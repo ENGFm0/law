@@ -124,3 +124,37 @@ node tools/build-artifact.mjs   # ← dist/sanad.html
 المصدر واحد للنسختين: `assets/js/pages.js` يكشف `Pages.mount()` ويشغّل نفسه
 تلقائياً إلا إذا وُجد `window.__SPA__`، و`tools/router.js` هو الموجّه الخاص
 بنسخة الملف الواحد فقط.
+
+---
+
+## النشر على GitHub Pages | Deploying
+
+المستودع فيه `.github/workflows/pages.yml` ينشر الموقع تلقائياً عند كل push
+على الفرع الافتراضي. الفرع الافتراضي هنا هو
+`claude/website-dark-light-languages-5exre8` — إذا غيّرته، غيّر اسم الفرع في
+`on.push.branches` داخل الـ workflow.
+
+### خطوة أولى لمرة واحدة
+
+قبل أول نشر، يجب تفعيل Pages يدوياً:
+
+1. افتح <https://github.com/ENGFm0/law/settings/pages>
+2. في **Build and deployment → Source** اختر **GitHub Actions**
+
+بعدها كل push ينشر تلقائياً، ويصبح الموقع على:
+
+**<https://engfm0.github.io/law/>** — الموقع متعدد الصفحات
+**<https://engfm0.github.io/law/dist/sanad.html>** — نسخة الملف الواحد
+
+### لماذا لا يفعّلها الـ workflow بنفسه؟
+
+جرّبنا `actions/configure-pages` مع `enablement: true`، فأعاد:
+
+```
+Create Pages site failed. Error: Resource not accessible by integration
+```
+
+إنشاء موقع Pages نداء إداري (`administration: write`) لا يُمنح لـ
+`GITHUB_TOKEN` داخل Actions مهما كتبت في كتلة `permissions` — يحتاج إما
+صفحة الإعدادات أو Personal Access Token. أما **النشر** على موقع Pages
+مفعّل مسبقاً فيكفيه `pages: write`، وهو ما يطلبه الـ workflow فعلاً.
