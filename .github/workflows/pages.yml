@@ -1,0 +1,56 @@
+name: Deploy to GitHub Pages
+
+# The site is static, so there is nothing to compile — the job only assembles
+# the files that should be public and regenerates the single-file bundle so it
+# can never drift from the sources it is built from.
+
+on:
+  push:
+    branches: [claude/website-dark-light-languages-5exre8]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deployment finish rather than cancelling it half-published.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true          # turns Pages on the first time this runs
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Rebuild the single-file bundle
+        run: node tools/build-artifact.mjs
+
+      - name: Assemble the published site
+        run: |
+          mkdir -p _site
+          cp *.html _site/
+          cp -r assets _site/
+          cp -r dist _site/
+          touch _site/.nojekyll     # keep Jekyll from filtering files
+          ls -R _site | head -40
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
