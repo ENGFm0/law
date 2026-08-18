@@ -72,26 +72,6 @@
         }).join("");
       }
 
-      var feat = $("[data-features]");
-      if (feat) {
-        feat.innerHTML = DATA.features.map(function (f) {
-          return '<article class="card card--hover card--rule-' + f.rule + ' feature reveal">' +
-            '<span class="feature__icon">' + Icons.svg(f.icon, "icon-lg") + "</span>" +
-            '<h3 class="subtitle">' + esc(tx(f.title)) + "</h3>" +
-            '<p class="small muted">' + esc(tx(f.body)) + "</p></article>";
-        }).join("");
-      }
-
-      var steps = $("[data-steps]");
-      if (steps) {
-        steps.innerHTML = DATA.steps.map(function (s, i) {
-          return '<article class="card card--pad step reveal">' +
-            '<span class="step__num">' + I18N.num(i + 1) + "</span>" +
-            '<h3 class="subtitle" style="margin-top:var(--s-4)">' + esc(tx(s.title)) + "</h3>" +
-            '<p class="small muted" style="margin-top:var(--s-2)">' + esc(tx(s.body)) + "</p></article>";
-        }).join("");
-      }
-
       var roleCards = $("[data-role-cards]");
       if (roleCards) {
         roleCards.innerHTML = global.Roles.all().map(function (r) {
@@ -108,41 +88,19 @@
         }).join("");
       }
 
-      var featured = $("[data-featured-lawyers]");
-      if (featured) {
-        featured.innerHTML = DATA.lawyers.slice(0, 3).map(function (l) {
-          return '<div class="reveal">' + App.lawyerCardCompact(l) + "</div>";
+      var teasers = $("[data-doc-teasers]");
+      if (teasers) {
+        teasers.innerHTML = DATA.docTypes.slice(0, 4).map(function (d) {
+          return '<li><span class="grow"><strong>' + esc(tx(d.title)) + "</strong>" +
+            '<span class="tiny muted" style="display:block">' + esc(tx(d.body)) + "</span></span>" +
+            '<span class="offer__price"><span class="tiny muted">' + esc(I18N.t("home.from")) +
+              '</span><strong><span class="num">' + I18N.num(d.price) + "</span> " +
+              esc(I18N.t("profile.sar")) + "</strong></span></li>";
         }).join("");
       }
 
       var statsHost = $("[data-stats]");
       if (statsHost) renderStats(statsHost);
-
-      var tHost = $("[data-testimonials]");
-      if (tHost) {
-        tHost.innerHTML = DATA.testimonials.map(function (t) {
-          var filled = "";
-          for (var i = 0; i < 5; i++) {
-            filled += '<span style="color:' + (i < t.rating ? "var(--accent)" : "var(--border-strong)") + '">' +
-              Icons.svg("star", "icon-sm") + "</span>";
-          }
-          return '<article class="card card--pad reveal stack gap-4">' +
-            '<div class="row gap-1">' + filled + "</div>" +
-            '<p class="lead small">“' + esc(tx(t.body)) + '”</p>' +
-            '<div class="row gap-3" style="margin-top:auto">' +
-              '<img class="avatar avatar--sm" src="' + App.avatarOf(t.name, tx(t.name)) + '" alt="" width="40" height="40">' +
-              "<div><strong class=\"small\">" + esc(tx(t.name)) + "</strong>" +
-              '<p class="tiny muted">' + esc(tx(t.role)) + "</p></div>" +
-            "</div></article>";
-        }).join("");
-      }
-
-      var artHost = $("[data-home-articles]");
-      if (artHost) {
-        artHost.innerHTML = DATA.articles.slice(0, 3).map(function (a) {
-          return '<div class="reveal">' + App.articleCard(a) + "</div>";
-        }).join("");
-      }
 
       App.observeReveals();
     });
@@ -683,6 +641,45 @@
         }).join("");
       }
 
+      var feat = $("[data-features]");
+      if (feat) {
+        feat.innerHTML = DATA.features.map(function (f) {
+          return '<article class="card card--hover card--rule-' + f.rule + ' feature reveal">' +
+            '<span class="feature__icon">' + Icons.svg(f.icon, "icon-lg") + "</span>" +
+            '<h3 class="subtitle">' + esc(tx(f.title)) + "</h3>" +
+            '<p class="small muted">' + esc(tx(f.body)) + "</p></article>";
+        }).join("");
+      }
+
+      var steps = $("[data-steps]");
+      if (steps) {
+        steps.innerHTML = DATA.steps.map(function (s, i) {
+          return '<article class="card card--pad step reveal">' +
+            '<span class="step__num">' + I18N.num(i + 1) + "</span>" +
+            '<h3 class="subtitle" style="margin-top:var(--s-4)">' + esc(tx(s.title)) + "</h3>" +
+            '<p class="small muted" style="margin-top:var(--s-2)">' + esc(tx(s.body)) + "</p></article>";
+        }).join("");
+      }
+
+      var tHost = $("[data-testimonials]");
+      if (tHost) {
+        tHost.innerHTML = DATA.testimonials.map(function (t) {
+          var filled = "";
+          for (var i = 0; i < 5; i++) {
+            filled += '<span style="color:' + (i < t.rating ? "var(--accent)" : "var(--border-strong)") + '">' +
+              Icons.svg("star", "icon-sm") + "</span>";
+          }
+          return '<article class="card card--pad reveal stack gap-4">' +
+            '<div class="row gap-1">' + filled + "</div>" +
+            '<p class="lead small">“' + esc(tx(t.body)) + '”</p>' +
+            '<div class="row gap-3" style="margin-top:auto">' +
+              '<img class="avatar avatar--sm" src="' + App.avatarOf(t.name, tx(t.name)) + '" alt="" width="40" height="40">' +
+              "<div><strong class=\"small\">" + esc(tx(t.name)) + "</strong>" +
+              '<p class="tiny muted">' + esc(tx(t.role)) + "</p></div>" +
+            "</div></article>";
+        }).join("");
+      }
+
       var statsHost = $("[data-stats]");
       if (statsHost) renderStats(statsHost);
 
@@ -1169,84 +1166,274 @@
     }
   }
 
-  /* ============================================================= ASSISTANT */
+  /* ============================================================= ASSISTANT
+     One page, three faces: a client orders a draft, a lawyer tunes the
+     knowledge base and approves what the assistant wrote, a trainee is
+     pointed at the task bank instead. Session state only — no backend. */
+  var kbFiles = null;             // lazily cloned from DATA so edits are local
+  var kbRegs = {};
+  var requestState = {};          // id -> "queued" | "drafted" | "approved"
+  var uploadCounter = 0;
+
   function initAssistant() {
-    var log = $("[data-chat-log]");
-    if (!log) return;
-    var turns = [];   // { who: "bot" | "user", text }
+    var clientView = $("[data-ai-client]");
+    if (!clientView) return;
 
-    function bubble(turn) {
-      var mine = turn.who === "user";
-      return '<div class="bubble' + (mine ? " bubble--user" : "") + '">' +
-        '<span class="bubble__who">' + esc(mine ? I18N.t("ai.you") : I18N.t("brand.name")) + "</span>" +
-        "<p>" + esc(turn.text) + "</p></div>";
+    if (!kbFiles) kbFiles = DATA.lawyerFiles.slice();
+    DATA.regulations.forEach(function (r) {
+      if (!(r.id in kbRegs)) kbRegs[r.id] = r.on;
+    });
+    DATA.aiRequests.forEach(function (r) {
+      if (!(r.id in requestState)) requestState[r.id] = r.state;
+    });
+
+    var order = { doc: null };
+    var openDraft = null;
+
+    /* ---------------- client ---------------- */
+    function drawClient() {
+      var opts = $("[data-doc-options]");
+      if (opts) {
+        opts.innerHTML = DATA.docTypes.map(function (d) {
+          return '<button type="button" class="doc-option' + (order.doc === d.id ? " is-active" : "") +
+            '" data-doc="' + esc(d.id) + '">' +
+            '<strong>' + esc(tx(d.title)) + "</strong>" +
+            '<span class="tiny muted">' + esc(tx(d.body)) + "</span>" +
+            '<span class="doc-option__price"><span class="num">' + I18N.num(d.price) + "</span> " +
+              esc(I18N.t("profile.sar")) + "</span></button>";
+        }).join("");
+      }
+
+      var summary = $("[data-order-summary]");
+      if (summary) {
+        var d = order.doc ? DATA.docTypeById(order.doc) : null;
+        if (!d) {
+          summary.innerHTML = '<p class="muted center" style="padding:var(--s-4)">' +
+            esc(I18N.t("ai.pickDoc")) + "</p>";
+        } else {
+          summary.innerHTML =
+            '<h2 class="subtitle">' + esc(tx(d.title)) + "</h2>" +
+            '<hr class="divider">' +
+            '<div class="row between" style="margin-bottom:var(--s-3)">' +
+              '<span class="small muted">' + esc(I18N.t("ai.priceAi")) + "</span>" +
+              '<strong style="font-size:1.5rem;color:var(--accent)"><span class="num">' +
+                I18N.num(d.price) + "</span> " + esc(I18N.t("profile.sar")) + "</strong></div>" +
+            '<div class="row between" style="margin-bottom:var(--s-3)">' +
+              '<span class="small muted">' + esc(I18N.t("ai.priceFull")) + "</span>" +
+              '<span class="muted" style="text-decoration:line-through"><span class="num">' +
+                I18N.num(d.full) + "</span> " + esc(I18N.t("profile.sar")) + "</span></div>" +
+            '<p class="status status--ok" style="width:100%;justify-content:center">' +
+              esc(I18N.t("ai.youSave", { n: I18N.num(d.full - d.price) })) + "</p>" +
+            '<p class="row gap-2 small muted" style="margin-top:var(--s-4)">' +
+              Icons.svg("clock", "icon-sm") +
+              esc(I18N.t("ai.turnaround", { n: I18N.num(d.hours) })) + "</p>" +
+            '<p class="row gap-2 small" style="margin-top:var(--s-2);color:var(--success);font-weight:700">' +
+              Icons.svg("shield-check", "icon-sm") + esc(I18N.t("ai.lawyerApproved")) + "</p>";
+        }
+      }
+
+      var steps = $("[data-ai-steps]");
+      if (steps) {
+        steps.innerHTML = [1, 2, 3, 4].map(function (i) {
+          return '<li><strong class="small">' + esc(I18N.t("ai.step" + i)) + "</strong>" +
+            '<p class="tiny muted">' + esc(I18N.t("ai.step" + i + "Body")) + "</p></li>";
+        }).join("");
+      }
     }
 
-    function draw() {
-      log.innerHTML = turns.length
-        ? turns.map(bubble).join("")
-        : bubble({ who: "bot", text: I18N.t("ai.greeting") });
-      log.scrollTop = log.scrollHeight;
+    /* ---------------- lawyer ---------------- */
+    function drawKb() {
+      var host = $("[data-kb-files]");
+      if (host) {
+        host.innerHTML = kbFiles.map(function (f) {
+          return '<div class="list-row">' +
+            '<span class="list-row__icon" style="color:var(--accent)">' +
+              Icons.svg("file-text", "icon-sm") + "</span>" +
+            '<div class="grow"><strong class="small">' + esc(tx(f)) + "</strong>" +
+              '<p class="tiny muted">' +
+                esc(I18N.t(f.kind === "template" ? "ai.template" : "ai.precedent")) +
+                ' <span class="dot"></span> <span class="num">' + esc(f.size) + "</span></p></div>" +
+            '<button class="icon-btn" type="button" data-kb-remove="' + esc(f.id) + '" ' +
+              'aria-label="' + esc(I18N.t("ai.removeFile")) + '">' +
+              Icons.svg("close", "icon-sm") + "</button></div>";
+        }).join("");
+      }
+
+      var regsHost = $("[data-kb-regs]");
+      if (regsHost) {
+        regsHost.innerHTML = DATA.regulations.map(function (r) {
+          return '<label class="check"><input type="checkbox" data-reg="' + esc(r.id) + '"' +
+            (kbRegs[r.id] ? " checked" : "") + "><span>" + esc(tx(r)) + "</span></label>";
+        }).join("");
+      }
+      var badge = $("[data-regs-count]");
+      if (badge) {
+        var on = DATA.regulations.filter(function (r) { return kbRegs[r.id]; }).length;
+        badge.textContent = I18N.t("ai.regsOn", { n: I18N.num(on) });
+      }
     }
 
-    /** Match a question to the closest canned answer; fall back to a hand-off. */
-    function answer(question) {
-      var q = question.toLowerCase();
-      var best = null, bestScore = 0;
-      DATA.assistant.forEach(function (entry) {
-        var words = tx(entry.q).toLowerCase().split(/[\s،,؟?.]+/).filter(function (w) { return w.length > 3; });
-        var score = words.reduce(function (n, w) { return q.indexOf(w) !== -1 ? n + 1 : n; }, 0);
-        if (score > bestScore) { bestScore = score; best = entry; }
-      });
-      if (best && bestScore >= 1) return tx(best.a);
-      return I18N.t("ai.disclaimer");
+    function drawQueue() {
+      var host = $("[data-ai-queue]");
+      if (!host) return;
+      var live = DATA.aiRequests.filter(function (r) { return requestState[r.id] !== "approved"; });
+
+      var badge = $("[data-queue-count]");
+      if (badge) badge.textContent = I18N.num(live.length);
+
+      host.innerHTML = live.length ? live.map(function (r) {
+        var d = DATA.docTypeById(r.doc);
+        var state = requestState[r.id];
+        var ready = state === "drafted";
+        return '<div class="list-row">' +
+          '<span class="list-row__icon">' + Icons.svg(ready ? "sparkle" : "clock", "icon-sm") + "</span>" +
+          '<div class="grow"><strong class="small">' + esc(d ? tx(d.title) : "") + "</strong>" +
+            '<p class="tiny muted">' + esc(tx(r.client)) + ' <span class="dot"></span> ' +
+              esc(tx(r.ago)) + "</p>" +
+            '<p class="tiny faint">' + esc(tx(r.note)) + "</p></div>" +
+          '<div class="stack gap-2" style="align-items:flex-end">' +
+            '<span class="status status--' + (ready ? "ok" : "muted") + '">' +
+              esc(I18N.t(ready ? "ai.stateDrafted" : "ai.stateQueued")) + "</span>" +
+            '<button class="btn btn--sm ' + (ready ? "btn--primary" : "btn--outline") +
+              '" type="button" data-req="' + esc(r.id) + '">' +
+              esc(I18N.t(ready ? "ai.openDraft" : "ai.generate")) + "</button>" +
+          "</div></div>";
+      }).join("")
+        : '<p class="muted center" style="padding:var(--s-6)">' + esc(I18N.t("ai.queueEmpty")) + "</p>";
+    }
+
+    function drawEditor() {
+      var host = $("[data-draft-editor]");
+      if (!host) return;
+      if (!openDraft) { host.hidden = true; host.innerHTML = ""; return; }
+
+      var req = DATA.aiRequests.filter(function (r) { return r.id === openDraft; })[0];
+      if (!req) { host.hidden = true; return; }
+      var d = DATA.docTypeById(req.doc);
+      var body = DATA.draftBodies[req.doc];
+      var onRegs = DATA.regulations.filter(function (r) { return kbRegs[r.id]; })
+        .slice(0, 3).map(function (r) { return tx(r); }).join("، ");
+
+      host.hidden = false;
+      host.innerHTML =
+        '<div class="panel__head row between wrap gap-3">' +
+          "<div><h2 class=\"subtitle\">" + esc(I18N.t("ai.draftFor")) + " " + esc(tx(req.client)) + "</h2>" +
+            '<p class="tiny muted">' + esc(d ? tx(d.title) : "") + ' <span class="dot"></span> ' +
+              esc(I18N.t("ai.aiSource")) + "</p></div>" +
+          '<button class="icon-btn" type="button" data-draft-close ' +
+            'aria-label="' + esc(I18N.t("ai.discard")) + '">' + Icons.svg("close", "icon-sm") + "</button>" +
+        "</div>" +
+        '<div style="padding:var(--s-4) var(--s-6) 0">' +
+          '<p class="tiny muted">' + esc(I18N.t("ai.basedOn")) + ": " + esc(onRegs) + "</p>" +
+          '<p class="tiny muted" style="margin-top:var(--s-1)">' + esc(I18N.t("ai.editHint")) + "</p>" +
+        "</div>" +
+        '<textarea class="draft-text" data-draft-body spellcheck="false">' +
+          esc(body ? tx(body) : "") + "</textarea>" +
+        '<div class="draft-foot">' +
+          '<div><span class="tiny muted">' + esc(I18N.t("ai.earns")) + "</span>" +
+            '<strong style="display:block;color:var(--accent)"><span class="num">' +
+              I18N.num(d ? Math.round(d.price * 0.7) : 0) + "</span> " +
+              esc(I18N.t("profile.sar")) + "</strong></div>" +
+          '<span class="tiny muted grow">' +
+            esc(I18N.t("ai.reviewMinutes", { n: I18N.num(6) })) + "</span>" +
+          '<button class="btn btn--accent" type="button" data-draft-approve>' +
+            Icons.svg("check", "icon-sm") + esc(I18N.t("ai.approve")) + "</button>" +
+        "</div>";
     }
 
     App.onRender(function () {
-      var host = $("[data-chat-suggestions]");
-      if (host) {
-        host.innerHTML = DATA.assistant.map(function (entry) {
-          return '<button type="button" class="chip" data-ask="' + esc(entry.id) + '">' +
-            esc(tx(entry.q)) + "</button>";
-        }).join("");
-      }
-      draw();
+      var role = global.Roles.current;
+      clientView.hidden = role !== "client";
+      $("[data-ai-lawyer]").hidden = role !== "lawyer";
+      $("[data-ai-intern]").hidden = role !== "intern";
+
+      if (role === "client") drawClient();
+      else if (role === "lawyer") { drawKb(); drawQueue(); drawEditor(); }
     });
 
-    function ask(text) {
-      turns.push({ who: "user", text: text });
-      draw();
-      // A brief pause reads as a reply rather than an instant lookup.
-      setTimeout(function () {
-        turns.push({ who: "bot", text: answer(text) });
-        draw();
-      }, 420);
-    }
+    /* ---------------- interactions ---------------- */
+    clientView.addEventListener("click", function (ev) {
+      var pick = ev.target.closest("[data-doc]");
+      if (!pick) return;
+      order.doc = pick.getAttribute("data-doc");
+      drawClient();
+    });
 
-    var sugg = $("[data-chat-suggestions]");
-    if (sugg) {
-      sugg.addEventListener("click", function (ev) {
-        var chip = ev.target.closest("[data-ask]");
-        if (!chip) return;
-        var entry = DATA.assistant.filter(function (e) { return e.id === chip.getAttribute("data-ask"); })[0];
-        if (entry) ask(tx(entry.q));
-      });
-    }
-
-    var form = $("[data-chat-form]");
-    if (form) {
-      form.addEventListener("submit", function (ev) {
+    var orderForm = $("[data-order-form]");
+    if (orderForm) {
+      orderForm.addEventListener("submit", function (ev) {
         ev.preventDefault();
-        var input = $("[data-chat-input]");
-        var text = input.value.trim();
-        if (!text) return;
-        input.value = "";
-        ask(text);
+        if (!order.doc) { App.toast(I18N.t("ai.needDoc"), "file-text"); return; }
+        App.toast(I18N.t("ai.ordered"), "check");
+        orderForm.reset();
+        order.doc = null;
+        drawClient();
       });
     }
 
-    var clear = $("[data-chat-clear]");
-    if (clear) clear.addEventListener("click", function () { turns = []; draw(); });
+    var lawyerView = $("[data-ai-lawyer]");
+    if (lawyerView) {
+      lawyerView.addEventListener("click", function (ev) {
+        var up = ev.target.closest("[data-kb-upload]");
+        if (up) {
+          uploadCounter++;
+          kbFiles = kbFiles.concat([{
+            id: "up-" + uploadCounter, kind: "template", size: "36 KB",
+            ar: "ملف مرفوع " + uploadCounter, en: "Uploaded file " + uploadCounter
+          }]);
+          App.toast(I18N.t("ai.uploaded"), "check");
+          drawKb();
+          return;
+        }
+
+        var rm = ev.target.closest("[data-kb-remove]");
+        if (rm) {
+          var id = rm.getAttribute("data-kb-remove");
+          kbFiles = kbFiles.filter(function (f) { return f.id !== id; });
+          App.toast(I18N.t("ai.removed"), "close");
+          drawKb();
+          return;
+        }
+
+        var req = ev.target.closest("[data-req]");
+        if (req) {
+          var rid = req.getAttribute("data-req");
+          if (requestState[rid] === "queued") {
+            // Writing takes a beat, so the state change reads as work happening.
+            req.disabled = true;
+            req.textContent = I18N.t("ai.generating");
+            setTimeout(function () {
+              requestState[rid] = "drafted";
+              openDraft = rid;
+              App.toast(I18N.t("ai.generated"), "sparkle");
+              drawQueue(); drawEditor();
+            }, 700);
+          } else {
+            openDraft = rid;
+            drawEditor();
+            var ed = $("[data-draft-editor]");
+            if (ed) ed.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+          return;
+        }
+
+        if (ev.target.closest("[data-draft-close]")) { openDraft = null; drawEditor(); return; }
+
+        if (ev.target.closest("[data-draft-approve]")) {
+          requestState[openDraft] = "approved";
+          openDraft = null;
+          App.toast(I18N.t("ai.approved"), "check");
+          drawQueue(); drawEditor();
+        }
+      });
+
+      lawyerView.addEventListener("change", function (ev) {
+        var reg = ev.target.closest("[data-reg]");
+        if (!reg) return;
+        kbRegs[reg.getAttribute("data-reg")] = reg.checked;
+        drawKb();
+      });
+    }
   }
 
   /* =============================================================== ACCOUNT */

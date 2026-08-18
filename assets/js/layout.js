@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Shared chrome — icon set, brand mark, header, mobile drawer, footer.
+   Shared chrome — icon set, brand mark, header, bottom tab bar, footer.
    Injected by script rather than copy-pasted into eight HTML files, so the
    nav only ever has to be corrected in one place.
    ========================================================================== */
@@ -29,6 +29,7 @@
     moon:      '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/>',
     globe:     '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/>',
     menu:      '<path d="M4 7h16M4 12h16M4 17h16"/>',
+    home:      '<path d="m3 10.5 9-7 9 7V20a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 20z"/><path d="M9.5 21.5v-7h5v7"/>',
     close:     '<path d="m6 6 12 12M18 6 6 18"/>',
     calendar:  '<rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
     clock:     '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>',
@@ -96,10 +97,10 @@
      Everything else is common to all three. */
   function navItems() {
     var role = global.Roles ? global.Roles.info : null;
-    var items = [{ key: "nav.home", href: "index.html", id: "home" }];
+    var items = [{ key: "nav.home", tab: "tab.home", href: "index.html", id: "home", icon: "home" }];
     if (role) items.push(role.nav);
-    items.push({ key: "nav.blog", href: "blog.html", id: "blog" });
-    items.push({ key: "nav.assistant", href: "assistant.html", id: "assistant" });
+    items.push({ key: "nav.blog", tab: "tab.blog", href: "blog.html", id: "blog", icon: "file-text" });
+    items.push({ key: "nav.assistant", tab: "tab.assistant", href: "assistant.html", id: "assistant", icon: "sparkle" });
     return items;
   }
 
@@ -136,31 +137,22 @@
       '<nav class="nav" data-i18n-attr="aria-label:a11y.menu">' + links + "</nav>" +
       '<div class="header-actions">' +
         themeButton() + langButton() + roleBadge() +
-        '<button class="icon-btn burger" type="button" data-action="open-drawer" data-i18n-attr="aria-label:a11y.menu">' +
-          Icons.svg("menu") + "</button>" +
       "</div></div></header>";
   }
 
-  function drawer(active) {
-    var links = navItems().map(function (item) {
-      return '<a class="drawer__link' + (item.id === active ? " is-active" : "") + '" href="' + item.href +
-        '" data-i18n="' + item.key + '"></a>';
-    }).join("");
-
-    return '<div class="drawer" data-drawer aria-hidden="true">' +
-      '<div class="drawer__scrim" data-action="close-drawer"></div>' +
-      '<div class="drawer__panel" role="dialog" aria-modal="true">' +
-        '<div class="row between" style="margin-bottom:var(--s-4)">' + brand() +
-          '<button class="icon-btn" type="button" data-action="close-drawer" data-i18n-attr="aria-label:a11y.close">' +
-          Icons.svg("close") + "</button></div>" +
-        links +
-        '<a class="drawer__link" href="about.html" data-i18n="nav.about"></a>' +
-        '<div class="divider"></div>' +
-        '<a class="drawer__link" href="account.html" data-i18n="account.heading"></a>' +
-        '<a class="drawer__link" href="login.html" data-i18n="nav.login"></a>' +
-        '<div class="divider"></div>' +
-        '<a class="btn btn--primary btn--block" href="lawyers.html" data-i18n="nav.cta"></a>' +
-      "</div></div>";
+  /** Phone navigation: a bottom tab bar, where a thumb actually reaches. */
+  function tabbar(active) {
+    var items = navItems().concat([
+      { key: "account.heading", tab: "tab.account", href: "account.html", id: "account", icon: "user" }
+    ]);
+    return '<nav class="tabbar" data-tabbar data-i18n-attr="aria-label:a11y.menu">' +
+      items.map(function (item) {
+        var on = item.id === active;
+        return '<a class="tabbar__link' + (on ? " is-active" : "") + '" href="' + item.href + '"' +
+          (on ? ' aria-current="page"' : "") + ">" +
+          Icons.svg(item.icon || "grid") +
+          '<span data-i18n="' + (item.tab || item.key) + '"></span></a>';
+      }).join("") + "</nav>";
   }
 
   function footer() {
@@ -211,7 +203,7 @@
     var filled = false;
 
     var headerSlot = document.querySelector("[data-slot=header]");
-    if (headerSlot) { headerSlot.outerHTML = header(page) + drawer(page); filled = true; }
+    if (headerSlot) { headerSlot.outerHTML = header(page) + tabbar(page); filled = true; }
 
     var footerSlot = document.querySelector("[data-slot=footer]");
     if (footerSlot) { footerSlot.outerHTML = footer(); filled = true; }
@@ -224,23 +216,23 @@
   function refresh() {
     var page = document.documentElement.getAttribute("data-page") || "";
     var oldHeader = document.querySelector(".site-header");
-    var oldDrawer = document.querySelector("[data-drawer]");
+    var oldTabbar = document.querySelector("[data-tabbar]");
     if (!oldHeader) return;
 
     var holder = document.createElement("div");
-    holder.innerHTML = header(page) + drawer(page);
-    var newHeader = holder.firstChild, newDrawer = holder.lastChild;
+    holder.innerHTML = header(page) + tabbar(page);
+    var newHeader = holder.firstChild, newTabbar = holder.lastChild;
 
     oldHeader.replaceWith(newHeader);
-    if (oldDrawer) oldDrawer.replaceWith(newDrawer);
-    else document.body.appendChild(newDrawer);
+    if (oldTabbar) oldTabbar.replaceWith(newTabbar);
+    else document.body.appendChild(newTabbar);
 
-    if (global.I18N) global.I18N.apply(newHeader), global.I18N.apply(newDrawer);
+    if (global.I18N) global.I18N.apply(newHeader), global.I18N.apply(newTabbar);
   }
 
   global.Layout = {
     mount: mount, refresh: refresh, header: header, footer: footer,
-    brand: brand, navItems: navItems
+    tabbar: tabbar, brand: brand, navItems: navItems
   };
   global.Icons = Icons;
 

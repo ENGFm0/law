@@ -432,6 +432,88 @@
            en: "Start with the title deed: check that its details match reality (area, boundaries, dimensions) and that it is free of mortgage or attachment via the official search. Then check the municipal plan, that the permitted use matches your purpose, and that no expropriation is planned. For an off-plan sale, confirm the project's licence and that payments run through the escrow account. Ask the seller for written confirmation that the property carries no outstanding financial obligations before you sign." } }
   ];
 
+  /* Saudi regulations the assistant can be pointed at when drafting. */
+  var REGULATIONS = [
+    { id: "labour",   on: true,  ar: "نظام العمل ولائحته التنفيذية", en: "Labour Law & implementing regulations" },
+    { id: "civil",    on: true,  ar: "نظام المعاملات المدنية",        en: "Civil Transactions Law" },
+    { id: "companies",on: true,  ar: "نظام الشركات",                  en: "Companies Law" },
+    { id: "status",   on: false, ar: "نظام الأحوال الشخصية",          en: "Personal Status Law" },
+    { id: "execution",on: false, ar: "نظام التنفيذ",                  en: "Enforcement Law" },
+    { id: "ecommerce",on: false, ar: "نظام التجارة الإلكترونية",      en: "E-Commerce Law" },
+    { id: "ip",       on: false, ar: "أنظمة الملكية الفكرية",         en: "Intellectual property laws" },
+    { id: "data",     on: false, ar: "نظام حماية البيانات الشخصية",   en: "Personal Data Protection Law" }
+  ];
+
+  /* The lawyer's own precedents and templates, which the assistant drafts from. */
+  var LAWYER_FILES = [
+    { id: "f-1", kind: "template", size: "48 KB", ar: "نموذج عقد عمل — مكتبي",        en: "Employment contract template — my office" },
+    { id: "f-2", kind: "template", size: "31 KB", ar: "نموذج اتفاقية عدم إفشاء",       en: "NDA template" },
+    { id: "f-3", kind: "precedent",size: "112 KB",ar: "مذكرة دفاع — دعوى عمالية سابقة", en: "Defence memo — earlier labour claim" },
+    { id: "f-4", kind: "template", size: "27 KB", ar: "نموذج إنذار بإخلاء مأجور",       en: "Notice to vacate template" },
+    { id: "f-5", kind: "precedent",size: "64 KB", ar: "صيغة تسوية ودية معتمدة",        en: "Approved settlement wording" }
+  ];
+
+  /* Simple documents a client can order at the AI-drafted, lawyer-approved rate.
+     `full` is what the same document costs when a lawyer writes it from scratch. */
+  var DOC_TYPES = [
+    { id: "employment", price: 99,  full: 500, hours: 4, specialty: "labour",
+      title: { ar: "عقد عمل", en: "Employment contract" },
+      body:  { ar: "عقد عمل محدد أو غير محدد المدة، متوافق مع نظام العمل السعودي.",
+               en: "A fixed- or open-term employment contract compliant with the Saudi Labour Law." } },
+    { id: "nda", price: 79, full: 400, hours: 3, specialty: "commercial",
+      title: { ar: "اتفاقية عدم إفشاء (NDA)", en: "Non-disclosure agreement (NDA)" },
+      body:  { ar: "اتفاقية سرية ثنائية أو أحادية الطرف مع تحديد مدة الالتزام.",
+               en: "A mutual or one-way confidentiality agreement with a defined term." } },
+    { id: "resignation", price: 49, full: 250, hours: 2, specialty: "labour",
+      title: { ar: "خطاب استقالة أو إنهاء خدمة", en: "Resignation or termination letter" },
+      body:  { ar: "خطاب مصاغ نظامياً يحفظ حقوقك ويحدد تاريخ آخر يوم عمل.",
+               en: "A properly worded letter that protects your rights and fixes the last working day." } },
+    { id: "demand", price: 89, full: 450, hours: 4, specialty: "commercial",
+      title: { ar: "إنذار بالمطالبة بمبلغ", en: "Formal demand for payment" },
+      body:  { ar: "إنذار رسمي بالسداد قبل رفع الدعوى، مع تحديد المهلة والأثر النظامي.",
+               en: "A formal pre-litigation demand, stating the deadline and the legal consequence." } },
+    { id: "lease", price: 99, full: 500, hours: 5, specialty: "realestate",
+      title: { ar: "عقد إيجار", en: "Lease agreement" },
+      body:  { ar: "عقد إيجار سكني أو تجاري مع بنود الصيانة والإخلاء.",
+               en: "A residential or commercial lease covering maintenance and termination." } },
+    { id: "poa", price: 69, full: 300, hours: 2, specialty: "commercial",
+      title: { ar: "صيغة وكالة", en: "Power of attorney wording" },
+      body:  { ar: "صياغة نطاق الوكالة وحدود الصلاحيات قبل توثيقها.",
+               en: "Wording for the scope of the mandate and its limits, ready for notarisation." } }
+  ];
+
+  /* Client orders sitting in the assistant/lawyer pipeline. */
+  var AI_REQUESTS = [
+    { id: "r-1", doc: "employment", client: { ar: "شركة أفق", en: "Ufuq Co." },
+      state: "drafted", ago: { ar: "منذ 12 دقيقة", en: "12 minutes ago" },
+      note: { ar: "عقد لموظف تسويق، راتب 9,000 ريال، فترة تجربة 90 يوماً.",
+              en: "Contract for a marketing hire, SAR 9,000 salary, 90-day probation." } },
+    { id: "r-2", doc: "demand", client: { ar: "خالد الشهري", en: "Khalid Al-Shehri" },
+      state: "drafted", ago: { ar: "منذ ساعة", en: "An hour ago" },
+      note: { ar: "مطالبة بمبلغ 45,000 ريال مستحق منذ ثلاثة أشهر.",
+              en: "Claim for SAR 45,000 outstanding for three months." } },
+    { id: "r-3", doc: "nda", client: { ar: "منصة رواق", en: "Rawaq Platform" },
+      state: "queued", ago: { ar: "منذ 5 دقائق", en: "5 minutes ago" },
+      note: { ar: "اتفاقية سرية مع مطوّر مستقل لمدة سنتين.",
+              en: "Confidentiality agreement with a freelance developer, two-year term." } }
+  ];
+
+  /* What the assistant produces before the lawyer touches it. */
+  var DRAFT_BODIES = {
+    employment: {
+      ar: "عقد عمل\n\nأولاً: طرفا العقد\nالطرف الأول (صاحب العمل): ...\nالطرف الثاني (العامل): ...\n\nثانياً: طبيعة العمل ومدته\nيلتزم الطرف الثاني بالعمل لدى الطرف الأول بوظيفة (أخصائي تسويق)، ومدة العقد سنة ميلادية تبدأ من تاريخ المباشرة، وتتجدد تلقائياً ما لم يخطر أحد الطرفين الآخر بخلاف ذلك قبل ثلاثين يوماً من انتهائها.\n\nثالثاً: فترة التجربة\nيخضع الطرف الثاني لفترة تجربة مدتها تسعون يوماً وفق المادة (53) من نظام العمل، لا تدخل ضمنها إجازات العيدين والإجازة المرضية.\n\nرابعاً: الأجر\nيستحق الطرف الثاني أجراً شهرياً قدره (9,000) تسعة آلاف ريال، يُصرف في نهاية كل شهر ميلادي عبر نظام حماية الأجور.\n\nخامساً: ساعات العمل\nثماني ساعات يومياً بما لا يتجاوز ثمانياً وأربعين ساعة أسبوعياً، وفق المادة (98) من نظام العمل.\n\nسادساً: إنهاء العقد\nيخضع إنهاء هذا العقد لأحكام المادتين (75) و(77) من نظام العمل.",
+      en: "EMPLOYMENT CONTRACT\n\n1. Parties\nFirst party (employer): ...\nSecond party (employee): ...\n\n2. Role and term\nThe employee shall serve as Marketing Specialist for a term of one calendar year from the start date, renewing automatically unless either party gives thirty days' notice before expiry.\n\n3. Probation\nA probationary period of ninety days applies under Article 53 of the Labour Law, excluding Eid holidays and sick leave.\n\n4. Pay\nA monthly salary of SAR 9,000, paid at the end of each calendar month through the Wage Protection System.\n\n5. Working hours\nEight hours daily, not exceeding forty-eight hours weekly, under Article 98 of the Labour Law.\n\n6. Termination\nTermination is governed by Articles 75 and 77 of the Labour Law."
+    },
+    demand: {
+      ar: "إنذار بالمطالبة بمبلغ\n\nالمرسل إليه: ...\nالتاريخ: ...\n\nبالإشارة إلى التعامل القائم بيننا بموجب (الفاتورة/العقد) رقم (...) بتاريخ (...)، فإن بذمتكم مبلغاً وقدره (45,000) خمسة وأربعون ألف ريال، مستحق الأداء منذ ثلاثة أشهر ولم يُسدَّد حتى تاريخه رغم المطالبات الودية.\n\nوعليه، فإننا ننذركم بسداد المبلغ كاملاً خلال (خمسة عشر) يوماً من تاريخ تسلمكم هذا الإنذار.\n\nوفي حال عدم السداد خلال المهلة المذكورة، فسنضطر آسفين إلى اتخاذ الإجراءات النظامية، بما في ذلك رفع الدعوى والمطالبة بالمبلغ والتعويض عن الضرر والمصاريف.\n\nهذا إنذار، وما بعده إجراء.",
+      en: "FORMAL DEMAND FOR PAYMENT\n\nTo: ...\nDate: ...\n\nFurther to our dealings under invoice/contract no. (...) dated (...), an amount of SAR 45,000 remains due and has been outstanding for three months despite amicable requests for payment.\n\nWe therefore formally demand payment in full within fifteen (15) days of your receipt of this notice.\n\nShould payment not be made within that period, we will regrettably proceed with legal action, including filing a claim for the amount, damages and costs.\n\nThis is a formal notice; action will follow."
+    },
+    nda: {
+      ar: "اتفاقية عدم إفشاء\n\nالبند الأول: تعريف المعلومات السرية\nكل معلومة تقنية أو تجارية أو مالية يفصح عنها أحد الطرفين للآخر، كتابةً أو شفاهةً، بما في ذلك الشيفرة المصدرية وقوائم العملاء والخطط التسويقية.\n\nالبند الثاني: الالتزام\nيلتزم الطرف المتلقي بعدم إفشاء المعلومات السرية أو استخدامها لغير الغرض المتفق عليه، وباتخاذ العناية ذاتها التي يتخذها لحماية معلوماته.\n\nالبند الثالث: المدة\nيسري هذا الالتزام طوال مدة التعاقد ولمدة سنتين من تاريخ انتهائه.\n\nالبند الرابع: الاستثناءات\nلا يشمل الالتزام المعلومات المتاحة للعموم دون إخلال، أو التي يوجب نظام أو أمر قضائي الإفصاح عنها.",
+      en: "NON-DISCLOSURE AGREEMENT\n\n1. Definition of confidential information\nAny technical, commercial or financial information disclosed by either party to the other, in writing or orally, including source code, client lists and marketing plans.\n\n2. Undertaking\nThe receiving party shall not disclose the confidential information or use it for any purpose other than the agreed one, and shall apply the same care it applies to its own information.\n\n3. Term\nThis undertaking runs for the term of the engagement and for two years after it ends.\n\n4. Carve-outs\nThe undertaking does not cover information already public without breach, or which a law or court order requires be disclosed."
+    }
+  };
+
   global.DATA = {
     specialties: SPECIALTIES,
     cities: CITIES,
@@ -449,6 +531,16 @@
     services: SERVICES,
     references: REFERENCES,
     interns: INTERNS,
+    regulations: REGULATIONS,
+    lawyerFiles: LAWYER_FILES,
+    docTypes: DOC_TYPES,
+    aiRequests: AI_REQUESTS,
+    draftBodies: DRAFT_BODIES,
+
+    docTypeById: function (id) {
+      for (var i = 0; i < DOC_TYPES.length; i++) if (DOC_TYPES[i].id === id) return DOC_TYPES[i];
+      return null;
+    },
     tasks: TASKS,
     drafts: DRAFTS,
     assistant: ASSISTANT,

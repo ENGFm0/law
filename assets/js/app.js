@@ -216,15 +216,6 @@
     nodes.forEach(function (n) { io.observe(n); });
   }
 
-  /* ---------- drawer ---------- */
-  function setDrawer(open) {
-    var d = $("[data-drawer]");
-    if (!d) return;
-    d.classList.toggle("is-open", open);
-    d.setAttribute("aria-hidden", open ? "false" : "true");
-    document.body.style.overflow = open ? "hidden" : "";
-  }
-
   /* ---------- theme button tooltip ---------- */
   function syncThemeButtons() {
     var key = global.Theme.isDark ? "theme.toLight" : "theme.toDark";
@@ -267,26 +258,12 @@
       global.Theme.toggle();
     } else if (action === "toggle-lang") {
       I18N.toggle();
-    } else if (action === "open-drawer") {
-      setDrawer(true);
-    } else if (action === "close-drawer") {
-      setDrawer(false);
     } else if (action === "scroll-top") {
       global.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       return; // not ours — let other handlers see it
     }
     if (target.tagName === "A" || target.tagName === "BUTTON") ev.preventDefault();
-  });
-
-  document.addEventListener("keydown", function (ev) {
-    if (ev.key === "Escape") setDrawer(false);
-  });
-
-  // Close the drawer when a link inside it navigates within the page
-  document.addEventListener("click", function (ev) {
-    var link = ev.target.closest ? ev.target.closest(".drawer__link") : null;
-    if (link) setDrawer(false);
   });
 
   document.addEventListener("langchange", function () {

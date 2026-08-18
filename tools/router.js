@@ -26,7 +26,7 @@
 
   function syncNav(name) {
     var href = name + ".html";
-    App.$$(".nav__link, .drawer__link").forEach(function (a) {
+    App.$$(".nav__link, .tabbar__link").forEach(function (a) {
       var match = a.getAttribute("href") === href ||
         (name === "lawyer" && a.getAttribute("href") === "lawyers.html");
       a.classList.toggle("is-active", match);

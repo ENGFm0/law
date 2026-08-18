@@ -18,21 +18,21 @@
       /* The workspace this role lands on from the header badge. */
       home: "dashboard-client.html",
       /* Role-specific slot in the main navigation. */
-      nav: { key: "nav.lawyers", href: "lawyers.html", id: "lawyers" }
+      nav: { key: "nav.lawyers", tab: "tab.lawyers", href: "lawyers.html", id: "lawyers", icon: "search" }
     },
     lawyer: {
       id: "lawyer",
       icon: "scale",
       nameKey: "role.lawyer",
       home: "dashboard-lawyer.html",
-      nav: { key: "dash.panel", href: "dashboard-lawyer.html", id: "dashboard" }
+      nav: { key: "dash.panel", tab: "tab.dashboard", href: "dashboard-lawyer.html", id: "dashboard", icon: "grid" }
     },
     intern: {
       id: "intern",
       icon: "graduation",
       nameKey: "role.intern",
       home: "tasks.html",
-      nav: { key: "nav.tasks", href: "tasks.html", id: "tasks" }
+      nav: { key: "nav.tasks", tab: "tab.tasks", href: "tasks.html", id: "tasks", icon: "graduation" }
     }
   };
 
