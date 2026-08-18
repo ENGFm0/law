@@ -514,6 +514,80 @@
     }
   };
 
+  /* What a client can order from a lawyer's profile.
+     Note the wording on `quick`: to the client it is simply an express
+     drafting tier the office turns around fast. How the office produces it
+     is not the client's concern, and nothing client-facing mentions it. */
+  var REQUEST_TYPES = [
+    { id: "call", icon: "phone", mode: "live", mult: 1,
+      title: { ar: "استشارة هاتفية", en: "Phone consultation" },
+      body:  { ar: "مكالمة مباشرة لمناقشة وضعك القانوني والخيارات المتاحة.",
+               en: "A direct call to talk through your position and your options." },
+      meta:  { ar: "30 دقيقة", en: "30 minutes" } },
+    { id: "video", icon: "video", mode: "live", mult: 2,
+      title: { ar: "استشارة فيديو", en: "Video consultation" },
+      body:  { ar: "جلسة مرئية لمراجعة مستنداتك ومناقشة استراتيجية قضيتك.",
+               en: "A video session to review your documents and discuss strategy." },
+      meta:  { ar: "60 دقيقة", en: "60 minutes" } },
+    { id: "written", icon: "chat", mode: "written", mult: 0.65,
+      title: { ar: "استشارة مكتوبة", en: "Written consultation" },
+      body:  { ar: "سؤال مفصّل وإجابة مكتوبة موثقة في حسابك.",
+               en: "A detailed question and a written answer documented in your account." },
+      meta:  { ar: "خلال 24 ساعة", en: "Within 24 hours" } },
+    { id: "doc-quick", icon: "bolt", mode: "doc", tier: "quick", mult: 0.66,
+      title: { ar: "صياغة مستند — سريعة", en: "Document drafting — express" },
+      body:  { ar: "مستند من نماذج المكتب المعتمدة، يراجعه المحامي ويوقّعه قبل تسليمه.",
+               en: "A document built from the office's approved templates, reviewed and signed off by the lawyer before delivery." },
+      meta:  { ar: "خلال ساعات", en: "Within hours" } },
+    { id: "doc-full", icon: "file-text", mode: "doc", tier: "full", mult: 3.3,
+      title: { ar: "صياغة مستند — كاملة", en: "Document drafting — full" },
+      body:  { ar: "صياغة مخصصة من الصفر لحالتك، مع جولتي تعديل.",
+               en: "Bespoke drafting from scratch for your situation, with two revision rounds." },
+      meta:  { ar: "3 – 5 أيام", en: "3 – 5 days" } }
+  ];
+
+  /* The lawyer's inbox. `ai` marks the ones the assistant can draft — only
+     the express tier and written answers. Live consultations never are. */
+  var INBOX = [
+    { id: "q-1", type: "doc-quick", doc: "employment", price: 99, ai: true, state: "drafted",
+      client: { ar: "شركة أفق", en: "Ufuq Co." }, ago: { ar: "منذ 12 دقيقة", en: "12 minutes ago" },
+      title: { ar: "عقد عمل لموظف تسويق", en: "Employment contract, marketing hire" },
+      note:  { ar: "راتب 9,000 ريال، فترة تجربة 90 يوماً.", en: "SAR 9,000 salary, 90-day probation." } },
+    { id: "q-2", type: "doc-quick", doc: "demand", price: 89, ai: true, state: "drafted",
+      client: { ar: "خالد الشهري", en: "Khalid Al-Shehri" }, ago: { ar: "منذ ساعة", en: "An hour ago" },
+      title: { ar: "إنذار بالمطالبة بمبلغ", en: "Formal demand for payment" },
+      note:  { ar: "45,000 ريال مستحقة منذ ثلاثة أشهر.", en: "SAR 45,000 outstanding for three months." } },
+    { id: "q-3", type: "doc-quick", doc: "nda", price: 79, ai: true, state: "queued",
+      client: { ar: "منصة رواق", en: "Rawaq Platform" }, ago: { ar: "منذ 5 دقائق", en: "5 minutes ago" },
+      title: { ar: "اتفاقية عدم إفشاء", en: "Non-disclosure agreement" },
+      note:  { ar: "مع مطوّر مستقل لمدة سنتين.", en: "With a freelance developer, two-year term." } },
+    { id: "q-4", type: "written", doc: null, price: 100, ai: true, state: "queued",
+      client: { ar: "منيرة العنزي", en: "Munira Al-Anazi" }, ago: { ar: "منذ 3 ساعات", en: "3 hours ago" },
+      title: { ar: "استشارة مكتوبة — نهاية الخدمة", en: "Written query — end-of-service" },
+      note:  { ar: "استقالة بعد 4 سنوات، ما مستحقاتي؟", en: "Resigning after 4 years — what am I owed?" } },
+    { id: "q-5", type: "doc-full", doc: null, price: 500, ai: false, state: "new",
+      client: { ar: "مجموعة نماء", en: "Namaa Group" }, ago: { ar: "أمس", en: "Yesterday" },
+      title: { ar: "عقد شراكة تجارية", en: "Commercial partnership agreement" },
+      note:  { ar: "ثلاثة شركاء، حصص متفاوتة، وبند خروج.", en: "Three partners, uneven shares, exit clause." } },
+    { id: "q-6", type: "doc-full", doc: null, price: 650, ai: false, state: "new",
+      client: { ar: "شركة أبعاد للمقاولات", en: "Ab'ad Contracting" }, ago: { ar: "أمس", en: "Yesterday" },
+      title: { ar: "مراجعة عقد مقاولة", en: "Construction contract review" },
+      note:  { ar: "مشروع بقيمة 8 ملايين، مراجعة بنود الغرامات.", en: "SAR 8m project; review the penalty clauses." } },
+    { id: "q-7", type: "call", doc: null, price: 150, ai: false, state: "scheduled",
+      client: { ar: "سارة العمري", en: "Sara Al-Amri" }, ago: { ar: "اليوم 14:00", en: "Today 14:00" },
+      title: { ar: "استشارة هاتفية", en: "Phone consultation" },
+      note:  { ar: "نزاع إيجاري مع المالك.", en: "Tenancy dispute with the landlord." } },
+    { id: "q-8", type: "video", doc: null, price: 300, ai: false, state: "scheduled",
+      client: { ar: "تركي الدوسري", en: "Turki Al-Dosari" }, ago: { ar: "غداً 11:30", en: "Tomorrow 11:30" },
+      title: { ar: "استشارة فيديو", en: "Video consultation" },
+      note:  { ar: "مراجعة مستندات قبل جلسة المحكمة.", en: "Document review ahead of a hearing." } }
+  ];
+
+  function requestTypeById(id) {
+    for (var i = 0; i < REQUEST_TYPES.length; i++) if (REQUEST_TYPES[i].id === id) return REQUEST_TYPES[i];
+    return null;
+  }
+
   global.DATA = {
     specialties: SPECIALTIES,
     cities: CITIES,
@@ -531,6 +605,16 @@
     services: SERVICES,
     references: REFERENCES,
     interns: INTERNS,
+    requestTypes: REQUEST_TYPES,
+    inbox: INBOX,
+
+    requestTypeById: requestTypeById,
+    /** A lawyer's price for a request type, derived from their own base rate. */
+    priceFor: function (lawyer, typeId) {
+      var t = requestTypeById(typeId);
+      if (!t || !lawyer) return 0;
+      return Math.round(lawyer.price * t.mult / 5) * 5;
+    },
     regulations: REGULATIONS,
     lawyerFiles: LAWYER_FILES,
     docTypes: DOC_TYPES,

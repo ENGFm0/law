@@ -292,65 +292,49 @@
       });
     }
 
-    /* -- booking state -- */
-    var today = new Date();
-    var book = { serviceIndex: 0, day: null, slot: null };
+    /* -- request picker: what this lawyer offers and at what price -- */
+    var picked = null;
 
-    var SLOT_TIMES = ["10:00", "11:30", "13:00", "14:30", "16:00", "17:30"];
-    var BLOCKED = [2]; // 13:00 already taken
-
-    function services() { return DATA.services; }
-
-    function servicePrice() {
-      var s = services()[book.serviceIndex];
-      return s ? s.price : 0;
-    }
-
-    function renderCalendar() {
-      var host = $("[data-calendar]");
-      if (!host) return;
-      var year = today.getFullYear(), month = today.getMonth();
-      var monthLabel = new Intl.DateTimeFormat(I18N.lang === "ar" ? "ar-SA-u-nu-latn-ca-gregory" : "en-GB",
-        { month: "long", year: "numeric" }).format(new Date(year, month, 1));
-      var mEl = $("[data-cal-month]");
-      if (mEl) mEl.textContent = monthLabel;
-
-      var dow = I18N.lang === "ar"
-        ? ["أح", "إث", "ثل", "أر", "خم", "جم", "سب"]
-        : ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-      var html = dow.map(function (d) { return '<span class="calendar__dow">' + d + "</span>"; }).join("");
-
-      var first = new Date(year, month, 1).getDay();
-      var days = new Date(year, month + 1, 0).getDate();
-      for (var i = 0; i < first; i++) html += "<span></span>";
-
-      for (var d = 1; d <= days; d++) {
-        var date = new Date(year, month, d);
-        var weekend = date.getDay() === 5 || date.getDay() === 6; // Fri/Sat in KSA
-        var past = d < today.getDate();
-        var off = past || weekend;
-        if (book.day === null && !off) book.day = d;
-        html += '<button type="button" class="day' + (off ? " is-off" : "") +
-          (weekend ? " is-weekend" : "") + (book.day === d ? " is-selected" : "") +
-          '" data-day="' + d + '"' + (off ? " disabled" : "") + ">" + I18N.num(d) + "</button>";
+    function renderRequests() {
+      var host = $("[data-req-types]");
+      if (host) {
+        host.innerHTML = DATA.requestTypes.map(function (t) {
+          var price = DATA.priceFor(lawyer, t.id);
+          return '<button type="button" class="req-item' + (picked === t.id ? " is-active" : "") +
+            '" data-req-type="' + esc(t.id) + '">' +
+            '<span class="req-item__icon">' + Icons.svg(t.icon, "icon-sm") + "</span>" +
+            '<span class="grow"><strong>' + esc(tx(t.title)) + "</strong>" +
+              (t.tier === "quick" ? '<span class="pill-fast">' + esc(I18N.t("req.express")) + "</span>" : "") +
+              '<span class="tiny muted" style="display:block">' + esc(tx(t.meta)) + "</span></span>" +
+            '<span class="req-item__price"><span class="num">' + I18N.num(price) + "</span> " +
+              esc(I18N.t("profile.sar")) + "</span></button>";
+        }).join("");
       }
-      host.innerHTML = html;
-    }
 
-    function renderSlots() {
-      var host = $("[data-slots]");
-      if (!host) return;
-      host.innerHTML = SLOT_TIMES.map(function (t, i) {
-        var off = BLOCKED.indexOf(i) !== -1;
-        return '<button type="button" class="slot' + (off ? " is-off" : "") +
-          (book.slot === i ? " is-selected" : "") + '" data-slot="' + i + '"' +
-          (off ? " disabled" : "") + '><span class="num">' + t + "</span></button>";
-      }).join("");
-    }
-
-    function renderTotal() {
-      var el = $("[data-total]");
-      if (el) el.textContent = I18N.num(servicePrice());
+      var detail = $("[data-req-detail]");
+      if (detail) {
+        var t = picked ? DATA.requestTypeById(picked) : null;
+        if (!t) {
+          detail.innerHTML = '<p class="muted center small" style="padding:var(--s-3) 0">' +
+            esc(I18N.t("req.pickType")) + "</p>";
+        } else {
+          var price = DATA.priceFor(lawyer, t.id);
+          detail.innerHTML =
+            '<p class="tiny muted">' + esc(I18N.t("req.selected")) + "</p>" +
+            '<strong class="subtitle">' + esc(tx(t.title)) + "</strong>" +
+            '<p class="small muted" style="margin-top:var(--s-2)">' + esc(tx(t.body)) + "</p>" +
+            (t.tier === "quick"
+              ? '<p class="small" style="margin-top:var(--s-3);color:var(--success);font-weight:600">' +
+                esc(I18N.t("req.expressNote")) + "</p>"
+              : "") +
+            '<div class="row between" style="margin-top:var(--s-4)">' +
+              '<span class="muted">' + esc(I18N.t("req.lawyerFee")) + "</span>" +
+              '<strong style="font-size:1.5rem"><span class="num">' + I18N.num(price) + "</span> " +
+                '<span class="small muted">' + esc(I18N.t("profile.sar")) + "</span></strong></div>" +
+            '<p class="row gap-2 tiny muted" style="margin-top:var(--s-2)">' +
+              Icons.svg("clock", "icon-sm") + esc(I18N.t("req.deliveryIn")) + ": " + esc(tx(t.meta)) + "</p>";
+        }
+      }
     }
 
     App.onRender(function () {
@@ -417,23 +401,24 @@
             }).join("") +
           "</ul></section>";
 
-      /* services panel */
+      /* services panel — the same offering, priced from this lawyer's own rate */
       $("[data-panel=services]").innerHTML =
         '<h2 class="title" style="grid-column:1/-1">' + esc(I18N.t("profile.services")) + "</h2>" +
-        DATA.services.map(function (s) {
-        var unit = s.unit === "half" ? I18N.t("lawyer.perHalfHour")
-                 : s.unit === "from" ? I18N.t("lawyer.startsAt", { n: I18N.num(s.price) })
-                 : I18N.t("lawyer.perConsult");
-        return '<article class="card card--rule-gold card--pad stack gap-3">' +
-          '<span class="feature__icon">' + Icons.svg(s.icon) + "</span>" +
-          '<h3 class="subtitle">' + esc(tx(s.title)) + "</h3>" +
-          '<p class="small muted">' + esc(tx(s.body)) + "</p>" +
-          '<div class="row between" style="margin-top:auto;padding-top:var(--s-3)">' +
-            '<strong style="font-size:1.25rem"><span class="num">' + I18N.num(s.price) + "</span> " +
-              '<span class="small muted">' + esc(I18N.t("profile.sar")) + "</span></strong>" +
-            '<span class="tiny muted">' + esc(unit) + "</span>" +
-          "</div></article>";
-      }).join("");
+        DATA.requestTypes.map(function (t) {
+          var price = DATA.priceFor(lawyer, t.id);
+          return '<article class="card card--rule-' + (t.tier === "quick" ? "gold" : "navy") +
+            ' card--pad stack gap-3">' +
+            '<span class="feature__icon">' + Icons.svg(t.icon) + "</span>" +
+            '<h3 class="subtitle row gap-2 wrap">' + esc(tx(t.title)) +
+              (t.tier === "quick" ? '<span class="pill-fast">' + esc(I18N.t("req.express")) + "</span>" : "") +
+            "</h3>" +
+            '<p class="small muted">' + esc(tx(t.body)) + "</p>" +
+            '<div class="row between" style="margin-top:auto;padding-top:var(--s-3)">' +
+              '<strong style="font-size:1.25rem"><span class="num">' + I18N.num(price) + "</span> " +
+                '<span class="small muted">' + esc(I18N.t("profile.sar")) + "</span></strong>" +
+              '<span class="tiny muted">' + esc(tx(t.meta)) + "</span>" +
+            "</div></article>";
+        }).join("");
 
       /* articles panel */
       var mine = DATA.articles.filter(function (a) { return a.author === lawyer.id; });
@@ -462,51 +447,22 @@
           '<p class="tiny faint">' + esc(tx(r.date)) + "</p></article>";
       }).join("");
 
-      /* booking widget */
-      var svcSel = $("[data-booking-service]");
-      if (svcSel) {
-        svcSel.innerHTML = DATA.services.map(function (s, i) {
-          return '<option value="' + i + '">' + esc(tx(s.title)) + "</option>";
-        }).join("");
-        svcSel.value = String(book.serviceIndex);
-      }
-      renderCalendar();
-      renderSlots();
-      renderTotal();
+      renderRequests();
     });
 
-    /* booking interactions */
     var bookingForm = $("[data-booking]");
     if (bookingForm) {
-      bookingForm.addEventListener("change", function (ev) {
-        if (ev.target.matches("[data-booking-service]")) {
-          book.serviceIndex = parseInt(ev.target.value, 10) || 0;
-          renderTotal();
-        }
-      });
-
       bookingForm.addEventListener("click", function (ev) {
-        var dayBtn = ev.target.closest("[data-day]");
-        if (dayBtn) {
-          book.day = parseInt(dayBtn.getAttribute("data-day"), 10);
-          $$("[data-day]", bookingForm).forEach(function (b) {
-            b.classList.toggle("is-selected", b === dayBtn);
-          });
-          return;
-        }
-        var slotBtn = ev.target.closest("[data-slot]");
-        if (slotBtn) {
-          book.slot = parseInt(slotBtn.getAttribute("data-slot"), 10);
-          $$("[data-slot]", bookingForm).forEach(function (b) {
-            b.classList.toggle("is-selected", b === slotBtn);
-          });
-        }
+        var btn = ev.target.closest("[data-req-type]");
+        if (!btn) return;
+        picked = btn.getAttribute("data-req-type");
+        renderRequests();
       });
 
       bookingForm.addEventListener("submit", function (ev) {
         ev.preventDefault();
-        if (book.slot === null) { App.toast(I18N.t("profile.pickSlot"), "clock"); return; }
-        App.toast(I18N.t("profile.booked"), "check");
+        if (!picked) { App.toast(I18N.t("req.pickType"), "file-text"); return; }
+        App.toast(I18N.t("req.ordered", { name: tx(lawyer.name) }), "check");
       });
     }
   }
@@ -796,7 +752,244 @@
 
   var signedDrafts = [];
 
+  /* ------------------------------------------------- lawyer request inbox */
+  var INBOX_FILTERS = [
+    { id: "all",      key: "inbox.all" },
+    { id: "ai",       key: "inbox.withAi" },
+    { id: "manual",   key: "inbox.withoutAi" },
+    { id: "live",     key: "inbox.live" },
+    { id: "assigned", key: "inbox.assigned" }
+  ];
+
+  function initInbox() {
+    var host = $("[data-inbox]");
+    if (!host) return;
+    var filter = "all";
+    var openId = null;
+
+    function stateOf(r) { return global.Store.req(r.id, r); }
+
+    function bucket(r) {
+      var st = stateOf(r);
+      if (st.assignedTo) return "assigned";
+      if (DATA.requestTypeById(r.type).mode === "live") return "live";
+      return r.ai ? "ai" : "manual";
+    }
+
+    function statusOf(r) {
+      var st = stateOf(r);
+      if (st.state === "done") return { cls: "ok", key: "inbox.done" };
+      if (st.assignedTo) return { cls: "info", key: "inbox.assigned" };
+      if (DATA.requestTypeById(r.type).mode === "live") return { cls: "info", key: "inbox.scheduled" };
+      if (r.ai && st.state === "drafted") return { cls: "ok", key: "inbox.aiReady" };
+      if (r.ai) return { cls: "muted", key: "inbox.aiQueued" };
+      return { cls: "warn", key: "inbox.needsYou" };
+    }
+
+    function actionsFor(r) {
+      var st = stateOf(r);
+      var type = DATA.requestTypeById(r.type);
+      if (st.state === "done") return "";
+
+      if (st.assignedTo) {
+        var who = DATA.internById(st.assignedTo);
+        return '<span class="tiny muted">' +
+            esc(I18N.t("inbox.assignedTo", { name: who ? tx(who.name) : "" })) + "</span>" +
+          '<button class="btn btn--ghost btn--sm" type="button" data-unassign="' + esc(r.id) + '">' +
+            esc(I18N.t("inbox.unassign")) + "</button>";
+      }
+
+      if (type.mode === "live") {
+        return '<button class="btn btn--primary btn--sm" type="button" data-done="' + esc(r.id) + '">' +
+          Icons.svg(type.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</button>";
+      }
+
+      var main = r.ai
+        ? (st.state === "drafted"
+            ? '<button class="btn btn--primary btn--sm" type="button" data-open="' + esc(r.id) + '">' +
+              esc(I18N.t("inbox.review")) + "</button>"
+            : '<button class="btn btn--outline btn--sm" type="button" data-gen="' + esc(r.id) + '">' +
+              Icons.svg("sparkle", "icon-sm") + esc(I18N.t("inbox.generate")) + "</button>")
+        : '<button class="btn btn--outline btn--sm" type="button" data-open="' + esc(r.id) + '">' +
+          esc(I18N.t("inbox.writeSelf")) + "</button>";
+
+      return main +
+        '<button class="btn btn--ghost btn--sm" type="button" data-assign="' + esc(r.id) + '">' +
+          Icons.svg("graduation", "icon-sm") + esc(I18N.t("inbox.assign")) + "</button>";
+    }
+
+    function draw() {
+      var rows = DATA.inbox.filter(function (r) {
+        return filter === "all" || bucket(r) === filter;
+      });
+
+      var fh = $("[data-inbox-filters]");
+      if (fh) {
+        fh.innerHTML = INBOX_FILTERS.map(function (f) {
+          var n = f.id === "all" ? DATA.inbox.length
+            : DATA.inbox.filter(function (r) { return bucket(r) === f.id; }).length;
+          return '<button type="button" class="chip' + (filter === f.id ? " is-active" : "") +
+            '" data-filter="' + f.id + '">' + esc(I18N.t(f.key)) +
+            ' <span class="num">' + I18N.num(n) + "</span></button>";
+        }).join("");
+      }
+
+      var count = $("[data-inbox-count]");
+      if (count) count.textContent = I18N.t("inbox.count", { n: I18N.num(rows.length) });
+
+      host.innerHTML = rows.length ? rows.map(function (r) {
+        var type = DATA.requestTypeById(r.type);
+        var st = statusOf(r);
+        return '<div class="inbox-row' + (openId === r.id ? " is-open" : "") + '">' +
+          '<span class="inbox-row__icon">' + Icons.svg(type.icon, "icon-sm") + "</span>" +
+          '<div class="grow" style="min-width:0">' +
+            '<div class="row gap-2 wrap"><strong class="small">' + esc(tx(r.title)) + "</strong>" +
+              '<span class="tag">' + esc(tx(type.title)) + "</span></div>" +
+            '<p class="tiny muted">' + esc(tx(r.client)) + ' <span class="dot"></span> ' +
+              esc(tx(r.ago)) + "</p>" +
+            '<p class="tiny faint">' + esc(I18N.t("inbox.clientNote")) + ": " + esc(tx(r.note)) + "</p>" +
+          "</div>" +
+          '<div class="inbox-row__side">' +
+            '<span class="status status--' + st.cls + '">' + esc(I18N.t(st.key)) + "</span>" +
+            '<strong class="tiny"><span class="num">' + I18N.num(r.price) + "</span> " +
+              esc(I18N.t("profile.sar")) + "</strong>" +
+            '<div class="inbox-row__actions">' + actionsFor(r) + "</div>" +
+          "</div></div>";
+      }).join("")
+        : '<p class="muted center" style="padding:var(--s-8)">' + esc(I18N.t("inbox.empty")) + "</p>";
+    }
+
+    function drawDraft() {
+      var box = $("[data-inbox-draft]");
+      if (!box) return;
+      if (!openId) { box.hidden = true; box.innerHTML = ""; return; }
+
+      var r = DATA.inbox.filter(function (x) { return x.id === openId; })[0];
+      if (!r) { box.hidden = true; return; }
+      var st = global.Store.req(r.id, r);
+      var type = DATA.requestTypeById(r.type);
+      var seed = st.body || (r.doc && DATA.draftBodies[r.doc] ? tx(DATA.draftBodies[r.doc]) : "");
+
+      box.hidden = false;
+      box.innerHTML =
+        '<div class="panel__head row between wrap gap-3">' +
+          "<div><h2 class=\"subtitle\">" + esc(tx(r.title)) + "</h2>" +
+            '<p class="tiny muted">' + esc(tx(r.client)) + ' <span class="dot"></span> ' +
+              esc(tx(type.title)) +
+              (r.ai ? ' <span class="dot"></span> ' + esc(I18N.t("ai.aiSource")) : "") + "</p></div>" +
+          '<button class="icon-btn" type="button" data-draft-close>' + Icons.svg("close", "icon-sm") + "</button>" +
+        "</div>" +
+        (r.ai ? '<p class="disclaimer" style="border-top:0">' +
+            Icons.svg("lock", "icon-sm") + "<span>" + esc(I18N.t("inbox.aiHidden")) + "</span></p>" : "") +
+        '<textarea class="draft-text" data-inbox-body spellcheck="false">' + esc(seed) + "</textarea>" +
+        '<div class="draft-foot">' +
+          '<div><span class="tiny muted">' + esc(I18N.t("inbox.revenue")) + "</span>" +
+            '<strong style="display:block;color:var(--accent)"><span class="num">' +
+              I18N.num(r.price) + "</span> " + esc(I18N.t("profile.sar")) + "</strong></div>" +
+          '<span class="grow"></span>' +
+          '<button class="btn btn--ghost btn--sm" type="button" data-assign="' + esc(r.id) + '">' +
+            Icons.svg("graduation", "icon-sm") + esc(I18N.t("inbox.assign")) + "</button>" +
+          '<button class="btn btn--accent" type="button" data-approve="' + esc(r.id) + '">' +
+            Icons.svg("check", "icon-sm") + esc(I18N.t("ai.approve")) + "</button>" +
+        "</div>";
+    }
+
+    /** Small inline chooser rather than a modal — it is three names. */
+    function openAssign(id, anchor) {
+      var existing = $(".assign-pop");
+      if (existing) existing.remove();
+      var pop = document.createElement("div");
+      pop.className = "assign-pop";
+      pop.innerHTML = '<p class="tiny muted">' + esc(I18N.t("inbox.assignTo")) + "</p>" +
+        DATA.interns.map(function (i) {
+          return '<button type="button" data-pick-intern="' + esc(i.id) + '" data-for="' + esc(id) + '">' +
+            '<img class="avatar avatar--sm" alt="" width="28" height="28" src="' +
+              App.avatarOf(i.name, i.id) + '">' +
+            "<span>" + esc(tx(i.name)) + "</span>" +
+            '<span class="tiny muted num">' + I18N.num(i.done) + "</span></button>";
+        }).join("");
+      anchor.appendChild(pop);
+    }
+
+    App.onRender(function () { draw(); drawDraft(); });
+    global.Store.onChange(function () { draw(); drawDraft(); });
+
+    var root = $("[data-inbox]").closest("main");
+    root.addEventListener("click", function (ev) {
+      var f = ev.target.closest("[data-filter]");
+      if (f) { filter = f.getAttribute("data-filter"); draw(); return; }
+
+      var gen = ev.target.closest("[data-gen]");
+      if (gen) {
+        var gid = gen.getAttribute("data-gen");
+        gen.disabled = true;
+        gen.textContent = I18N.t("ai.generating");
+        setTimeout(function () {
+          global.Store.set(gid, { state: "drafted" });
+          openId = gid;
+          App.toast(I18N.t("ai.generated"), "sparkle");
+          draw(); drawDraft();
+        }, 700);
+        return;
+      }
+
+      var op = ev.target.closest("[data-open]");
+      if (op) {
+        openId = op.getAttribute("data-open");
+        draw(); drawDraft();
+        var box = $("[data-inbox-draft]");
+        if (box) box.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
+      if (ev.target.closest("[data-draft-close]")) { openId = null; draw(); drawDraft(); return; }
+
+      var ap = ev.target.closest("[data-approve]");
+      if (ap) {
+        var body = $("[data-inbox-body]");
+        global.Store.set(ap.getAttribute("data-approve"),
+          { state: "done", body: body ? body.value : null });
+        openId = null;
+        App.toast(I18N.t("inbox.completed"), "check");
+        draw(); drawDraft();
+        return;
+      }
+
+      var dn = ev.target.closest("[data-done]");
+      if (dn) {
+        global.Store.set(dn.getAttribute("data-done"), { state: "done" });
+        App.toast(I18N.t("inbox.completed"), "check");
+        return;
+      }
+
+      var as = ev.target.closest("[data-assign]");
+      if (as) { openAssign(as.getAttribute("data-assign"), as.parentNode); return; }
+
+      var pick = ev.target.closest("[data-pick-intern]");
+      if (pick) {
+        var who = DATA.internById(pick.getAttribute("data-pick-intern"));
+        global.Store.set(pick.getAttribute("data-for"), { assignedTo: who.id, state: "assigned" });
+        openId = null;
+        App.toast(I18N.t("inbox.assignDone", { name: tx(who.name) }), "graduation");
+        draw(); drawDraft();
+        return;
+      }
+
+      var un = ev.target.closest("[data-unassign]");
+      if (un) {
+        global.Store.set(un.getAttribute("data-unassign"), { assignedTo: null, state: "new" });
+        App.toast(I18N.t("inbox.unassigned"), "arrow-back");
+        draw(); drawDraft();
+        return;
+      }
+
+      var pop = $(".assign-pop");
+      if (pop && !ev.target.closest(".assign-pop")) pop.remove();
+    });
+  }
+
   function initLawyerDash() {
+    initInbox();
     var TOOLS = [
       ["bold", "italic", "underline"],
       ["align-start", "align-center", "align-end"],
@@ -869,39 +1062,6 @@
           : '<p class="muted center" style="padding:var(--s-6)">' + esc(I18N.t("drafts.empty")) + "</p>";
       }
 
-      var reqs = $("[data-dash-requests]");
-      if (reqs) {
-        var rows = [
-          { icon: "gavel", title: { ar: "مراجعة عقد شراكة تجارية", en: "Partnership agreement review" }, no: "C-8924", status: "warn", statusKey: "client.statusReview", when: "common.hoursAgo" },
-          { icon: "file-text", title: { ar: "استشارة عقارية – نقل ملكية", en: "Property consultation – title transfer" }, no: "C-8810", status: "info", statusKey: "client.statusPending", when: "common.yesterday" },
-          { icon: "chat", title: { ar: "استفسار عمالي – نهاية الخدمة", en: "Labour query – end of service" }, no: "C-8788", status: "ok", statusKey: "client.statusDone", when: "common.yesterday" }
-        ];
-        reqs.innerHTML = rows.map(function (r) {
-          return '<div class="list-row">' +
-            '<span class="list-row__icon">' + Icons.svg(r.icon, "icon-sm") + "</span>" +
-            '<div class="grow"><strong class="small">' + esc(tx(r.title)) + "</strong>" +
-              '<p class="tiny muted">' + esc(I18N.t("client.requestNo")) + ': <span class="num">#' + r.no + "</span></p></div>" +
-            '<div class="stack gap-1" style="align-items:flex-end">' +
-              '<span class="status status--' + r.status + '">' + esc(I18N.t(r.statusKey)) + "</span>" +
-              '<span class="tiny faint">' + esc(I18N.t(r.when)) + "</span></div></div>";
-        }).join("");
-      }
-
-      var up = $("[data-dash-upcoming]");
-      if (up) {
-        var appts = [
-          { time: "11:30", icon: "video", who: { ar: "سارة العمري – استشارة فيديو", en: "Sara Al-Amri – video consultation" }, day: "common.today" },
-          { time: "14:00", icon: "phone", who: { ar: "شركة نماء – مكالمة متابعة", en: "Namaa Co. – follow-up call" }, day: "common.today" },
-          { time: "10:00", icon: "chat",  who: { ar: "خالد المطيري – استشارة نصية", en: "Khalid Al-Mutairi – written consultation" }, day: "common.yesterday" }
-        ];
-        up.innerHTML = appts.map(function (a) {
-          return '<div class="list-row">' +
-            '<span class="list-row__icon">' + Icons.svg(a.icon, "icon-sm") + "</span>" +
-            '<div class="grow"><strong class="small">' + esc(tx(a.who)) + "</strong>" +
-              '<p class="tiny muted">' + esc(I18N.t(a.day)) + "</p></div>" +
-            '<strong class="num small">' + a.time + "</strong></div>";
-        }).join("");
-      }
     });
 
     var toolbar = $("[data-editor-toolbar]");
@@ -1126,7 +1286,62 @@
       }
     }
 
+    /* Requests a lawyer routed here from their inbox. */
+    function drawAssigned() {
+      var host = $("[data-assigned-list]");
+      if (!host) return;
+      var mine = DATA.inbox.filter(function (r) {
+        var st = global.Store.req(r.id, r);
+        return !!st.assignedTo && st.state !== "done";
+      });
+
+      var badge = $("[data-assigned-count]");
+      if (badge) badge.textContent = I18N.num(mine.length);
+
+      host.innerHTML = mine.length ? mine.map(function (r) {
+        var type = DATA.requestTypeById(r.type);
+        var sup = DATA.lawyers[0];
+        var st = global.Store.req(r.id, r);
+        var started = st.state === "started";
+        return '<div class="list-row">' +
+          '<span class="list-row__icon" style="color:var(--info)">' +
+            Icons.svg(type.icon, "icon-sm") + "</span>" +
+          '<div class="grow" style="min-width:0"><strong class="small">' + esc(tx(r.title)) + "</strong>" +
+            '<p class="tiny muted">' + esc(I18N.t("tasks.fromLawyer")) + ": " + esc(tx(sup.name)) +
+              ' <span class="dot"></span> ' + esc(tx(type.title)) + "</p>" +
+            '<p class="tiny faint">' + esc(tx(r.note)) + "</p></div>" +
+          '<div class="stack gap-2" style="align-items:flex-end">' +
+            '<span class="status status--' + (started ? "warn" : "info") + '">' +
+              esc(I18N.t(started ? "tasks.inProgress" : "inbox.assigned")) + "</span>" +
+            '<button class="btn btn--sm ' + (started ? "btn--accent" : "btn--primary") +
+              '" type="button" data-task-action="' + esc(r.id) + '" data-started="' + started + '">' +
+              esc(I18N.t(started ? "tasks.submit" : "tasks.openTask")) + "</button>" +
+          "</div></div>";
+      }).join("")
+        : '<p class="muted center" style="padding:var(--s-6)">' + esc(I18N.t("tasks.noneAssigned")) + "</p>";
+    }
+
+    global.Store.onChange(drawAssigned);
+
+    var assignedHost = $("[data-assigned-list]");
+    if (assignedHost) {
+      assignedHost.addEventListener("click", function (ev) {
+        var btn = ev.target.closest("[data-task-action]");
+        if (!btn) return;
+        var id = btn.getAttribute("data-task-action");
+        if (btn.getAttribute("data-started") === "true") {
+          global.Store.set(id, { state: "submitted", assignedTo: null });
+          App.toast(I18N.t("tasks.submittedOk"), "check");
+        } else {
+          global.Store.set(id, { state: "started" });
+          App.toast(I18N.t("tasks.started"), "check");
+        }
+        drawAssigned();
+      });
+    }
+
     App.onRender(function () {
+      drawAssigned();
       var sel = $("[data-task-filter]");
       if (sel) {
         var used = {};
@@ -1176,8 +1391,8 @@
   var uploadCounter = 0;
 
   function initAssistant() {
-    var clientView = $("[data-ai-client]");
-    if (!clientView) return;
+    var lawyerPane = $("[data-ai-lawyer]");
+    if (!lawyerPane) return;
 
     if (!kbFiles) kbFiles = DATA.lawyerFiles.slice();
     DATA.regulations.forEach(function (r) {
@@ -1187,59 +1402,7 @@
       if (!(r.id in requestState)) requestState[r.id] = r.state;
     });
 
-    var order = { doc: null };
     var openDraft = null;
-
-    /* ---------------- client ---------------- */
-    function drawClient() {
-      var opts = $("[data-doc-options]");
-      if (opts) {
-        opts.innerHTML = DATA.docTypes.map(function (d) {
-          return '<button type="button" class="doc-option' + (order.doc === d.id ? " is-active" : "") +
-            '" data-doc="' + esc(d.id) + '">' +
-            '<strong>' + esc(tx(d.title)) + "</strong>" +
-            '<span class="tiny muted">' + esc(tx(d.body)) + "</span>" +
-            '<span class="doc-option__price"><span class="num">' + I18N.num(d.price) + "</span> " +
-              esc(I18N.t("profile.sar")) + "</span></button>";
-        }).join("");
-      }
-
-      var summary = $("[data-order-summary]");
-      if (summary) {
-        var d = order.doc ? DATA.docTypeById(order.doc) : null;
-        if (!d) {
-          summary.innerHTML = '<p class="muted center" style="padding:var(--s-4)">' +
-            esc(I18N.t("ai.pickDoc")) + "</p>";
-        } else {
-          summary.innerHTML =
-            '<h2 class="subtitle">' + esc(tx(d.title)) + "</h2>" +
-            '<hr class="divider">' +
-            '<div class="row between" style="margin-bottom:var(--s-3)">' +
-              '<span class="small muted">' + esc(I18N.t("ai.priceAi")) + "</span>" +
-              '<strong style="font-size:1.5rem;color:var(--accent)"><span class="num">' +
-                I18N.num(d.price) + "</span> " + esc(I18N.t("profile.sar")) + "</strong></div>" +
-            '<div class="row between" style="margin-bottom:var(--s-3)">' +
-              '<span class="small muted">' + esc(I18N.t("ai.priceFull")) + "</span>" +
-              '<span class="muted" style="text-decoration:line-through"><span class="num">' +
-                I18N.num(d.full) + "</span> " + esc(I18N.t("profile.sar")) + "</span></div>" +
-            '<p class="status status--ok" style="width:100%;justify-content:center">' +
-              esc(I18N.t("ai.youSave", { n: I18N.num(d.full - d.price) })) + "</p>" +
-            '<p class="row gap-2 small muted" style="margin-top:var(--s-4)">' +
-              Icons.svg("clock", "icon-sm") +
-              esc(I18N.t("ai.turnaround", { n: I18N.num(d.hours) })) + "</p>" +
-            '<p class="row gap-2 small" style="margin-top:var(--s-2);color:var(--success);font-weight:700">' +
-              Icons.svg("shield-check", "icon-sm") + esc(I18N.t("ai.lawyerApproved")) + "</p>";
-        }
-      }
-
-      var steps = $("[data-ai-steps]");
-      if (steps) {
-        steps.innerHTML = [1, 2, 3, 4].map(function (i) {
-          return '<li><strong class="small">' + esc(I18N.t("ai.step" + i)) + "</strong>" +
-            '<p class="tiny muted">' + esc(I18N.t("ai.step" + i + "Body")) + "</p></li>";
-        }).join("");
-      }
-    }
 
     /* ---------------- lawyer ---------------- */
     function drawKb() {
@@ -1342,36 +1505,15 @@
     }
 
     App.onRender(function () {
-      var role = global.Roles.current;
-      clientView.hidden = role !== "client";
-      $("[data-ai-lawyer]").hidden = role !== "lawyer";
-      $("[data-ai-intern]").hidden = role !== "intern";
-
-      if (role === "client") drawClient();
-      else if (role === "lawyer") { drawKb(); drawQueue(); drawEditor(); }
+      var isLawyer = global.Roles.is("lawyer");
+      lawyerPane.hidden = !isLawyer;
+      var gate = $("[data-ai-gate]");
+      if (gate) gate.hidden = isLawyer;
+      if (isLawyer) { drawKb(); drawQueue(); drawEditor(); }
     });
 
     /* ---------------- interactions ---------------- */
-    clientView.addEventListener("click", function (ev) {
-      var pick = ev.target.closest("[data-doc]");
-      if (!pick) return;
-      order.doc = pick.getAttribute("data-doc");
-      drawClient();
-    });
-
-    var orderForm = $("[data-order-form]");
-    if (orderForm) {
-      orderForm.addEventListener("submit", function (ev) {
-        ev.preventDefault();
-        if (!order.doc) { App.toast(I18N.t("ai.needDoc"), "file-text"); return; }
-        App.toast(I18N.t("ai.ordered"), "check");
-        orderForm.reset();
-        order.doc = null;
-        drawClient();
-      });
-    }
-
-    var lawyerView = $("[data-ai-lawyer]");
+    var lawyerView = lawyerPane;
     if (lawyerView) {
       lawyerView.addEventListener("click", function (ev) {
         var up = ev.target.closest("[data-kb-upload]");

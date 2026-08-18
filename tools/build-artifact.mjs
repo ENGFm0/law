@@ -69,9 +69,9 @@ for (const r of ROUTES) {
 }
 
 const css = read('assets/css/style.css');
-const js = ['theme', 'i18n', 'roles', 'data', 'layout', 'app', 'pages']
+const js = ['theme', 'i18n', 'roles', 'store', 'data', 'layout', 'app', 'pages']
   .map((n) => read(`assets/js/${n}.js`));
-const [theme, i18n, roles, data, layout, app, pages] = js;
+const [theme, i18n, roles, store, data, layout, app, pages] = js;
 const router = read('tools/router.js');
 
 /* charset first: the encoding pre-scan reads the opening bytes of the served
@@ -112,6 +112,7 @@ window.__ROUTES__ = ${JSON.stringify(routeMap)};
 <script>${theme}</script>
 <script>${i18n}</script>
 <script>${roles}</script>
+<script>${store}</script>
 <script>${data}</script>
 <script>${layout}</script>
 <script>${app}</script>

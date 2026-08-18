@@ -14,6 +14,7 @@
 <script src="assets/js/theme.js"></script>
 <script src="assets/js/i18n.js"></script>
 <script src="assets/js/roles.js"></script>
+<script src="assets/js/store.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
@@ -44,6 +45,24 @@
     </header>
 
     <div class="grid grid-4" style="margin-bottom:var(--s-8)" data-dash-stats></div>
+
+    <!-- Request inbox: everything the clients have sent -->
+    <section class="panel" style="margin-bottom:var(--s-8)">
+      <div class="panel__head">
+        <div class="row between wrap gap-3">
+          <div>
+            <h2 class="subtitle" data-i18n="inbox.title"></h2>
+            <p class="small muted" data-i18n="inbox.lead"></p>
+          </div>
+          <span class="status status--warn" data-inbox-count></span>
+        </div>
+        <div class="row gap-2 wrap" style="margin-top:var(--s-4)" data-inbox-filters></div>
+      </div>
+      <div class="panel__body" data-inbox></div>
+    </section>
+
+    <!-- Draft review — only appears once a request is opened -->
+    <section class="card card--rule-gold" style="margin-bottom:var(--s-8)" data-inbox-draft hidden></section>
 
     <section class="panel" style="margin-bottom:var(--s-8)">
       <div class="panel__head row between wrap gap-3">
@@ -77,16 +96,6 @@
       </div>
     </section>
 
-    <div class="grid grid-2">
-      <section class="panel">
-        <div class="panel__head"><h2 class="subtitle" data-i18n="dash.newRequests"></h2></div>
-        <div class="panel__body" data-dash-requests></div>
-      </section>
-      <section class="panel">
-        <div class="panel__head"><h2 class="subtitle" data-i18n="dash.upcoming"></h2></div>
-        <div class="panel__body" data-dash-upcoming></div>
-      </section>
-    </div>
   </main>
 </div>
 

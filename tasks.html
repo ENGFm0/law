@@ -14,6 +14,7 @@
 <script src="assets/js/theme.js"></script>
 <script src="assets/js/i18n.js"></script>
 <script src="assets/js/roles.js"></script>
+<script src="assets/js/store.js"></script>
 </head>
 <body class="page">
 <a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
@@ -47,8 +48,22 @@
 
     <div class="grid grid-3" style="margin-bottom:var(--s-8)" data-task-stats></div>
 
+    <!-- Work a supervising lawyer routed to this trainee -->
+    <section style="margin-bottom:var(--s-12)">
+      <div class="row between wrap gap-3" style="margin-bottom:var(--s-4)">
+        <div>
+          <h2 class="title" data-i18n="tasks.assignedToMe"></h2>
+          <p class="small muted" data-i18n="tasks.assignedLead"></p>
+        </div>
+        <span class="status status--info" data-assigned-count></span>
+      </div>
+      <div class="panel"><div class="panel__body" data-assigned-list></div></div>
+    </section>
+
+
+
     <div class="row between wrap gap-4" style="margin-bottom:var(--s-5)">
-      <h2 class="title" data-i18n="tasks.available"></h2>
+      <h2 class="title" data-i18n="tasks.bank"></h2>
       <select class="select" data-task-filter style="width:auto"></select>
     </div>
     <div class="grid grid-2" data-task-list></div>

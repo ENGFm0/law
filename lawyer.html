@@ -14,6 +14,7 @@
 <script src="assets/js/theme.js"></script>
 <script src="assets/js/i18n.js"></script>
 <script src="assets/js/roles.js"></script>
+<script src="assets/js/store.js"></script>
 </head>
 <body class="page">
 <a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
@@ -59,37 +60,18 @@
       <aside class="booking">
         <form class="card card--rule-gold card--pad stack gap-5" data-booking>
           <div>
-            <h2 class="title" data-i18n="profile.book"></h2>
-            <p class="small muted" data-i18n="profile.bookHint"></p>
+            <h2 class="title" data-i18n="req.available"></h2>
+            <p class="small muted" data-i18n="req.availableLead"></p>
           </div>
 
-          <div class="field">
-            <label class="label" for="svc" data-i18n="profile.consultType"></label>
-            <select class="select" id="svc" data-booking-service></select>
-          </div>
-
-          <div class="field">
-            <span class="label" data-i18n="profile.date"></span>
-            <div class="row between" style="margin-bottom:var(--s-2)">
-              <strong class="small" data-cal-month></strong>
-            </div>
-            <div class="calendar" data-calendar></div>
-          </div>
-
-          <div class="field">
-            <span class="label" data-i18n="profile.availableTimes"></span>
-            <div class="slots" data-slots></div>
-          </div>
+          <div class="req-list" data-req-types></div>
 
           <hr class="divider" style="margin:0">
 
-          <div class="row between">
-            <span class="muted" data-i18n="profile.total"></span>
-            <strong style="font-size:1.5rem"><span class="num" data-total>0</span> <span class="small muted" data-i18n="profile.sar"></span></strong>
-          </div>
+          <div data-req-detail></div>
 
           <button class="btn btn--accent btn--block btn--lg" type="submit">
-            <span data-i18n="profile.pay"></span>
+            <span data-i18n="req.order"></span>
             <svg class="icon icon-sm icon-flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
           <p class="tiny muted center row gap-2" style="justify-content:center">

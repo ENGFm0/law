@@ -98,9 +98,16 @@
   function navItems() {
     var role = global.Roles ? global.Roles.info : null;
     var items = [{ key: "nav.home", tab: "tab.home", href: "index.html", id: "home", icon: "home" }];
-    if (role) items.push(role.nav);
+    if (role) {
+      items.push(role.nav);
+      // The assistant is the lawyer's own tool. Clients never see it offered,
+      // because they are never told a machine touched their document.
+      if (role.id === "lawyer") {
+        items.push({ key: "nav.assistant", tab: "tab.assistant",
+                     href: "assistant.html", id: "assistant", icon: "sparkle" });
+      }
+    }
     items.push({ key: "nav.blog", tab: "tab.blog", href: "blog.html", id: "blog", icon: "file-text" });
-    items.push({ key: "nav.assistant", tab: "tab.assistant", href: "assistant.html", id: "assistant", icon: "sparkle" });
     return items;
   }
 
@@ -171,7 +178,6 @@
         col("footer.platform", [
           { href: "lawyers.html",   key: "nav.lawyers" },
           { href: "tasks.html",     key: "nav.tasks" },
-          { href: "assistant.html", key: "nav.assistant" },
           { href: "blog.html",      key: "nav.blog" },
           { href: "about.html",     key: "nav.about" },
           { href: "login.html",     key: "nav.login" }
