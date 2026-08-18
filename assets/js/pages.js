@@ -752,6 +752,21 @@
 
   var signedDrafts = [];
 
+  var QUOTE_MODES = [
+    { id: "call",  icon: "phone", key: "lawyer.call" },
+    { id: "video", icon: "video", key: "req.video" },
+    { id: "written", icon: "chat", key: "req.written" }
+  ];
+  var QUOTE_WINDOWS = [15, 30, 60];
+
+  function quoteRemaining(q) {
+    return Math.max(0, Math.floor((q.expiresAt - Date.now()) / 1000));
+  }
+  function clock(total) {
+    var m = Math.floor(total / 60), sec = total % 60;
+    return (m < 10 ? "0" : "") + m + ":" + (sec < 10 ? "0" : "") + sec;
+  }
+
   /* ------------------------------------------------- lawyer request inbox */
   var INBOX_FILTERS = [
     { id: "all",      key: "inbox.all" },
@@ -988,8 +1003,110 @@
     });
   }
 
+  /* ---------------------------------------- lawyer side of the quote board */
+  function initBids() {
+    var panel = $("[data-bids-panel]");
+    if (!panel) return;
+    var me = DATA.lawyers[0];              // the signed-in lawyer in this demo
+    var tick = null;
+
+    function q() { return global.Store.getQuote(); }
+
+    function draw() {
+      var cur = q();
+      var open = cur && cur.status === "open" && quoteRemaining(cur) > 0;
+      panel.hidden = !cur;
+      if (!cur) { clearInterval(tick); return; }
+
+      var host = $("[data-bids]");
+      var clockEl = $("[data-bids-clock]");
+
+      if (!open) {
+        if (clockEl) clockEl.textContent = "";
+        var mine = cur.offers.some(function (o) { return o.lawyer === me.id; });
+        var won = cur.status === "accepted" && cur.acceptedBy === me.id;
+        host.innerHTML = '<p class="muted center" style="padding:var(--s-6)">' +
+          esc(I18N.t(won ? "bids.won" : (cur.status === "accepted" && mine) ? "bids.lost" : "bids.none")) +
+          "</p>";
+        clearInterval(tick);
+        return;
+      }
+
+      if (clockEl) {
+        clockEl.textContent = I18N.t("bids.closesIn") + " " + clock(quoteRemaining(cur));
+      }
+
+      var already = cur.offers.filter(function (o) { return o.lawyer === me.id; })[0];
+      var mode = QUOTE_MODES.filter(function (m) { return m.id === cur.mode; })[0];
+      var city = cur.city ? tx(DATA.labelOf(DATA.cities, cur.city)) : I18N.t("quotes.anyCity");
+      var spec = cur.specialty ? tx(DATA.labelOf(DATA.specialties, cur.specialty)) : I18N.t("quotes.anySpecialty");
+      var suggested = DATA.priceFor(me, cur.mode === "written" ? "written" : cur.mode);
+
+      host.innerHTML =
+        '<div class="anon-card">' +
+          '<div class="row gap-3" style="align-items:flex-start">' +
+            '<span class="anon-card__mark">' + Icons.svg("user", "icon-sm") + "</span>" +
+            '<div class="grow" style="min-width:0">' +
+              '<strong class="small">' + esc(I18N.t("quotes.anonId", { id: esc(cur.id) })) + "</strong>" +
+              '<p class="tiny muted">' + esc(city) + ' <span class="dot"></span> ' + esc(spec) +
+                ' <span class="dot"></span> ' + esc(I18N.t(mode.key)) + "</p>" +
+            "</div>" +
+          "</div>" +
+          '<p class="small" style="margin-top:var(--s-3)">' + esc(cur.brief) + "</p>" +
+          '<p class="tiny faint row gap-2" style="margin-top:var(--s-3)">' +
+            Icons.svg("lock", "icon-sm") + esc(I18N.t("bids.clientHidden")) + "</p>" +
+        "</div>" +
+
+        '<div class="row between wrap gap-3" style="margin-top:var(--s-4)">' +
+          '<span class="tiny muted">' +
+            esc(I18N.t("bids.competing", { n: I18N.num(cur.offers.length) })) + "</span>" +
+        "</div>" +
+
+        (already
+          ? '<p class="status status--ok" style="width:100%;justify-content:center;margin-top:var(--s-4)">' +
+            Icons.svg("check", "icon-sm") + esc(I18N.t("bids.already")) + " — " +
+            '<span class="num">' + I18N.num(already.price) + "</span> " + esc(I18N.t("profile.sar")) + "</p>"
+          : '<form class="bid-form" data-bid-form>' +
+              '<label class="field"><span class="tiny muted">' + esc(I18N.t("bids.yourPrice")) + "</span>" +
+                '<input class="input num" type="number" min="40" step="5" data-bid-price value="' +
+                  suggested + '" required></label>' +
+              '<label class="field"><span class="tiny muted">' + esc(I18N.t("bids.yourEta")) + "</span>" +
+                '<input class="input num" type="number" min="1" max="72" step="1" data-bid-eta value="4" required></label>' +
+              '<button class="btn btn--accent" type="submit">' + esc(I18N.t("bids.submit")) + "</button>" +
+            "</form>");
+    }
+
+    App.onRender(draw);
+    global.Store.onChange(draw);
+
+    clearInterval(tick);
+    tick = setInterval(function () {
+      var cur = q();
+      if (!cur) return;
+      if (cur.status === "open" && quoteRemaining(cur) <= 0) {
+        global.Store.setQuoteStatus("expired");
+      }
+      draw();
+    }, 1000);
+
+    panel.addEventListener("submit", function (ev) {
+      if (!ev.target.matches("[data-bid-form]")) return;
+      ev.preventDefault();
+      var price = parseInt($("[data-bid-price]").value, 10);
+      var eta = parseInt($("[data-bid-eta]").value, 10) || 4;
+      if (!price || price < 40) { App.toast(I18N.t("bids.badPrice"), "file-text"); return; }
+      if (global.Store.addOffer({ lawyer: me.id, price: price, eta: eta })) {
+        App.toast(I18N.t("bids.submitted"), "check");
+      } else {
+        App.toast(I18N.t("bids.already"), "check");
+      }
+      draw();
+    });
+  }
+
   function initLawyerDash() {
     initInbox();
+    initBids();
     var TOOLS = [
       ["bold", "italic", "underline"],
       ["align-start", "align-center", "align-end"],
@@ -1578,6 +1695,319 @@
     }
   }
 
+  /* ================================================================ QUOTES
+     A client posts one brief; every lawyer may bid; the window closes on its
+     own. The client's identity is never part of what lawyers receive. */
+  function initQuotes() {
+    var compose = $("[data-quote-compose]");
+    if (!compose) return;
+
+    var draft = { city: "", specialty: "", mode: "call", window: 30 };
+    var sort = "price";
+    var ticker = null;
+    var offerTimers = [];
+
+    function q() { return global.Store.getQuote(); }
+
+    /* ---------- compose ---------- */
+    function drawCompose() {
+      var citySel = $("[data-quote-city]");
+      if (citySel) {
+        citySel.innerHTML = '<option value="">' + esc(I18N.t("quotes.anyCity")) + "</option>" +
+          DATA.cities.map(function (c) {
+            return '<option value="' + esc(c.id) + '">' + esc(tx(c)) + "</option>";
+          }).join("");
+        citySel.value = draft.city;
+      }
+      var specSel = $("[data-quote-spec]");
+      if (specSel) {
+        specSel.innerHTML = '<option value="">' + esc(I18N.t("quotes.anySpecialty")) + "</option>" +
+          DATA.specialties.map(function (sp) {
+            return '<option value="' + esc(sp.id) + '">' + esc(tx(sp)) + "</option>";
+          }).join("");
+        specSel.value = draft.specialty;
+      }
+
+      drawChips();
+      drawPreview();
+    }
+
+    function drawChips() {
+      var modes = $("[data-quote-modes]");
+      if (modes) {
+        modes.innerHTML = QUOTE_MODES.map(function (m) {
+          return '<button type="button" class="chip' + (draft.mode === m.id ? " is-active" : "") +
+            '" data-mode="' + m.id + '">' + Icons.svg(m.icon, "icon-sm") +
+            esc(I18N.t(m.key)) + "</button>";
+        }).join("");
+      }
+
+      var win = $("[data-quote-window]");
+      if (win) {
+        win.innerHTML = QUOTE_WINDOWS.map(function (n) {
+          return '<button type="button" class="chip' + (draft.window === n ? " is-active" : "") +
+            '" data-window="' + n + '">' + esc(I18N.t("quotes.minutes", { n: I18N.num(n) })) + "</button>";
+        }).join("");
+      }
+    }
+
+    function drawPreview() {
+      var prev = $("[data-quote-preview]");
+      if (prev) {
+        var city = draft.city ? tx(DATA.labelOf(DATA.cities, draft.city)) : I18N.t("quotes.anyCity");
+        var sp = draft.specialty ? tx(DATA.labelOf(DATA.specialties, draft.specialty)) : I18N.t("quotes.anySpecialty");
+        var mode = QUOTE_MODES.filter(function (m) { return m.id === draft.mode; })[0];
+        prev.innerHTML =
+          '<p class="tiny muted">' + esc(I18N.t("bids.clientHidden")) + "</p>" +
+          '<div class="anon-card" style="margin-top:var(--s-3)">' +
+            '<div class="row gap-3">' +
+              '<span class="anon-card__mark">' + Icons.svg("user", "icon-sm") + "</span>" +
+              "<div><strong class=\"small\">" + esc(I18N.t("quotes.anonId", { id: "4821" })) + "</strong>" +
+              '<p class="tiny muted">' + esc(city) + ' <span class="dot"></span> ' + esc(sp) +
+                ' <span class="dot"></span> ' + esc(I18N.t(mode.key)) + "</p></div>" +
+            "</div></div>";
+      }
+    }
+
+    /* ---------- live board ---------- */
+    function offerRow(o) {
+      var l = DATA.lawyerById(o.lawyer);
+      var best = o.price === Math.min.apply(null, q().offers.map(function (x) { return x.price; }));
+      return '<article class="offer-card' + (best ? " is-best" : "") + '">' +
+        (best ? '<span class="offer-card__flag">' + esc(I18N.t("quotes.bestPrice")) + "</span>" : "") +
+        '<img class="avatar avatar--md" alt="" width="64" height="64" src="' +
+          App.avatarOf(l.name, l.id) + '">' +
+        '<div class="grow" style="min-width:0">' +
+          '<strong class="small">' + esc(tx(l.name)) + "</strong>" +
+          '<p class="tiny muted">' + esc(tx(l.title)) + "</p>" +
+          '<div class="meta-row" style="margin-top:var(--s-2)">' +
+            App.stars(l.rating) +
+            '<span class="muted">' + esc(I18N.t("lawyer.years", { n: I18N.num(l.years) })) + "</span>" +
+            '<span class="dot"></span>' +
+            '<span class="muted">' + esc(I18N.t("quotes.within", { n: I18N.num(o.eta) })) + "</span>" +
+          "</div>" +
+        "</div>" +
+        '<div class="offer-card__end">' +
+          '<strong class="offer-card__price"><span class="num">' + I18N.num(o.price) + "</span> " +
+            '<span class="small muted">' + esc(I18N.t("profile.sar")) + "</span></strong>" +
+          '<button class="btn btn--accent btn--sm" type="button" data-accept="' + esc(o.lawyer) + '">' +
+            esc(I18N.t("quotes.accept")) + "</button>" +
+        "</div></article>";
+    }
+
+    function sortedOffers() {
+      var list = q().offers.slice();
+      list.sort(function (a, b) {
+        if (sort === "rating") return DATA.lawyerById(b.lawyer).rating - DATA.lawyerById(a.lawyer).rating;
+        if (sort === "speed") return a.eta - b.eta;
+        return a.price - b.price;
+      });
+      return list;
+    }
+
+    function drawLive() {
+      var host = $("[data-quote-live]");
+      var cur = q();
+      if (!host) return;
+
+      compose.hidden = !!cur;
+      host.hidden = !cur;
+      if (!cur) return;
+
+      /* finished states first */
+      if (cur.status === "accepted") {
+        var won = DATA.lawyerById(cur.acceptedBy);
+        host.innerHTML =
+          '<div class="card card--rule-gold card--pad center stack gap-4" style="align-items:center">' +
+            '<span class="feature__icon" style="background:var(--success-soft);color:var(--success)">' +
+              Icons.svg("check", "icon-lg") + "</span>" +
+            '<h1 class="headline">' + esc(I18N.t("quotes.acceptedTitle")) + "</h1>" +
+            '<p class="lead">' + esc(I18N.t("quotes.acceptedBody", { name: tx(won.name) })) + "</p>" +
+            '<a class="btn btn--primary" href="lawyer.html?id=' + esc(won.id) + '">' +
+              esc(I18N.t("dir.viewProfile")) + "</a>" +
+            '<button class="btn btn--ghost btn--sm" type="button" data-quote-reset>' +
+              esc(I18N.t("quotes.newRequest")) + "</button>" +
+          "</div>";
+        return;
+      }
+      if (cur.status === "expired" || cur.status === "cancelled") {
+        host.innerHTML =
+          '<div class="card card--pad center stack gap-4" style="align-items:center">' +
+            '<span class="feature__icon">' + Icons.svg("clock", "icon-lg") + "</span>" +
+            '<h1 class="headline">' + esc(I18N.t(cur.status === "expired" ? "quotes.expired" : "quotes.cancelled")) + "</h1>" +
+            '<p class="lead">' + esc(I18N.t(cur.status === "expired" ? "quotes.expiredBody" : "quotes.cancelled")) + "</p>" +
+            '<button class="btn btn--accent" type="button" data-quote-reset>' +
+              esc(I18N.t("quotes.repost")) + "</button>" +
+          "</div>";
+        return;
+      }
+
+      /* open: countdown + offers as they arrive */
+      var left = quoteRemaining(cur);
+      var mode = QUOTE_MODES.filter(function (m) { return m.id === cur.mode; })[0];
+      var city = cur.city ? tx(DATA.labelOf(DATA.cities, cur.city)) : I18N.t("quotes.anyCity");
+
+      host.innerHTML =
+        '<div class="card card--rule-gold card--pad" style="margin-bottom:var(--s-6)">' +
+          '<div class="row between wrap gap-5">' +
+            '<div class="grow" style="min-width:220px">' +
+              '<span class="status status--ok">' + esc(I18N.t("quotes.live")) + "</span>" +
+              '<h1 class="title" style="margin-top:var(--s-3)">' + esc(cur.brief.slice(0, 90)) +
+                (cur.brief.length > 90 ? "…" : "") + "</h1>" +
+              '<p class="small muted" style="margin-top:var(--s-2)">' + esc(city) +
+                ' <span class="dot"></span> ' + esc(I18N.t(mode.key)) + "</p>" +
+            "</div>" +
+            '<div class="countdown" style="min-width:180px">' +
+              '<div class="countdown__time" data-quote-clock>' + clock(left) + "</div>" +
+              '<p class="tiny muted">' + esc(I18N.t("quotes.timeLeft")) + "</p>" +
+            "</div>" +
+          "</div>" +
+          '<hr class="divider">' +
+          '<div class="row between wrap gap-3">' +
+            '<strong class="small">' + esc(I18N.t("quotes.offersIn", { n: I18N.num(cur.offers.length) })) + "</strong>" +
+            '<button class="btn btn--ghost btn--sm" type="button" data-quote-cancel>' +
+              esc(I18N.t("quotes.cancel")) + "</button>" +
+          "</div>" +
+        "</div>" +
+
+        (cur.offers.length
+          ? '<div class="row gap-2 wrap" style="margin-bottom:var(--s-4)">' +
+              [["price", "quotes.sortPrice"], ["rating", "quotes.sortRating"], ["speed", "quotes.sortSpeed"]]
+                .map(function (pair) {
+                  return '<button type="button" class="chip' + (sort === pair[0] ? " is-active" : "") +
+                    '" data-sort="' + pair[0] + '">' + esc(I18N.t(pair[1])) + "</button>";
+                }).join("") + "</div>" +
+            '<div class="stack gap-3">' + sortedOffers().map(offerRow).join("") + "</div>"
+          : '<div class="card empty">' + Icons.svg("clock", "icon-xl") +
+            '<p class="subtitle">' + esc(I18N.t("quotes.waiting")) + "</p></div>");
+    }
+
+    /* ---------- simulated competition ----------
+       Other lawyers bid on their own; the one signed in as `lawyer` bids by
+       hand from their dashboard. Prices vary around each lawyer's own rate. */
+    function scheduleOffers(cur) {
+      offerTimers.forEach(clearTimeout);
+      offerTimers = [];
+
+      // The lawyer signed in on this device bids by hand from their dashboard,
+      // so the simulation stands in for everyone except them.
+      var me = DATA.lawyers[0].id;
+      var eligible = DATA.lawyers.filter(function (l) { return l.id !== me; });
+      var pool = eligible.filter(function (l) {
+        if (cur.specialty && l.specialties.indexOf(cur.specialty) === -1) return false;
+        if (cur.city && l.city !== cur.city) return false;
+        return true;
+      });
+      if (pool.length < 3) pool = eligible.slice();
+
+      pool.slice(0, 5).forEach(function (l, i) {
+        var base = DATA.priceFor(l, cur.mode === "written" ? "written" : cur.mode);
+        // A competitive board: bids land between 25% under and 10% over list.
+        var factor = 0.75 + ((i * 37) % 35) / 100;
+        var price = Math.max(40, Math.round(base * factor / 5) * 5);
+        var eta = 2 + ((i * 3) % 10);
+        offerTimers.push(setTimeout(function () {
+          if (global.Store.addOffer({ lawyer: l.id, price: price, eta: eta })) drawLive();
+        }, 2200 + i * 2600));
+      });
+    }
+
+    function startTicker() {
+      clearInterval(ticker);
+      ticker = setInterval(function () {
+        var cur = q();
+        if (!cur || cur.status !== "open") { clearInterval(ticker); return; }
+        var left = quoteRemaining(cur);
+        var el = $("[data-quote-clock]");
+        if (el) el.textContent = clock(left);
+        if (left <= 0) {
+          clearInterval(ticker);
+          offerTimers.forEach(clearTimeout);
+          global.Store.setQuoteStatus("expired");
+          App.toast(I18N.t("quotes.expired"), "clock");
+          drawLive();
+        }
+      }, 1000);
+    }
+
+    App.onRender(function () {
+      drawCompose();
+      drawLive();
+      var cur = q();
+      if (cur && cur.status === "open") { startTicker(); scheduleOffers(cur); }
+    });
+
+    /* ---------- interactions ---------- */
+    compose.addEventListener("click", function (ev) {
+      var m = ev.target.closest("[data-mode]");
+      if (m) { draft.mode = m.getAttribute("data-mode"); drawChips(); drawPreview(); return; }
+      var w = ev.target.closest("[data-window]");
+      if (w) { draft.window = parseInt(w.getAttribute("data-window"), 10); drawChips(); }
+    });
+    compose.addEventListener("change", function (ev) {
+      var isCity = ev.target.matches("[data-quote-city]");
+      var isSpec = ev.target.matches("[data-quote-spec]");
+      // The textarea also fires `change` when it loses focus — which happens on
+      // the way to clicking a chip. Redrawing then would tear the chip out from
+      // under the pointer and swallow the click, so only the selects redraw.
+      if (!isCity && !isSpec) return;
+      if (isCity) draft.city = ev.target.value;
+      if (isSpec) draft.specialty = ev.target.value;
+      drawPreview();
+    });
+
+    var form = $("[data-quote-form]");
+    if (form) {
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var brief = $("#q-brief").value.trim();
+        if (brief.length < 10) { App.toast(I18N.t("quotes.needBrief"), "file-text"); return; }
+        var cur = global.Store.openQuote({
+          id: "4821", brief: brief, city: draft.city, specialty: draft.specialty,
+          mode: draft.mode, minutes: draft.window,
+          expiresAt: Date.now() + draft.window * 60000,
+          status: "open", offers: []
+        });
+        App.toast(I18N.t("quotes.published"), "check");
+        drawLive(); startTicker(); scheduleOffers(cur);
+        global.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+
+    var live = $("[data-quote-live]");
+    if (live) {
+      live.addEventListener("click", function (ev) {
+        var so = ev.target.closest("[data-sort]");
+        if (so) { sort = so.getAttribute("data-sort"); drawLive(); return; }
+
+        var ac = ev.target.closest("[data-accept]");
+        if (ac) {
+          var id = ac.getAttribute("data-accept");
+          offerTimers.forEach(clearTimeout);
+          clearInterval(ticker);
+          global.Store.setQuoteStatus("accepted", { acceptedBy: id });
+          App.toast(I18N.t("quotes.accepted", { name: tx(DATA.lawyerById(id).name) }), "check");
+          drawLive();
+          return;
+        }
+
+        if (ev.target.closest("[data-quote-cancel]")) {
+          offerTimers.forEach(clearTimeout);
+          clearInterval(ticker);
+          global.Store.setQuoteStatus("cancelled");
+          App.toast(I18N.t("quotes.cancelled"), "close");
+          drawLive();
+          return;
+        }
+
+        if (ev.target.closest("[data-quote-reset]")) {
+          global.Store.clearQuote();
+          drawCompose(); drawLive();
+        }
+      });
+    }
+  }
+
   /* =============================================================== ACCOUNT */
   function initAccount() {
     var switcher = $("[data-role-switcher]");
@@ -1655,6 +2085,7 @@
     else if (page === "tasks") initTasks();
     else if (page === "assistant") initAssistant();
     else if (page === "account") initAccount();
+    else if (page === "quotes") initQuotes();
   }
 
   global.Pages = { mount: mount };

@@ -60,7 +60,36 @@
       });
     },
 
-    reset: function () { state.requests = {}; notify(); },
+    /* ---------------- open call for quotes ----------------
+       One live request at a time: the client posts a brief, every lawyer may
+       bid, and it dies on its own when the window closes. */
+    getQuote: function () { return state.quote || null; },
+
+    openQuote: function (q) {
+      state.quote = q;
+      notify();
+      return q;
+    },
+
+    addOffer: function (offer) {
+      if (!state.quote || state.quote.status !== "open") return false;
+      var seen = state.quote.offers.some(function (o) { return o.lawyer === offer.lawyer; });
+      if (seen) return false;                    // one bid per lawyer
+      state.quote.offers.push(offer);
+      notify();
+      return true;
+    },
+
+    setQuoteStatus: function (status, extra) {
+      if (!state.quote) return;
+      state.quote.status = status;
+      if (extra) Object.keys(extra).forEach(function (k) { state.quote[k] = extra[k]; });
+      notify();
+    },
+
+    clearQuote: function () { delete state.quote; notify(); },
+
+    reset: function () { state.requests = {}; delete state.quote; notify(); },
 
     onChange: function (fn) { listeners.push(fn); }
   };

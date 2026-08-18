@@ -100,6 +100,7 @@
     var items = [{ key: "nav.home", tab: "tab.home", href: "index.html", id: "home", icon: "home" }];
     if (role) {
       items.push(role.nav);
+      if (role.extraNav) items.push(role.extraNav);
       // The assistant is the lawyer's own tool. Clients never see it offered,
       // because they are never told a machine touched their document.
       if (role.id === "lawyer") {
@@ -177,6 +178,7 @@
         "</div>" +
         col("footer.platform", [
           { href: "lawyers.html",   key: "nav.lawyers" },
+          { href: "quotes.html",    key: "nav.quotes" },
           { href: "tasks.html",     key: "nav.tasks" },
           { href: "blog.html",      key: "nav.blog" },
           { href: "about.html",     key: "nav.about" },

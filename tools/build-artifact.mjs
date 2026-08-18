@@ -26,6 +26,7 @@ const ROUTES = [
   { name: 'tasks',            file: 'tasks.html',            page: 'tasks',            chrome: 'site' },
   { name: 'assistant',        file: 'assistant.html',        page: 'assistant',        chrome: 'site' },
   { name: 'account',          file: 'account.html',          page: 'account',          chrome: 'site' },
+  { name: 'quotes',           file: 'quotes.html',           page: 'quotes',           chrome: 'site' },
   { name: 'dashboard-lawyer', file: 'dashboard-lawyer.html', page: 'dashboard',        chrome: 'app'  },
   { name: 'dashboard-client', file: 'dashboard-client.html', page: 'dashboard-client', chrome: 'app'  },
 ];

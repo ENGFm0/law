@@ -18,7 +18,9 @@
       /* The workspace this role lands on from the header badge. */
       home: "dashboard-client.html",
       /* Role-specific slot in the main navigation. */
-      nav: { key: "nav.lawyers", tab: "tab.lawyers", href: "lawyers.html", id: "lawyers", icon: "search" }
+      nav: { key: "nav.lawyers", tab: "tab.lawyers", href: "lawyers.html", id: "lawyers", icon: "search" },
+      /* An extra slot only clients get: post one brief, collect quotes. */
+      extraNav: { key: "nav.quotes", tab: "tab.quotes", href: "quotes.html", id: "quotes", icon: "gavel" }
     },
     lawyer: {
       id: "lawyer",

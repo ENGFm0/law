@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-page="quotes" data-title-key="quotes.title">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f8fd">
+<title>اطلب عروض أسعار | سند</title>
+<meta name="description" content="انشر حالتك مرة واحدة وقارن عروض أسعار من محامين مرخصين، مع حفظ خصوصيتك الكاملة.">
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/roles.js"></script>
+<script src="assets/js/store.js"></script>
+</head>
+<body class="page">
+<a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
+
+<div data-slot="header"></div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/layout.js"></script>
+
+<main id="main">
+  <div class="container" style="max-width:960px;padding-bottom:var(--s-20)">
+    <nav class="breadcrumb">
+      <a href="index.html" data-i18n="nav.home"></a>
+      <svg class="icon icon-sm icon-flip" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      <span data-i18n="nav.quotes"></span>
+    </nav>
+
+    <!-- ===== compose: only while there is no live request ===== -->
+    <section data-quote-compose hidden>
+      <header style="margin-bottom:var(--s-8);max-width:660px">
+        <span class="eyebrow" data-i18n="nav.quotes"></span>
+        <h1 class="headline" style="margin-top:var(--s-3)" data-i18n="quotes.heading"></h1>
+        <p class="lead" data-i18n="quotes.lead"></p>
+      </header>
+
+      <div class="quote-layout">
+        <form class="card card--pad stack gap-6" data-quote-form>
+          <div class="field">
+            <label class="label" for="q-brief" data-i18n="quotes.brief"></label>
+            <!-- Validated in JS rather than with [required]: the native bubble
+                 speaks the browser's language, not the page's. -->
+            <textarea class="textarea" id="q-brief"
+                      data-i18n-attr="placeholder:quotes.briefPlaceholder"></textarea>
+            <p class="tiny faint" data-i18n="quotes.briefHint"></p>
+          </div>
+
+          <div class="grid grid-2" style="gap:var(--s-4)">
+            <div class="field">
+              <label class="label" for="q-city" data-i18n="quotes.where"></label>
+              <select class="select" id="q-city" data-quote-city></select>
+            </div>
+            <div class="field">
+              <label class="label" for="q-spec" data-i18n="quotes.specialty"></label>
+              <select class="select" id="q-spec" data-quote-spec></select>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="label" data-i18n="quotes.how"></span>
+            <div class="row gap-2 wrap" data-quote-modes></div>
+          </div>
+
+          <div class="field">
+            <span class="label" data-i18n="quotes.window"></span>
+            <div class="row gap-2 wrap" data-quote-window></div>
+          </div>
+
+          <button class="btn btn--accent btn--lg btn--block" type="submit">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            <span data-i18n="quotes.publish"></span>
+          </button>
+        </form>
+
+        <aside class="card card--rule-navy card--pad" style="align-self:start">
+          <h2 class="subtitle row gap-2">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <span data-i18n="quotes.privacy"></span>
+          </h2>
+          <p class="small muted" style="margin-top:var(--s-3)" data-i18n="quotes.privacyBody"></p>
+          <hr class="divider">
+          <div data-quote-preview></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===== live board: countdown + incoming offers ===== -->
+    <section data-quote-live hidden></section>
+
+  </div>
+</main>
+
+<div data-slot="footer"></div>
+
+<script src="assets/js/app.js"></script>
+<script src="assets/js/pages.js"></script>
+</body>
+</html>

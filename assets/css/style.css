@@ -980,3 +980,52 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 }
 .assign-pop button:hover { background: var(--surface-2); }
 .assign-pop button span:nth-child(2) { flex: 1; }
+
+/* ==========================================================================
+   Call for quotes — the client's board and the lawyer's bid form
+   ========================================================================== */
+.quote-layout { display: grid; grid-template-columns: 1fr 340px; gap: var(--s-8); align-items: start; }
+@media (max-width: 1024px) { .quote-layout { grid-template-columns: 1fr; } }
+
+/* What a lawyer is shown instead of a person: no name, no contact. */
+.anon-card {
+  padding: var(--s-4); border-radius: var(--r-lg);
+  border: 1px dashed var(--border-strong); background: var(--surface-2);
+}
+.anon-card__mark {
+  width: 34px; height: 34px; flex: none; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--surface-3); color: var(--text-muted);
+}
+
+/* An incoming quote. The cheapest is flagged, since that is what was asked for. */
+.offer-card {
+  position: relative; display: flex; align-items: center; gap: var(--s-4);
+  padding: var(--s-4) var(--s-5);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-1);
+  animation: offer-in .32s cubic-bezier(.2, .7, .3, 1) both;
+}
+@keyframes offer-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .offer-card { animation: none; } }
+
+.offer-card.is-best { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow-1); }
+.offer-card__flag {
+  position: absolute; top: -9px; inset-inline-start: var(--s-5);
+  padding: 1px var(--s-3); border-radius: var(--r-full);
+  background: var(--accent); color: var(--on-accent);
+  font-size: .625rem; font-weight: 800;
+}
+.offer-card__end { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s-2); flex: none; }
+.offer-card__price { font-size: 1.375rem; }
+@media (max-width: 620px) {
+  .offer-card { flex-wrap: wrap; }
+  .offer-card__end { align-items: stretch; width: 100%; }
+  .offer-card__end .btn { width: 100%; }
+}
+
+.bid-form {
+  display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--s-3);
+  align-items: end; margin-top: var(--s-4);
+}
+@media (max-width: 640px) { .bid-form { grid-template-columns: 1fr 1fr; } .bid-form .btn { grid-column: 1 / -1; } }
