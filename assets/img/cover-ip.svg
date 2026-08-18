@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="Intellectual property">
+  <defs>
+    <linearGradient id="ip" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1b3a"/><stop offset="1" stop-color="#132a52"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#ip)"/>
+  <g stroke="#4f7fd4" stroke-width="1.5" opacity=".35" fill="none">
+    <path d="M0 90 H800 M0 180 H800 M0 270 H800 M0 360 H800"/>
+    <path d="M100 0 V450 M250 0 V450 M400 0 V450 M550 0 V450 M700 0 V450"/>
+  </g>
+  <g fill="#4f7fd4" opacity=".55">
+    <circle cx="100" cy="180" r="5"/><circle cx="250" cy="90" r="5"/><circle cx="400" cy="270" r="5"/>
+    <circle cx="550" cy="180" r="5"/><circle cx="700" cy="360" r="5"/><circle cx="250" cy="360" r="5"/>
+  </g>
+  <g transform="translate(400 225)">
+    <rect x="-56" y="-14" width="112" height="90" rx="10" fill="#c8912a"/>
+    <path d="M-30 -14 v-26 a30 30 0 0 1 60 0 v26" fill="none" stroke="#c8912a" stroke-width="14"/>
+    <circle cx="0" cy="26" r="10" fill="#0b1b3a"/><rect x="-4" y="26" width="8" height="22" fill="#0b1b3a"/>
+  </g>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Sanad">
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="none" stroke="#0f172a" stroke-width="4"/>
+  <path d="M32 14 v34" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M16 22 h32" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M16 22 l-7 13 h14 z" fill="none" stroke="#c8912a" stroke-width="3.2" stroke-linejoin="round"/>
+  <path d="M48 22 l-7 13 h14 z" fill="none" stroke="#c8912a" stroke-width="3.2" stroke-linejoin="round"/>
+  <path d="M24 50 h16" stroke="#c8912a" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="32" cy="14" r="3.6" fill="#c8912a"/>
+</svg>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-page="lawyers" data-title-key="dir.title">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f8fd">
+<title>دليل المحامين | سند</title>
+<meta name="description" content="ابحث بين نخبة من المحامين المرخصين في المملكة واختر الأنسب لقضيتك.">
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/i18n.js"></script>
+</head>
+<body class="page">
+<a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
+
+<div data-slot="header"></div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/layout.js"></script>
+
+<main id="main">
+  <div class="container">
+    <nav class="breadcrumb">
+      <a href="index.html" data-i18n="nav.home"></a>
+      <svg class="icon icon-sm icon-flip" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      <span data-i18n="nav.lawyers"></span>
+    </nav>
+
+    <header style="margin-bottom:var(--s-8)">
+      <h1 class="headline" data-i18n="dir.heading"></h1>
+      <p class="lead" data-i18n="dir.lead"></p>
+    </header>
+
+    <div class="directory" style="padding-bottom:var(--s-16)">
+
+      <!-- Filters -->
+      <aside class="filters">
+        <button class="btn btn--outline btn--block hidden" type="button" data-toggle-filters style="margin-bottom:var(--s-3)">
+          <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+          <span data-i18n="dir.showFilters"></span>
+        </button>
+
+        <form class="panel" data-filters>
+          <div class="panel__head row between gap-3">
+            <h2 class="subtitle row gap-2">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+              <span data-i18n="dir.filters"></span>
+            </h2>
+            <button class="btn btn--ghost btn--sm" type="reset" data-i18n="dir.reset"></button>
+          </div>
+
+          <div class="panel__body">
+            <div class="filter-group">
+              <h3 class="filter-group__title" data-i18n="dir.specialties"></h3>
+              <div data-filter-specialties></div>
+            </div>
+
+            <div class="filter-group">
+              <h3 class="filter-group__title" data-i18n="dir.cities"></h3>
+              <div data-filter-cities></div>
+            </div>
+
+            <div class="filter-group">
+              <h3 class="filter-group__title" data-i18n="dir.priceRange"></h3>
+              <div class="row gap-2">
+                <input class="input" type="number" min="0" step="10" name="min" data-i18n-attr="placeholder:dir.from, aria-label:dir.from">
+                <span class="muted">–</span>
+                <input class="input" type="number" min="0" step="10" name="max" data-i18n-attr="placeholder:dir.to, aria-label:dir.to">
+              </div>
+            </div>
+
+            <div class="filter-group">
+              <h3 class="filter-group__title" data-i18n="dir.consultType"></h3>
+              <div data-filter-consults></div>
+            </div>
+
+            <div class="filter-group">
+              <h3 class="filter-group__title" data-i18n="dir.rating"></h3>
+              <label class="check"><input type="radio" name="rating" value="0" checked><span data-i18n="dir.anyRating"></span></label>
+              <label class="check"><input type="radio" name="rating" value="4"><span data-i18n="dir.stars4"></span></label>
+              <label class="check"><input type="radio" name="rating" value="4.5"><span data-i18n="dir.stars45"></span></label>
+            </div>
+          </div>
+        </form>
+      </aside>
+
+      <!-- Results -->
+      <section>
+        <div class="card results-bar" style="margin-bottom:var(--s-6)">
+          <strong data-results-count></strong>
+          <label class="row gap-3">
+            <span class="small muted" data-i18n="dir.sortBy"></span>
+            <select class="select" data-sort style="width:auto;height:38px">
+              <option value="rating" data-i18n="dir.sortRating"></option>
+              <option value="priceAsc" data-i18n="dir.sortPriceAsc"></option>
+              <option value="priceDesc" data-i18n="dir.sortPriceDesc"></option>
+              <option value="experience" data-i18n="dir.sortExperience"></option>
+            </select>
+          </label>
+        </div>
+
+        <div class="grid grid-2" data-results></div>
+        <div class="pagination" data-pagination></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div data-slot="footer"></div>
+
+<script src="assets/js/app.js"></script>
+<script src="assets/js/pages.js"></script>
+</body>
+</html>

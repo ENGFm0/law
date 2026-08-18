@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="Real estate">
+  <defs>
+    <linearGradient id="re" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b3a5c"/><stop offset="1" stop-color="#0c1c30"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#re)"/>
+  <circle cx="640" cy="110" r="52" fill="#c8912a" opacity=".35"/>
+  <g stroke="#ffffff" stroke-width="2" fill="none" opacity=".22">
+    <path d="M120 300 L240 220 L360 300 L360 420 L120 420 Z"/>
+    <path d="M180 420 L180 350 L230 350 L230 420"/>
+    <path d="M400 340 L500 275 L600 340 L600 420 L400 420 Z"/>
+  </g>
+  <g fill="#c8912a" opacity=".6">
+    <rect x="265" y="315" width="26" height="26"/><rect x="265" y="360" width="26" height="26"/>
+    <rect x="430" y="360" width="24" height="24"/><rect x="540" y="360" width="24" height="24"/>
+  </g>
+  <rect x="0" y="418" width="800" height="32" fill="#060c18" opacity=".6"/>
+  <g stroke="#c8912a" stroke-width="3" opacity=".8"><path d="M60 130 L60 200 M60 130 L140 130"/></g>
+</svg>

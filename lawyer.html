@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-page="lawyers" data-title-key="profile.title">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f8fd">
+<title>الملف الشخصي للمحامي | سند</title>
+<meta name="description" content="ملف المحامي: الخبرات، المؤهلات، الخدمات، وحجز استشارة مباشرة.">
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/i18n.js"></script>
+</head>
+<body class="page">
+<a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
+
+<div data-slot="header"></div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/layout.js"></script>
+
+<main id="main">
+  <div class="container">
+    <nav class="breadcrumb">
+      <a href="index.html" data-i18n="nav.home"></a>
+      <svg class="icon icon-sm icon-flip" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      <a href="lawyers.html" data-i18n="nav.lawyers"></a>
+      <svg class="icon icon-sm icon-flip" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      <span data-crumb-name></span>
+    </nav>
+
+    <div class="profile-layout" style="padding-bottom:var(--s-16)">
+
+      <!-- Main column -->
+      <div class="stack gap-6" id="profile">
+        <div class="card card--rule-navy card--pad" data-profile-head></div>
+
+        <div>
+          <div class="tabs" data-tabs>
+            <button class="tab is-active" type="button" data-tab="experience" data-i18n="profile.tabExperience"></button>
+            <button class="tab" type="button" data-tab="services" data-i18n="profile.tabServices"></button>
+            <button class="tab" type="button" data-tab="articles" data-i18n="profile.tabArticles"></button>
+            <button class="tab" type="button" data-tab="reviews" data-i18n="profile.tabReviews"></button>
+          </div>
+
+          <div style="padding-top:var(--s-6)">
+            <div class="tab-panel stack gap-6" data-panel="experience"></div>
+            <div class="tab-panel grid grid-2" data-panel="services" hidden></div>
+            <div class="tab-panel grid grid-2" data-panel="articles" hidden></div>
+            <div class="tab-panel stack gap-4" data-panel="reviews" hidden></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Booking -->
+      <aside class="booking">
+        <form class="card card--rule-gold card--pad stack gap-5" data-booking>
+          <div>
+            <h2 class="title" data-i18n="profile.book"></h2>
+            <p class="small muted" data-i18n="profile.bookHint"></p>
+          </div>
+
+          <div class="field">
+            <label class="label" for="svc" data-i18n="profile.consultType"></label>
+            <select class="select" id="svc" data-booking-service></select>
+          </div>
+
+          <div class="field">
+            <span class="label" data-i18n="profile.date"></span>
+            <div class="row between" style="margin-bottom:var(--s-2)">
+              <strong class="small" data-cal-month></strong>
+            </div>
+            <div class="calendar" data-calendar></div>
+          </div>
+
+          <div class="field">
+            <span class="label" data-i18n="profile.availableTimes"></span>
+            <div class="slots" data-slots></div>
+          </div>
+
+          <hr class="divider" style="margin:0">
+
+          <div class="row between">
+            <span class="muted" data-i18n="profile.total"></span>
+            <strong style="font-size:1.5rem"><span class="num" data-total>0</span> <span class="small muted" data-i18n="profile.sar"></span></strong>
+          </div>
+
+          <button class="btn btn--accent btn--block btn--lg" type="submit">
+            <span data-i18n="profile.pay"></span>
+            <svg class="icon icon-sm icon-flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <p class="tiny muted center row gap-2" style="justify-content:center">
+            <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <span data-i18n="profile.securePay"></span>
+          </p>
+        </form>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<div data-slot="footer"></div>
+
+<script src="assets/js/app.js"></script>
+<script src="assets/js/pages.js"></script>
+</body>
+</html>

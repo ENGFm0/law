@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" role="img" aria-label="Contracts">
+  <defs>
+    <linearGradient id="ct" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f172a"/><stop offset="1" stop-color="#22375c"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#ct)"/>
+  <g transform="rotate(-8 400 225)">
+    <rect x="250" y="80" width="300" height="300" rx="12" fill="#f3f6ff" opacity=".95"/>
+    <g stroke="#8b93a7" stroke-width="7" stroke-linecap="round">
+      <path d="M290 140 h180 M290 180 h220 M290 220 h150 M290 260 h200"/>
+    </g>
+    <path d="M300 320 c30 -30 60 20 90 -10 s60 -40 100 10" fill="none" stroke="#c8912a" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <circle cx="660" cy="360" r="56" fill="#c8912a" opacity=".25"/>
+</svg>
