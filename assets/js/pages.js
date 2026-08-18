@@ -7,7 +7,6 @@
 
   var I18N = global.I18N, DATA = global.DATA, Icons = global.Icons, App = global.App;
   var $ = App.$, $$ = App.$$, esc = App.esc, tx = App.tx;
-  var page = document.documentElement.getAttribute("data-page") || "";
 
   /* ---------------------------------------------------------------- utils */
   function fillSelect(sel, list, anyLabelKey) {
@@ -32,7 +31,10 @@
 
   function params() {
     var out = {};
-    var q = global.location.search.replace(/^\?/, "");
+    // #/lawyer?id=x in the bundled build, ?id=x when served as separate files
+    var hash = global.location.hash || "";
+    var mark = hash.indexOf("?");
+    var q = mark !== -1 ? hash.slice(mark + 1) : global.location.search.replace(/^\?/, "");
     if (!q) return out;
     q.split("&").forEach(function (part) {
       var kv = part.split("=");
@@ -875,6 +877,8 @@
     if (draft) draft.addEventListener("click", function () { App.toast(I18N.t("dash.draftSaved"), "file-text"); });
   }
 
+  var countdownTimer = null;
+
   function initClientDash() {
     var remaining = 45 * 60 + 20; // seconds until the next video consultation
 
@@ -968,20 +972,31 @@
       }
     });
 
-    setInterval(function () {
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(function () {
       if (remaining > 0) remaining--;
       var el = $("[data-countdown]");
       if (el) el.textContent = clockText();
+      else clearInterval(countdownTimer);   // view was swapped out
     }, 1000);
   }
 
   /* ================================================================= route */
-  if (page === "home") initHome();
-  else if (page === "lawyers" && $("[data-results]")) initDirectory();
-  else if (page === "lawyers") initProfile();
-  else if (page === "blog") initBlog();
-  else if (page === "about") initAbout();
-  else if (page === "login") initAuth();
-  else if (page === "dashboard") initLawyerDash();
-  else if (page === "dashboard-client") initClientDash();
+  function mount() {
+    var page = document.documentElement.getAttribute("data-page") || "";
+    if (page === "home") initHome();
+    else if (page === "lawyers" && $("[data-results]")) initDirectory();
+    else if (page === "lawyers") initProfile();
+    else if (page === "blog") initBlog();
+    else if (page === "about") initAbout();
+    else if (page === "login") initAuth();
+    else if (page === "dashboard") initLawyerDash();
+    else if (page === "dashboard-client") initClientDash();
+  }
+
+  global.Pages = { mount: mount };
+
+  // Served as separate HTML files, each document mounts itself. The bundled
+  // single-file build sets __SPA__ and lets its router call mount() per route.
+  if (!global.__SPA__) mount();
 })(window);

@@ -18,6 +18,14 @@
   }
   function tx(pair) { return I18N.pick(pair); }
 
+  /* ---------- image paths ----------
+     A bundled single-file build has no assets/ directory to reach, so it
+     pre-populates window.__ASSETS__ with inlined data URIs. */
+  function asset(name) {
+    var map = global.__ASSETS__;
+    return (map && map[name]) || "assets/img/" + name;
+  }
+
   /* ---------- avatars ----------
      Stock photography isn't shipped with the project, so each person gets a
      deterministic initials mark instead — it never 404s and it themes itself. */
@@ -169,7 +177,7 @@
     var authorName = author ? tx(author.name) : "";
     return '<article class="card card--hover article-card">' +
       '<a class="article-card__media" href="blog.html#' + esc(a.id) + '">' +
-        '<img src="assets/img/' + esc(a.cover) + '" alt="" loading="lazy" width="800" height="450">' +
+        '<img src="' + esc(asset(a.cover)) + '" alt="" loading="lazy" width="800" height="450">' +
         '<span class="article-card__cat">' + esc(tx(cat)) + "</span>" +
       "</a>" +
       '<div class="article-card__body">' +
@@ -241,6 +249,9 @@
     renderers.push(fn);
     try { fn(); } catch (e) { console.error(e); }
   }
+  /** Single-page mode swaps the whole view, so drop the outgoing page's
+      renderers before the incoming page registers its own. */
+  function resetRenderers() { renderers.length = 0; }
   function rerender() {
     renderers.forEach(function (fn) { try { fn(); } catch (e) { console.error(e); } });
     observeReveals();
@@ -307,6 +318,8 @@
     specialtyTags: specialtyTags,
     observeReveals: observeReveals,
     onRender: onRender,
-    rerender: rerender
+    resetRenderers: resetRenderers,
+    rerender: rerender,
+    asset: asset
   };
 })(window);
