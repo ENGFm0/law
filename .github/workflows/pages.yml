@@ -28,9 +28,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Note: this cannot switch Pages on by itself. Creating a Pages site is an
+      # administrative call, and the Actions GITHUB_TOKEN is never granted it —
+      # enablement: true fails with "Resource not accessible by integration".
+      # Pages has to be turned on once under Settings > Pages (source:
+      # GitHub Actions); from then on every push deploys through this job.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true          # turns Pages on the first time this runs
 
       - uses: actions/setup-node@v4
         with:
