@@ -1,0 +1,249 @@
+/* ==========================================================================
+   Store — accounts, session, and everything the visitor creates.
+
+   Two tiers, deliberately:
+     • ACCOUNTS + SESSION live in localStorage, so signing up and coming back
+       tomorrow works. This is the "saved accounts" decision — real enough to
+       use, and the UI says plainly that it lives in this browser only.
+     • WORK (requests, comments, quotes…) lives in sessionStorage, so a demo
+       run starts clean without wiping the accounts someone registered.
+   ========================================================================== */
+(function (global) {
+  "use strict";
+
+  var ACCOUNTS_KEY = "sanad.accounts";
+  var SESSION_KEY  = "sanad.session.user";
+  var WORK_KEY     = "sanad.work";
+
+  function read(storage, key, fallback) {
+    try {
+      var raw = storage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) { return fallback; }
+  }
+  function write(storage, key, value) {
+    try { storage.setItem(key, JSON.stringify(value)); } catch (e) { /* private mode */ }
+  }
+
+  var accounts = read(localStorage, ACCOUNTS_KEY, []);
+  var work = read(sessionStorage, WORK_KEY, {});
+  [
+    "requests", "requestStates", "services", "removedServices", "reviews",
+    "articles", "articleStates", "comments", "endorsements"
+  ].forEach(function (k) {
+    if (!work[k]) work[k] = (k.indexOf("States") !== -1 ? {} : []);
+  });
+
+  var listeners = [];
+  function notify() {
+    write(sessionStorage, WORK_KEY, work);
+    listeners.forEach(function (fn) { try { fn(); } catch (e) { console.error(e); } });
+    document.dispatchEvent(new CustomEvent("storechange"));
+  }
+  function saveAccounts() { write(localStorage, ACCOUNTS_KEY, accounts); }
+
+  function uid(prefix) {
+    return prefix + "-" + Math.random().toString(36).slice(2, 8);
+  }
+
+  var Store = {
+    /* ---------------- accounts ---------------- */
+    signups: function () { return accounts; },
+
+    findAccount: function (email) {
+      var e = String(email || "").trim().toLowerCase();
+      for (var i = 0; i < accounts.length; i++) {
+        if (accounts[i].email.toLowerCase() === e) return accounts[i];
+      }
+      return null;
+    },
+
+    /** Creates the account and signs them in. Returns { ok, error, user }. */
+    register: function (data) {
+      if (Store.findAccount(data.email)) return { ok: false, error: "emailTaken" };
+      var u = {
+        id: uid("u"),
+        roles: [data.role],
+        activeRole: data.role,
+        name: data.name,
+        email: data.email,
+        phone: data.phone || "",
+        city: data.city || "",
+        password: data.password || "",     // demo only; never a real credential
+        avatar: data.avatar || null,
+        status: data.role === "client" ? "verified" : "pending",
+        createdAt: Date.now(),
+        completed: 0,
+        responseHours: 12,
+        seedRating: 0,
+        seedReviews: 0,
+        seedHours: 0
+      };
+      if (data.role === "lawyer") {
+        u.licence = {
+          number: data.licenceNumber, authority: data.licenceAuthority,
+          expiry: data.licenceExpiry, fileName: data.licenceFile || null
+        };
+        u.specialties = data.specialties || [];
+        u.years = data.years || 0;
+        u.bio = data.bio || "";
+        u.title = data.title || "";
+      }
+      if (data.role === "intern") {
+        u.university = data.university || "";
+        u.level = data.level || "";
+        u.skills = data.skills || [];
+        u.cvName = data.cvFile || null;
+        u.bio = data.bio || "";
+      }
+      accounts.push(u);
+      saveAccounts();
+      Store.signIn(u.id);
+      return { ok: true, user: u };
+    },
+
+    updateAccount: function (id, patch) {
+      var u = null;
+      for (var i = 0; i < accounts.length; i++) if (accounts[i].id === id) u = accounts[i];
+      if (!u) return null;
+      Object.keys(patch).forEach(function (k) { u[k] = patch[k]; });
+      saveAccounts();
+      notify();
+      return u;
+    },
+
+    /** One account can carry several roles — the decision taken up front. */
+    addRole: function (id, role, extra) {
+      var u = Store.updateAccount(id, {});
+      if (!u || u.roles.indexOf(role) !== -1) return u;
+      u.roles.push(role);
+      if (role !== "client") u.status = "pending";
+      Object.keys(extra || {}).forEach(function (k) { u[k] = extra[k]; });
+      saveAccounts();
+      notify();
+      return u;
+    },
+
+    /* ---------------- session ---------------- */
+    currentId: function () {
+      try { return localStorage.getItem(SESSION_KEY); } catch (e) { return null; }
+    },
+    signIn: function (id) {
+      try { localStorage.setItem(SESSION_KEY, id); } catch (e) {}
+      notify();
+    },
+    signOut: function () {
+      try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+      notify();
+    },
+
+    /* ---------------- work created during a visit ---------------- */
+    requests: function () { return work.requests; },
+    addRequest: function (r) {
+      r.id = r.id || uid("r");
+      r.createdAt = Date.now();
+      work.requests.push(r);
+      notify();
+      return r;
+    },
+    requestState: function (id) { return work.requestStates[id] || {}; },
+    setRequest: function (id, patch) {
+      var cur = work.requestStates[id] || {};
+      Object.keys(patch).forEach(function (k) { cur[k] = patch[k]; });
+      work.requestStates[id] = cur;
+      notify();
+    },
+
+    services: function () { return work.services; },
+    addService: function (s) {
+      s.id = s.id || uid("s");
+      work.services.push(s);
+      notify();
+      return s;
+    },
+    removeService: function (id) {
+      work.removedServices = work.removedServices || [];
+      if (work.removedServices.indexOf(id) === -1) work.removedServices.push(id);
+      work.services = work.services.filter(function (s) { return s.id !== id; });
+      notify();
+    },
+    removedServices: function () { return work.removedServices || []; },
+
+    reviews: function () { return work.reviews; },
+    addReview: function (rev) {
+      rev.id = uid("rev");
+      rev.at = Date.now();
+      work.reviews.push(rev);
+      notify();
+      return rev;
+    },
+
+    articles: function () { return work.articles; },
+    addArticle: function (a) {
+      a.id = a.id || uid("a");
+      a.at = Date.now();
+      work.articles.push(a);
+      notify();
+      return a;
+    },
+    articleState: function (id) { return work.articleStates[id] || {}; },
+    setArticle: function (id, patch) {
+      var cur = work.articleStates[id] || {};
+      Object.keys(patch).forEach(function (k) { cur[k] = patch[k]; });
+      work.articleStates[id] = cur;
+      notify();
+    },
+
+    comments: function () { return work.comments; },
+    addComment: function (c) {
+      c.id = uid("c");
+      c.at = Date.now();
+      work.comments.push(c);
+      notify();
+      return c;
+    },
+
+    endorsements: function () { return work.endorsements; },
+    addEndorsement: function (e) {
+      e.id = uid("end");
+      e.at = Date.now();
+      work.endorsements.push(e);
+      notify();
+      return e;
+    },
+
+    /* ---------------- quote auction (unchanged behaviour) ---------------- */
+    getQuote: function () { return work.quote || null; },
+    openQuote: function (q) { work.quote = q; notify(); return q; },
+    addOffer: function (offer) {
+      if (!work.quote || work.quote.status !== "open") return false;
+      if (work.quote.offers.some(function (o) { return o.lawyer === offer.lawyer; })) return false;
+      work.quote.offers.push(offer);
+      notify();
+      return true;
+    },
+    setQuoteStatus: function (status, extra) {
+      if (!work.quote) return;
+      work.quote.status = status;
+      Object.keys(extra || {}).forEach(function (k) { work.quote[k] = extra[k]; });
+      notify();
+    },
+    clearQuote: function () { delete work.quote; notify(); },
+
+    /* ---------------- housekeeping ---------------- */
+    resetWork: function () {
+      work = { requests: [], requestStates: {}, services: [], removedServices: [],
+               reviews: [], articles: [], articleStates: {}, comments: [], endorsements: [] };
+      notify();
+    },
+    resetAll: function () {
+      accounts = []; saveAccounts();
+      Store.signOut();
+      Store.resetWork();
+    },
+
+    onChange: function (fn) { listeners.push(fn); }
+  };
+
+  global.Store = Store;
+})(window);
