@@ -1,7 +1,8 @@
 /* ==========================================================================
    Hash router — used only by the bundled single-file build.
-   The multi-page site navigates with ordinary links; here the same eight
-   views live in one document and are swapped in under #/route.
+   The multi-page site navigates with ordinary links; here every view lives in
+   one document and is swapped in under #/route, then its page module is run
+   again through Pages.run().
    ========================================================================== */
 (function (global) {
   "use strict";
@@ -9,6 +10,7 @@
   var ROUTES = global.__ROUTES__;          // injected by tools/build-artifact.mjs
   var DEFAULT = "index";
   var I18N = global.I18N, App = global.App, Pages = global.Pages;
+  var Layout = global.Layout;
   var host = document.getElementById("app");
 
   function parse() {
@@ -21,7 +23,7 @@
       var kv = part.split("=");
       if (kv[0] === "to") to = decodeURIComponent(kv[1] || "");
     });
-    return { name: ROUTES[name] ? name : DEFAULT, to: to };
+    return { name: ROUTES[name] ? name : DEFAULT, to: to, query: query };
   }
 
   function syncNav(name) {
@@ -41,13 +43,14 @@
 
     document.documentElement.setAttribute("data-page", route.page);
     document.documentElement.setAttribute("data-title-key", route.titleKey);
-    // Dashboards bring their own chrome, so the site header and footer step aside.
-    document.body.classList.toggle("is-app", route.chrome === "app");
 
+    global.__ROUTE_QUERY__ = at.query;
     App.resetRenderers();
     host.innerHTML = route.html;
     I18N.apply(document);
-    Pages.mount();
+    // The header is role-aware, so it is rebuilt with the view, not once.
+    if (Layout && Layout.refresh) Layout.refresh();
+    Pages.run(route.script);
     App.observeReveals();
     syncNav(at.name);
 

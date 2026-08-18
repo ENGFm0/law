@@ -5,33 +5,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f7f8fd">
 <title>اطلب عروض أسعار | سند</title>
-<meta name="description" content="انشر حالتك مرة واحدة وقارن عروض أسعار من محامين مرخصين، مع حفظ خصوصيتك الكاملة.">
+<meta name="description" content="انشر حالتك مرة واحدة، وقارن عروض محامين مرخصين خلال دقائق.">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/css/style.css">
-<script src="assets/js/theme.js"></script>
-<script src="assets/js/i18n.js"></script>
-<script src="assets/js/roles.js"></script>
-<script src="assets/js/store.js"></script>
+<script src="assets/js/core/theme.js"></script>
+<script src="assets/js/core/i18n.js"></script>
 </head>
 <body class="page">
 <a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
 
 <div data-slot="header"></div>
-<script src="assets/js/data.js"></script>
-<script src="assets/js/layout.js"></script>
+<script src="assets/js/core/store.js"></script>
+<script src="assets/js/data/seed.js"></script>
+<script src="assets/js/data/models.js"></script>
+<script src="assets/js/core/session.js"></script>
+<script src="assets/js/ui/icons.js"></script>
+<script src="assets/js/core/app.js"></script>
+<script src="assets/js/ui/layout.js"></script>
 
 <main id="main">
-  <div class="container" style="max-width:960px;padding-bottom:var(--s-20)">
+  <div class="container" style="max-width:960px;padding-block:var(--s-8) var(--s-20)">
     <nav class="breadcrumb">
       <a href="index.html" data-i18n="nav.home"></a>
-      <svg class="icon icon-sm icon-flip" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      <span aria-hidden="true">·</span>
       <span data-i18n="nav.quotes"></span>
     </nav>
 
-    <!-- ===== compose: only while there is no live request ===== -->
+    <!-- ===== the client's side: compose, only while nothing is live ===== -->
     <section data-quote-compose hidden>
       <header style="margin-bottom:var(--s-8);max-width:660px">
         <span class="eyebrow" data-i18n="nav.quotes"></span>
@@ -71,17 +74,11 @@
             <div class="row gap-2 wrap" data-quote-window></div>
           </div>
 
-          <button class="btn btn--accent btn--lg btn--block" type="submit">
-            <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            <span data-i18n="quotes.publish"></span>
-          </button>
+          <button class="btn btn--accent btn--lg btn--block" type="submit" data-i18n="quotes.publish"></button>
         </form>
 
         <aside class="card card--rule-navy card--pad" style="align-self:start">
-          <h2 class="subtitle row gap-2">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-            <span data-i18n="quotes.privacy"></span>
-          </h2>
+          <h2 class="subtitle" data-i18n="quotes.privacy"></h2>
           <p class="small muted" style="margin-top:var(--s-3)" data-i18n="quotes.privacyBody"></p>
           <hr class="divider">
           <div data-quote-preview></div>
@@ -89,15 +86,17 @@
       </div>
     </section>
 
-    <!-- ===== live board: countdown + incoming offers ===== -->
+    <!-- ===== the live board the client watches ===== -->
     <section data-quote-live hidden></section>
 
+    <!-- ===== the same auction seen from a lawyer's chair ===== -->
+    <section data-quote-bids hidden></section>
   </div>
 </main>
 
 <div data-slot="footer"></div>
 
-<script src="assets/js/app.js"></script>
-<script src="assets/js/pages.js"></script>
+<script src="assets/js/ui/components.js"></script>
+<script src="assets/js/pages/quotes.js"></script>
 </body>
 </html>

@@ -49,21 +49,21 @@ ok('price over the ceiling is rejected', M.checkPrice('express', 900) === 'high'
 ok('price inside the band passes', M.checkPrice('express', 99) === null);
 
 console.log('— REQUESTS —');
-ok('Fahad has open requests', M.requestsForClient('u-fahad','open').length === 4);
+ok('Fahad has open requests', M.requestsForClient('u-fahad','open').length === 7);
 ok('Fahad has past requests', M.requestsForClient('u-fahad','past').length === 2);
 St.setRequest('r-3', { status: 'completed' });
 ok('completing one moves it to past', M.requestsForClient('u-fahad','past').length === 3);
 
 console.log('— TRAINING HOURS & CERTIFICATE —');
 const p1 = M.certProgress('u-jaid');
-ok(`Al-Jaid at ${p1.hours}/${p1.needed}h (${p1.pct}%) — not yet eligible`, !p1.eligible && p1.pct === 65);
+ok(`Al-Jaid at ${p1.hours}/${p1.needed}h (${p1.pct}%) — not yet eligible`, !p1.eligible && p1.pct === 78);
 const p2 = M.certProgress('u-layan');
 ok(`Al-Harbi at ${p2.hours}h — eligible`, p2.eligible);
 ok('Al-Harbi already holds an endorsement', M.endorsementsFor('u-layan').length === 1);
 ok('Al-Jaid holds none yet', M.endorsementsFor('u-jaid').length === 0);
 St.setRequest('r-5', { assignedTo: 'u-jaid', status: 'delivered' });
 const p3 = M.certProgress('u-jaid');
-ok(`delivering an 8h task lifts him to ${p3.hours}h`, p3.hours === 34);
+ok(`delivering an 8h task lifts him to ${p3.hours}h`, p3.hours === 39);
 
 console.log('— ACCOUNTS & SESSION —');
 ok('starts as a guest', S.isGuest());

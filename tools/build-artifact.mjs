@@ -1,8 +1,11 @@
 /* ==========================================================================
    Bundles the multi-page site into one self-contained HTML file.
-   The Artifact host serves a single document, so the eight pages become
-   hash routes and every asset is inlined — no network fetch at runtime
-   except the Google Fonts stylesheet, which degrades to system fonts.
+   The Artifact host serves a single document, so every page becomes a hash
+   route and every asset is inlined — no network fetch at runtime except the
+   Google Fonts stylesheet, which degrades to system fonts.
+
+   Each page's script is registered with Pages.define(), so the router can run
+   it again whenever it swaps that view back in.
 
    Usage: node tools/build-artifact.mjs
    Output: dist/sanad.html
@@ -17,31 +20,28 @@ const read = (p) => readFileSync(join(root, p), 'utf8');
 /* Each route: which file it comes from, which element holds the view, and the
    page identity that pages.js and the nav highlight both key off. */
 const ROUTES = [
-  { name: 'index',            file: 'index.html',            page: 'home',             chrome: 'site' },
-  { name: 'lawyers',          file: 'lawyers.html',          page: 'lawyers',          chrome: 'site' },
-  { name: 'lawyer',           file: 'lawyer.html',           page: 'lawyers',          chrome: 'site' },
-  { name: 'blog',             file: 'blog.html',             page: 'blog',             chrome: 'site' },
-  { name: 'about',            file: 'about.html',            page: 'about',            chrome: 'site' },
-  { name: 'login',            file: 'login.html',            page: 'login',            chrome: 'site' },
-  { name: 'tasks',            file: 'tasks.html',            page: 'tasks',            chrome: 'site' },
-  { name: 'assistant',        file: 'assistant.html',        page: 'assistant',        chrome: 'site' },
-  { name: 'account',          file: 'account.html',          page: 'account',          chrome: 'site' },
-  { name: 'quotes',           file: 'quotes.html',           page: 'quotes',           chrome: 'site' },
-  { name: 'dashboard-lawyer', file: 'dashboard-lawyer.html', page: 'dashboard',        chrome: 'app'  },
-  { name: 'dashboard-client', file: 'dashboard-client.html', page: 'dashboard-client', chrome: 'app'  },
+  { name: 'index',     script: 'home',      page: 'home' },
+  { name: 'requests',  script: 'requests',  page: 'requests' },
+  { name: 'services',  script: 'services',  page: 'services' },
+  { name: 'lawyers',   script: 'lawyers',   page: 'lawyers' },
+  { name: 'lawyer',    script: 'lawyer',    page: 'lawyers' },
+  { name: 'intern',    script: 'intern',    page: 'lawyers' },
+  { name: 'blog',      script: 'blog',      page: 'blog' },
+  { name: 'article',   script: 'article',   page: 'blog' },
+  { name: 'editor',    script: 'editor',    page: 'blog' },
+  { name: 'quotes',    script: 'quotes',    page: 'quotes' },
+  { name: 'assistant', script: 'assistant', page: 'assistant' },
+  { name: 'account',   script: 'account',   page: 'account' },
+  { name: 'about',     script: 'about',     page: 'about' },
+  { name: 'login',     script: 'login',     page: 'login' },
+  { name: 'signup',    script: 'signup',    page: 'signup' },
 ];
 
-/** Pull the view out of a page: <main> for site pages, .app shell for dashboards. */
-function extractView(html, chrome) {
-  if (chrome === 'app') {
-    const start = html.indexOf('<div class="app">');
-    const end = html.indexOf('<script src="assets/js/data.js">');
-    if (start === -1 || end === -1) throw new Error('app shell not found');
-    return html.slice(start, end).replace(/\s*$/, '');
-  }
-  const start = html.indexOf('<main id="main">');
+/** Pull the view out of a page — everything between <main> and </main>. */
+function extractView(html, file) {
+  const start = html.indexOf('<main id="main"');
   const end = html.indexOf('</main>');
-  if (start === -1 || end === -1) throw new Error('<main> not found');
+  if (start === -1 || end === -1) throw new Error(`<main> not found in ${file}`);
   return html.slice(start, end + '</main>'.length);
 }
 
@@ -60,19 +60,29 @@ for (const file of readdirSync(join(root, 'assets/img'))) {
 
 const routeMap = {};
 for (const r of ROUTES) {
-  const html = read(r.file);
+  const html = read(r.name + '.html');
   routeMap[r.name] = {
     page: r.page,
-    chrome: r.chrome,
+    script: r.script,
     titleKey: titleKeyOf(html),
-    html: extractView(html, r.chrome),
+    html: extractView(html, r.file || r.name + '.html'),
   };
 }
 
 const css = read('assets/css/style.css');
-const js = ['theme', 'i18n', 'roles', 'store', 'data', 'layout', 'app', 'pages']
-  .map((n) => read(`assets/js/${n}.js`));
-const [theme, i18n, roles, store, data, layout, app, pages] = js;
+
+/* The same dependency order the page shells use, then every page module. */
+const core = [
+  'core/theme', 'core/i18n', 'core/store', 'data/seed', 'data/models',
+  'core/session', 'ui/icons', 'core/app', 'ui/layout', 'ui/components',
+].map((n) => read(`assets/js/${n}.js`)).join('\n');
+
+const pageScripts = ROUTES
+  .map((r) => r.script)
+  .filter((n, i, all) => all.indexOf(n) === i)
+  .map((n) => read(`assets/js/pages/${n}.js`))
+  .join('\n');
+
 const router = read('tools/router.js');
 
 /* charset first: the encoding pre-scan reads the opening bytes of the served
@@ -91,11 +101,6 @@ ${css}
 /* --- bundle-only: the router swaps views inside #app --- */
 #app { display: flex; flex-direction: column; flex: 1; }
 #app > main { flex: 1; }
-/* Dashboard routes carry their own chrome. */
-body.is-app .site-header,
-body.is-app .site-footer,
-body.is-app .drawer { display: none !important; }
-body.is-app #app { flex: 1; }
 </style>
 
 <a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
@@ -110,14 +115,8 @@ body.is-app #app { flex: 1; }
 window.__ASSETS__ = ${JSON.stringify(assets)};
 window.__ROUTES__ = ${JSON.stringify(routeMap)};
 </script>
-<script>${theme}</script>
-<script>${i18n}</script>
-<script>${roles}</script>
-<script>${store}</script>
-<script>${data}</script>
-<script>${layout}</script>
-<script>${app}</script>
-<script>${pages}</script>
+<script>${core}</script>
+<script>${pageScripts}</script>
 <script>${router}</script>
 `;
 

@@ -1,11 +1,18 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl" data-page="lawyers" data-title-key="dir.title">
+# -*- coding: utf-8 -*-
+"""Emit a page shell with the one correct module order.
+
+Dependency order matters and is easy to get wrong by hand:
+  store -> seed -> models -> session -> icons -> app -> layout
+Layout mounts the header the moment it runs, so it sits right after the slot.
+"""
+HEAD = '''<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-page="{page}" data-title-key="{title_key}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f7f8fd">
-<title>دليل المحامين | سند</title>
-<meta name="description" content="تصفح المحامين المرخصين والمتدربين القانونيين وترتيبهم على منصة سند.">
+<title>{title}</title>
+<meta name="description" content="{desc}">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,12 +32,18 @@
 <script src="assets/js/ui/icons.js"></script>
 <script src="assets/js/core/app.js"></script>
 <script src="assets/js/ui/layout.js"></script>
+'''
 
-<main id="main" data-people></main>
-
+FOOT = '''
 <div data-slot="footer"></div>
 
 <script src="assets/js/ui/components.js"></script>
-<script src="assets/js/pages/lawyers.js"></script>
+<script src="assets/js/pages/{script}.js"></script>
 </body>
 </html>
+'''
+
+def shell(page, title_key, title, desc, body, script=None):
+    return (HEAD.format(page=page, title_key=title_key, title=title, desc=desc)
+            + body
+            + FOOT.format(script=script or page))

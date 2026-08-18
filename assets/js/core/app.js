@@ -1,12 +1,13 @@
 /* ==========================================================================
-   App core — global behaviour + render helpers shared by every page.
+   App core — global behaviour shared by every page: theme and language
+   controls, toasts, scroll reveals, and the render registry that lets a
+   language or session change redraw the view in place.
    ========================================================================== */
 (function (global) {
   "use strict";
 
   var I18N = global.I18N;
   var Icons = global.Icons;
-  var DATA = global.DATA;
 
   /* ---------- tiny DOM helpers ---------- */
   function $(sel, root) { return (root || document).querySelector(sel); }
@@ -88,116 +89,6 @@
       '<span class="num">' + rating.toFixed(1) + "</span></span>";
   }
 
-  function specialtyTags(lawyer, limit) {
-    return lawyer.specialties.slice(0, limit || 3).map(function (id) {
-      var s = DATA.labelOf(DATA.specialties, id);
-      return '<span class="tag">' + esc(tx(s)) + "</span>";
-    }).join("");
-  }
-
-  function priceCell(iconName, labelKey, value, sub, off) {
-    return '<div' + (off ? ' class="off"' : "") + ">" +
-      Icons.svg(iconName, "icon-sm") +
-      '<span class="tiny muted">' + esc(I18N.t(labelKey)) + "</span>" +
-      "<strong>" + value + "</strong>" +
-      (sub ? '<span class="tiny muted">' + esc(sub) + "</span>" : "") +
-      "</div>";
-  }
-
-  /** Compact card used on the home page grid. */
-  function lawyerCardCompact(l) {
-    var city = DATA.labelOf(DATA.cities, l.city);
-    return '<article class="card card--hover lawyer-card card--rule-navy">' +
-      '<div class="lawyer-card__body center" style="align-items:center">' +
-        '<img class="avatar avatar--lg" src="' + avatarOf(l.name, l.id) + '" alt="" loading="lazy" width="88" height="88">' +
-        '<h3 class="subtitle row gap-2" style="justify-content:center">' + esc(tx(l.name)) +
-          '<span class="verified" title="verified">' + Icons.svg("verified", "icon-sm") + "</span></h3>" +
-        '<span class="tag">' + esc(I18N.t("lawyer.license")) + ": <span class=\"num\">" + esc(l.license) + "</span></span>" +
-        '<div class="row gap-2 wrap" style="justify-content:center">' + specialtyTags(l, 2) + "</div>" +
-        '<div class="meta-row" style="justify-content:center">' +
-          stars(l.rating) +
-          '<span class="muted">' + esc(I18N.t("lawyer.reviews", { n: I18N.num(l.reviews) })) + "</span>" +
-          '<span class="dot"></span>' +
-          '<span class="row gap-1">' + Icons.svg("location", "icon-sm") + esc(tx(city)) + "</span>" +
-        "</div>" +
-      "</div>" +
-      '<div class="lawyer-card__foot">' +
-        '<a class="btn btn--primary btn--block" href="lawyer.html?id=' + encodeURIComponent(l.id) + '">' +
-          esc(I18N.t("dir.book")) + "</a>" +
-      "</div></article>";
-  }
-
-  /** Wide card used in the directory listing. */
-  function lawyerCardWide(l) {
-    var city = DATA.labelOf(DATA.cities, l.city);
-    var has = function (t) { return l.consults.indexOf(t) !== -1; };
-
-    var cells =
-      priceCell("phone", "lawyer.call",
-        has("call") ? '<span class="num">' + I18N.num(l.price) + "</span>" : esc(I18N.t("lawyer.unavailable")),
-        has("call") ? I18N.t("lawyer.perHalfHour") : "", !has("call")) +
-      priceCell("chat", "lawyer.chat",
-        has("chat") ? '<span class="num">' + I18N.num(Math.round(l.price * 0.65)) + "</span>" : esc(I18N.t("lawyer.unavailable")),
-        has("chat") ? I18N.t("lawyer.perConsult") : "", !has("chat")) +
-      (has("contract")
-        ? priceCell("file-text", "lawyer.contract", esc(I18N.t("lawyer.startsAt", { n: I18N.num(l.price * 3) })), "")
-        : priceCell("gavel", "lawyer.litigation", esc(I18N.t("lawyer.byCase")), ""));
-
-    return '<article class="card card--hover lawyer-card card--rule-navy">' +
-      '<div class="lawyer-card__body">' +
-        '<div class="row gap-4" style="align-items:flex-start">' +
-          '<img class="avatar avatar--md" src="' + avatarOf(l.name, l.id) + '" alt="" loading="lazy" width="64" height="64">' +
-          '<div class="grow">' +
-            '<div class="row between gap-3">' +
-              '<h3 class="subtitle" style="min-width:0">' + esc(tx(l.name)) + "</h3>" +
-              '<span class="status status--warn">' + Icons.svg("star", "icon-sm") +
-                '<span class="num">' + l.rating.toFixed(1) + "</span></span>" +
-            "</div>" +
-            '<p class="small muted">' + esc(tx(l.title)) + "</p>" +
-            '<div class="row gap-2 wrap" style="margin-top:var(--s-2)">' + specialtyTags(l, 2) +
-              '<span class="tag">' + esc(I18N.t("lawyer.years", { n: I18N.num(l.years) })) + "</span>" +
-              '<span class="tag">' + esc(tx(city)) + "</span>" +
-            "</div>" +
-          "</div>" +
-        "</div>" +
-        '<p class="small muted">' + esc(tx(l.short)) + "</p>" +
-      "</div>" +
-      '<div class="price-grid">' + cells + "</div>" +
-      '<div class="lawyer-card__foot row gap-3">' +
-        '<a class="btn btn--primary grow" href="lawyer.html?id=' + encodeURIComponent(l.id) + '">' +
-          Icons.svg("calendar", "icon-sm") + esc(I18N.t("dir.book")) + "</a>" +
-        '<a class="btn btn--outline grow" href="lawyer.html?id=' + encodeURIComponent(l.id) + '#profile">' +
-          Icons.svg("user", "icon-sm") + esc(I18N.t("dir.viewProfile")) + "</a>" +
-      "</div></article>";
-  }
-
-  function articleCard(a) {
-    var cat = DATA.labelOf(DATA.specialties, a.cat);
-    var author = DATA.lawyerById(a.author);
-    var authorName = author ? tx(author.name) : "";
-    return '<article class="card card--hover article-card">' +
-      '<a class="article-card__media" href="blog.html#' + esc(a.id) + '">' +
-        '<img src="' + esc(asset(a.cover)) + '" alt="" loading="lazy" width="800" height="450">' +
-        '<span class="article-card__cat">' + esc(tx(cat)) + "</span>" +
-      "</a>" +
-      '<div class="article-card__body">' +
-        '<div class="meta-row">' +
-          "<span>" + esc(tx(a.date)) + "</span><span class=\"dot\"></span>" +
-          '<span class="row gap-1">' + Icons.svg("clock", "icon-sm") +
-            esc(I18N.t("blog.readTime", { n: I18N.num(a.read) })) + "</span>" +
-        "</div>" +
-        '<h3 class="subtitle"><a href="blog.html#' + esc(a.id) + '">' + esc(tx(a.title)) + "</a></h3>" +
-        '<p class="small muted">' + esc(tx(a.excerpt)) + "</p>" +
-      "</div>" +
-      '<div class="article-card__foot">' +
-        '<span class="row gap-2 small muted">' +
-          '<img class="avatar avatar--sm" src="' + avatarOf(author ? author.name : authorName, a.author) + '" alt="" width="40" height="40">' +
-          esc(authorName) + "</span>" +
-        '<a class="row gap-1 small" style="color:var(--accent);font-weight:700" href="blog.html#' + esc(a.id) + '">' +
-          esc(I18N.t("blog.readMore")) + Icons.svg("arrow", "icon-sm icon-flip") + "</a>" +
-      "</div></article>";
-  }
-
   /* ---------- scroll reveal ---------- */
   function observeReveals(root) {
     var nodes = $$(".reveal:not(.is-in)", root || document);
@@ -272,13 +163,16 @@
     rerender();
   });
 
-  // A role change rewrites the navigation and anything drawn per-role.
-  document.addEventListener("rolechange", function () {
+  // Signing in, signing out or switching role rewrites the navigation and
+  // everything drawn for that person.
+  document.addEventListener("sessionchange", function () {
     if (global.Layout && global.Layout.refresh) global.Layout.refresh();
     syncLangButtons();
     syncThemeButtons();
     rerender();
   });
+
+  document.addEventListener("storechange", function () { rerender(); });
 
   document.addEventListener("themechange", syncThemeButtons);
 
@@ -294,13 +188,41 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();
 
+  /* ---------- addressing ----------
+     The multi-page site keeps parameters in the query string; the bundled
+     build keeps them in the hash. Pages ask these two rather than reading
+     location themselves, so the same code serves both. */
+  function param(name) {
+    var src = global.__ROUTE_QUERY__ != null
+      ? global.__ROUTE_QUERY__
+      : global.location.search.replace(/^\?/, "");
+    return new URLSearchParams(src).get(name);
+  }
+
+  function go(href) {
+    if (!global.__SPA__) { global.location.href = href; return; }
+    var m = String(href).match(/^([\w-]+)\.html(?:\?(.*))?$/);
+    global.location.hash = m ? "#/" + m[1] + (m[2] ? "?" + m[2] : "") : href;
+  }
+
+  /* ---------- page modules ----------
+     A page's script is a function, not a side effect, so the bundled
+     single-file build can re-run it each time its router swaps that view in.
+     The multi-page site has one view per document and runs it straight away. */
+  var pages = {};
+  global.Pages = {
+    define: function (name, fn) {
+      pages[name] = fn;
+      if (!global.__SPA__) fn(global);
+    },
+    run: function (name) { if (pages[name]) pages[name](global); },
+    has: function (name) { return !!pages[name]; }
+  };
+
   global.App = {
     $: $, $$: $$, esc: esc, tx: tx,
     avatar: avatar, avatarOf: avatarOf, toast: toast, stars: stars,
-    lawyerCardCompact: lawyerCardCompact,
-    lawyerCardWide: lawyerCardWide,
-    articleCard: articleCard,
-    specialtyTags: specialtyTags,
+    param: param, go: go,
     observeReveals: observeReveals,
     onRender: onRender,
     resetRenderers: resetRenderers,

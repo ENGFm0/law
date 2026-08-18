@@ -4,132 +4,33 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f7f8fd">
-<title>سند | سندك القانوني الموثوق</title>
-<meta name="description" content="منصة سند للتقنية القانونية — استشارات قانونية سريعة وموثوقة من محامين مرخصين، بأسعار واضحة.">
+<title>سند | منصة قانونية سعودية</title>
+<meta name="description" content="منصة سعودية تجمع محامين مرخصين لإنجاز استشاراتك وعقودك بأسعار واضحة.">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/css/style.css">
-<script src="assets/js/theme.js"></script>
-<script src="assets/js/i18n.js"></script>
-<script src="assets/js/roles.js"></script>
-<script src="assets/js/store.js"></script>
+<script src="assets/js/core/theme.js"></script>
+<script src="assets/js/core/i18n.js"></script>
 </head>
 <body class="page">
 <a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
 
 <div data-slot="header"></div>
-<script src="assets/js/data.js"></script>
-<script src="assets/js/layout.js"></script>
+<script src="assets/js/core/store.js"></script>
+<script src="assets/js/data/seed.js"></script>
+<script src="assets/js/data/models.js"></script>
+<script src="assets/js/core/session.js"></script>
+<script src="assets/js/ui/icons.js"></script>
+<script src="assets/js/core/app.js"></script>
+<script src="assets/js/ui/layout.js"></script>
 
-<main id="main">
-
-  <!-- Hero -->
-  <section class="hero">
-    <div class="container hero__inner">
-      <span class="eyebrow" data-i18n="home.eyebrow"></span>
-      <h1 class="display" style="margin-top:var(--s-4)" data-i18n="home.heroTitle"></h1>
-      <p class="lead" data-i18n="home.heroLead"></p>
-
-      <form class="searchbar" data-search-form>
-        <div class="input-group">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input class="input" type="search" name="q" data-i18n-attr="placeholder:home.searchPlaceholder, aria-label:home.searchPlaceholder">
-        </div>
-        <select class="select" name="specialty" data-fill="specialties" data-i18n-attr="aria-label:home.specialty"></select>
-        <select class="select" name="city" data-fill="cities" data-i18n-attr="aria-label:home.city"></select>
-        <button class="btn btn--primary" type="submit" data-i18n="home.search"></button>
-      </form>
-
-      <div style="margin-top:var(--s-5)">
-        <a class="btn btn--accent btn--lg" href="lawyers.html" data-i18n="home.bookNow"></a>
-      </div>
-
-      <div class="trustbar" data-trustbar></div>
-    </div>
-  </section>
-
-  <!-- AI-drafted, lawyer-approved -->
-  <section class="section">
-    <div class="container">
-      <div class="offer">
-        <div class="offer__copy">
-          <span class="eyebrow">
-            <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5 13.8 11.3 12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/></svg>
-            <span data-i18n="nav.assistant"></span>
-          </span>
-          <h2 class="headline" data-i18n="home.aiTitle"></h2>
-          <p class="lead" data-i18n="home.aiLead"></p>
-          <p class="row gap-2 small" style="color:var(--success);font-weight:700">
-            <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
-            <span data-i18n="ai.lawyerApproved"></span>
-          </p>
-          <a class="btn btn--accent btn--lg" href="assistant.html" data-i18n="home.aiCta"></a>
-        </div>
-        <ul class="offer__list" data-doc-teasers></ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- Post once, compare quotes -->
-  <section class="section--tight">
-    <div class="container">
-      <div class="card card--rule-navy card--pad row between wrap gap-6" style="align-items:center">
-        <div style="max-width:520px">
-          <h2 class="title" data-i18n="home.quotesTitle"></h2>
-          <p class="lead small" style="margin-top:var(--s-2)" data-i18n="home.quotesLead"></p>
-          <p class="row gap-2 small" style="margin-top:var(--s-3);color:var(--success);font-weight:700">
-            <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10" width="15" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-            <span data-i18n="quotes.privacy"></span>
-          </p>
-        </div>
-        <a class="btn btn--primary btn--lg" href="quotes.html">
-          <span data-i18n="home.quotesCta"></span>
-          <svg class="icon icon-sm icon-flip" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Three workspaces -->
-  <section class="section section--band">
-    <div class="container">
-      <div class="section-head center">
-        <h2 class="headline" data-i18n="home.rolesTitle"></h2>
-        <p class="lead" data-i18n="home.rolesLead"></p>
-      </div>
-      <div class="grid grid-3" data-role-cards></div>
-    </div>
-  </section>
-
-  <!-- Stats -->
-  <section class="section--tight section--band">
-    <div class="container">
-      <h2 class="headline center" style="margin-bottom:var(--s-10)" data-i18n="home.statsTitle"></h2>
-      <div class="grid grid-4 center" data-stats></div>
-    </div>
-  </section>
-
-  <!-- CTA -->
-  <section class="section">
-    <div class="container">
-      <div class="cta-band reveal">
-        <h2 class="headline" data-i18n="home.ctaTitle"></h2>
-        <p class="lead" style="margin-top:var(--s-3)" data-i18n="home.ctaLead"></p>
-        <div class="row gap-3 wrap" style="justify-content:center;margin-top:var(--s-8)">
-          <a class="btn btn--accent btn--lg" href="lawyers.html" data-i18n="home.ctaPrimary"></a>
-          <a class="btn btn--outline btn--lg" href="about.html" data-i18n="home.exploreMore"></a>
-        </div>
-      </div>
-    </div>
-  </section>
-
-</main>
+<main id="main" data-home></main>
 
 <div data-slot="footer"></div>
 
-<script src="assets/js/app.js"></script>
-<script src="assets/js/pages.js"></script>
+<script src="assets/js/ui/components.js"></script>
+<script src="assets/js/pages/home.js"></script>
 </body>
 </html>

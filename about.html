@@ -4,148 +4,33 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f7f8fd">
-<title>عن سند | منصة التقنية القانونية</title>
-<meta name="description" content="سند منصة سعودية للتقنية القانونية تجعل الوصول إلى محامٍ مرخص بسيطاً وشفافاً وآمناً.">
+<title>عن سند | سند</title>
+<meta name="description" content="رسالة سند ورؤيتها وقيمها وفريقها والأسئلة الشائعة.">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/css/style.css">
-<script src="assets/js/theme.js"></script>
-<script src="assets/js/i18n.js"></script>
-<script src="assets/js/roles.js"></script>
-<script src="assets/js/store.js"></script>
+<script src="assets/js/core/theme.js"></script>
+<script src="assets/js/core/i18n.js"></script>
 </head>
 <body class="page">
 <a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
 
 <div data-slot="header"></div>
-<script src="assets/js/data.js"></script>
-<script src="assets/js/layout.js"></script>
+<script src="assets/js/core/store.js"></script>
+<script src="assets/js/data/seed.js"></script>
+<script src="assets/js/data/models.js"></script>
+<script src="assets/js/core/session.js"></script>
+<script src="assets/js/ui/icons.js"></script>
+<script src="assets/js/core/app.js"></script>
+<script src="assets/js/ui/layout.js"></script>
 
-<main id="main">
-
-  <section class="hero">
-    <div class="container hero__inner">
-      <span class="eyebrow" data-i18n="home.eyebrow"></span>
-      <h1 class="display" style="margin-top:var(--s-4)" data-i18n="about.heading"></h1>
-      <p class="lead" data-i18n="about.lead"></p>
-    </div>
-  </section>
-
-  <section class="section--tight">
-    <div class="container">
-      <div class="grid grid-2">
-        <article class="card card--rule-navy card--pad reveal">
-          <h2 class="title" data-i18n="about.missionTitle"></h2>
-          <p class="lead" style="margin-top:var(--s-3)" data-i18n="about.missionBody"></p>
-        </article>
-        <article class="card card--rule-gold card--pad reveal">
-          <h2 class="title" data-i18n="about.visionTitle"></h2>
-          <p class="lead" style="margin-top:var(--s-3)" data-i18n="about.visionBody"></p>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <div class="section-head center">
-        <h2 class="headline" data-i18n="about.valuesTitle"></h2>
-        <p class="lead" data-i18n="about.valuesLead"></p>
-      </div>
-      <div class="grid grid-4" data-values></div>
-    </div>
-  </section>
-
-  <section class="section--tight section--band">
-    <div class="container">
-      <h2 class="headline center" style="margin-bottom:var(--s-10)" data-i18n="about.numbersTitle"></h2>
-      <div class="grid grid-4 center" data-stats></div>
-    </div>
-  </section>
-
-  <!-- Why Sanad -->
-  <section class="section">
-    <div class="container">
-      <div class="section-head center">
-        <h2 class="headline" data-i18n="home.whyTitle"></h2>
-        <p class="lead" data-i18n="home.whyLead"></p>
-      </div>
-      <div class="grid grid-4" data-features></div>
-    </div>
-  </section>
-
-  <!-- How it works -->
-  <section class="section section--band">
-    <div class="container">
-      <div class="section-head center">
-        <h2 class="headline" data-i18n="home.stepsTitle"></h2>
-        <p class="lead" data-i18n="home.stepsLead"></p>
-      </div>
-      <div class="grid grid-4" data-steps></div>
-    </div>
-  </section>
-
-  <!-- Testimonials -->
-  <section class="section">
-    <div class="container">
-      <div class="section-head center">
-        <h2 class="headline" data-i18n="home.testimonialsTitle"></h2>
-        <p class="lead" data-i18n="home.testimonialsLead"></p>
-      </div>
-      <div class="grid grid-3" data-testimonials></div>
-    </div>
-  </section>
-
-  <section class="section" id="team">
-    <div class="container">
-      <div class="section-head center">
-        <h2 class="headline" data-i18n="about.teamTitle"></h2>
-        <p class="lead" data-i18n="about.teamLead"></p>
-      </div>
-      <div class="grid grid-4" data-team></div>
-    </div>
-  </section>
-
-  <section class="section section--band" id="faq">
-    <div class="container" style="max-width:860px">
-      <h2 class="headline center" style="margin-bottom:var(--s-10)" data-i18n="about.faqTitle"></h2>
-      <div class="stack gap-3" data-faq></div>
-    </div>
-  </section>
-
-  <section class="section" id="contact">
-    <div class="container" style="max-width:720px">
-      <div class="section-head center">
-        <h2 class="headline" data-i18n="about.contactTitle"></h2>
-        <p class="lead" data-i18n="about.contactLead"></p>
-      </div>
-      <form class="card card--pad stack gap-4" data-contact>
-        <div class="grid grid-2" style="gap:var(--s-4)">
-          <div class="field">
-            <label class="label" for="c-name" data-i18n="about.name"></label>
-            <input class="input" id="c-name" name="name" required>
-          </div>
-          <div class="field">
-            <label class="label" for="c-mail" data-i18n="about.email"></label>
-            <input class="input" id="c-mail" name="email" type="email" required>
-          </div>
-        </div>
-        <div class="field">
-          <label class="label" for="c-msg" data-i18n="about.message"></label>
-          <textarea class="textarea" id="c-msg" name="message" required></textarea>
-        </div>
-        <button class="btn btn--primary btn--lg" type="submit" data-i18n="about.send"></button>
-      </form>
-    </div>
-  </section>
-
-</main>
+<main id="main" data-about></main>
 
 <div data-slot="footer"></div>
 
-<script src="assets/js/app.js"></script>
-<script src="assets/js/pages.js"></script>
+<script src="assets/js/ui/components.js"></script>
+<script src="assets/js/pages/about.js"></script>
 </body>
 </html>

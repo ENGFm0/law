@@ -5,98 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f7f8fd">
 <title>المدونة القانونية | سند</title>
-<meta name="description" content="رؤى قانونية وتحديثات تنظيمية يكتبها محامون ممارسون في المملكة.">
+<meta name="description" content="مقالات وتحليلات قانونية يكتبها محامون ومتدربون على منصة سند.">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/css/style.css">
-<script src="assets/js/theme.js"></script>
-<script src="assets/js/i18n.js"></script>
-<script src="assets/js/roles.js"></script>
-<script src="assets/js/store.js"></script>
+<script src="assets/js/core/theme.js"></script>
+<script src="assets/js/core/i18n.js"></script>
 </head>
 <body class="page">
 <a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
 
 <div data-slot="header"></div>
-<script src="assets/js/data.js"></script>
-<script src="assets/js/layout.js"></script>
+<script src="assets/js/core/store.js"></script>
+<script src="assets/js/data/seed.js"></script>
+<script src="assets/js/data/models.js"></script>
+<script src="assets/js/core/session.js"></script>
+<script src="assets/js/ui/icons.js"></script>
+<script src="assets/js/core/app.js"></script>
+<script src="assets/js/ui/layout.js"></script>
 
-<main id="main">
-
-  <section class="section--tight">
-    <div class="container">
-      <div class="card card--pad center" style="padding-block:var(--s-16)">
-        <h1 class="headline" data-i18n="blog.heading"></h1>
-        <p class="lead" style="max-width:680px;margin:var(--s-4) auto 0" data-i18n="blog.lead"></p>
-
-        <form class="row gap-3" style="max-width:620px;margin:var(--s-8) auto 0" data-blog-search>
-          <div class="input-group grow">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-            <input class="input" type="search" data-i18n-attr="placeholder:blog.searchPlaceholder, aria-label:blog.searchPlaceholder">
-          </div>
-          <button class="btn btn--primary" type="submit" data-i18n="blog.search"></button>
-        </form>
-
-        <div class="row gap-2 wrap" style="justify-content:center;margin-top:var(--s-6)" data-blog-cats></div>
-      </div>
-    </div>
-  </section>
-
-  <section class="section--tight" style="padding-bottom:var(--s-20)">
-    <div class="container">
-      <div class="blog-layout">
-
-        <!-- Sidebar -->
-        <aside class="stack gap-6">
-          <div class="card card--pad">
-            <h2 class="subtitle" data-i18n="blog.askExpert"></h2>
-            <hr class="divider">
-            <div data-blog-expert></div>
-            <a class="btn btn--accent btn--block" style="margin-top:var(--s-4)" href="lawyers.html" data-i18n="blog.askExpertCta"></a>
-          </div>
-
-          <div class="card card--rule-navy card--pad" style="background:var(--surface-2)">
-            <h2 class="subtitle row gap-2">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 4.5 5 5M17 2l5 5M12 7l5 5M3.5 20.5h8"/><path d="m5.5 15.5 6-6 3 3-6 6z"/></svg>
-              <span data-i18n="blog.refs"></span>
-            </h2>
-            <hr class="divider">
-            <ul class="stack gap-4" data-blog-refs></ul>
-          </div>
-
-          <form class="newsletter" data-newsletter>
-            <h2 class="subtitle" data-i18n="blog.newsletter"></h2>
-            <p class="small" style="opacity:.75;margin-top:var(--s-2)" data-i18n="blog.newsletterLead"></p>
-            <div class="stack gap-3" style="margin-top:var(--s-4)">
-              <input class="input" type="email" required data-i18n-attr="placeholder:blog.email, aria-label:blog.email">
-              <button class="btn btn--accent btn--block" type="submit" data-i18n="blog.subscribe"></button>
-            </div>
-          </form>
-        </aside>
-
-        <!-- Articles -->
-        <section>
-          <div class="row between wrap gap-4" style="margin-bottom:var(--s-6)">
-            <h2 class="title" data-i18n="blog.latest"></h2>
-            <span class="small muted" data-blog-count></span>
-          </div>
-          <div class="grid grid-2" data-blog-list></div>
-          <div class="center" style="margin-top:var(--s-10)">
-            <button class="btn btn--outline" type="button" data-blog-more data-i18n="blog.loadMore"></button>
-          </div>
-        </section>
-
-      </div>
-    </div>
-  </section>
-
-</main>
+<main id="main" data-blog></main>
 
 <div data-slot="footer"></div>
 
-<script src="assets/js/app.js"></script>
-<script src="assets/js/pages.js"></script>
+<script src="assets/js/ui/components.js"></script>
+<script src="assets/js/pages/blog.js"></script>
 </body>
 </html>

@@ -289,7 +289,41 @@
       status: "completed", ai: false, hours: 9,
       title: { ar: "مراجعة عقد إيجار تجاري", en: "Commercial lease review" },
       brief: { ar: "محل تجاري في الدمام، مدة خمس سنوات.", en: "Retail unit in Dammam, five-year term." },
-      ago: { ar: "الشهر الماضي", en: "Last month" } }
+      ago: { ar: "الشهر الماضي", en: "Last month" } },
+
+    /* work already routed to a trainee, so their side is not empty on arrival */
+    { id: "r-11", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "drafting", price: 420,
+      status: "with_intern", assignedTo: "u-jaid", ai: false, hours: 6,
+      title: { ar: "مذكرة بحث عن أحكام الوكالة", en: "Research memo on agency rulings" },
+      brief: { ar: "جمع السوابق القضائية في نزاع وكالة تجارية.", en: "Collect the precedents in a commercial agency dispute." },
+      ago: { ar: "منذ يومين", en: "Two days ago" } },
+    { id: "r-12", clientId: "u-fahad", lawyerId: "u-sara", typeId: "written", price: 90,
+      status: "with_intern", assignedTo: "u-layan", ai: false, hours: 4,
+      title: { ar: "تلخيص لائحة اعتراضية", en: "Summary of an appeal brief" },
+      brief: { ar: "تلخيص اللائحة في صفحتين قبل الجلسة.", en: "Two-page summary of the brief before the hearing." },
+      ago: { ar: "أمس", en: "Yesterday" } },
+    { id: "r-13", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "drafting", price: 380,
+      status: "delivered", assignedTo: "u-jaid", ai: false, hours: 5,
+      title: { ar: "صياغة إنذار عدلي", en: "Drafting a notarised notice" },
+      brief: { ar: "إنذار بإخلاء عقار مؤجر.", en: "Notice to vacate a leased property." },
+      ago: { ar: "الأسبوع الماضي", en: "Last week" } },
+
+    /* other lawyers carry live work too, so every signed-in lawyer has a desk */
+    { id: "r-14", clientId: "u-fahad", lawyerId: "u-sara", typeId: "call", price: 120,
+      status: "scheduled", ai: false, hours: 1,
+      title: { ar: "استشارة هاتفية — تركة", en: "Phone consultation — estate" },
+      brief: { ar: "قسمة تركة بين خمسة ورثة.", en: "Dividing an estate among five heirs." },
+      ago: { ar: "غداً 09:30", en: "Tomorrow 09:30" } },
+    { id: "r-15", clientId: "u-munira", lawyerId: "u-sara", typeId: "express", price: 79,
+      status: "drafted", ai: true, doc: "demand", hours: 3,
+      title: { ar: "خطاب مطالبة بأجرة متأخرة", en: "Letter claiming unpaid rent" },
+      brief: { ar: "ثلاثة أشهر متأخرة عن مستأجر.", en: "Three months overdue from a tenant." },
+      ago: { ar: "منذ 40 دقيقة", en: "40 minutes ago" } },
+    { id: "r-16", clientId: "u-fahad", lawyerId: "u-mohammed", typeId: "video", price: 400,
+      status: "new", ai: false, hours: 2,
+      title: { ar: "استشارة فيديو — عقار", en: "Video consultation — property" },
+      brief: { ar: "شراء أرض بمخطط غير معتمد.", en: "Buying land on an unapproved plan." },
+      ago: { ar: "منذ ساعتين", en: "Two hours ago" } }
   ];
 
   /* ---------- writing ---------- */
@@ -390,6 +424,192 @@
               en: "Completed over forty supervised legal tasks at a standard beyond her stage." } }
   ];
 
+  /* ------------------------------------------------------------------------
+     Content that is authored, not relational: the assistant's knowledge base
+     and draft templates, and the copy the About page renders.
+     ------------------------------------------------------------------------ */
+
+  var DRAFT_BODIES = {
+    employment: {
+      ar: "عقد عمل\n\nأولاً: طرفا العقد\nالطرف الأول (صاحب العمل): ...\nالطرف الثاني (العامل): ...\n\nثانياً: طبيعة العمل ومدته\nيلتزم الطرف الثاني بالعمل لدى الطرف الأول بوظيفة (أخصائي تسويق)، ومدة العقد سنة ميلادية تبدأ من تاريخ المباشرة، وتتجدد تلقائياً ما لم يخطر أحد الطرفين الآخر بخلاف ذلك قبل ثلاثين يوماً من انتهائها.\n\nثالثاً: فترة التجربة\nيخضع الطرف الثاني لفترة تجربة مدتها تسعون يوماً وفق المادة (53) من نظام العمل، لا تدخل ضمنها إجازات العيدين والإجازة المرضية.\n\nرابعاً: الأجر\nيستحق الطرف الثاني أجراً شهرياً قدره (9,000) تسعة آلاف ريال، يُصرف في نهاية كل شهر ميلادي عبر نظام حماية الأجور.\n\nخامساً: ساعات العمل\nثماني ساعات يومياً بما لا يتجاوز ثمانياً وأربعين ساعة أسبوعياً، وفق المادة (98) من نظام العمل.\n\nسادساً: إنهاء العقد\nيخضع إنهاء هذا العقد لأحكام المادتين (75) و(77) من نظام العمل.",
+      en: "EMPLOYMENT CONTRACT\n\n1. Parties\nFirst party (employer): ...\nSecond party (employee): ...\n\n2. Role and term\nThe employee shall serve as Marketing Specialist for a term of one calendar year from the start date, renewing automatically unless either party gives thirty days' notice before expiry.\n\n3. Probation\nA probationary period of ninety days applies under Article 53 of the Labour Law, excluding Eid holidays and sick leave.\n\n4. Pay\nA monthly salary of SAR 9,000, paid at the end of each calendar month through the Wage Protection System.\n\n5. Working hours\nEight hours daily, not exceeding forty-eight hours weekly, under Article 98 of the Labour Law.\n\n6. Termination\nTermination is governed by Articles 75 and 77 of the Labour Law."
+    },
+    demand: {
+      ar: "إنذار بالمطالبة بمبلغ\n\nالمرسل إليه: ...\nالتاريخ: ...\n\nبالإشارة إلى التعامل القائم بيننا بموجب (الفاتورة/العقد) رقم (...) بتاريخ (...)، فإن بذمتكم مبلغاً وقدره (45,000) خمسة وأربعون ألف ريال، مستحق الأداء منذ ثلاثة أشهر ولم يُسدَّد حتى تاريخه رغم المطالبات الودية.\n\nوعليه، فإننا ننذركم بسداد المبلغ كاملاً خلال (خمسة عشر) يوماً من تاريخ تسلمكم هذا الإنذار.\n\nوفي حال عدم السداد خلال المهلة المذكورة، فسنضطر آسفين إلى اتخاذ الإجراءات النظامية، بما في ذلك رفع الدعوى والمطالبة بالمبلغ والتعويض عن الضرر والمصاريف.\n\nهذا إنذار، وما بعده إجراء.",
+      en: "FORMAL DEMAND FOR PAYMENT\n\nTo: ...\nDate: ...\n\nFurther to our dealings under invoice/contract no. (...) dated (...), an amount of SAR 45,000 remains due and has been outstanding for three months despite amicable requests for payment.\n\nWe therefore formally demand payment in full within fifteen (15) days of your receipt of this notice.\n\nShould payment not be made within that period, we will regrettably proceed with legal action, including filing a claim for the amount, damages and costs.\n\nThis is a formal notice; action will follow."
+    },
+    nda: {
+      ar: "اتفاقية عدم إفشاء\n\nالبند الأول: تعريف المعلومات السرية\nكل معلومة تقنية أو تجارية أو مالية يفصح عنها أحد الطرفين للآخر، كتابةً أو شفاهةً، بما في ذلك الشيفرة المصدرية وقوائم العملاء والخطط التسويقية.\n\nالبند الثاني: الالتزام\nيلتزم الطرف المتلقي بعدم إفشاء المعلومات السرية أو استخدامها لغير الغرض المتفق عليه، وباتخاذ العناية ذاتها التي يتخذها لحماية معلوماته.\n\nالبند الثالث: المدة\nيسري هذا الالتزام طوال مدة التعاقد ولمدة سنتين من تاريخ انتهائه.\n\nالبند الرابع: الاستثناءات\nلا يشمل الالتزام المعلومات المتاحة للعموم دون إخلال، أو التي يوجب نظام أو أمر قضائي الإفصاح عنها.",
+      en: "NON-DISCLOSURE AGREEMENT\n\n1. Definition of confidential information\nAny technical, commercial or financial information disclosed by either party to the other, in writing or orally, including source code, client lists and marketing plans.\n\n2. Undertaking\nThe receiving party shall not disclose the confidential information or use it for any purpose other than the agreed one, and shall apply the same care it applies to its own information.\n\n3. Term\nThis undertaking runs for the term of the engagement and for two years after it ends.\n\n4. Carve-outs\nThe undertaking does not cover information already public without breach, or which a law or court order requires be disclosed."
+    }
+  };
+
+  var REGULATIONS = [
+    { id: "labour",   on: true,  ar: "نظام العمل ولائحته التنفيذية", en: "Labour Law & implementing regulations" },
+    { id: "civil",    on: true,  ar: "نظام المعاملات المدنية",        en: "Civil Transactions Law" },
+    { id: "companies",on: true,  ar: "نظام الشركات",                  en: "Companies Law" },
+    { id: "status",   on: false, ar: "نظام الأحوال الشخصية",          en: "Personal Status Law" },
+    { id: "execution",on: false, ar: "نظام التنفيذ",                  en: "Enforcement Law" },
+    { id: "ecommerce",on: false, ar: "نظام التجارة الإلكترونية",      en: "E-Commerce Law" },
+    { id: "ip",       on: false, ar: "أنظمة الملكية الفكرية",         en: "Intellectual property laws" },
+    { id: "data",     on: false, ar: "نظام حماية البيانات الشخصية",   en: "Personal Data Protection Law" }
+  ];
+
+  var LAWYER_FILES = [
+    { id: "f-1", kind: "template", size: "48 KB", ar: "نموذج عقد عمل — مكتبي",        en: "Employment contract template — my office" },
+    { id: "f-2", kind: "template", size: "31 KB", ar: "نموذج اتفاقية عدم إفشاء",       en: "NDA template" },
+    { id: "f-3", kind: "precedent",size: "112 KB",ar: "مذكرة دفاع — دعوى عمالية سابقة", en: "Defence memo — earlier labour claim" },
+    { id: "f-4", kind: "template", size: "27 KB", ar: "نموذج إنذار بإخلاء مأجور",       en: "Notice to vacate template" },
+    { id: "f-5", kind: "precedent",size: "64 KB", ar: "صيغة تسوية ودية معتمدة",        en: "Approved settlement wording" }
+  ];
+
+  var DOC_TYPES = [
+    { id: "employment", price: 99,  full: 500, hours: 4, specialty: "labour",
+      title: { ar: "عقد عمل", en: "Employment contract" },
+      body:  { ar: "عقد عمل محدد أو غير محدد المدة، متوافق مع نظام العمل السعودي.",
+               en: "A fixed- or open-term employment contract compliant with the Saudi Labour Law." } },
+    { id: "nda", price: 79, full: 400, hours: 3, specialty: "commercial",
+      title: { ar: "اتفاقية عدم إفشاء (NDA)", en: "Non-disclosure agreement (NDA)" },
+      body:  { ar: "اتفاقية سرية ثنائية أو أحادية الطرف مع تحديد مدة الالتزام.",
+               en: "A mutual or one-way confidentiality agreement with a defined term." } },
+    { id: "resignation", price: 49, full: 250, hours: 2, specialty: "labour",
+      title: { ar: "خطاب استقالة أو إنهاء خدمة", en: "Resignation or termination letter" },
+      body:  { ar: "خطاب مصاغ نظامياً يحفظ حقوقك ويحدد تاريخ آخر يوم عمل.",
+               en: "A properly worded letter that protects your rights and fixes the last working day." } },
+    { id: "demand", price: 89, full: 450, hours: 4, specialty: "commercial",
+      title: { ar: "إنذار بالمطالبة بمبلغ", en: "Formal demand for payment" },
+      body:  { ar: "إنذار رسمي بالسداد قبل رفع الدعوى، مع تحديد المهلة والأثر النظامي.",
+               en: "A formal pre-litigation demand, stating the deadline and the legal consequence." } },
+    { id: "lease", price: 99, full: 500, hours: 5, specialty: "realestate",
+      title: { ar: "عقد إيجار", en: "Lease agreement" },
+      body:  { ar: "عقد إيجار سكني أو تجاري مع بنود الصيانة والإخلاء.",
+               en: "A residential or commercial lease covering maintenance and termination." } },
+    { id: "poa", price: 69, full: 300, hours: 2, specialty: "commercial",
+      title: { ar: "صيغة وكالة", en: "Power of attorney wording" },
+      body:  { ar: "صياغة نطاق الوكالة وحدود الصلاحيات قبل توثيقها.",
+               en: "Wording for the scope of the mandate and its limits, ready for notarisation." } }
+  ];
+
+  var ASSISTANT = [
+    { id: "nda",
+      q: { ar: "كيف أصيغ بند سرية في عقد عمل؟", en: "How do I word a confidentiality clause in an employment contract?" },
+      a: { ar: "بند السرية الجيد يحدد ثلاثة أشياء بوضوح: ما الذي يُعد سراً (تعريف المعلومة السرية)، ومدى الالتزام أثناء العلاقة وبعد انتهائها، والاستثناءات كالمعلومات المتاحة للعموم أو المطلوبة بأمر نظامي. اجعل المدة محددة برقم — «ثلاث سنوات من تاريخ انتهاء العقد» أوضح من «إلى الأبد» وأقرب للقبول أمام القضاء. وتجنّب الصياغات المطلقة التي تمنع الموظف من العمل في المجال كلياً، لأنها قد تُقرأ كشرط تقييد مبالغ فيه.",
+           en: "A solid confidentiality clause pins down three things: what counts as confidential (a definition), how long the duty runs both during and after the relationship, and the carve-outs — information already public, or disclosure required by law. Put a number on the term: \u2018three years from the end of the contract\u2019 reads better before a court than \u2018in perpetuity\u2019. Avoid absolute wording that bars the employee from the field entirely; that tends to be read as an excessive restraint." } },
+    { id: "termination",
+      q: { ar: "ما الفرق بين المادة 75 والمادة 77 في نظام العمل؟", en: "What is the difference between Articles 75 and 77 of the Labour Law?" },
+      a: { ar: "المادة 75 تعالج إنهاء العقد غير محدد المدة بإشعار مسبق من أي من الطرفين — أي إنهاء مشروع متى استوفى مدة الإشعار. أما المادة 77 فتعالج ما يحدث إذا أُنهي العقد لسبب غير مشروع، وتقرر تعويضاً يُتفق عليه في العقد، وإن لم يُتفق فأجر خمسة عشر يوماً عن كل سنة للعقد غير محدد المدة، وأجر المدة المتبقية للعقد محدد المدة. باختصار: 75 عن كيفية الإنهاء، و77 عن ثمنه إذا كان بلا مبرر.",
+           en: "Article 75 covers ending an open-ended contract with prior notice from either side — lawful termination, provided the notice period is served. Article 77 covers what happens when a contract is ended without a valid reason: compensation as agreed in the contract, and failing that, fifteen days' wages per year of service for an open-ended contract, or the wages for the remaining term of a fixed-term one. In short: 75 is about how you end it, 77 is about what it costs when there was no good reason." } },
+    { id: "company",
+      q: { ar: "ما الخطوات النظامية لتأسيس شركة ذات مسؤولية محدودة؟", en: "What are the steps to set up a limited liability company?" },
+      a: { ar: "المسار العملي: حجز الاسم التجاري، ثم إعداد عقد التأسيس وتوثيقه، ثم إصدار السجل التجاري، ثم التسجيل لدى الزكاة والضريبة والجمارك والتأمينات الاجتماعية، وأخيراً فتح الحساب البنكي للشركة. أهم ما يُغفل عادة هو عقد التأسيس نفسه: حدّد فيه آلية اتخاذ القرار، وكيفية تقييم الحصة عند خروج شريك، وآلية فض النزاع. البنود هذه رخيصة اليوم وباهظة إن تُركت للاحقاً.",
+           en: "The practical path: reserve the trade name, draft and notarise the articles of association, issue the commercial registration, register with ZATCA and the social insurance authority, then open the company bank account. What most founders skip is the articles themselves: set out how decisions get made, how a departing partner's share is valued, and how disputes are resolved. Those clauses are cheap now and expensive later." } },
+    { id: "property",
+      q: { ar: "ما الذي أتحقق منه قبل شراء عقار؟", en: "What should I check before buying a property?" },
+      a: { ar: "ابدأ بالصك: تأكد من مطابقة بياناته للواقع (المساحة والحدود والأطوال)، ومن خلوه من الرهن أو الحجز عبر الاستعلام النظامي. ثم تحقق من مخطط البلدية ومن أن الاستخدام المصرح به يطابق غرضك، ومن عدم وجود نزع ملكية مخطط له. وإذا كان البيع على الخارطة، فتأكد من ترخيص المشروع ومن أن الدفعات تمر عبر حساب الضمان. اطلب من البائع إفادة بخلو العقار من الالتزامات المالية قبل التوقيع.",
+           en: "Start with the title deed: check that its details match reality (area, boundaries, dimensions) and that it is free of mortgage or attachment via the official search. Then check the municipal plan, that the permitted use matches your purpose, and that no expropriation is planned. For an off-plan sale, confirm the project's licence and that payments run through the escrow account. Ask the seller for written confirmation that the property carries no outstanding financial obligations before you sign." } }
+  ];
+
+  var FAQ = [
+    { q: { ar: "هل المحامون على المنصة مرخصون رسمياً؟", en: "Are the lawyers on the platform officially licensed?" },
+      a: { ar: "نعم. نتحقق من رقم ترخيص كل محامٍ لدى الجهة المختصة قبل تفعيل ملفه، ونعيد التحقق سنوياً.",
+           en: "Yes. We verify each lawyer's licence number with the competent authority before activating their profile, and re-verify annually." } },
+    { q: { ar: "كيف يتم تحديد سعر الاستشارة؟", en: "How is the consultation price set?" },
+      a: { ar: "يحدد كل محامٍ أسعاره حسب نوع الخدمة ومدتها، وتظهر لك كاملة قبل الدفع دون أي رسوم إضافية.",
+           en: "Each lawyer sets their own rates by service type and duration. You see the full price before paying, with no add-ons." } },
+    { q: { ar: "ماذا لو لم تتم الاستشارة في موعدها؟", en: "What if the consultation does not take place?" },
+      a: { ar: "تبقى الأتعاب محفوظة لدى المنصة حتى اكتمال الاستشارة. إذا لم تتم، يُعاد المبلغ كاملاً خلال ثلاثة أيام عمل.",
+           en: "Fees are held by the platform until the consultation is complete. If it does not happen, you are refunded in full within three business days." } },
+    { q: { ar: "هل يمكنني اختيار محامٍ في مدينة أخرى؟", en: "Can I choose a lawyer in another city?" },
+      a: { ar: "بالتأكيد. معظم الاستشارات تتم عن بُعد عبر المكالمة أو الفيديو، ويمكنك اختيار أي محامٍ في المملكة.",
+           en: "Certainly. Most consultations happen remotely by call or video, so you can choose any lawyer in the Kingdom." } },
+    { q: { ar: "كيف أنضم كمحامٍ إلى سند؟", en: "How do I join Sanad as a lawyer?" },
+      a: { ar: "أنشئ حساباً من صفحة دخول المحامين، وأرفق رقم الترخيص. يستغرق التحقق من يوم إلى ثلاثة أيام عمل.",
+           en: "Create an account from the lawyer login page and attach your licence number. Verification takes one to three business days." } }
+  ];
+
+  var VALUES = [
+    { icon: "scale",  title: { ar: "النزاهة", en: "Integrity" },
+      body: { ar: "لا نرجّح مصلحة على أخرى، ولا نوصي بخدمة لا يحتاجها العميل.", en: "We favour no side, and never recommend a service a client does not need." } },
+    { icon: "eye",    title: { ar: "الشفافية", en: "Transparency" },
+      body: { ar: "السعر والمدة والمخرجات معروفة قبل الدفع، لا مفاجآت لاحقاً.", en: "Price, duration and deliverables are known before payment. No surprises." } },
+    { icon: "lock",   title: { ar: "السرية", en: "Confidentiality" },
+      body: { ar: "بيانات العميل وقضيته محمية بمعايير تشفير مصرفية.", en: "Client data and case details are protected to banking-grade encryption standards." } },
+    { icon: "sparkle",title: { ar: "الإتقان", en: "Craft" },
+      body: { ar: "نراجع جودة كل استشارة، ونستبعد من لا يلتزم بمعاييرنا.", en: "We review the quality of every consultation, and remove those who fall short." } }
+  ];
+
+  var TEAM = [
+    { name: { ar: "د. أحمد المحمدي", en: "Dr. Ahmed Al-Mohammadi" }, role: { ar: "الرئيس التنفيذي", en: "Chief Executive Officer" } },
+    { name: { ar: "سارة بنت طارق", en: "Sara bint Tariq" },       role: { ar: "رئيسة الشؤون القانونية", en: "Chief Legal Officer" } },
+    { name: { ar: "نورة القحطاني", en: "Noura Al-Qahtani" },       role: { ar: "رئيسة المنتج", en: "Chief Product Officer" } },
+    { name: { ar: "محمد الفهد", en: "Mohammed Al-Fahd" },          role: { ar: "رئيس شبكة المحامين", en: "Head of Lawyer Network" } }
+  ];
+
+  var STATS = [
+    { value: "1,500+", valueEn: "1,500+", label: { ar: "استشارة منجزة", en: "Consultations delivered" } },
+    { value: "240+", valueEn: "240+", label: { ar: "محامٍ معتمد", en: "Licensed lawyers" } },
+    { value: "180+", valueEn: "180+", label: { ar: "مساعد ومتدرب قانوني", en: "Assistants & trainees" } },
+    { value: "99%", valueEn: "99%", label: { ar: "نسبة رضا العملاء", en: "Client satisfaction" } }
+  ];
+
+  var REFERENCES = [
+    { title: { ar: "نظام الشركات الجديد (1443هـ)", en: "The new Companies Law (1443 AH)" },
+      note:  { ar: "النسخة المحدثة الصادرة عن وزارة التجارة.", en: "Updated edition issued by the Ministry of Commerce." } },
+    { title: { ar: "لائحة حوكمة الشركات", en: "Corporate Governance Regulations" },
+      note:  { ar: "الصادرة عن هيئة السوق المالية.", en: "Issued by the Capital Market Authority." } },
+    { title: { ar: "نظام العمل ولائحته التنفيذية", en: "Labour Law & implementing regulations" },
+      note:  { ar: "المرجع الأساسي لعلاقات العمل.", en: "The primary reference for employment relationships." } }
+  ];
+
+  var FEATURES = [
+    { icon: "shield-check", rule: "navy",
+      title: { ar: "محامون معتمدون", en: "Licensed lawyers" },
+      body:  { ar: "نخبة من المحامين المرخصين من وزارة العدل ذوي الخبرة الواسعة في مختلف التخصصات.",
+               en: "Ministry-licensed lawyers with deep experience across every practice area." } },
+    { icon: "payments", rule: "gold",
+      title: { ar: "أسعار شفافة", en: "Transparent pricing" },
+      body:  { ar: "تكاليف واضحة ومعلومة مسبقاً دون رسوم خفية، لضمان راحة بالك.",
+               en: "Clear costs known upfront, with no hidden fees." } },
+    { icon: "file-text", rule: "navy",
+      title: { ar: "عقود ذكية", en: "Smart contracts" },
+      body:  { ar: "صياغة عقود قانونية محكمة ودقيقة باستخدام قوالب مراجعة من محامين ممارسين.",
+               en: "Precise legal drafting built on templates reviewed by practising lawyers." } },
+    { icon: "lock", rule: "gold",
+      title: { ar: "خصوصية تامة", en: "Total confidentiality" },
+      body:  { ar: "حماية كاملة لبياناتك وتفاصيل قضاياك بأعلى معايير الأمان والتشفير.",
+               en: "Your data and case details are protected by the highest encryption standards." } }
+  ];
+
+  var STEPS = [
+    { title: { ar: "ابحث واختر", en: "Search & choose" },
+      body:  { ar: "حدد التخصص والمدينة والميزانية، وقارن بين المحامين حسب التقييم والخبرة.",
+               en: "Set the practice area, city and budget, then compare lawyers by rating and experience." } },
+    { title: { ar: "احجز الموعد", en: "Book a slot" },
+      body:  { ar: "اختر نوع الاستشارة والوقت المناسب من التقويم المتاح مباشرة.",
+               en: "Pick the consultation type and a time that suits you from the live calendar." } },
+    { title: { ar: "ادفع بأمان", en: "Pay securely" },
+      body:  { ar: "ادفع عبر بوابة مشفّرة، وتبقى الأتعاب محفوظة حتى اكتمال الاستشارة.",
+               en: "Pay through an encrypted gateway; the fee is held until the consultation is complete." } },
+    { title: { ar: "استشر واستلم", en: "Consult & receive" },
+      body:  { ar: "تحدث مع المحامي عبر المكالمة أو المحادثة، واستلم مخرجاتك موثقة في حسابك.",
+               en: "Talk to your lawyer by call or chat, and receive documented output in your account." } }
+  ];
+
+  var TESTIMONIALS = [
+    { name: { ar: "عبدالعزيز الشمري", en: "Abdulaziz Al-Shammari" },
+      role: { ar: "مؤسس شركة ناشئة", en: "Startup founder" }, rating: 5,
+      body: { ar: "حصلت على مراجعة كاملة لعقد التأسيس خلال يومين، بسعر واضح من البداية ودون مفاوضات.",
+              en: "I got a full review of our founders' agreement in two days, at a price that was clear from the start." } },
+    { name: { ar: "منيرة العنزي", en: "Munira Al-Anazi" },
+      role: { ar: "موظفة قطاع خاص", en: "Private-sector employee" }, rating: 5,
+      body: { ar: "كنت مترددة في رفع قضية عمالية، والاستشارة الأولى وضّحت لي حقوقي بالضبط قبل أن أخطو أي خطوة.",
+              en: "I hesitated to file a labour claim; the first consultation showed me exactly where I stood before I moved." } },
+    { name: { ar: "شركة أبعاد للمقاولات", en: "Ab'ad Contracting" },
+      role: { ar: "قطاع الإنشاءات", en: "Construction sector" }, rating: 4,
+      body: { ar: "نتعامل مع سند بشكل دوري لمراجعة عقود المقاولات. السرعة والاحترافية جعلتها جزءاً من عملياتنا.",
+              en: "We use Sanad routinely to review construction contracts. The speed and professionalism made it part of our process." } }
+  ];
+
   global.SEED = {
     specialties: SPECIALTIES,
     cities: CITIES,
@@ -400,6 +620,20 @@
     articles: ARTICLES,
     comments: COMMENTS,
     reviews: REVIEWS,
-    endorsements: ENDORSEMENTS
+    endorsements: ENDORSEMENTS,
+
+    draftBodies: DRAFT_BODIES,
+    regulations: REGULATIONS,
+    lawyerFiles: LAWYER_FILES,
+    docTypes: DOC_TYPES,
+    assistant: ASSISTANT,
+    faq: FAQ,
+    values: VALUES,
+    team: TEAM,
+    stats: STATS,
+    references: REFERENCES,
+    features: FEATURES,
+    steps: STEPS,
+    testimonials: TESTIMONIALS
   };
 })(window);

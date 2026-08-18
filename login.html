@@ -5,23 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f7f8fd">
 <title>تسجيل الدخول | سند</title>
-<meta name="description" content="سجّل الدخول إلى حسابك في منصة سند أو أنشئ حساباً جديداً كمحامٍ.">
+<meta name="description" content="سجّل الدخول إلى حسابك في منصة سند.">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/css/style.css">
-<script src="assets/js/theme.js"></script>
-<script src="assets/js/i18n.js"></script>
-<script src="assets/js/roles.js"></script>
-<script src="assets/js/store.js"></script>
+<script src="assets/js/core/theme.js"></script>
+<script src="assets/js/core/i18n.js"></script>
 </head>
 <body class="page">
 <a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
 
 <div data-slot="header"></div>
-<script src="assets/js/data.js"></script>
-<script src="assets/js/layout.js"></script>
+<script src="assets/js/core/store.js"></script>
+<script src="assets/js/data/seed.js"></script>
+<script src="assets/js/data/models.js"></script>
+<script src="assets/js/core/session.js"></script>
+<script src="assets/js/ui/icons.js"></script>
+<script src="assets/js/core/app.js"></script>
+<script src="assets/js/ui/layout.js"></script>
 
 <main id="main">
   <div class="auth">
@@ -32,48 +35,27 @@
     </aside>
 
     <section class="auth__form">
-      <div class="seg" style="margin-bottom:var(--s-6);align-self:flex-start" data-auth-seg>
-        <button type="button" class="is-active" data-mode="login" data-i18n="auth.login"></button>
-        <button type="button" data-mode="register" data-i18n="auth.register"></button>
-      </div>
+      <p class="demo-banner" data-i18n="auth.demoBanner"></p>
+      <h1 class="headline" style="margin-top:var(--s-6)" data-i18n="auth.welcome"></h1>
+      <p class="lead" style="margin:var(--s-2) 0 var(--s-8)" data-i18n="auth.welcomeLead"></p>
 
-      <h1 class="headline" data-auth-title></h1>
-      <p class="lead" style="margin-top:var(--s-2);margin-bottom:var(--s-8)" data-auth-lead></p>
-
-      <form class="stack gap-4" data-auth-form>
-        <div class="field" data-only="register" hidden>
-          <label class="label" for="a-name" data-i18n="auth.fullName"></label>
-          <input class="input" id="a-name" name="name" autocomplete="name">
-        </div>
-        <div class="field" data-only="register" hidden>
-          <label class="label" for="a-lic" data-i18n="auth.licenseNo"></label>
-          <input class="input num" id="a-lic" name="license" inputmode="numeric">
-        </div>
-        <div class="field">
-          <label class="label" for="a-mail" data-i18n="auth.email"></label>
-          <input class="input" id="a-mail" name="email" type="email" required autocomplete="email">
-        </div>
-        <div class="field">
-          <label class="label" for="a-pass" data-i18n="auth.password"></label>
-          <input class="input" id="a-pass" name="password" type="password" required autocomplete="current-password">
-        </div>
-
-        <div class="row between wrap gap-3" data-only="login">
-          <label class="check"><input type="checkbox"><span data-i18n="auth.remember"></span></label>
-          <a class="small" style="color:var(--accent);font-weight:700" href="#" data-i18n="auth.forgot"></a>
-        </div>
-
-        <p class="tiny muted" data-only="register" hidden data-i18n="auth.terms"></p>
-
-        <button class="btn btn--primary btn--lg btn--block" type="submit" data-auth-submit></button>
+      <form class="stack gap-4" data-login novalidate>
+        <label class="field"><span class="label" data-i18n="auth.email"></span>
+          <input class="input" name="email" type="email" autocomplete="email" dir="ltr"></label>
+        <label class="field"><span class="label" data-i18n="auth.password"></span>
+          <input class="input" name="password" type="password" autocomplete="current-password"></label>
+        <p class="form-error" data-login-error hidden></p>
+        <button class="btn btn--primary btn--lg btn--block" type="submit" data-i18n="auth.signIn"></button>
       </form>
 
-      <div style="margin-top:var(--s-8)">
-        <p class="small muted center" data-i18n="auth.orGoTo"></p>
-        <div class="row gap-3 wrap" style="justify-content:center;margin-top:var(--s-3)">
-          <a class="btn btn--outline btn--sm" href="dashboard-lawyer.html" data-i18n="auth.demoLawyer"></a>
-          <a class="btn btn--outline btn--sm" href="dashboard-client.html" data-i18n="auth.demoClient"></a>
-        </div>
+      <p class="center small muted" style="margin-top:var(--s-6)">
+        <span data-i18n="signup.noAccount"></span>
+        <a href="signup.html" style="color:var(--accent);font-weight:700" data-i18n="auth.createAccount"></a>
+      </p>
+
+      <div style="margin-top:var(--s-10)">
+        <p class="small muted center" data-i18n="login.tryAs"></p>
+        <div class="grid grid-3" style="gap:var(--s-3);margin-top:var(--s-3)" data-demo-accounts></div>
       </div>
     </section>
   </div>
@@ -81,7 +63,7 @@
 
 <div data-slot="footer"></div>
 
-<script src="assets/js/app.js"></script>
-<script src="assets/js/pages.js"></script>
+<script src="assets/js/ui/components.js"></script>
+<script src="assets/js/pages/login.js"></script>
 </body>
 </html>
