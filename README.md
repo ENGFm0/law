@@ -129,32 +129,28 @@ node tools/build-artifact.mjs   # ← dist/sanad.html
 
 ## النشر على GitHub Pages | Deploying
 
-المستودع فيه `.github/workflows/pages.yml` ينشر الموقع تلقائياً عند كل push
-على الفرع الافتراضي. الفرع الافتراضي هنا هو
-`claude/website-dark-light-languages-5exre8` — إذا غيّرته، غيّر اسم الفرع في
-`on.push.branches` داخل الـ workflow.
+**الموقع منشور على:**
 
-### خطوة أولى لمرة واحدة
+- <https://engfm0.github.io/law/> — الموقع متعدد الصفحات
+- <https://engfm0.github.io/law/dist/sanad.html> — نسخة الملف الواحد
 
-قبل أول نشر، يجب تفعيل Pages يدوياً:
+النشر يتم من فرع `gh-pages`، ويحدّثه `.github/workflows/pages.yml` عند كل push
+على الفرع الافتراضي: يعيد بناء نسخة الملف الواحد من المصادر، يجمّع الصفحات
+والأصول، ثم يدفعها إلى `gh-pages`.
 
-1. افتح <https://github.com/ENGFm0/law/settings/pages>
-2. في **Build and deployment → Source** اختر **GitHub Actions**
+الفرع الافتراضي هنا هو `claude/website-dark-light-languages-5exre8` — إذا
+غيّرته، غيّر اسمه في `on.push.branches` داخل الـ workflow.
 
-بعدها كل push ينشر تلقائياً، ويصبح الموقع على:
+### لماذا النشر عبر فرع وليس عبر `actions/deploy-pages`؟
 
-**<https://engfm0.github.io/law/>** — الموقع متعدد الصفحات
-**<https://engfm0.github.io/law/dist/sanad.html>** — نسخة الملف الواحد
-
-### لماذا لا يفعّلها الـ workflow بنفسه؟
-
-جرّبنا `actions/configure-pages` مع `enablement: true`، فأعاد:
+النشر عبر Actions يشترط ضبط مصدر Pages على "GitHub Actions" في إعدادات
+المستودع، وهذا ما لا يستطيع توكن Actions فعله بنفسه:
 
 ```
 Create Pages site failed. Error: Resource not accessible by integration
 ```
 
-إنشاء موقع Pages نداء إداري (`administration: write`) لا يُمنح لـ
-`GITHUB_TOKEN` داخل Actions مهما كتبت في كتلة `permissions` — يحتاج إما
-صفحة الإعدادات أو Personal Access Token. أما **النشر** على موقع Pages
-مفعّل مسبقاً فيكفيه `pages: write`، وهو ما يطلبه الـ workflow فعلاً.
+إنشاء موقع Pages أو تغيير مصدره نداء إداري (`administration: write`) لا
+يُمنح لـ `GITHUB_TOKEN` مهما كتبت في كتلة `permissions`. أما دفع فرع فيكفيه
+`contents: write` وهو متاح — ولأن المستودع عام، فعّل GitHub خدمة Pages
+تلقائياً بمجرد ظهور فرع `gh-pages` أول مرة.
