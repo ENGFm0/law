@@ -9,10 +9,11 @@
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/css/style.css">
 <script src="assets/js/theme.js"></script>
 <script src="assets/js/i18n.js"></script>
+<script src="assets/js/roles.js"></script>
 </head>
 <body class="page">
 <a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
@@ -59,8 +60,19 @@
     </div>
   </section>
 
-  <!-- How it works -->
+  <!-- Three workspaces -->
   <section class="section section--band">
+    <div class="container">
+      <div class="section-head center">
+        <h2 class="headline" data-i18n="home.rolesTitle"></h2>
+        <p class="lead" data-i18n="home.rolesLead"></p>
+      </div>
+      <div class="grid grid-3" data-role-cards></div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section">
     <div class="container">
       <div class="section-head center">
         <h2 class="headline" data-i18n="home.stepsTitle"></h2>

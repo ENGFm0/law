@@ -270,10 +270,10 @@
   ];
 
   var STATS = [
-    { value: "142+", valueEn: "142+", label: { ar: "محامٍ مرخص", en: "Licensed lawyers" } },
-    { value: "8,400+", valueEn: "8,400+", label: { ar: "استشارة منجزة", en: "Consultations delivered" } },
-    { value: "4.8", valueEn: "4.8", label: { ar: "متوسط التقييم", en: "Average rating" } },
-    { value: "13", valueEn: "13", label: { ar: "مدينة مغطاة", en: "Cities covered" } }
+    { value: "1,500+", valueEn: "1,500+", label: { ar: "استشارة منجزة", en: "Consultations delivered" } },
+    { value: "240+", valueEn: "240+", label: { ar: "محامٍ معتمد", en: "Licensed lawyers" } },
+    { value: "180+", valueEn: "180+", label: { ar: "مساعد ومتدرب قانوني", en: "Assistants & trainees" } },
+    { value: "99%", valueEn: "99%", label: { ar: "نسبة رضا العملاء", en: "Client satisfaction" } }
   ];
 
   var TESTIMONIALS = [
@@ -367,6 +367,71 @@
       note:  { ar: "المرجع الأساسي لعلاقات العمل.", en: "The primary reference for employment relationships." } }
   ];
 
+  /* Legal assistants and trainees working under supervision. */
+  var INTERNS = [
+    { id: "ahmed-aljaid",   name: { ar: "أحمد الجعيد",   en: "Ahmed Al-Jaid" },   level: "mid",      done: 24 },
+    { id: "layan-alharbi",  name: { ar: "ليان الحربي",   en: "Layan Al-Harbi" },  level: "advanced", done: 41 },
+    { id: "turki-alsubaie", name: { ar: "تركي السبيعي",  en: "Turki Al-Subaie" }, level: "basic",    done: 7 }
+  ];
+
+  /* Work posted by supervising lawyers for trainees to pick up. */
+  var TASKS = [
+    { id: "nda-draft", reward: 250, days: 3, level: "basic", specialty: "commercial", supervisor: "ahmed-almohammadi",
+      title: { ar: "صياغة اتفاقية عدم إفشاء (NDA)", en: "Draft a non-disclosure agreement (NDA)" },
+      body:  { ar: "صياغة اتفاقية سرية ثنائية بين شركة ناشئة ومستثمر محتمل، مع بند مدة سريان لا يقل عن ثلاث سنوات.",
+               en: "Draft a mutual NDA between a startup and a prospective investor, with a survival period of at least three years." } },
+    { id: "labour-memo", reward: 400, days: 5, level: "mid", specialty: "labour", supervisor: "faisal-alotaibi",
+      title: { ar: "إعداد لائحة اعتراضية في دعوى عمالية", en: "Prepare a statement of defence in a labour claim" },
+      body:  { ar: "تلخيص وقائع الدعوى وإعداد لائحة اعتراضية مستندة إلى المادتين 75 و77 من نظام العمل.",
+               en: "Summarise the facts and prepare a statement of defence grounded in Articles 75 and 77 of the Labour Law." } },
+    { id: "trademark-search", reward: 300, days: 4, level: "mid", specialty: "ip", supervisor: "noura-alqahtani",
+      title: { ar: "بحث تشابه لعلامة تجارية قبل التسجيل", en: "Trademark clearance search before filing" },
+      body:  { ar: "فحص سجل العلامات التجارية وإعداد تقرير بالتشابهات المحتملة وتوصية بالفئات الأنسب.",
+               en: "Search the trademark register and report likely conflicts, with a recommendation on the best classes to file in." } },
+    { id: "lease-review", reward: 350, days: 4, level: "mid", specialty: "realestate", supervisor: "mohammed-alfahd",
+      title: { ar: "مراجعة عقد إيجار تجاري", en: "Review a commercial lease" },
+      body:  { ar: "مراجعة عقد إيجار محل تجاري وإبراز البنود المجحفة، مع اقتراح صياغات بديلة لبند الإخلاء.",
+               en: "Review a retail lease, flag one-sided clauses, and propose alternative wording for the termination clause." } },
+    { id: "estate-schedule", reward: 500, days: 7, level: "advanced", specialty: "estates", supervisor: "sara-bint-tariq",
+      title: { ar: "إعداد جدول حصر تركة وقسمتها", en: "Prepare an estate inventory and division schedule" },
+      body:  { ar: "حصر أصول التركة وإعداد جدول القسمة الشرعية مع بيان الأنصبة، تمهيداً لمراجعة المحامي المشرف.",
+               en: "Inventory the estate's assets and prepare the division schedule with each share stated, ready for the supervising lawyer." } },
+    { id: "board-minutes", reward: 220, days: 2, level: "basic", specialty: "commercial", supervisor: "ahmed-almohammadi",
+      title: { ar: "صياغة محضر اجتماع مجلس إدارة", en: "Draft board meeting minutes" },
+      body:  { ar: "تحرير محضر اجتماع مجلس إدارة شركة مساهمة وفق متطلبات لائحة الحوكمة.",
+               en: "Write up the minutes of a joint-stock company board meeting to the governance regulations' requirements." } }
+  ];
+
+  /* Trainee work sitting in the supervising lawyer's signature queue. */
+  var DRAFTS = [
+    { id: "d-1", by: "ahmed-aljaid", ago: { ar: "منذ ساعتين", en: "2 hours ago" }, specialty: "labour",
+      title: { ar: "لائحة اعتراضية — دعوى عمالية", en: "Statement of defence — labour claim" } },
+    { id: "d-2", by: "layan-alharbi", ago: { ar: "أمس", en: "Yesterday" }, specialty: "commercial",
+      title: { ar: "اتفاقية عدم إفشاء — شركة ناشئة", en: "Non-disclosure agreement — startup" } },
+    { id: "d-3", by: "turki-alsubaie", ago: { ar: "منذ 3 أيام", en: "3 days ago" }, specialty: "realestate",
+      title: { ar: "مذكرة مراجعة عقد إيجار تجاري", en: "Commercial lease review memo" } }
+  ];
+
+  /* Canned assistant exchanges. No model runs here — see the page disclaimer. */
+  var ASSISTANT = [
+    { id: "nda",
+      q: { ar: "كيف أصيغ بند سرية في عقد عمل؟", en: "How do I word a confidentiality clause in an employment contract?" },
+      a: { ar: "بند السرية الجيد يحدد ثلاثة أشياء بوضوح: ما الذي يُعد سراً (تعريف المعلومة السرية)، ومدى الالتزام أثناء العلاقة وبعد انتهائها، والاستثناءات كالمعلومات المتاحة للعموم أو المطلوبة بأمر نظامي. اجعل المدة محددة برقم — «ثلاث سنوات من تاريخ انتهاء العقد» أوضح من «إلى الأبد» وأقرب للقبول أمام القضاء. وتجنّب الصياغات المطلقة التي تمنع الموظف من العمل في المجال كلياً، لأنها قد تُقرأ كشرط تقييد مبالغ فيه.",
+           en: "A solid confidentiality clause pins down three things: what counts as confidential (a definition), how long the duty runs both during and after the relationship, and the carve-outs — information already public, or disclosure required by law. Put a number on the term: \u2018three years from the end of the contract\u2019 reads better before a court than \u2018in perpetuity\u2019. Avoid absolute wording that bars the employee from the field entirely; that tends to be read as an excessive restraint." } },
+    { id: "termination",
+      q: { ar: "ما الفرق بين المادة 75 والمادة 77 في نظام العمل؟", en: "What is the difference between Articles 75 and 77 of the Labour Law?" },
+      a: { ar: "المادة 75 تعالج إنهاء العقد غير محدد المدة بإشعار مسبق من أي من الطرفين — أي إنهاء مشروع متى استوفى مدة الإشعار. أما المادة 77 فتعالج ما يحدث إذا أُنهي العقد لسبب غير مشروع، وتقرر تعويضاً يُتفق عليه في العقد، وإن لم يُتفق فأجر خمسة عشر يوماً عن كل سنة للعقد غير محدد المدة، وأجر المدة المتبقية للعقد محدد المدة. باختصار: 75 عن كيفية الإنهاء، و77 عن ثمنه إذا كان بلا مبرر.",
+           en: "Article 75 covers ending an open-ended contract with prior notice from either side — lawful termination, provided the notice period is served. Article 77 covers what happens when a contract is ended without a valid reason: compensation as agreed in the contract, and failing that, fifteen days' wages per year of service for an open-ended contract, or the wages for the remaining term of a fixed-term one. In short: 75 is about how you end it, 77 is about what it costs when there was no good reason." } },
+    { id: "company",
+      q: { ar: "ما الخطوات النظامية لتأسيس شركة ذات مسؤولية محدودة؟", en: "What are the steps to set up a limited liability company?" },
+      a: { ar: "المسار العملي: حجز الاسم التجاري، ثم إعداد عقد التأسيس وتوثيقه، ثم إصدار السجل التجاري، ثم التسجيل لدى الزكاة والضريبة والجمارك والتأمينات الاجتماعية، وأخيراً فتح الحساب البنكي للشركة. أهم ما يُغفل عادة هو عقد التأسيس نفسه: حدّد فيه آلية اتخاذ القرار، وكيفية تقييم الحصة عند خروج شريك، وآلية فض النزاع. البنود هذه رخيصة اليوم وباهظة إن تُركت للاحقاً.",
+           en: "The practical path: reserve the trade name, draft and notarise the articles of association, issue the commercial registration, register with ZATCA and the social insurance authority, then open the company bank account. What most founders skip is the articles themselves: set out how decisions get made, how a departing partner's share is valued, and how disputes are resolved. Those clauses are cheap now and expensive later." } },
+    { id: "property",
+      q: { ar: "ما الذي أتحقق منه قبل شراء عقار؟", en: "What should I check before buying a property?" },
+      a: { ar: "ابدأ بالصك: تأكد من مطابقة بياناته للواقع (المساحة والحدود والأطوال)، ومن خلوه من الرهن أو الحجز عبر الاستعلام النظامي. ثم تحقق من مخطط البلدية ومن أن الاستخدام المصرح به يطابق غرضك، ومن عدم وجود نزع ملكية مخطط له. وإذا كان البيع على الخارطة، فتأكد من ترخيص المشروع ومن أن الدفعات تمر عبر حساب الضمان. اطلب من البائع إفادة بخلو العقار من الالتزامات المالية قبل التوقيع.",
+           en: "Start with the title deed: check that its details match reality (area, boundaries, dimensions) and that it is free of mortgage or attachment via the official search. Then check the municipal plan, that the permitted use matches your purpose, and that no expropriation is planned. For an off-plan sale, confirm the project's licence and that payments run through the escrow account. Ask the seller for written confirmation that the property carries no outstanding financial obligations before you sign." } }
+  ];
+
   global.DATA = {
     specialties: SPECIALTIES,
     cities: CITIES,
@@ -383,6 +448,15 @@
     reviews: REVIEWS,
     services: SERVICES,
     references: REFERENCES,
+    interns: INTERNS,
+    tasks: TASKS,
+    drafts: DRAFTS,
+    assistant: ASSISTANT,
+
+    internById: function (id) {
+      for (var i = 0; i < INTERNS.length; i++) if (INTERNS[i].id === id) return INTERNS[i];
+      return null;
+    },
 
     lawyerById: function (id) {
       for (var i = 0; i < LAWYERS.length; i++) if (LAWYERS[i].id === id) return LAWYERS[i];

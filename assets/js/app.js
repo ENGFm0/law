@@ -295,6 +295,14 @@
     rerender();
   });
 
+  // A role change rewrites the navigation and anything drawn per-role.
+  document.addEventListener("rolechange", function () {
+    if (global.Layout && global.Layout.refresh) global.Layout.refresh();
+    syncLangButtons();
+    syncThemeButtons();
+    rerender();
+  });
+
   document.addEventListener("themechange", syncThemeButtons);
 
   /* ---------- boot ---------- */

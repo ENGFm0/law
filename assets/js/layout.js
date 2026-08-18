@@ -91,12 +91,17 @@
   }
 
   /* ---------- Nav model ---------- */
-  var NAV = [
-    { key: "nav.home",    href: "index.html",   id: "home" },
-    { key: "nav.lawyers", href: "lawyers.html", id: "lawyers" },
-    { key: "nav.blog",    href: "blog.html",    id: "blog" },
-    { key: "nav.about",   href: "about.html",   id: "about" }
-  ];
+  /* The middle slot belongs to whichever role you are signed in as — a client
+     browses lawyers, a lawyer works their dashboard, a trainee the task bank.
+     Everything else is common to all three. */
+  function navItems() {
+    var role = global.Roles ? global.Roles.info : null;
+    var items = [{ key: "nav.home", href: "index.html", id: "home" }];
+    if (role) items.push(role.nav);
+    items.push({ key: "nav.blog", href: "blog.html", id: "blog" });
+    items.push({ key: "nav.assistant", href: "assistant.html", id: "assistant" });
+    return items;
+  }
 
   function themeButton() {
     return '<button class="icon-btn" type="button" data-action="toggle-theme" ' +
@@ -110,8 +115,18 @@
       Icons.svg("globe", "icon-sm") + '<span class="lang-btn__code" data-lang-code>EN</span></button>';
   }
 
+  /** The header badge: who you are, and a way into your own workspace. */
+  function roleBadge() {
+    var role = global.Roles ? global.Roles.info : null;
+    if (!role) return "";
+    return '<a class="role-badge" href="account.html" data-role-badge>' +
+      '<span class="role-badge__mark">' + Icons.svg(role.icon, "icon-sm") + "</span>" +
+      '<span class="role-badge__text"><strong data-i18n="account.signedInAs"></strong>' +
+        '<span data-i18n="' + role.nameKey + '"></span></span></a>';
+  }
+
   function header(active) {
-    var links = NAV.map(function (item) {
+    var links = navItems().map(function (item) {
       return '<a class="nav__link' + (item.id === active ? " is-active" : "") + '" href="' + item.href +
         '" data-i18n="' + item.key + '"' + (item.id === active ? ' aria-current="page"' : "") + "></a>";
     }).join("");
@@ -120,16 +135,14 @@
       brand() +
       '<nav class="nav" data-i18n-attr="aria-label:a11y.menu">' + links + "</nav>" +
       '<div class="header-actions">' +
-        themeButton() + langButton() +
-        '<a class="btn btn--outline btn--sm" href="login.html" data-i18n="nav.login"></a>' +
-        '<a class="btn btn--primary btn--sm" href="lawyers.html" data-i18n="nav.cta"></a>' +
+        themeButton() + langButton() + roleBadge() +
         '<button class="icon-btn burger" type="button" data-action="open-drawer" data-i18n-attr="aria-label:a11y.menu">' +
           Icons.svg("menu") + "</button>" +
       "</div></div></header>";
   }
 
   function drawer(active) {
-    var links = NAV.map(function (item) {
+    var links = navItems().map(function (item) {
       return '<a class="drawer__link' + (item.id === active ? " is-active" : "") + '" href="' + item.href +
         '" data-i18n="' + item.key + '"></a>';
     }).join("");
@@ -141,11 +154,11 @@
           '<button class="icon-btn" type="button" data-action="close-drawer" data-i18n-attr="aria-label:a11y.close">' +
           Icons.svg("close") + "</button></div>" +
         links +
+        '<a class="drawer__link" href="about.html" data-i18n="nav.about"></a>' +
         '<div class="divider"></div>' +
-        '<a class="drawer__link" href="dashboard-lawyer.html" data-i18n="nav.dashboardLawyer"></a>' +
-        '<a class="drawer__link" href="dashboard-client.html" data-i18n="nav.dashboardClient"></a>' +
+        '<a class="drawer__link" href="account.html" data-i18n="account.heading"></a>' +
+        '<a class="drawer__link" href="login.html" data-i18n="nav.login"></a>' +
         '<div class="divider"></div>' +
-        '<a class="btn btn--outline btn--block" href="login.html" data-i18n="nav.login" style="margin-bottom:var(--s-3)"></a>' +
         '<a class="btn btn--primary btn--block" href="lawyers.html" data-i18n="nav.cta"></a>' +
       "</div></div>";
   }
@@ -164,10 +177,12 @@
           '<p class="lead small" style="margin-top:var(--s-4)" data-i18n="footer.about"></p>' +
         "</div>" +
         col("footer.platform", [
-          { href: "lawyers.html", key: "nav.lawyers" },
-          { href: "blog.html",    key: "nav.blog" },
-          { href: "about.html",   key: "nav.about" },
-          { href: "login.html",   key: "nav.login" }
+          { href: "lawyers.html",   key: "nav.lawyers" },
+          { href: "tasks.html",     key: "nav.tasks" },
+          { href: "assistant.html", key: "nav.assistant" },
+          { href: "blog.html",      key: "nav.blog" },
+          { href: "about.html",     key: "nav.about" },
+          { href: "login.html",     key: "nav.login" }
         ]) +
         col("footer.legal", [
           { href: "about.html#faq", key: "footer.faq" },
@@ -205,7 +220,28 @@
     return filled;
   }
 
-  global.Layout = { mount: mount, header: header, footer: footer, brand: brand, nav: NAV };
+  /** Rebuild the chrome in place — the nav changes when the role does. */
+  function refresh() {
+    var page = document.documentElement.getAttribute("data-page") || "";
+    var oldHeader = document.querySelector(".site-header");
+    var oldDrawer = document.querySelector("[data-drawer]");
+    if (!oldHeader) return;
+
+    var holder = document.createElement("div");
+    holder.innerHTML = header(page) + drawer(page);
+    var newHeader = holder.firstChild, newDrawer = holder.lastChild;
+
+    oldHeader.replaceWith(newHeader);
+    if (oldDrawer) oldDrawer.replaceWith(newDrawer);
+    else document.body.appendChild(newDrawer);
+
+    if (global.I18N) global.I18N.apply(newHeader), global.I18N.apply(newDrawer);
+  }
+
+  global.Layout = {
+    mount: mount, refresh: refresh, header: header, footer: footer,
+    brand: brand, navItems: navItems
+  };
   global.Icons = Icons;
 
   mount();

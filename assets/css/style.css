@@ -72,7 +72,7 @@
   --header-h: 72px;
 
   /* Type */
-  --font-ar: "Cairo", "Tajawal", "Segoe UI", system-ui, sans-serif;
+  --font-ar: "Tajawal", "Cairo", "Segoe UI", system-ui, sans-serif;
   --font-en: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font: var(--font-ar);
 }
@@ -716,3 +716,110 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .faq-chevron { transition: transform .2s; color: var(--text-muted); }
 .faq-item[open] .faq-chevron { transform: rotate(180deg); }
 .faq-a { padding: 0 var(--s-6) var(--s-5); color: var(--text-muted); line-height: 1.7; }
+
+/* ==========================================================================
+   Roles, task bank, assistant, account
+   ========================================================================== */
+
+/* ---------- header role badge ---------- */
+.role-badge {
+  display: inline-flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-1) var(--s-3) var(--s-1) var(--s-1);
+  border: 1.5px solid var(--border); border-radius: var(--r-full);
+  background: var(--surface); transition: all .18s;
+}
+[dir="ltr"] .role-badge { padding: var(--s-1) var(--s-1) var(--s-1) var(--s-3); }
+.role-badge:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.role-badge__mark {
+  width: 30px; height: 30px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  background: var(--accent); color: var(--on-accent);
+}
+.role-badge__text { display: flex; flex-direction: column; line-height: 1.2; }
+.role-badge__text strong { font-size: .625rem; font-weight: 600; color: var(--text-faint); }
+.role-badge__text span { font-size: .8125rem; font-weight: 700; }
+@media (max-width: 1024px) { .role-badge__text { display: none; } .role-badge { padding: var(--s-1); } }
+
+/* ---------- role picker cards ---------- */
+.role-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2);
+  position: relative; text-align: start;
+  padding: var(--s-5); border-radius: var(--r-lg);
+  border: 1.5px solid var(--border); background: var(--surface);
+  transition: all .18s;
+}
+.role-card:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: var(--shadow-1); }
+.role-card.is-active { border-color: var(--accent); background: var(--accent-soft); }
+.role-card__icon {
+  width: 44px; height: 44px; border-radius: var(--r); display: grid; place-items: center;
+  background: var(--surface-3); color: var(--text);
+}
+.role-card.is-active .role-card__icon { background: var(--accent); color: var(--on-accent); }
+.role-card__check {
+  position: absolute; top: var(--s-3); inset-inline-end: var(--s-3);
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent); color: var(--on-accent);
+}
+
+/* ---------- account quick links ---------- */
+.account-link {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-4) var(--s-2); font-weight: 600; font-size: .9375rem;
+  color: var(--text-muted); transition: color .18s, padding .18s;
+}
+.account-link + .account-link { border-top: 1px solid var(--border); }
+.account-link:hover { color: var(--text); padding-inline-start: var(--s-4); }
+.account-link__go { margin-inline-start: auto; color: var(--text-faint); }
+[dir="rtl"] .account-link__go { transform: scaleX(-1); }
+
+/* ---------- task bank ---------- */
+.task-card { display: flex; flex-direction: column; height: 100%; }
+.task-card__body { padding: var(--s-5); display: flex; flex-direction: column; gap: var(--s-3); flex: 1; }
+.task-card__meta {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3);
+  padding-top: var(--s-4); margin-top: auto; border-top: 1px solid var(--border);
+}
+.task-card__meta > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.task-card__meta strong { font-size: .875rem; }
+.task-card__meta .reward { color: var(--accent); font-size: 1rem; }
+.task-card__foot { padding: 0 var(--s-5) var(--s-5); }
+.task-card.is-taken { opacity: .82; }
+@media (max-width: 480px) { .task-card__meta { grid-template-columns: 1fr 1fr; } }
+
+/* ---------- assistant chat ---------- */
+.chat {
+  padding: var(--s-5); min-height: 300px; max-height: 460px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: var(--s-4);
+  background: var(--surface-2); border-block: 1px solid var(--border);
+}
+.bubble {
+  max-width: min(72ch, 88%); align-self: flex-start;
+  padding: var(--s-4) var(--s-5); border-radius: var(--r-lg);
+  background: var(--surface); border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+}
+/* The reader's own turn sits on the side the page reads from. */
+.bubble--user {
+  align-self: flex-end;
+  background: var(--primary); color: var(--on-primary); border-color: var(--primary);
+}
+.bubble__who {
+  display: block; font-size: .6875rem; font-weight: 700;
+  letter-spacing: .04em; opacity: .6; margin-bottom: var(--s-2);
+}
+.bubble p { line-height: 1.75; font-size: .9375rem; }
+
+.chat-composer { display: flex; gap: var(--s-3); padding: var(--s-4) var(--s-5); }
+.chat-composer .input { flex: 1; }
+@media (max-width: 520px) {
+  .chat-composer { flex-direction: column; }
+  .chat-composer .btn { width: 100%; }
+}
+
+.disclaimer {
+  display: flex; align-items: flex-start; gap: var(--s-3);
+  padding: var(--s-4) var(--s-5); border-top: 1px solid var(--border);
+  background: var(--warning-soft); color: var(--warning);
+  font-size: .8125rem; line-height: 1.6;
+}
+.disclaimer .icon { flex: none; margin-top: 2px; }

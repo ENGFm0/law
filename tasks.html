@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-page="tasks" data-title-key="tasks.title">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f8fd">
+<title>بنك المهام | سند</title>
+<meta name="description" content="مهام قانونية حقيقية ينشرها محامون معتمدون للمتدربين والمساعدين القانونيين.">
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/roles.js"></script>
+</head>
+<body class="page">
+<a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
+
+<div data-slot="header"></div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/layout.js"></script>
+
+<main id="main">
+  <div class="container">
+    <nav class="breadcrumb">
+      <a href="index.html" data-i18n="nav.home"></a>
+      <svg class="icon icon-sm icon-flip" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      <span data-i18n="nav.tasks"></span>
+    </nav>
+
+    <header style="margin-bottom:var(--s-8)">
+      <span class="eyebrow" data-i18n="role.intern"></span>
+      <h1 class="headline" style="margin-top:var(--s-3)" data-i18n="tasks.heading"></h1>
+      <p class="lead" style="max-width:640px" data-i18n="tasks.lead"></p>
+    </header>
+
+    <!-- Shown when the visitor is not signed in as a trainee -->
+    <div class="card card--pad row between wrap gap-4 hidden" data-role-gate style="margin-bottom:var(--s-6);border-inline-start:4px solid var(--accent)">
+      <p class="row gap-3">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 4 9 4.5-9 4.5-9-4.5z"/><path d="M6.5 10.5V15c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3v-4.5"/></svg>
+        <span data-i18n="tasks.onlyInterns"></span>
+      </p>
+      <button class="btn btn--accent btn--sm" type="button" data-become-intern data-i18n="tasks.switchToIntern"></button>
+    </div>
+
+    <div class="grid grid-3" style="margin-bottom:var(--s-8)" data-task-stats></div>
+
+    <div class="row between wrap gap-4" style="margin-bottom:var(--s-5)">
+      <h2 class="title" data-i18n="tasks.available"></h2>
+      <select class="select" data-task-filter style="width:auto"></select>
+    </div>
+    <div class="grid grid-2" data-task-list></div>
+
+    <section style="margin-block:var(--s-16) var(--s-20)">
+      <h2 class="title" style="margin-bottom:var(--s-5)" data-i18n="tasks.mine"></h2>
+      <div class="panel"><div class="panel__body" data-task-mine></div></div>
+    </section>
+  </div>
+</main>
+
+<div data-slot="footer"></div>
+
+<script src="assets/js/app.js"></script>
+<script src="assets/js/pages.js"></script>
+</body>
+</html>

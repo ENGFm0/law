@@ -9,10 +9,11 @@
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="assets/css/style.css">
 <script src="assets/js/theme.js"></script>
 <script src="assets/js/i18n.js"></script>
+<script src="assets/js/roles.js"></script>
 </head>
 <body>
 <a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
@@ -43,6 +44,17 @@
     </header>
 
     <div class="grid grid-4" style="margin-bottom:var(--s-8)" data-dash-stats></div>
+
+    <section class="panel" style="margin-bottom:var(--s-8)">
+      <div class="panel__head row between wrap gap-3">
+        <h2 class="subtitle row gap-2">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+          <span data-i18n="drafts.title"></span>
+        </h2>
+        <span class="status status--warn" data-drafts-count></span>
+      </div>
+      <div class="panel__body" data-drafts></div>
+    </section>
 
     <section class="panel" style="margin-bottom:var(--s-8)">
       <div class="panel__head row between wrap gap-3">

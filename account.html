@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-page="account" data-title-key="account.title">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f8fd">
+<title>حسابي | سند</title>
+<meta name="description" content="إدارة دورك على منصة سند والوصول السريع إلى مساحات عملك.">
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/theme.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/roles.js"></script>
+</head>
+<body class="page">
+<a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
+
+<div data-slot="header"></div>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/layout.js"></script>
+
+<main id="main">
+  <div class="container" style="max-width:760px">
+    <nav class="breadcrumb">
+      <a href="index.html" data-i18n="nav.home"></a>
+      <svg class="icon icon-sm icon-flip" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      <span data-i18n="account.heading"></span>
+    </nav>
+
+    <header style="margin-bottom:var(--s-8)">
+      <h1 class="headline" data-i18n="account.heading"></h1>
+      <p class="lead" data-i18n="account.lead"></p>
+    </header>
+
+    <div class="stack gap-6" style="padding-bottom:var(--s-20)">
+      <section class="card card--rule-navy card--pad" data-account-identity></section>
+
+      <section class="card card--pad">
+        <h2 class="title" data-i18n="role.switch"></h2>
+        <p class="small muted" style="margin-top:var(--s-2)" data-i18n="role.switchHint"></p>
+        <div class="grid grid-3" style="margin-top:var(--s-5)" data-role-switcher></div>
+        <p class="tiny faint" style="margin-top:var(--s-4)" data-i18n="account.demoNote"></p>
+      </section>
+
+      <section class="card card--pad">
+        <h2 class="title" data-i18n="account.quickLinks"></h2>
+        <div class="stack" style="margin-top:var(--s-3)" data-account-links></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div data-slot="footer"></div>
+
+<script src="assets/js/app.js"></script>
+<script src="assets/js/pages.js"></script>
+</body>
+</html>

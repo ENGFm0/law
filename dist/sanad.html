@@ -4,7 +4,7 @@
 <meta name="theme-color" content="#f7f8fd">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
 
 <style>
 /* ==========================================================================
@@ -81,7 +81,7 @@
   --header-h: 72px;
 
   /* Type */
-  --font-ar: "Cairo", "Tajawal", "Segoe UI", system-ui, sans-serif;
+  --font-ar: "Tajawal", "Cairo", "Segoe UI", system-ui, sans-serif;
   --font-en: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font: var(--font-ar);
 }
@@ -726,6 +726,113 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .faq-item[open] .faq-chevron { transform: rotate(180deg); }
 .faq-a { padding: 0 var(--s-6) var(--s-5); color: var(--text-muted); line-height: 1.7; }
 
+/* ==========================================================================
+   Roles, task bank, assistant, account
+   ========================================================================== */
+
+/* ---------- header role badge ---------- */
+.role-badge {
+  display: inline-flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-1) var(--s-3) var(--s-1) var(--s-1);
+  border: 1.5px solid var(--border); border-radius: var(--r-full);
+  background: var(--surface); transition: all .18s;
+}
+[dir="ltr"] .role-badge { padding: var(--s-1) var(--s-1) var(--s-1) var(--s-3); }
+.role-badge:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.role-badge__mark {
+  width: 30px; height: 30px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  background: var(--accent); color: var(--on-accent);
+}
+.role-badge__text { display: flex; flex-direction: column; line-height: 1.2; }
+.role-badge__text strong { font-size: .625rem; font-weight: 600; color: var(--text-faint); }
+.role-badge__text span { font-size: .8125rem; font-weight: 700; }
+@media (max-width: 1024px) { .role-badge__text { display: none; } .role-badge { padding: var(--s-1); } }
+
+/* ---------- role picker cards ---------- */
+.role-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-2);
+  position: relative; text-align: start;
+  padding: var(--s-5); border-radius: var(--r-lg);
+  border: 1.5px solid var(--border); background: var(--surface);
+  transition: all .18s;
+}
+.role-card:hover { border-color: var(--border-strong); transform: translateY(-2px); box-shadow: var(--shadow-1); }
+.role-card.is-active { border-color: var(--accent); background: var(--accent-soft); }
+.role-card__icon {
+  width: 44px; height: 44px; border-radius: var(--r); display: grid; place-items: center;
+  background: var(--surface-3); color: var(--text);
+}
+.role-card.is-active .role-card__icon { background: var(--accent); color: var(--on-accent); }
+.role-card__check {
+  position: absolute; top: var(--s-3); inset-inline-end: var(--s-3);
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent); color: var(--on-accent);
+}
+
+/* ---------- account quick links ---------- */
+.account-link {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-4) var(--s-2); font-weight: 600; font-size: .9375rem;
+  color: var(--text-muted); transition: color .18s, padding .18s;
+}
+.account-link + .account-link { border-top: 1px solid var(--border); }
+.account-link:hover { color: var(--text); padding-inline-start: var(--s-4); }
+.account-link__go { margin-inline-start: auto; color: var(--text-faint); }
+[dir="rtl"] .account-link__go { transform: scaleX(-1); }
+
+/* ---------- task bank ---------- */
+.task-card { display: flex; flex-direction: column; height: 100%; }
+.task-card__body { padding: var(--s-5); display: flex; flex-direction: column; gap: var(--s-3); flex: 1; }
+.task-card__meta {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3);
+  padding-top: var(--s-4); margin-top: auto; border-top: 1px solid var(--border);
+}
+.task-card__meta > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.task-card__meta strong { font-size: .875rem; }
+.task-card__meta .reward { color: var(--accent); font-size: 1rem; }
+.task-card__foot { padding: 0 var(--s-5) var(--s-5); }
+.task-card.is-taken { opacity: .82; }
+@media (max-width: 480px) { .task-card__meta { grid-template-columns: 1fr 1fr; } }
+
+/* ---------- assistant chat ---------- */
+.chat {
+  padding: var(--s-5); min-height: 300px; max-height: 460px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: var(--s-4);
+  background: var(--surface-2); border-block: 1px solid var(--border);
+}
+.bubble {
+  max-width: min(72ch, 88%); align-self: flex-start;
+  padding: var(--s-4) var(--s-5); border-radius: var(--r-lg);
+  background: var(--surface); border: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+}
+/* The reader's own turn sits on the side the page reads from. */
+.bubble--user {
+  align-self: flex-end;
+  background: var(--primary); color: var(--on-primary); border-color: var(--primary);
+}
+.bubble__who {
+  display: block; font-size: .6875rem; font-weight: 700;
+  letter-spacing: .04em; opacity: .6; margin-bottom: var(--s-2);
+}
+.bubble p { line-height: 1.75; font-size: .9375rem; }
+
+.chat-composer { display: flex; gap: var(--s-3); padding: var(--s-4) var(--s-5); }
+.chat-composer .input { flex: 1; }
+@media (max-width: 520px) {
+  .chat-composer { flex-direction: column; }
+  .chat-composer .btn { width: 100%; }
+}
+
+.disclaimer {
+  display: flex; align-items: flex-start; gap: var(--s-3);
+  padding: var(--s-4) var(--s-5); border-top: 1px solid var(--border);
+  background: var(--warning-soft); color: var(--warning);
+  font-size: .8125rem; line-height: 1.6;
+}
+.disclaimer .icon { flex: none; margin-top: 2px; }
+
 
 /* --- bundle-only: the router swaps views inside #app --- */
 #app { display: flex; flex-direction: column; flex: 1; }
@@ -747,7 +854,7 @@ body.is-app #app { flex: 1; }
 
 <script>window.__SPA__ = true;
 window.__ASSETS__ = {"cover-contracts.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Contracts%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22ct%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2322375c%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23ct)%22%2F%3E%0A%20%20%3Cg%20transform%3D%22rotate(-8%20400%20225)%22%3E%0A%20%20%20%20%3Crect%20x%3D%22250%22%20y%3D%2280%22%20width%3D%22300%22%20height%3D%22300%22%20rx%3D%2212%22%20fill%3D%22%23f3f6ff%22%20opacity%3D%22.95%22%2F%3E%0A%20%20%20%20%3Cg%20stroke%3D%22%238b93a7%22%20stroke-width%3D%227%22%20stroke-linecap%3D%22round%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M290%20140%20h180%20M290%20180%20h220%20M290%20220%20h150%20M290%20260%20h200%22%2F%3E%0A%20%20%20%20%3C%2Fg%3E%0A%20%20%20%20%3Cpath%20d%3D%22M300%20320%20c30%20-30%2060%2020%2090%20-10%20s60%20-40%20100%2010%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Ccircle%20cx%3D%22660%22%20cy%3D%22360%22%20r%3D%2256%22%20fill%3D%22%23c8912a%22%20opacity%3D%22.25%22%2F%3E%0A%3C%2Fsvg%3E%0A","cover-corporate.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Corporate%20governance%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22cg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%231e3a5f%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23cg)%22%2F%3E%0A%20%20%3Cg%20fill%3D%22%23ffffff%22%20opacity%3D%22.07%22%3E%0A%20%20%20%20%3Crect%20x%3D%2260%22%20y%3D%22180%22%20width%3D%2290%22%20height%3D%22270%22%2F%3E%3Crect%20x%3D%22170%22%20y%3D%22120%22%20width%3D%2270%22%20height%3D%22330%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22260%22%20y%3D%22220%22%20width%3D%22110%22%20height%3D%22230%22%2F%3E%3Crect%20x%3D%22390%22%20y%3D%2290%22%20width%3D%2280%22%20height%3D%22360%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22490%22%20y%3D%22170%22%20width%3D%22100%22%20height%3D%22280%22%2F%3E%3Crect%20x%3D%22610%22%20y%3D%22130%22%20width%3D%2260%22%20height%3D%22320%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22690%22%20y%3D%22230%22%20width%3D%2280%22%20height%3D%22220%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20fill%3D%22%23c8912a%22%20opacity%3D%22.85%22%3E%0A%20%20%20%20%3Crect%20x%3D%22182%22%20y%3D%22150%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22204%22%20y%3D%22150%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22182%22%20y%3D%22180%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22204%22%20y%3D%22210%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22402%22%20y%3D%22120%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22424%22%20y%3D%22150%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22402%22%20y%3D%22200%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22446%22%20y%3D%22120%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22502%22%20y%3D%22200%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22546%22%20y%3D%22240%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22622%22%20y%3D%22160%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22644%22%20y%3D%22200%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cpath%20d%3D%22M0%20380%20L800%20300%20L800%20450%20L0%20450%20Z%22%20fill%3D%22%23060c18%22%20opacity%3D%22.55%22%2F%3E%0A%3C%2Fsvg%3E%0A","cover-family.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Family%20law%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22fm%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23183050%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230d1e38%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23fm)%22%2F%3E%0A%20%20%3Cg%20fill%3D%22none%22%20stroke%3D%22%23e8eefc%22%20stroke-width%3D%225%22%20opacity%3D%22.7%22%3E%0A%20%20%20%20%3Crect%20x%3D%22230%22%20y%3D%22120%22%20width%3D%22210%22%20height%3D%22270%22%20rx%3D%2210%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M265%20175%20h140%20M265%20215%20h140%20M265%20255%20h100%20M265%20295%20h120%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20fill%3D%22%23c8912a%22%20opacity%3D%22.9%22%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22520%22%20cy%3D%22215%22%20r%3D%2246%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%2210%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22580%22%20cy%3D%22215%22%20r%3D%2246%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%2210%22%20opacity%3D%22.6%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Ccircle%20cx%3D%22140%22%20cy%3D%22330%22%20r%3D%2270%22%20fill%3D%22%23c8912a%22%20opacity%3D%22.18%22%2F%3E%0A%3C%2Fsvg%3E%0A","cover-ip.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Intellectual%20property%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22ip%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%230b1b3a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23132a52%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23ip)%22%2F%3E%0A%20%20%3Cg%20stroke%3D%22%234f7fd4%22%20stroke-width%3D%221.5%22%20opacity%3D%22.35%22%20fill%3D%22none%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M0%2090%20H800%20M0%20180%20H800%20M0%20270%20H800%20M0%20360%20H800%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M100%200%20V450%20M250%200%20V450%20M400%200%20V450%20M550%200%20V450%20M700%200%20V450%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20fill%3D%22%234f7fd4%22%20opacity%3D%22.55%22%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22100%22%20cy%3D%22180%22%20r%3D%225%22%2F%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%2290%22%20r%3D%225%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22270%22%20r%3D%225%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22550%22%20cy%3D%22180%22%20r%3D%225%22%2F%3E%3Ccircle%20cx%3D%22700%22%20cy%3D%22360%22%20r%3D%225%22%2F%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%22360%22%20r%3D%225%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20transform%3D%22translate(400%20225)%22%3E%0A%20%20%20%20%3Crect%20x%3D%22-56%22%20y%3D%22-14%22%20width%3D%22112%22%20height%3D%2290%22%20rx%3D%2210%22%20fill%3D%22%23c8912a%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M-30%20-14%20v-26%20a30%2030%200%200%201%2060%200%20v26%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%2214%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%2226%22%20r%3D%2210%22%20fill%3D%22%230b1b3a%22%2F%3E%3Crect%20x%3D%22-4%22%20y%3D%2226%22%20width%3D%228%22%20height%3D%2222%22%20fill%3D%22%230b1b3a%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A","cover-labour.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Labour%20law%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22lb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2312233f%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b1729%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23lb)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22690%22%20cy%3D%22380%22%20r%3D%2270%22%20fill%3D%22%23c8912a%22%20opacity%3D%22.16%22%2F%3E%0A%20%20%3Cg%20transform%3D%22translate(400%20235)%22%3E%0A%20%20%20%20%3Cg%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M-150%2060%20h300%22%2F%3E%3Cpath%20d%3D%22M0%20-110%20v170%22%2F%3E%0A%20%20%20%20%3C%2Fg%3E%0A%20%20%20%20%3Cg%20fill%3D%22none%22%20stroke%3D%22%23e8eefc%22%20stroke-width%3D%226%22%20opacity%3D%22.85%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M-120%20-70%20h240%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M-120%20-70%20l-40%2070%20h80%20z%22%2F%3E%3Cpath%20d%3D%22M120%20-70%20l-40%2070%20h80%20z%22%2F%3E%0A%20%20%20%20%3C%2Fg%3E%0A%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%22-110%22%20r%3D%2212%22%20fill%3D%22%23c8912a%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22-70%22%20y%3D%2260%22%20width%3D%22140%22%20height%3D%2216%22%20rx%3D%226%22%20fill%3D%22%23c8912a%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A","cover-realestate.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Real%20estate%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22re%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231b3a5c%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230c1c30%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23re)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22640%22%20cy%3D%22110%22%20r%3D%2252%22%20fill%3D%22%23c8912a%22%20opacity%3D%22.35%22%2F%3E%0A%20%20%3Cg%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22%20fill%3D%22none%22%20opacity%3D%22.22%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M120%20300%20L240%20220%20L360%20300%20L360%20420%20L120%20420%20Z%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M180%20420%20L180%20350%20L230%20350%20L230%20420%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M400%20340%20L500%20275%20L600%20340%20L600%20420%20L400%20420%20Z%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20fill%3D%22%23c8912a%22%20opacity%3D%22.6%22%3E%0A%20%20%20%20%3Crect%20x%3D%22265%22%20y%3D%22315%22%20width%3D%2226%22%20height%3D%2226%22%2F%3E%3Crect%20x%3D%22265%22%20y%3D%22360%22%20width%3D%2226%22%20height%3D%2226%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22430%22%20y%3D%22360%22%20width%3D%2224%22%20height%3D%2224%22%2F%3E%3Crect%20x%3D%22540%22%20y%3D%22360%22%20width%3D%2224%22%20height%3D%2224%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%22418%22%20width%3D%22800%22%20height%3D%2232%22%20fill%3D%22%23060c18%22%20opacity%3D%22.6%22%2F%3E%0A%20%20%3Cg%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223%22%20opacity%3D%22.8%22%3E%3Cpath%20d%3D%22M60%20130%20L60%20200%20M60%20130%20L140%20130%22%2F%3E%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A","favicon.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Sanad%22%3E%0A%20%20%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2260%22%20height%3D%2260%22%20rx%3D%2214%22%20fill%3D%22none%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M32%2014%20v34%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M16%2022%20h32%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M16%2022%20l-7%2013%20h14%20z%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M48%2022%20l-7%2013%20h14%20z%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2050%20h16%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2214%22%20r%3D%223.6%22%20fill%3D%22%23c8912a%22%2F%3E%0A%3C%2Fsvg%3E%0A","logo.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Sanad%22%3E%0A%20%20%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2260%22%20height%3D%2260%22%20rx%3D%2214%22%20fill%3D%22none%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M32%2014%20v34%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M16%2022%20h32%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M16%2022%20l-7%2013%20h14%20z%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M48%2022%20l-7%2013%20h14%20z%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2050%20h16%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2214%22%20r%3D%223.6%22%20fill%3D%22%23c8912a%22%2F%3E%0A%3C%2Fsvg%3E%0A"};
-window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.title","html":"<main id=\"main\">\n\n  <!-- Hero -->\n  <section class=\"hero\">\n    <div class=\"container hero__inner\">\n      <span class=\"eyebrow\" data-i18n=\"home.eyebrow\"></span>\n      <h1 class=\"display\" style=\"margin-top:var(--s-4)\" data-i18n=\"home.heroTitle\"></h1>\n      <p class=\"lead\" data-i18n=\"home.heroLead\"></p>\n\n      <form class=\"searchbar\" data-search-form>\n        <div class=\"input-group\">\n          <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m20 20-3.5-3.5\"/></svg>\n          <input class=\"input\" type=\"search\" name=\"q\" data-i18n-attr=\"placeholder:home.searchPlaceholder, aria-label:home.searchPlaceholder\">\n        </div>\n        <select class=\"select\" name=\"specialty\" data-fill=\"specialties\" data-i18n-attr=\"aria-label:home.specialty\"></select>\n        <select class=\"select\" name=\"city\" data-fill=\"cities\" data-i18n-attr=\"aria-label:home.city\"></select>\n        <button class=\"btn btn--primary\" type=\"submit\" data-i18n=\"home.search\"></button>\n      </form>\n\n      <div style=\"margin-top:var(--s-5)\">\n        <a class=\"btn btn--accent btn--lg\" href=\"lawyers.html\" data-i18n=\"home.bookNow\"></a>\n      </div>\n\n      <div class=\"trustbar\" data-trustbar></div>\n    </div>\n  </section>\n\n  <!-- Why Sanad -->\n  <section class=\"section\">\n    <div class=\"container\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"home.whyTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"home.whyLead\"></p>\n      </div>\n      <div class=\"grid grid-4\" data-features></div>\n    </div>\n  </section>\n\n  <!-- How it works -->\n  <section class=\"section section--band\">\n    <div class=\"container\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"home.stepsTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"home.stepsLead\"></p>\n      </div>\n      <div class=\"grid grid-4\" data-steps></div>\n    </div>\n  </section>\n\n  <!-- Featured lawyers -->\n  <section class=\"section\">\n    <div class=\"container\">\n      <div class=\"row between wrap gap-4\" style=\"margin-bottom:var(--s-10)\">\n        <div>\n          <h2 class=\"headline\" data-i18n=\"home.featuredTitle\"></h2>\n          <p class=\"lead\" data-i18n=\"home.featuredLead\"></p>\n        </div>\n        <a class=\"btn btn--ghost\" href=\"lawyers.html\">\n          <span data-i18n=\"home.viewAll\"></span>\n          <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>\n        </a>\n      </div>\n      <div class=\"grid grid-3\" data-featured-lawyers></div>\n    </div>\n  </section>\n\n  <!-- Stats -->\n  <section class=\"section--tight section--band\">\n    <div class=\"container\">\n      <h2 class=\"headline center\" style=\"margin-bottom:var(--s-10)\" data-i18n=\"home.statsTitle\"></h2>\n      <div class=\"grid grid-4 center\" data-stats></div>\n    </div>\n  </section>\n\n  <!-- Testimonials -->\n  <section class=\"section\">\n    <div class=\"container\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"home.testimonialsTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"home.testimonialsLead\"></p>\n      </div>\n      <div class=\"grid grid-3\" data-testimonials></div>\n    </div>\n  </section>\n\n  <!-- Latest articles -->\n  <section class=\"section section--band\">\n    <div class=\"container\">\n      <div class=\"row between wrap gap-4\" style=\"margin-bottom:var(--s-10)\">\n        <div>\n          <h2 class=\"headline\" data-i18n=\"home.blogTitle\"></h2>\n          <p class=\"lead\" data-i18n=\"home.blogLead\"></p>\n        </div>\n        <a class=\"btn btn--ghost\" href=\"blog.html\">\n          <span data-i18n=\"home.viewAll\"></span>\n          <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>\n        </a>\n      </div>\n      <div class=\"grid grid-3\" data-home-articles></div>\n    </div>\n  </section>\n\n  <!-- CTA -->\n  <section class=\"section\">\n    <div class=\"container\">\n      <div class=\"cta-band reveal\">\n        <h2 class=\"headline\" data-i18n=\"home.ctaTitle\"></h2>\n        <p class=\"lead\" style=\"margin-top:var(--s-3)\" data-i18n=\"home.ctaLead\"></p>\n        <div class=\"row gap-3 wrap\" style=\"justify-content:center;margin-top:var(--s-8)\">\n          <a class=\"btn btn--accent btn--lg\" href=\"lawyers.html\" data-i18n=\"home.ctaPrimary\"></a>\n          <a class=\"btn btn--outline btn--lg\" href=\"login.html\" data-i18n=\"home.ctaSecondary\"></a>\n        </div>\n      </div>\n    </div>\n  </section>\n\n</main>"},"lawyers":{"page":"lawyers","chrome":"site","titleKey":"dir.title","html":"<main id=\"main\">\n  <div class=\"container\">\n    <nav class=\"breadcrumb\">\n      <a href=\"index.html\" data-i18n=\"nav.home\"></a>\n      <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\"/></svg>\n      <span data-i18n=\"nav.lawyers\"></span>\n    </nav>\n\n    <header style=\"margin-bottom:var(--s-8)\">\n      <h1 class=\"headline\" data-i18n=\"dir.heading\"></h1>\n      <p class=\"lead\" data-i18n=\"dir.lead\"></p>\n    </header>\n\n    <div class=\"directory\" style=\"padding-bottom:var(--s-16)\">\n\n      <!-- Filters -->\n      <aside class=\"filters\">\n        <button class=\"btn btn--outline btn--block hidden\" type=\"button\" data-toggle-filters style=\"margin-bottom:var(--s-3)\">\n          <svg class=\"icon icon-sm\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 6h16M7 12h10M10 18h4\"/></svg>\n          <span data-i18n=\"dir.showFilters\"></span>\n        </button>\n\n        <form class=\"panel\" data-filters>\n          <div class=\"panel__head row between gap-3\">\n            <h2 class=\"subtitle row gap-2\">\n              <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 6h16M7 12h10M10 18h4\"/></svg>\n              <span data-i18n=\"dir.filters\"></span>\n            </h2>\n            <button class=\"btn btn--ghost btn--sm\" type=\"reset\" data-i18n=\"dir.reset\"></button>\n          </div>\n\n          <div class=\"panel__body\">\n            <div class=\"filter-group\">\n              <h3 class=\"filter-group__title\" data-i18n=\"dir.specialties\"></h3>\n              <div data-filter-specialties></div>\n            </div>\n\n            <div class=\"filter-group\">\n              <h3 class=\"filter-group__title\" data-i18n=\"dir.cities\"></h3>\n              <div data-filter-cities></div>\n            </div>\n\n            <div class=\"filter-group\">\n              <h3 class=\"filter-group__title\" data-i18n=\"dir.priceRange\"></h3>\n              <div class=\"row gap-2\">\n                <input class=\"input\" type=\"number\" min=\"0\" step=\"10\" name=\"min\" data-i18n-attr=\"placeholder:dir.from, aria-label:dir.from\">\n                <span class=\"muted\">–</span>\n                <input class=\"input\" type=\"number\" min=\"0\" step=\"10\" name=\"max\" data-i18n-attr=\"placeholder:dir.to, aria-label:dir.to\">\n              </div>\n            </div>\n\n            <div class=\"filter-group\">\n              <h3 class=\"filter-group__title\" data-i18n=\"dir.consultType\"></h3>\n              <div data-filter-consults></div>\n            </div>\n\n            <div class=\"filter-group\">\n              <h3 class=\"filter-group__title\" data-i18n=\"dir.rating\"></h3>\n              <label class=\"check\"><input type=\"radio\" name=\"rating\" value=\"0\" checked><span data-i18n=\"dir.anyRating\"></span></label>\n              <label class=\"check\"><input type=\"radio\" name=\"rating\" value=\"4\"><span data-i18n=\"dir.stars4\"></span></label>\n              <label class=\"check\"><input type=\"radio\" name=\"rating\" value=\"4.5\"><span data-i18n=\"dir.stars45\"></span></label>\n            </div>\n          </div>\n        </form>\n      </aside>\n\n      <!-- Results -->\n      <section>\n        <div class=\"card results-bar\" style=\"margin-bottom:var(--s-6)\">\n          <strong data-results-count></strong>\n          <label class=\"row gap-3\">\n            <span class=\"small muted\" data-i18n=\"dir.sortBy\"></span>\n            <select class=\"select\" data-sort style=\"width:auto;height:38px\">\n              <option value=\"rating\" data-i18n=\"dir.sortRating\"></option>\n              <option value=\"priceAsc\" data-i18n=\"dir.sortPriceAsc\"></option>\n              <option value=\"priceDesc\" data-i18n=\"dir.sortPriceDesc\"></option>\n              <option value=\"experience\" data-i18n=\"dir.sortExperience\"></option>\n            </select>\n          </label>\n        </div>\n\n        <div class=\"grid grid-2\" data-results></div>\n        <div class=\"pagination\" data-pagination></div>\n      </section>\n    </div>\n  </div>\n</main>"},"lawyer":{"page":"lawyers","chrome":"site","titleKey":"profile.title","html":"<main id=\"main\">\n  <div class=\"container\">\n    <nav class=\"breadcrumb\">\n      <a href=\"index.html\" data-i18n=\"nav.home\"></a>\n      <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\"/></svg>\n      <a href=\"lawyers.html\" data-i18n=\"nav.lawyers\"></a>\n      <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\"/></svg>\n      <span data-crumb-name></span>\n    </nav>\n\n    <div class=\"profile-layout\" style=\"padding-bottom:var(--s-16)\">\n\n      <!-- Main column -->\n      <div class=\"stack gap-6\" id=\"profile\">\n        <div class=\"card card--rule-navy card--pad\" data-profile-head></div>\n\n        <div>\n          <div class=\"tabs\" data-tabs>\n            <button class=\"tab is-active\" type=\"button\" data-tab=\"experience\" data-i18n=\"profile.tabExperience\"></button>\n            <button class=\"tab\" type=\"button\" data-tab=\"services\" data-i18n=\"profile.tabServices\"></button>\n            <button class=\"tab\" type=\"button\" data-tab=\"articles\" data-i18n=\"profile.tabArticles\"></button>\n            <button class=\"tab\" type=\"button\" data-tab=\"reviews\" data-i18n=\"profile.tabReviews\"></button>\n          </div>\n\n          <div style=\"padding-top:var(--s-6)\">\n            <div class=\"tab-panel stack gap-6\" data-panel=\"experience\"></div>\n            <div class=\"tab-panel grid grid-2\" data-panel=\"services\" hidden></div>\n            <div class=\"tab-panel grid grid-2\" data-panel=\"articles\" hidden></div>\n            <div class=\"tab-panel stack gap-4\" data-panel=\"reviews\" hidden></div>\n          </div>\n        </div>\n      </div>\n\n      <!-- Booking -->\n      <aside class=\"booking\">\n        <form class=\"card card--rule-gold card--pad stack gap-5\" data-booking>\n          <div>\n            <h2 class=\"title\" data-i18n=\"profile.book\"></h2>\n            <p class=\"small muted\" data-i18n=\"profile.bookHint\"></p>\n          </div>\n\n          <div class=\"field\">\n            <label class=\"label\" for=\"svc\" data-i18n=\"profile.consultType\"></label>\n            <select class=\"select\" id=\"svc\" data-booking-service></select>\n          </div>\n\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"profile.date\"></span>\n            <div class=\"row between\" style=\"margin-bottom:var(--s-2)\">\n              <strong class=\"small\" data-cal-month></strong>\n            </div>\n            <div class=\"calendar\" data-calendar></div>\n          </div>\n\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"profile.availableTimes\"></span>\n            <div class=\"slots\" data-slots></div>\n          </div>\n\n          <hr class=\"divider\" style=\"margin:0\">\n\n          <div class=\"row between\">\n            <span class=\"muted\" data-i18n=\"profile.total\"></span>\n            <strong style=\"font-size:1.5rem\"><span class=\"num\" data-total>0</span> <span class=\"small muted\" data-i18n=\"profile.sar\"></span></strong>\n          </div>\n\n          <button class=\"btn btn--accent btn--block btn--lg\" type=\"submit\">\n            <span data-i18n=\"profile.pay\"></span>\n            <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>\n          </button>\n          <p class=\"tiny muted center row gap-2\" style=\"justify-content:center\">\n            <svg class=\"icon icon-sm\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"4.5\" y=\"10\" width=\"15\" height=\"10\" rx=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3\"/></svg>\n            <span data-i18n=\"profile.securePay\"></span>\n          </p>\n        </form>\n      </aside>\n    </div>\n  </div>\n</main>"},"blog":{"page":"blog","chrome":"site","titleKey":"blog.title","html":"<main id=\"main\">\n\n  <section class=\"section--tight\">\n    <div class=\"container\">\n      <div class=\"card card--pad center\" style=\"padding-block:var(--s-16)\">\n        <h1 class=\"headline\" data-i18n=\"blog.heading\"></h1>\n        <p class=\"lead\" style=\"max-width:680px;margin:var(--s-4) auto 0\" data-i18n=\"blog.lead\"></p>\n\n        <form class=\"row gap-3\" style=\"max-width:620px;margin:var(--s-8) auto 0\" data-blog-search>\n          <div class=\"input-group grow\">\n            <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m20 20-3.5-3.5\"/></svg>\n            <input class=\"input\" type=\"search\" data-i18n-attr=\"placeholder:blog.searchPlaceholder, aria-label:blog.searchPlaceholder\">\n          </div>\n          <button class=\"btn btn--primary\" type=\"submit\" data-i18n=\"blog.search\"></button>\n        </form>\n\n        <div class=\"row gap-2 wrap\" style=\"justify-content:center;margin-top:var(--s-6)\" data-blog-cats></div>\n      </div>\n    </div>\n  </section>\n\n  <section class=\"section--tight\" style=\"padding-bottom:var(--s-20)\">\n    <div class=\"container\">\n      <div class=\"blog-layout\">\n\n        <!-- Sidebar -->\n        <aside class=\"stack gap-6\">\n          <div class=\"card card--pad\">\n            <h2 class=\"subtitle\" data-i18n=\"blog.askExpert\"></h2>\n            <hr class=\"divider\">\n            <div data-blog-expert></div>\n            <a class=\"btn btn--accent btn--block\" style=\"margin-top:var(--s-4)\" href=\"lawyers.html\" data-i18n=\"blog.askExpertCta\"></a>\n          </div>\n\n          <div class=\"card card--rule-navy card--pad\" style=\"background:var(--surface-2)\">\n            <h2 class=\"subtitle row gap-2\">\n              <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m14.5 4.5 5 5M17 2l5 5M12 7l5 5M3.5 20.5h8\"/><path d=\"m5.5 15.5 6-6 3 3-6 6z\"/></svg>\n              <span data-i18n=\"blog.refs\"></span>\n            </h2>\n            <hr class=\"divider\">\n            <ul class=\"stack gap-4\" data-blog-refs></ul>\n          </div>\n\n          <form class=\"newsletter\" data-newsletter>\n            <h2 class=\"subtitle\" data-i18n=\"blog.newsletter\"></h2>\n            <p class=\"small\" style=\"opacity:.75;margin-top:var(--s-2)\" data-i18n=\"blog.newsletterLead\"></p>\n            <div class=\"stack gap-3\" style=\"margin-top:var(--s-4)\">\n              <input class=\"input\" type=\"email\" required data-i18n-attr=\"placeholder:blog.email, aria-label:blog.email\">\n              <button class=\"btn btn--accent btn--block\" type=\"submit\" data-i18n=\"blog.subscribe\"></button>\n            </div>\n          </form>\n        </aside>\n\n        <!-- Articles -->\n        <section>\n          <div class=\"row between wrap gap-4\" style=\"margin-bottom:var(--s-6)\">\n            <h2 class=\"title\" data-i18n=\"blog.latest\"></h2>\n            <span class=\"small muted\" data-blog-count></span>\n          </div>\n          <div class=\"grid grid-2\" data-blog-list></div>\n          <div class=\"center\" style=\"margin-top:var(--s-10)\">\n            <button class=\"btn btn--outline\" type=\"button\" data-blog-more data-i18n=\"blog.loadMore\"></button>\n          </div>\n        </section>\n\n      </div>\n    </div>\n  </section>\n\n</main>"},"about":{"page":"about","chrome":"site","titleKey":"about.title","html":"<main id=\"main\">\n\n  <section class=\"hero\">\n    <div class=\"container hero__inner\">\n      <span class=\"eyebrow\" data-i18n=\"home.eyebrow\"></span>\n      <h1 class=\"display\" style=\"margin-top:var(--s-4)\" data-i18n=\"about.heading\"></h1>\n      <p class=\"lead\" data-i18n=\"about.lead\"></p>\n    </div>\n  </section>\n\n  <section class=\"section--tight\">\n    <div class=\"container\">\n      <div class=\"grid grid-2\">\n        <article class=\"card card--rule-navy card--pad reveal\">\n          <h2 class=\"title\" data-i18n=\"about.missionTitle\"></h2>\n          <p class=\"lead\" style=\"margin-top:var(--s-3)\" data-i18n=\"about.missionBody\"></p>\n        </article>\n        <article class=\"card card--rule-gold card--pad reveal\">\n          <h2 class=\"title\" data-i18n=\"about.visionTitle\"></h2>\n          <p class=\"lead\" style=\"margin-top:var(--s-3)\" data-i18n=\"about.visionBody\"></p>\n        </article>\n      </div>\n    </div>\n  </section>\n\n  <section class=\"section\">\n    <div class=\"container\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"about.valuesTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"about.valuesLead\"></p>\n      </div>\n      <div class=\"grid grid-4\" data-values></div>\n    </div>\n  </section>\n\n  <section class=\"section--tight section--band\">\n    <div class=\"container\">\n      <h2 class=\"headline center\" style=\"margin-bottom:var(--s-10)\" data-i18n=\"about.numbersTitle\"></h2>\n      <div class=\"grid grid-4 center\" data-stats></div>\n    </div>\n  </section>\n\n  <section class=\"section\" id=\"team\">\n    <div class=\"container\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"about.teamTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"about.teamLead\"></p>\n      </div>\n      <div class=\"grid grid-4\" data-team></div>\n    </div>\n  </section>\n\n  <section class=\"section section--band\" id=\"faq\">\n    <div class=\"container\" style=\"max-width:860px\">\n      <h2 class=\"headline center\" style=\"margin-bottom:var(--s-10)\" data-i18n=\"about.faqTitle\"></h2>\n      <div class=\"stack gap-3\" data-faq></div>\n    </div>\n  </section>\n\n  <section class=\"section\" id=\"contact\">\n    <div class=\"container\" style=\"max-width:720px\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"about.contactTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"about.contactLead\"></p>\n      </div>\n      <form class=\"card card--pad stack gap-4\" data-contact>\n        <div class=\"grid grid-2\" style=\"gap:var(--s-4)\">\n          <div class=\"field\">\n            <label class=\"label\" for=\"c-name\" data-i18n=\"about.name\"></label>\n            <input class=\"input\" id=\"c-name\" name=\"name\" required>\n          </div>\n          <div class=\"field\">\n            <label class=\"label\" for=\"c-mail\" data-i18n=\"about.email\"></label>\n            <input class=\"input\" id=\"c-mail\" name=\"email\" type=\"email\" required>\n          </div>\n        </div>\n        <div class=\"field\">\n          <label class=\"label\" for=\"c-msg\" data-i18n=\"about.message\"></label>\n          <textarea class=\"textarea\" id=\"c-msg\" name=\"message\" required></textarea>\n        </div>\n        <button class=\"btn btn--primary btn--lg\" type=\"submit\" data-i18n=\"about.send\"></button>\n      </form>\n    </div>\n  </section>\n\n</main>"},"login":{"page":"login","chrome":"site","titleKey":"auth.title","html":"<main id=\"main\">\n  <div class=\"auth\">\n    <aside class=\"auth__aside\">\n      <h2 class=\"headline\" data-i18n=\"auth.asideTitle\"></h2>\n      <p class=\"lead\" style=\"color:rgba(232,238,252,.72)\" data-i18n=\"auth.asideBody\"></p>\n      <ul class=\"stack gap-4\" data-auth-points></ul>\n    </aside>\n\n    <section class=\"auth__form\">\n      <div class=\"seg\" style=\"margin-bottom:var(--s-6);align-self:flex-start\" data-auth-seg>\n        <button type=\"button\" class=\"is-active\" data-mode=\"login\" data-i18n=\"auth.login\"></button>\n        <button type=\"button\" data-mode=\"register\" data-i18n=\"auth.register\"></button>\n      </div>\n\n      <h1 class=\"headline\" data-auth-title></h1>\n      <p class=\"lead\" style=\"margin-top:var(--s-2);margin-bottom:var(--s-8)\" data-auth-lead></p>\n\n      <form class=\"stack gap-4\" data-auth-form>\n        <div class=\"field\" data-only=\"register\" hidden>\n          <label class=\"label\" for=\"a-name\" data-i18n=\"auth.fullName\"></label>\n          <input class=\"input\" id=\"a-name\" name=\"name\" autocomplete=\"name\">\n        </div>\n        <div class=\"field\" data-only=\"register\" hidden>\n          <label class=\"label\" for=\"a-lic\" data-i18n=\"auth.licenseNo\"></label>\n          <input class=\"input num\" id=\"a-lic\" name=\"license\" inputmode=\"numeric\">\n        </div>\n        <div class=\"field\">\n          <label class=\"label\" for=\"a-mail\" data-i18n=\"auth.email\"></label>\n          <input class=\"input\" id=\"a-mail\" name=\"email\" type=\"email\" required autocomplete=\"email\">\n        </div>\n        <div class=\"field\">\n          <label class=\"label\" for=\"a-pass\" data-i18n=\"auth.password\"></label>\n          <input class=\"input\" id=\"a-pass\" name=\"password\" type=\"password\" required autocomplete=\"current-password\">\n        </div>\n\n        <div class=\"row between wrap gap-3\" data-only=\"login\">\n          <label class=\"check\"><input type=\"checkbox\"><span data-i18n=\"auth.remember\"></span></label>\n          <a class=\"small\" style=\"color:var(--accent);font-weight:700\" href=\"#\" data-i18n=\"auth.forgot\"></a>\n        </div>\n\n        <p class=\"tiny muted\" data-only=\"register\" hidden data-i18n=\"auth.terms\"></p>\n\n        <button class=\"btn btn--primary btn--lg btn--block\" type=\"submit\" data-auth-submit></button>\n      </form>\n\n      <div style=\"margin-top:var(--s-8)\">\n        <p class=\"small muted center\" data-i18n=\"auth.orGoTo\"></p>\n        <div class=\"row gap-3 wrap\" style=\"justify-content:center;margin-top:var(--s-3)\">\n          <a class=\"btn btn--outline btn--sm\" href=\"dashboard-lawyer.html\" data-i18n=\"auth.demoLawyer\"></a>\n          <a class=\"btn btn--outline btn--sm\" href=\"dashboard-client.html\" data-i18n=\"auth.demoClient\"></a>\n        </div>\n      </div>\n    </section>\n  </div>\n</main>"},"dashboard-lawyer":{"page":"dashboard","chrome":"app","titleKey":"dash.title","html":"<div class=\"app\">\n  <aside class=\"sidebar\" data-dash-sidebar data-role=\"lawyer\"></aside>\n\n  <main class=\"app-main\" id=\"main\">\n    <header class=\"app-head\">\n      <div>\n        <h1 class=\"headline\" data-i18n=\"dash.overview\"></h1>\n        <p class=\"lead\" data-i18n=\"dash.overviewLead\"></p>\n      </div>\n      <div class=\"row gap-2\">\n        <button class=\"icon-btn\" type=\"button\" data-action=\"toggle-theme\" data-i18n-attr=\"aria-label:a11y.theme\">\n          <svg class=\"icon icon-moon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z\"/></svg>\n          <svg class=\"icon icon-sun\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4.2\"/><path d=\"M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4\"/></svg>\n        </button>\n        <button class=\"icon-btn icon-btn--wide\" type=\"button\" data-action=\"toggle-lang\" data-i18n-attr=\"aria-label:a11y.lang, title:a11y.lang\">\n          <svg class=\"icon icon-sm\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z\"/></svg>\n          <span class=\"lang-btn__code\" data-lang-code>EN</span>\n        </button>\n        <button class=\"icon-btn\" type=\"button\" data-i18n-attr=\"aria-label:dash.requests\" style=\"position:relative\">\n          <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 15V10a6 6 0 1 0-12 0v5l-1.5 3h15z\"/><path d=\"M10 21h4\"/></svg>\n          <span style=\"position:absolute;top:6px;inset-inline-end:6px;width:8px;height:8px;border-radius:50%;background:var(--accent)\"></span>\n        </button>\n      </div>\n    </header>\n\n    <div class=\"grid grid-4\" style=\"margin-bottom:var(--s-8)\" data-dash-stats></div>\n\n    <section class=\"panel\" style=\"margin-bottom:var(--s-8)\">\n      <div class=\"panel__head row between wrap gap-3\">\n        <h2 class=\"subtitle row gap-2\">\n          <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h4\"/></svg>\n          <span data-i18n=\"dash.editorTitle\"></span>\n        </h2>\n        <div class=\"row gap-3\">\n          <button class=\"btn btn--outline btn--sm\" type=\"button\" data-editor-draft data-i18n=\"dash.saveDraft\"></button>\n          <button class=\"btn btn--accent btn--sm\" type=\"button\" data-editor-publish data-i18n=\"dash.publish\"></button>\n        </div>\n      </div>\n\n      <div class=\"toolbar\" data-editor-toolbar></div>\n\n      <div class=\"editor\">\n        <input class=\"editor__title\" data-i18n-attr=\"placeholder:dash.articleTitlePlaceholder, aria-label:dash.articleTitlePlaceholder\">\n        <div class=\"editor__body\" contenteditable=\"true\" role=\"textbox\" aria-multiline=\"true\"\n             data-editor-body data-i18n-attr=\"data-placeholder:dash.articleBodyPlaceholder\"></div>\n      </div>\n    </section>\n\n    <div class=\"grid grid-2\">\n      <section class=\"panel\">\n        <div class=\"panel__head\"><h2 class=\"subtitle\" data-i18n=\"dash.newRequests\"></h2></div>\n        <div class=\"panel__body\" data-dash-requests></div>\n      </section>\n      <section class=\"panel\">\n        <div class=\"panel__head\"><h2 class=\"subtitle\" data-i18n=\"dash.upcoming\"></h2></div>\n        <div class=\"panel__body\" data-dash-upcoming></div>\n      </section>\n    </div>\n  </main>\n</div>"},"dashboard-client":{"page":"dashboard-client","chrome":"app","titleKey":"client.title","html":"<div class=\"app\">\n  <aside class=\"sidebar\" data-dash-sidebar data-role=\"client\"></aside>\n\n  <main class=\"app-main\" id=\"main\">\n    <header class=\"app-head\">\n      <div>\n        <h1 class=\"headline\" data-i18n=\"dash.panel\"></h1>\n        <p class=\"lead\" data-i18n=\"client.lead\"></p>\n      </div>\n      <div class=\"row gap-2\">\n        <button class=\"icon-btn\" type=\"button\" data-action=\"toggle-theme\" data-i18n-attr=\"aria-label:a11y.theme\">\n          <svg class=\"icon icon-moon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z\"/></svg>\n          <svg class=\"icon icon-sun\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4.2\"/><path d=\"M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4\"/></svg>\n        </button>\n        <button class=\"icon-btn icon-btn--wide\" type=\"button\" data-action=\"toggle-lang\" data-i18n-attr=\"aria-label:a11y.lang, title:a11y.lang\">\n          <svg class=\"icon icon-sm\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z\"/></svg>\n          <span class=\"lang-btn__code\" data-lang-code>EN</span>\n        </button>\n        <a class=\"btn btn--primary btn--sm\" href=\"lawyers.html\">\n          <svg class=\"icon icon-sm\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>\n          <span data-i18n=\"client.newRequest\"></span>\n        </a>\n      </div>\n    </header>\n\n    <div class=\"grid grid-3\" style=\"margin-bottom:var(--s-8)\" data-client-stats></div>\n\n    <div class=\"grid dash-split\">\n      <div class=\"stack gap-6\">\n        <section class=\"card card--rule-gold card--pad\" data-client-upcoming></section>\n\n        <section class=\"panel\">\n          <div class=\"panel__head row between gap-3\">\n            <h2 class=\"subtitle\" data-i18n=\"client.activeConsults\"></h2>\n            <a class=\"small muted\" href=\"#\" data-i18n=\"client.viewAll\"></a>\n          </div>\n          <div class=\"panel__body\" data-client-consults></div>\n        </section>\n      </div>\n\n      <aside class=\"stack gap-6\">\n        <section class=\"card card--rule-navy card--pad\">\n          <h2 class=\"subtitle\" data-i18n=\"client.docCenter\"></h2>\n          <hr class=\"divider\">\n          <div data-client-docs></div>\n        </section>\n\n        <section class=\"card card--pad\">\n          <h2 class=\"subtitle\" data-i18n=\"client.savedArticles\"></h2>\n          <hr class=\"divider\">\n          <div data-client-saved></div>\n        </section>\n      </aside>\n    </div>\n  </main>\n</div>"}};
+window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.title","html":"<main id=\"main\">\n\n  <!-- Hero -->\n  <section class=\"hero\">\n    <div class=\"container hero__inner\">\n      <span class=\"eyebrow\" data-i18n=\"home.eyebrow\"></span>\n      <h1 class=\"display\" style=\"margin-top:var(--s-4)\" data-i18n=\"home.heroTitle\"></h1>\n      <p class=\"lead\" data-i18n=\"home.heroLead\"></p>\n\n      <form class=\"searchbar\" data-search-form>\n        <div class=\"input-group\">\n          <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m20 20-3.5-3.5\"/></svg>\n          <input class=\"input\" type=\"search\" name=\"q\" data-i18n-attr=\"placeholder:home.searchPlaceholder, aria-label:home.searchPlaceholder\">\n        </div>\n        <select class=\"select\" name=\"specialty\" data-fill=\"specialties\" data-i18n-attr=\"aria-label:home.specialty\"></select>\n        <select class=\"select\" name=\"city\" data-fill=\"cities\" data-i18n-attr=\"aria-label:home.city\"></select>\n        <button class=\"btn btn--primary\" type=\"submit\" data-i18n=\"home.search\"></button>\n      </form>\n\n      <div style=\"margin-top:var(--s-5)\">\n        <a class=\"btn btn--accent btn--lg\" href=\"lawyers.html\" data-i18n=\"home.bookNow\"></a>\n      </div>\n\n      <div class=\"trustbar\" data-trustbar></div>\n    </div>\n  </section>\n\n  <!-- Why Sanad -->\n  <section class=\"section\">\n    <div class=\"container\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"home.whyTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"home.whyLead\"></p>\n      </div>\n      <div class=\"grid grid-4\" data-features></div>\n    </div>\n  </section>\n\n  <!-- Three workspaces -->\n  <section class=\"section section--band\">\n    <div class=\"container\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"home.rolesTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"home.rolesLead\"></p>\n      </div>\n      <div class=\"grid grid-3\" data-role-cards></div>\n    </div>\n  </section>\n\n  <!-- How it works -->\n  <section class=\"section\">\n    <div class=\"container\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"home.stepsTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"home.stepsLead\"></p>\n      </div>\n      <div class=\"grid grid-4\" data-steps></div>\n    </div>\n  </section>\n\n  <!-- Featured lawyers -->\n  <section class=\"section\">\n    <div class=\"container\">\n      <div class=\"row between wrap gap-4\" style=\"margin-bottom:var(--s-10)\">\n        <div>\n          <h2 class=\"headline\" data-i18n=\"home.featuredTitle\"></h2>\n          <p class=\"lead\" data-i18n=\"home.featuredLead\"></p>\n        </div>\n        <a class=\"btn btn--ghost\" href=\"lawyers.html\">\n          <span data-i18n=\"home.viewAll\"></span>\n          <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>\n        </a>\n      </div>\n      <div class=\"grid grid-3\" data-featured-lawyers></div>\n    </div>\n  </section>\n\n  <!-- Stats -->\n  <section class=\"section--tight section--band\">\n    <div class=\"container\">\n      <h2 class=\"headline center\" style=\"margin-bottom:var(--s-10)\" data-i18n=\"home.statsTitle\"></h2>\n      <div class=\"grid grid-4 center\" data-stats></div>\n    </div>\n  </section>\n\n  <!-- Testimonials -->\n  <section class=\"section\">\n    <div class=\"container\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"home.testimonialsTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"home.testimonialsLead\"></p>\n      </div>\n      <div class=\"grid grid-3\" data-testimonials></div>\n    </div>\n  </section>\n\n  <!-- Latest articles -->\n  <section class=\"section section--band\">\n    <div class=\"container\">\n      <div class=\"row between wrap gap-4\" style=\"margin-bottom:var(--s-10)\">\n        <div>\n          <h2 class=\"headline\" data-i18n=\"home.blogTitle\"></h2>\n          <p class=\"lead\" data-i18n=\"home.blogLead\"></p>\n        </div>\n        <a class=\"btn btn--ghost\" href=\"blog.html\">\n          <span data-i18n=\"home.viewAll\"></span>\n          <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>\n        </a>\n      </div>\n      <div class=\"grid grid-3\" data-home-articles></div>\n    </div>\n  </section>\n\n  <!-- CTA -->\n  <section class=\"section\">\n    <div class=\"container\">\n      <div class=\"cta-band reveal\">\n        <h2 class=\"headline\" data-i18n=\"home.ctaTitle\"></h2>\n        <p class=\"lead\" style=\"margin-top:var(--s-3)\" data-i18n=\"home.ctaLead\"></p>\n        <div class=\"row gap-3 wrap\" style=\"justify-content:center;margin-top:var(--s-8)\">\n          <a class=\"btn btn--accent btn--lg\" href=\"lawyers.html\" data-i18n=\"home.ctaPrimary\"></a>\n          <a class=\"btn btn--outline btn--lg\" href=\"login.html\" data-i18n=\"home.ctaSecondary\"></a>\n        </div>\n      </div>\n    </div>\n  </section>\n\n</main>"},"lawyers":{"page":"lawyers","chrome":"site","titleKey":"dir.title","html":"<main id=\"main\">\n  <div class=\"container\">\n    <nav class=\"breadcrumb\">\n      <a href=\"index.html\" data-i18n=\"nav.home\"></a>\n      <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\"/></svg>\n      <span data-i18n=\"nav.lawyers\"></span>\n    </nav>\n\n    <header style=\"margin-bottom:var(--s-8)\">\n      <h1 class=\"headline\" data-i18n=\"dir.heading\"></h1>\n      <p class=\"lead\" data-i18n=\"dir.lead\"></p>\n    </header>\n\n    <div class=\"directory\" style=\"padding-bottom:var(--s-16)\">\n\n      <!-- Filters -->\n      <aside class=\"filters\">\n        <button class=\"btn btn--outline btn--block hidden\" type=\"button\" data-toggle-filters style=\"margin-bottom:var(--s-3)\">\n          <svg class=\"icon icon-sm\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 6h16M7 12h10M10 18h4\"/></svg>\n          <span data-i18n=\"dir.showFilters\"></span>\n        </button>\n\n        <form class=\"panel\" data-filters>\n          <div class=\"panel__head row between gap-3\">\n            <h2 class=\"subtitle row gap-2\">\n              <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 6h16M7 12h10M10 18h4\"/></svg>\n              <span data-i18n=\"dir.filters\"></span>\n            </h2>\n            <button class=\"btn btn--ghost btn--sm\" type=\"reset\" data-i18n=\"dir.reset\"></button>\n          </div>\n\n          <div class=\"panel__body\">\n            <div class=\"filter-group\">\n              <h3 class=\"filter-group__title\" data-i18n=\"dir.specialties\"></h3>\n              <div data-filter-specialties></div>\n            </div>\n\n            <div class=\"filter-group\">\n              <h3 class=\"filter-group__title\" data-i18n=\"dir.cities\"></h3>\n              <div data-filter-cities></div>\n            </div>\n\n            <div class=\"filter-group\">\n              <h3 class=\"filter-group__title\" data-i18n=\"dir.priceRange\"></h3>\n              <div class=\"row gap-2\">\n                <input class=\"input\" type=\"number\" min=\"0\" step=\"10\" name=\"min\" data-i18n-attr=\"placeholder:dir.from, aria-label:dir.from\">\n                <span class=\"muted\">–</span>\n                <input class=\"input\" type=\"number\" min=\"0\" step=\"10\" name=\"max\" data-i18n-attr=\"placeholder:dir.to, aria-label:dir.to\">\n              </div>\n            </div>\n\n            <div class=\"filter-group\">\n              <h3 class=\"filter-group__title\" data-i18n=\"dir.consultType\"></h3>\n              <div data-filter-consults></div>\n            </div>\n\n            <div class=\"filter-group\">\n              <h3 class=\"filter-group__title\" data-i18n=\"dir.rating\"></h3>\n              <label class=\"check\"><input type=\"radio\" name=\"rating\" value=\"0\" checked><span data-i18n=\"dir.anyRating\"></span></label>\n              <label class=\"check\"><input type=\"radio\" name=\"rating\" value=\"4\"><span data-i18n=\"dir.stars4\"></span></label>\n              <label class=\"check\"><input type=\"radio\" name=\"rating\" value=\"4.5\"><span data-i18n=\"dir.stars45\"></span></label>\n            </div>\n          </div>\n        </form>\n      </aside>\n\n      <!-- Results -->\n      <section>\n        <div class=\"card results-bar\" style=\"margin-bottom:var(--s-6)\">\n          <strong data-results-count></strong>\n          <label class=\"row gap-3\">\n            <span class=\"small muted\" data-i18n=\"dir.sortBy\"></span>\n            <select class=\"select\" data-sort style=\"width:auto;height:38px\">\n              <option value=\"rating\" data-i18n=\"dir.sortRating\"></option>\n              <option value=\"priceAsc\" data-i18n=\"dir.sortPriceAsc\"></option>\n              <option value=\"priceDesc\" data-i18n=\"dir.sortPriceDesc\"></option>\n              <option value=\"experience\" data-i18n=\"dir.sortExperience\"></option>\n            </select>\n          </label>\n        </div>\n\n        <div class=\"grid grid-2\" data-results></div>\n        <div class=\"pagination\" data-pagination></div>\n      </section>\n    </div>\n  </div>\n</main>"},"lawyer":{"page":"lawyers","chrome":"site","titleKey":"profile.title","html":"<main id=\"main\">\n  <div class=\"container\">\n    <nav class=\"breadcrumb\">\n      <a href=\"index.html\" data-i18n=\"nav.home\"></a>\n      <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\"/></svg>\n      <a href=\"lawyers.html\" data-i18n=\"nav.lawyers\"></a>\n      <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\"/></svg>\n      <span data-crumb-name></span>\n    </nav>\n\n    <div class=\"profile-layout\" style=\"padding-bottom:var(--s-16)\">\n\n      <!-- Main column -->\n      <div class=\"stack gap-6\" id=\"profile\">\n        <div class=\"card card--rule-navy card--pad\" data-profile-head></div>\n\n        <div>\n          <div class=\"tabs\" data-tabs>\n            <button class=\"tab is-active\" type=\"button\" data-tab=\"experience\" data-i18n=\"profile.tabExperience\"></button>\n            <button class=\"tab\" type=\"button\" data-tab=\"services\" data-i18n=\"profile.tabServices\"></button>\n            <button class=\"tab\" type=\"button\" data-tab=\"articles\" data-i18n=\"profile.tabArticles\"></button>\n            <button class=\"tab\" type=\"button\" data-tab=\"reviews\" data-i18n=\"profile.tabReviews\"></button>\n          </div>\n\n          <div style=\"padding-top:var(--s-6)\">\n            <div class=\"tab-panel stack gap-6\" data-panel=\"experience\"></div>\n            <div class=\"tab-panel grid grid-2\" data-panel=\"services\" hidden></div>\n            <div class=\"tab-panel grid grid-2\" data-panel=\"articles\" hidden></div>\n            <div class=\"tab-panel stack gap-4\" data-panel=\"reviews\" hidden></div>\n          </div>\n        </div>\n      </div>\n\n      <!-- Booking -->\n      <aside class=\"booking\">\n        <form class=\"card card--rule-gold card--pad stack gap-5\" data-booking>\n          <div>\n            <h2 class=\"title\" data-i18n=\"profile.book\"></h2>\n            <p class=\"small muted\" data-i18n=\"profile.bookHint\"></p>\n          </div>\n\n          <div class=\"field\">\n            <label class=\"label\" for=\"svc\" data-i18n=\"profile.consultType\"></label>\n            <select class=\"select\" id=\"svc\" data-booking-service></select>\n          </div>\n\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"profile.date\"></span>\n            <div class=\"row between\" style=\"margin-bottom:var(--s-2)\">\n              <strong class=\"small\" data-cal-month></strong>\n            </div>\n            <div class=\"calendar\" data-calendar></div>\n          </div>\n\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"profile.availableTimes\"></span>\n            <div class=\"slots\" data-slots></div>\n          </div>\n\n          <hr class=\"divider\" style=\"margin:0\">\n\n          <div class=\"row between\">\n            <span class=\"muted\" data-i18n=\"profile.total\"></span>\n            <strong style=\"font-size:1.5rem\"><span class=\"num\" data-total>0</span> <span class=\"small muted\" data-i18n=\"profile.sar\"></span></strong>\n          </div>\n\n          <button class=\"btn btn--accent btn--block btn--lg\" type=\"submit\">\n            <span data-i18n=\"profile.pay\"></span>\n            <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>\n          </button>\n          <p class=\"tiny muted center row gap-2\" style=\"justify-content:center\">\n            <svg class=\"icon icon-sm\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"4.5\" y=\"10\" width=\"15\" height=\"10\" rx=\"2\"/><path d=\"M8 10V7a4 4 0 0 1 8 0v3\"/></svg>\n            <span data-i18n=\"profile.securePay\"></span>\n          </p>\n        </form>\n      </aside>\n    </div>\n  </div>\n</main>"},"blog":{"page":"blog","chrome":"site","titleKey":"blog.title","html":"<main id=\"main\">\n\n  <section class=\"section--tight\">\n    <div class=\"container\">\n      <div class=\"card card--pad center\" style=\"padding-block:var(--s-16)\">\n        <h1 class=\"headline\" data-i18n=\"blog.heading\"></h1>\n        <p class=\"lead\" style=\"max-width:680px;margin:var(--s-4) auto 0\" data-i18n=\"blog.lead\"></p>\n\n        <form class=\"row gap-3\" style=\"max-width:620px;margin:var(--s-8) auto 0\" data-blog-search>\n          <div class=\"input-group grow\">\n            <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m20 20-3.5-3.5\"/></svg>\n            <input class=\"input\" type=\"search\" data-i18n-attr=\"placeholder:blog.searchPlaceholder, aria-label:blog.searchPlaceholder\">\n          </div>\n          <button class=\"btn btn--primary\" type=\"submit\" data-i18n=\"blog.search\"></button>\n        </form>\n\n        <div class=\"row gap-2 wrap\" style=\"justify-content:center;margin-top:var(--s-6)\" data-blog-cats></div>\n      </div>\n    </div>\n  </section>\n\n  <section class=\"section--tight\" style=\"padding-bottom:var(--s-20)\">\n    <div class=\"container\">\n      <div class=\"blog-layout\">\n\n        <!-- Sidebar -->\n        <aside class=\"stack gap-6\">\n          <div class=\"card card--pad\">\n            <h2 class=\"subtitle\" data-i18n=\"blog.askExpert\"></h2>\n            <hr class=\"divider\">\n            <div data-blog-expert></div>\n            <a class=\"btn btn--accent btn--block\" style=\"margin-top:var(--s-4)\" href=\"lawyers.html\" data-i18n=\"blog.askExpertCta\"></a>\n          </div>\n\n          <div class=\"card card--rule-navy card--pad\" style=\"background:var(--surface-2)\">\n            <h2 class=\"subtitle row gap-2\">\n              <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m14.5 4.5 5 5M17 2l5 5M12 7l5 5M3.5 20.5h8\"/><path d=\"m5.5 15.5 6-6 3 3-6 6z\"/></svg>\n              <span data-i18n=\"blog.refs\"></span>\n            </h2>\n            <hr class=\"divider\">\n            <ul class=\"stack gap-4\" data-blog-refs></ul>\n          </div>\n\n          <form class=\"newsletter\" data-newsletter>\n            <h2 class=\"subtitle\" data-i18n=\"blog.newsletter\"></h2>\n            <p class=\"small\" style=\"opacity:.75;margin-top:var(--s-2)\" data-i18n=\"blog.newsletterLead\"></p>\n            <div class=\"stack gap-3\" style=\"margin-top:var(--s-4)\">\n              <input class=\"input\" type=\"email\" required data-i18n-attr=\"placeholder:blog.email, aria-label:blog.email\">\n              <button class=\"btn btn--accent btn--block\" type=\"submit\" data-i18n=\"blog.subscribe\"></button>\n            </div>\n          </form>\n        </aside>\n\n        <!-- Articles -->\n        <section>\n          <div class=\"row between wrap gap-4\" style=\"margin-bottom:var(--s-6)\">\n            <h2 class=\"title\" data-i18n=\"blog.latest\"></h2>\n            <span class=\"small muted\" data-blog-count></span>\n          </div>\n          <div class=\"grid grid-2\" data-blog-list></div>\n          <div class=\"center\" style=\"margin-top:var(--s-10)\">\n            <button class=\"btn btn--outline\" type=\"button\" data-blog-more data-i18n=\"blog.loadMore\"></button>\n          </div>\n        </section>\n\n      </div>\n    </div>\n  </section>\n\n</main>"},"about":{"page":"about","chrome":"site","titleKey":"about.title","html":"<main id=\"main\">\n\n  <section class=\"hero\">\n    <div class=\"container hero__inner\">\n      <span class=\"eyebrow\" data-i18n=\"home.eyebrow\"></span>\n      <h1 class=\"display\" style=\"margin-top:var(--s-4)\" data-i18n=\"about.heading\"></h1>\n      <p class=\"lead\" data-i18n=\"about.lead\"></p>\n    </div>\n  </section>\n\n  <section class=\"section--tight\">\n    <div class=\"container\">\n      <div class=\"grid grid-2\">\n        <article class=\"card card--rule-navy card--pad reveal\">\n          <h2 class=\"title\" data-i18n=\"about.missionTitle\"></h2>\n          <p class=\"lead\" style=\"margin-top:var(--s-3)\" data-i18n=\"about.missionBody\"></p>\n        </article>\n        <article class=\"card card--rule-gold card--pad reveal\">\n          <h2 class=\"title\" data-i18n=\"about.visionTitle\"></h2>\n          <p class=\"lead\" style=\"margin-top:var(--s-3)\" data-i18n=\"about.visionBody\"></p>\n        </article>\n      </div>\n    </div>\n  </section>\n\n  <section class=\"section\">\n    <div class=\"container\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"about.valuesTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"about.valuesLead\"></p>\n      </div>\n      <div class=\"grid grid-4\" data-values></div>\n    </div>\n  </section>\n\n  <section class=\"section--tight section--band\">\n    <div class=\"container\">\n      <h2 class=\"headline center\" style=\"margin-bottom:var(--s-10)\" data-i18n=\"about.numbersTitle\"></h2>\n      <div class=\"grid grid-4 center\" data-stats></div>\n    </div>\n  </section>\n\n  <section class=\"section\" id=\"team\">\n    <div class=\"container\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"about.teamTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"about.teamLead\"></p>\n      </div>\n      <div class=\"grid grid-4\" data-team></div>\n    </div>\n  </section>\n\n  <section class=\"section section--band\" id=\"faq\">\n    <div class=\"container\" style=\"max-width:860px\">\n      <h2 class=\"headline center\" style=\"margin-bottom:var(--s-10)\" data-i18n=\"about.faqTitle\"></h2>\n      <div class=\"stack gap-3\" data-faq></div>\n    </div>\n  </section>\n\n  <section class=\"section\" id=\"contact\">\n    <div class=\"container\" style=\"max-width:720px\">\n      <div class=\"section-head center\">\n        <h2 class=\"headline\" data-i18n=\"about.contactTitle\"></h2>\n        <p class=\"lead\" data-i18n=\"about.contactLead\"></p>\n      </div>\n      <form class=\"card card--pad stack gap-4\" data-contact>\n        <div class=\"grid grid-2\" style=\"gap:var(--s-4)\">\n          <div class=\"field\">\n            <label class=\"label\" for=\"c-name\" data-i18n=\"about.name\"></label>\n            <input class=\"input\" id=\"c-name\" name=\"name\" required>\n          </div>\n          <div class=\"field\">\n            <label class=\"label\" for=\"c-mail\" data-i18n=\"about.email\"></label>\n            <input class=\"input\" id=\"c-mail\" name=\"email\" type=\"email\" required>\n          </div>\n        </div>\n        <div class=\"field\">\n          <label class=\"label\" for=\"c-msg\" data-i18n=\"about.message\"></label>\n          <textarea class=\"textarea\" id=\"c-msg\" name=\"message\" required></textarea>\n        </div>\n        <button class=\"btn btn--primary btn--lg\" type=\"submit\" data-i18n=\"about.send\"></button>\n      </form>\n    </div>\n  </section>\n\n</main>"},"login":{"page":"login","chrome":"site","titleKey":"auth.title","html":"<main id=\"main\">\n  <div class=\"auth\">\n    <aside class=\"auth__aside\">\n      <h2 class=\"headline\" data-i18n=\"auth.asideTitle\"></h2>\n      <p class=\"lead\" style=\"color:rgba(232,238,252,.72)\" data-i18n=\"auth.asideBody\"></p>\n      <ul class=\"stack gap-4\" data-auth-points></ul>\n    </aside>\n\n    <section class=\"auth__form\">\n      <div class=\"seg\" style=\"margin-bottom:var(--s-6);align-self:flex-start\" data-auth-seg>\n        <button type=\"button\" class=\"is-active\" data-mode=\"login\" data-i18n=\"auth.login\"></button>\n        <button type=\"button\" data-mode=\"register\" data-i18n=\"auth.register\"></button>\n      </div>\n\n      <h1 class=\"headline\" data-auth-title></h1>\n      <p class=\"lead\" style=\"margin-top:var(--s-2);margin-bottom:var(--s-8)\" data-auth-lead></p>\n\n      <form class=\"stack gap-4\" data-auth-form>\n        <div class=\"field\" data-only=\"register\" hidden>\n          <label class=\"label\" for=\"a-name\" data-i18n=\"auth.fullName\"></label>\n          <input class=\"input\" id=\"a-name\" name=\"name\" autocomplete=\"name\">\n        </div>\n        <div class=\"field\" data-only=\"register\" hidden>\n          <label class=\"label\" for=\"a-lic\" data-i18n=\"auth.licenseNo\"></label>\n          <input class=\"input num\" id=\"a-lic\" name=\"license\" inputmode=\"numeric\">\n        </div>\n        <div class=\"field\">\n          <label class=\"label\" for=\"a-mail\" data-i18n=\"auth.email\"></label>\n          <input class=\"input\" id=\"a-mail\" name=\"email\" type=\"email\" required autocomplete=\"email\">\n        </div>\n        <div class=\"field\">\n          <label class=\"label\" for=\"a-pass\" data-i18n=\"auth.password\"></label>\n          <input class=\"input\" id=\"a-pass\" name=\"password\" type=\"password\" required autocomplete=\"current-password\">\n        </div>\n\n        <div class=\"row between wrap gap-3\" data-only=\"login\">\n          <label class=\"check\"><input type=\"checkbox\"><span data-i18n=\"auth.remember\"></span></label>\n          <a class=\"small\" style=\"color:var(--accent);font-weight:700\" href=\"#\" data-i18n=\"auth.forgot\"></a>\n        </div>\n\n        <p class=\"tiny muted\" data-only=\"register\" hidden data-i18n=\"auth.terms\"></p>\n\n        <button class=\"btn btn--primary btn--lg btn--block\" type=\"submit\" data-auth-submit></button>\n      </form>\n\n      <div style=\"margin-top:var(--s-8)\">\n        <p class=\"small muted center\" data-i18n=\"auth.orGoTo\"></p>\n        <div class=\"row gap-3 wrap\" style=\"justify-content:center;margin-top:var(--s-3)\">\n          <a class=\"btn btn--outline btn--sm\" href=\"dashboard-lawyer.html\" data-i18n=\"auth.demoLawyer\"></a>\n          <a class=\"btn btn--outline btn--sm\" href=\"dashboard-client.html\" data-i18n=\"auth.demoClient\"></a>\n        </div>\n      </div>\n    </section>\n  </div>\n</main>"},"tasks":{"page":"tasks","chrome":"site","titleKey":"tasks.title","html":"<main id=\"main\">\n  <div class=\"container\">\n    <nav class=\"breadcrumb\">\n      <a href=\"index.html\" data-i18n=\"nav.home\"></a>\n      <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\"/></svg>\n      <span data-i18n=\"nav.tasks\"></span>\n    </nav>\n\n    <header style=\"margin-bottom:var(--s-8)\">\n      <span class=\"eyebrow\" data-i18n=\"role.intern\"></span>\n      <h1 class=\"headline\" style=\"margin-top:var(--s-3)\" data-i18n=\"tasks.heading\"></h1>\n      <p class=\"lead\" style=\"max-width:640px\" data-i18n=\"tasks.lead\"></p>\n    </header>\n\n    <!-- Shown when the visitor is not signed in as a trainee -->\n    <div class=\"card card--pad row between wrap gap-4 hidden\" data-role-gate style=\"margin-bottom:var(--s-6);border-inline-start:4px solid var(--accent)\">\n      <p class=\"row gap-3\">\n        <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m12 4 9 4.5-9 4.5-9-4.5z\"/><path d=\"M6.5 10.5V15c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3v-4.5\"/></svg>\n        <span data-i18n=\"tasks.onlyInterns\"></span>\n      </p>\n      <button class=\"btn btn--accent btn--sm\" type=\"button\" data-become-intern data-i18n=\"tasks.switchToIntern\"></button>\n    </div>\n\n    <div class=\"grid grid-3\" style=\"margin-bottom:var(--s-8)\" data-task-stats></div>\n\n    <div class=\"row between wrap gap-4\" style=\"margin-bottom:var(--s-5)\">\n      <h2 class=\"title\" data-i18n=\"tasks.available\"></h2>\n      <select class=\"select\" data-task-filter style=\"width:auto\"></select>\n    </div>\n    <div class=\"grid grid-2\" data-task-list></div>\n\n    <section style=\"margin-block:var(--s-16) var(--s-20)\">\n      <h2 class=\"title\" style=\"margin-bottom:var(--s-5)\" data-i18n=\"tasks.mine\"></h2>\n      <div class=\"panel\"><div class=\"panel__body\" data-task-mine></div></div>\n    </section>\n  </div>\n</main>"},"assistant":{"page":"assistant","chrome":"site","titleKey":"ai.title","html":"<main id=\"main\">\n  <div class=\"container\" style=\"max-width:900px\">\n    <nav class=\"breadcrumb\">\n      <a href=\"index.html\" data-i18n=\"nav.home\"></a>\n      <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\"/></svg>\n      <span data-i18n=\"nav.assistant\"></span>\n    </nav>\n\n    <header class=\"center\" style=\"margin-bottom:var(--s-8)\">\n      <span class=\"eyebrow\">\n        <svg class=\"icon icon-sm\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3l1.8 4.7L18.5 9.5 13.8 11.3 12 16l-1.8-4.7L5.5 9.5l4.7-1.8z\"/></svg>\n        <span data-i18n=\"nav.assistant\"></span>\n      </span>\n      <h1 class=\"headline\" style=\"margin-top:var(--s-3)\" data-i18n=\"ai.heading\"></h1>\n      <p class=\"lead\" style=\"max-width:620px;margin-inline:auto\" data-i18n=\"ai.lead\"></p>\n    </header>\n\n    <section class=\"card card--rule-gold\" style=\"margin-bottom:var(--s-16)\">\n      <div class=\"panel__head row between wrap gap-3\">\n        <h2 class=\"subtitle\" data-i18n=\"ai.suggestions\"></h2>\n        <button class=\"btn btn--ghost btn--sm\" type=\"button\" data-chat-clear data-i18n=\"ai.clear\"></button>\n      </div>\n\n      <div class=\"row gap-2 wrap\" style=\"padding:var(--s-4) var(--s-5)\" data-chat-suggestions></div>\n\n      <div class=\"chat\" data-chat-log aria-live=\"polite\"></div>\n\n      <form class=\"chat-composer\" data-chat-form>\n        <input class=\"input\" data-chat-input required\n               data-i18n-attr=\"placeholder:ai.placeholder, aria-label:ai.placeholder\">\n        <button class=\"btn btn--primary\" type=\"submit\">\n          <span data-i18n=\"ai.send\"></span>\n          <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg>\n        </button>\n      </form>\n\n      <p class=\"disclaimer\">\n        <svg class=\"icon icon-sm\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 8h.01M11 12h1v5h1\"/></svg>\n        <span><span data-i18n=\"ai.disclaimer\"></span>\n        <a href=\"lawyers.html\" style=\"color:var(--accent);font-weight:700\" data-i18n=\"ai.bookInstead\"></a></span>\n      </p>\n    </section>\n  </div>\n</main>"},"account":{"page":"account","chrome":"site","titleKey":"account.title","html":"<main id=\"main\">\n  <div class=\"container\" style=\"max-width:760px\">\n    <nav class=\"breadcrumb\">\n      <a href=\"index.html\" data-i18n=\"nav.home\"></a>\n      <svg class=\"icon icon-sm icon-flip\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 6 6 6-6 6\"/></svg>\n      <span data-i18n=\"account.heading\"></span>\n    </nav>\n\n    <header style=\"margin-bottom:var(--s-8)\">\n      <h1 class=\"headline\" data-i18n=\"account.heading\"></h1>\n      <p class=\"lead\" data-i18n=\"account.lead\"></p>\n    </header>\n\n    <div class=\"stack gap-6\" style=\"padding-bottom:var(--s-20)\">\n      <section class=\"card card--rule-navy card--pad\" data-account-identity></section>\n\n      <section class=\"card card--pad\">\n        <h2 class=\"title\" data-i18n=\"role.switch\"></h2>\n        <p class=\"small muted\" style=\"margin-top:var(--s-2)\" data-i18n=\"role.switchHint\"></p>\n        <div class=\"grid grid-3\" style=\"margin-top:var(--s-5)\" data-role-switcher></div>\n        <p class=\"tiny faint\" style=\"margin-top:var(--s-4)\" data-i18n=\"account.demoNote\"></p>\n      </section>\n\n      <section class=\"card card--pad\">\n        <h2 class=\"title\" data-i18n=\"account.quickLinks\"></h2>\n        <div class=\"stack\" style=\"margin-top:var(--s-3)\" data-account-links></div>\n      </section>\n    </div>\n  </div>\n</main>"},"dashboard-lawyer":{"page":"dashboard","chrome":"app","titleKey":"dash.title","html":"<div class=\"app\">\n  <aside class=\"sidebar\" data-dash-sidebar data-role=\"lawyer\"></aside>\n\n  <main class=\"app-main\" id=\"main\">\n    <header class=\"app-head\">\n      <div>\n        <h1 class=\"headline\" data-i18n=\"dash.overview\"></h1>\n        <p class=\"lead\" data-i18n=\"dash.overviewLead\"></p>\n      </div>\n      <div class=\"row gap-2\">\n        <button class=\"icon-btn\" type=\"button\" data-action=\"toggle-theme\" data-i18n-attr=\"aria-label:a11y.theme\">\n          <svg class=\"icon icon-moon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z\"/></svg>\n          <svg class=\"icon icon-sun\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4.2\"/><path d=\"M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4\"/></svg>\n        </button>\n        <button class=\"icon-btn icon-btn--wide\" type=\"button\" data-action=\"toggle-lang\" data-i18n-attr=\"aria-label:a11y.lang, title:a11y.lang\">\n          <svg class=\"icon icon-sm\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z\"/></svg>\n          <span class=\"lang-btn__code\" data-lang-code>EN</span>\n        </button>\n        <button class=\"icon-btn\" type=\"button\" data-i18n-attr=\"aria-label:dash.requests\" style=\"position:relative\">\n          <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 15V10a6 6 0 1 0-12 0v5l-1.5 3h15z\"/><path d=\"M10 21h4\"/></svg>\n          <span style=\"position:absolute;top:6px;inset-inline-end:6px;width:8px;height:8px;border-radius:50%;background:var(--accent)\"></span>\n        </button>\n      </div>\n    </header>\n\n    <div class=\"grid grid-4\" style=\"margin-bottom:var(--s-8)\" data-dash-stats></div>\n\n    <section class=\"panel\" style=\"margin-bottom:var(--s-8)\">\n      <div class=\"panel__head row between wrap gap-3\">\n        <h2 class=\"subtitle row gap-2\">\n          <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h4\"/></svg>\n          <span data-i18n=\"drafts.title\"></span>\n        </h2>\n        <span class=\"status status--warn\" data-drafts-count></span>\n      </div>\n      <div class=\"panel__body\" data-drafts></div>\n    </section>\n\n    <section class=\"panel\" style=\"margin-bottom:var(--s-8)\">\n      <div class=\"panel__head row between wrap gap-3\">\n        <h2 class=\"subtitle row gap-2\">\n          <svg class=\"icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h4\"/></svg>\n          <span data-i18n=\"dash.editorTitle\"></span>\n        </h2>\n        <div class=\"row gap-3\">\n          <button class=\"btn btn--outline btn--sm\" type=\"button\" data-editor-draft data-i18n=\"dash.saveDraft\"></button>\n          <button class=\"btn btn--accent btn--sm\" type=\"button\" data-editor-publish data-i18n=\"dash.publish\"></button>\n        </div>\n      </div>\n\n      <div class=\"toolbar\" data-editor-toolbar></div>\n\n      <div class=\"editor\">\n        <input class=\"editor__title\" data-i18n-attr=\"placeholder:dash.articleTitlePlaceholder, aria-label:dash.articleTitlePlaceholder\">\n        <div class=\"editor__body\" contenteditable=\"true\" role=\"textbox\" aria-multiline=\"true\"\n             data-editor-body data-i18n-attr=\"data-placeholder:dash.articleBodyPlaceholder\"></div>\n      </div>\n    </section>\n\n    <div class=\"grid grid-2\">\n      <section class=\"panel\">\n        <div class=\"panel__head\"><h2 class=\"subtitle\" data-i18n=\"dash.newRequests\"></h2></div>\n        <div class=\"panel__body\" data-dash-requests></div>\n      </section>\n      <section class=\"panel\">\n        <div class=\"panel__head\"><h2 class=\"subtitle\" data-i18n=\"dash.upcoming\"></h2></div>\n        <div class=\"panel__body\" data-dash-upcoming></div>\n      </section>\n    </div>\n  </main>\n</div>"},"dashboard-client":{"page":"dashboard-client","chrome":"app","titleKey":"client.title","html":"<div class=\"app\">\n  <aside class=\"sidebar\" data-dash-sidebar data-role=\"client\"></aside>\n\n  <main class=\"app-main\" id=\"main\">\n    <header class=\"app-head\">\n      <div>\n        <h1 class=\"headline\" data-i18n=\"dash.panel\"></h1>\n        <p class=\"lead\" data-i18n=\"client.lead\"></p>\n      </div>\n      <div class=\"row gap-2\">\n        <button class=\"icon-btn\" type=\"button\" data-action=\"toggle-theme\" data-i18n-attr=\"aria-label:a11y.theme\">\n          <svg class=\"icon icon-moon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z\"/></svg>\n          <svg class=\"icon icon-sun\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4.2\"/><path d=\"M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4\"/></svg>\n        </button>\n        <button class=\"icon-btn icon-btn--wide\" type=\"button\" data-action=\"toggle-lang\" data-i18n-attr=\"aria-label:a11y.lang, title:a11y.lang\">\n          <svg class=\"icon icon-sm\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z\"/></svg>\n          <span class=\"lang-btn__code\" data-lang-code>EN</span>\n        </button>\n        <a class=\"btn btn--primary btn--sm\" href=\"lawyers.html\">\n          <svg class=\"icon icon-sm\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>\n          <span data-i18n=\"client.newRequest\"></span>\n        </a>\n      </div>\n    </header>\n\n    <div class=\"grid grid-3\" style=\"margin-bottom:var(--s-8)\" data-client-stats></div>\n\n    <div class=\"grid dash-split\">\n      <div class=\"stack gap-6\">\n        <section class=\"card card--rule-gold card--pad\" data-client-upcoming></section>\n\n        <section class=\"panel\">\n          <div class=\"panel__head row between gap-3\">\n            <h2 class=\"subtitle\" data-i18n=\"client.activeConsults\"></h2>\n            <a class=\"small muted\" href=\"#\" data-i18n=\"client.viewAll\"></a>\n          </div>\n          <div class=\"panel__body\" data-client-consults></div>\n        </section>\n      </div>\n\n      <aside class=\"stack gap-6\">\n        <section class=\"card card--rule-navy card--pad\">\n          <h2 class=\"subtitle\" data-i18n=\"client.docCenter\"></h2>\n          <hr class=\"divider\">\n          <div data-client-docs></div>\n        </section>\n\n        <section class=\"card card--pad\">\n          <h2 class=\"subtitle\" data-i18n=\"client.savedArticles\"></h2>\n          <hr class=\"divider\">\n          <div data-client-saved></div>\n        </section>\n      </aside>\n    </div>\n  </main>\n</div>"}};
 </script>
 <script>/* ==========================================================================
    Theme — light / dark
@@ -843,6 +950,82 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
 
   var DICT = {
     ar: {
+      /* --- roles --- */
+      "role.client": "عميل",
+      "role.lawyer": "محامٍ",
+      "role.intern": "متدرب",
+      "role.clientDesc": "ابحث عن محامٍ، احجز استشارة، وتابع ملفاتك ووثائقك.",
+      "role.lawyerDesc": "استقبل الطلبات، اعتمد المسودات، وأشرف على المتدربين.",
+      "role.internDesc": "استلم مهاماً حقيقية تحت إشراف محامٍ معتمد واكسب خبرة وأجراً.",
+      "role.switch": "تبديل دور الحساب",
+      "role.switchHint": "المنصة تعرض لك واجهة مختلفة حسب دورك. بدّل الدور لتجربة كل واجهة.",
+      "role.current": "دورك الحالي",
+      "role.changed": "تم التبديل إلى واجهة {role}.",
+      "role.workspace": "مساحة عملك",
+
+      /* --- account --- */
+      "account.title": "حسابي | سند",
+      "account.heading": "حسابي",
+      "account.lead": "إدارة دورك على المنصة والوصول السريع إلى مساحات عملك.",
+      "account.quickLinks": "روابط سريعة",
+      "account.signedInAs": "مسجّل باسم",
+      "account.demoNote": "حساب تجريبي — التبديل بين الأدوار متاح للاطلاع على كل واجهة.",
+
+      /* --- tasks (intern task bank) --- */
+      "nav.tasks": "بنك المهام",
+      "tasks.title": "بنك المهام | سند",
+      "tasks.heading": "بنك المهام المتاحة",
+      "tasks.lead": "مهام قانونية حقيقية ينشرها محامون معتمدون. اقبل المهمة، سلّم عملك، واستلم مكافأتك بعد الاعتماد.",
+      "tasks.available": "المهام المتاحة",
+      "tasks.mine": "مهامي المقبولة",
+      "tasks.reward": "المكافأة",
+      "tasks.supervisor": "المشرف",
+      "tasks.deadline": "التسليم خلال",
+      "tasks.days": "{n} أيام",
+      "tasks.level": "المستوى",
+      "tasks.levelBasic": "مبتدئ",
+      "tasks.levelMid": "متوسط",
+      "tasks.levelAdvanced": "متقدم",
+      "tasks.accept": "قبول المهمة",
+      "tasks.accepted": "تم قبول المهمة — ستجدها في «مهامي المقبولة».",
+      "tasks.submitted": "قيد المراجعة",
+      "tasks.inProgress": "قيد التنفيذ",
+      "tasks.noneAccepted": "لم تقبل أي مهمة بعد.",
+      "tasks.filterAll": "كل التخصصات",
+      "tasks.earnings": "إجمالي المكافآت المقبولة",
+      "tasks.openCount": "مهمة متاحة",
+      "tasks.onlyInterns": "بنك المهام مخصص للمتدربين.",
+      "tasks.switchToIntern": "التبديل إلى دور متدرب",
+
+      /* --- drafts (lawyer signature queue) --- */
+      "drafts.title": "مسودات بانتظار اعتمادك",
+      "drafts.preparedBy": "إعداد",
+      "drafts.sign": "توقيع واعتماد",
+      "drafts.signed": "تم اعتماد المسودة وإشعار المتدرب.",
+      "drafts.review": "مراجعة",
+      "drafts.empty": "لا توجد مسودات بانتظار الاعتماد.",
+      "drafts.submittedAgo": "سُلّمت",
+
+      /* --- AI assistant --- */
+      "nav.assistant": "المساعد الذكي",
+      "ai.title": "المساعد الذكي | سند",
+      "ai.heading": "مساعد سند الذكي",
+      "ai.lead": "اسأل عن صياغة بند، أو لخّص وضعك القانوني، أو جهّز مسوّدة أولية قبل عرضها على محامٍ.",
+      "ai.placeholder": "اكتب سؤالك القانوني هنا...",
+      "ai.send": "إرسال",
+      "ai.suggestions": "جرّب أحد هذه الأسئلة",
+      "ai.greeting": "أهلاً بك في مساعد سند. اسألني عن صياغة البنود أو الإجراءات النظامية، وسأعطيك نقطة انطلاق واضحة.",
+      "ai.disclaimer": "هذا مساعد تجريبي يقدّم معلومات عامة فقط، وليس بديلاً عن استشارة محامٍ مرخص. للحالات الفعلية، احجز استشارة.",
+      "ai.bookInstead": "احجز استشارة مع محامٍ",
+      "ai.thinking": "يكتب...",
+      "ai.you": "أنت",
+      "ai.clear": "محادثة جديدة",
+
+      /* --- home additions --- */
+      "home.rolesTitle": "منصة واحدة، ثلاث مساحات عمل",
+      "home.rolesLead": "لكل دور واجهته وأدواته — اختر ما يناسبك.",
+      "home.enterWorkspace": "ادخل المساحة",
+
       /* --- chrome --- */
       "brand.name": "سند",
       "brand.latin": "SANAD",
@@ -879,8 +1062,8 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
       /* --- home --- */
       "home.title": "سند | سندك القانوني الموثوق",
       "home.eyebrow": "منصة قانونية معتمدة",
-      "home.heroTitle": "سندك القانوني الموثوق.. استشارات وعقود بأبسط طريقة",
-      "home.heroLead": "منصة تجمع نخبة من المحامين المعتمدين لتقديم استشارات قانونية سريعة، موثوقة، وبأسعار تنافسية.",
+      "home.heroTitle": "سندك القانوني الموثوق.. خبراء، وذكاء اصطناعي، ومساعدون في خدمتك",
+      "home.heroLead": "منصة سعودية تجمع المحامين المعتمدين والمساعدين القانونيين لإنجاز أعمالك وقضاياك بدقة وشفافية.",
       "home.searchPlaceholder": "كلمة البحث (مثال: طلاق، تأسيس شركة)",
       "home.specialty": "التخصص القانوني",
       "home.city": "المدينة",
@@ -1104,6 +1287,81 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
     },
 
     en: {
+      /* --- roles --- */
+      "role.client": "Client",
+      "role.lawyer": "Lawyer",
+      "role.intern": "Trainee",
+      "role.clientDesc": "Find a lawyer, book a consultation, and track your files and documents.",
+      "role.lawyerDesc": "Take on requests, approve drafts, and supervise trainees.",
+      "role.internDesc": "Take real tasks under a licensed lawyer's supervision, and earn experience and a fee.",
+      "role.switch": "Switch account role",
+      "role.switchHint": "The platform shows a different interface for each role. Switch to see them all.",
+      "role.current": "Your current role",
+      "role.changed": "Switched to the {role} interface.",
+      "role.workspace": "Your workspace",
+
+      /* --- account --- */
+      "account.title": "My account | Sanad",
+      "account.heading": "My account",
+      "account.lead": "Manage your role on the platform and jump straight to your workspaces.",
+      "account.quickLinks": "Quick links",
+      "account.signedInAs": "Signed in as",
+      "account.demoNote": "Demo account — role switching is open so you can see every interface.",
+
+      /* --- tasks (intern task bank) --- */
+      "nav.tasks": "Task bank",
+      "tasks.title": "Task bank | Sanad",
+      "tasks.heading": "Available tasks",
+      "tasks.lead": "Real legal work posted by licensed lawyers. Accept a task, submit your work, and get paid once it is approved.",
+      "tasks.available": "Open tasks",
+      "tasks.mine": "My accepted tasks",
+      "tasks.reward": "Fee",
+      "tasks.supervisor": "Supervisor",
+      "tasks.deadline": "Due within",
+      "tasks.days": "{n} days",
+      "tasks.level": "Level",
+      "tasks.levelBasic": "Entry",
+      "tasks.levelMid": "Intermediate",
+      "tasks.levelAdvanced": "Advanced",
+      "tasks.accept": "Accept task",
+      "tasks.accepted": "Task accepted — you will find it under \u2018My accepted tasks\u2019.",
+      "tasks.submitted": "Under review",
+      "tasks.inProgress": "In progress",
+      "tasks.noneAccepted": "You have not accepted any tasks yet.",
+      "tasks.filterAll": "All practice areas",
+      "tasks.earnings": "Total fees accepted",
+      "tasks.openCount": "open tasks",
+      "tasks.onlyInterns": "The task bank is for trainees.",
+      "tasks.switchToIntern": "Switch to the trainee role",
+
+      /* --- drafts (lawyer signature queue) --- */
+      "drafts.title": "Drafts awaiting your approval",
+      "drafts.preparedBy": "Prepared by",
+      "drafts.sign": "Sign & approve",
+      "drafts.signed": "Draft approved and the trainee notified.",
+      "drafts.review": "Review",
+      "drafts.empty": "No drafts are waiting for approval.",
+      "drafts.submittedAgo": "Submitted",
+
+      /* --- AI assistant --- */
+      "nav.assistant": "AI assistant",
+      "ai.title": "AI assistant | Sanad",
+      "ai.heading": "Sanad AI assistant",
+      "ai.lead": "Ask how to word a clause, summarise your legal position, or prepare a first draft before a lawyer reviews it.",
+      "ai.placeholder": "Type your legal question here...",
+      "ai.send": "Send",
+      "ai.suggestions": "Try one of these",
+      "ai.greeting": "Welcome to the Sanad assistant. Ask about clause wording or regulatory procedure, and I will give you a clear starting point.",
+      "ai.disclaimer": "This is a demo assistant giving general information only. It is not a substitute for advice from a licensed lawyer \u2014 for a real matter, book a consultation.",
+      "ai.bookInstead": "Book a consultation instead",
+      "ai.thinking": "Typing...",
+      "ai.you": "You",
+      "ai.clear": "New conversation",
+
+      /* --- home additions --- */
+      "home.rolesTitle": "One platform, three workspaces",
+      "home.rolesLead": "Each role gets its own interface and tools \u2014 pick the one that fits.",
+      "home.enterWorkspace": "Enter workspace",
       "brand.name": "Sanad",
       "brand.latin": "SANAD",
       "nav.home": "Home",
@@ -1137,8 +1395,8 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
 
       "home.title": "Sanad | Your trusted legal backing",
       "home.eyebrow": "Licensed legal platform",
-      "home.heroTitle": "Your trusted legal backing — consultations and contracts, made simple",
-      "home.heroLead": "A platform bringing together top licensed lawyers to deliver fast, reliable legal advice at competitive prices.",
+      "home.heroTitle": "Your trusted legal backing — experts, AI, and assistants at your service",
+      "home.heroLead": "A Saudi platform bringing together licensed lawyers and legal assistants to move your work and cases forward with precision and transparency.",
       "home.searchPlaceholder": "Search term (e.g. divorce, company setup)",
       "home.specialty": "Practice area",
       "home.city": "City",
@@ -1473,6 +1731,78 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
 })(window);
 </script>
 <script>/* ==========================================================================
+   Roles — client / lawyer / intern.
+   The platform serves three audiences, and which one you are decides the
+   navigation, the dashboard you land on, and which workspaces exist at all.
+   Stored like the theme and the language, so the choice survives navigation.
+   ========================================================================== */
+(function (global) {
+  "use strict";
+
+  var STORAGE_KEY = "sanad.role";
+  var DEFAULT_ROLE = "client";
+
+  var ROLES = {
+    client: {
+      id: "client",
+      icon: "user",
+      nameKey: "role.client",
+      /* The workspace this role lands on from the header badge. */
+      home: "dashboard-client.html",
+      /* Role-specific slot in the main navigation. */
+      nav: { key: "nav.lawyers", href: "lawyers.html", id: "lawyers" }
+    },
+    lawyer: {
+      id: "lawyer",
+      icon: "scale",
+      nameKey: "role.lawyer",
+      home: "dashboard-lawyer.html",
+      nav: { key: "dash.panel", href: "dashboard-lawyer.html", id: "dashboard" }
+    },
+    intern: {
+      id: "intern",
+      icon: "graduation",
+      nameKey: "role.intern",
+      home: "tasks.html",
+      nav: { key: "nav.tasks", href: "tasks.html", id: "tasks" }
+    }
+  };
+
+  function read() {
+    try { return localStorage.getItem(STORAGE_KEY); } catch (e) { return null; }
+  }
+  function write(v) {
+    try { localStorage.setItem(STORAGE_KEY, v); } catch (e) { /* private mode */ }
+  }
+
+  var stored = read();
+  var current = ROLES[stored] ? stored : DEFAULT_ROLE;
+
+  var listeners = [];
+
+  global.Roles = {
+    get current() { return current; },
+    get info() { return ROLES[current]; },
+    all: function () { return [ROLES.client, ROLES.lawyer, ROLES.intern]; },
+    is: function (id) { return current === id; },
+    get: function (id) { return ROLES[id] || null; },
+
+    set: function (id) {
+      if (!ROLES[id] || id === current) return;
+      current = id;
+      write(id);
+      listeners.forEach(function (fn) { try { fn(id); } catch (e) { console.error(e); } });
+      document.dispatchEvent(new CustomEvent("rolechange", { detail: { role: id } }));
+    },
+
+    onChange: function (fn, runNow) {
+      listeners.push(fn);
+      if (runNow !== false) { try { fn(current); } catch (e) { console.error(e); } }
+    }
+  };
+})(window);
+</script>
+<script>/* ==========================================================================
    Content — every user-facing string carries both languages, so switching
    locale re-renders from the same source instead of loading a second site.
    ========================================================================== */
@@ -1744,10 +2074,10 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
   ];
 
   var STATS = [
-    { value: "142+", valueEn: "142+", label: { ar: "محامٍ مرخص", en: "Licensed lawyers" } },
-    { value: "8,400+", valueEn: "8,400+", label: { ar: "استشارة منجزة", en: "Consultations delivered" } },
-    { value: "4.8", valueEn: "4.8", label: { ar: "متوسط التقييم", en: "Average rating" } },
-    { value: "13", valueEn: "13", label: { ar: "مدينة مغطاة", en: "Cities covered" } }
+    { value: "1,500+", valueEn: "1,500+", label: { ar: "استشارة منجزة", en: "Consultations delivered" } },
+    { value: "240+", valueEn: "240+", label: { ar: "محامٍ معتمد", en: "Licensed lawyers" } },
+    { value: "180+", valueEn: "180+", label: { ar: "مساعد ومتدرب قانوني", en: "Assistants & trainees" } },
+    { value: "99%", valueEn: "99%", label: { ar: "نسبة رضا العملاء", en: "Client satisfaction" } }
   ];
 
   var TESTIMONIALS = [
@@ -1841,6 +2171,71 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
       note:  { ar: "المرجع الأساسي لعلاقات العمل.", en: "The primary reference for employment relationships." } }
   ];
 
+  /* Legal assistants and trainees working under supervision. */
+  var INTERNS = [
+    { id: "ahmed-aljaid",   name: { ar: "أحمد الجعيد",   en: "Ahmed Al-Jaid" },   level: "mid",      done: 24 },
+    { id: "layan-alharbi",  name: { ar: "ليان الحربي",   en: "Layan Al-Harbi" },  level: "advanced", done: 41 },
+    { id: "turki-alsubaie", name: { ar: "تركي السبيعي",  en: "Turki Al-Subaie" }, level: "basic",    done: 7 }
+  ];
+
+  /* Work posted by supervising lawyers for trainees to pick up. */
+  var TASKS = [
+    { id: "nda-draft", reward: 250, days: 3, level: "basic", specialty: "commercial", supervisor: "ahmed-almohammadi",
+      title: { ar: "صياغة اتفاقية عدم إفشاء (NDA)", en: "Draft a non-disclosure agreement (NDA)" },
+      body:  { ar: "صياغة اتفاقية سرية ثنائية بين شركة ناشئة ومستثمر محتمل، مع بند مدة سريان لا يقل عن ثلاث سنوات.",
+               en: "Draft a mutual NDA between a startup and a prospective investor, with a survival period of at least three years." } },
+    { id: "labour-memo", reward: 400, days: 5, level: "mid", specialty: "labour", supervisor: "faisal-alotaibi",
+      title: { ar: "إعداد لائحة اعتراضية في دعوى عمالية", en: "Prepare a statement of defence in a labour claim" },
+      body:  { ar: "تلخيص وقائع الدعوى وإعداد لائحة اعتراضية مستندة إلى المادتين 75 و77 من نظام العمل.",
+               en: "Summarise the facts and prepare a statement of defence grounded in Articles 75 and 77 of the Labour Law." } },
+    { id: "trademark-search", reward: 300, days: 4, level: "mid", specialty: "ip", supervisor: "noura-alqahtani",
+      title: { ar: "بحث تشابه لعلامة تجارية قبل التسجيل", en: "Trademark clearance search before filing" },
+      body:  { ar: "فحص سجل العلامات التجارية وإعداد تقرير بالتشابهات المحتملة وتوصية بالفئات الأنسب.",
+               en: "Search the trademark register and report likely conflicts, with a recommendation on the best classes to file in." } },
+    { id: "lease-review", reward: 350, days: 4, level: "mid", specialty: "realestate", supervisor: "mohammed-alfahd",
+      title: { ar: "مراجعة عقد إيجار تجاري", en: "Review a commercial lease" },
+      body:  { ar: "مراجعة عقد إيجار محل تجاري وإبراز البنود المجحفة، مع اقتراح صياغات بديلة لبند الإخلاء.",
+               en: "Review a retail lease, flag one-sided clauses, and propose alternative wording for the termination clause." } },
+    { id: "estate-schedule", reward: 500, days: 7, level: "advanced", specialty: "estates", supervisor: "sara-bint-tariq",
+      title: { ar: "إعداد جدول حصر تركة وقسمتها", en: "Prepare an estate inventory and division schedule" },
+      body:  { ar: "حصر أصول التركة وإعداد جدول القسمة الشرعية مع بيان الأنصبة، تمهيداً لمراجعة المحامي المشرف.",
+               en: "Inventory the estate's assets and prepare the division schedule with each share stated, ready for the supervising lawyer." } },
+    { id: "board-minutes", reward: 220, days: 2, level: "basic", specialty: "commercial", supervisor: "ahmed-almohammadi",
+      title: { ar: "صياغة محضر اجتماع مجلس إدارة", en: "Draft board meeting minutes" },
+      body:  { ar: "تحرير محضر اجتماع مجلس إدارة شركة مساهمة وفق متطلبات لائحة الحوكمة.",
+               en: "Write up the minutes of a joint-stock company board meeting to the governance regulations' requirements." } }
+  ];
+
+  /* Trainee work sitting in the supervising lawyer's signature queue. */
+  var DRAFTS = [
+    { id: "d-1", by: "ahmed-aljaid", ago: { ar: "منذ ساعتين", en: "2 hours ago" }, specialty: "labour",
+      title: { ar: "لائحة اعتراضية — دعوى عمالية", en: "Statement of defence — labour claim" } },
+    { id: "d-2", by: "layan-alharbi", ago: { ar: "أمس", en: "Yesterday" }, specialty: "commercial",
+      title: { ar: "اتفاقية عدم إفشاء — شركة ناشئة", en: "Non-disclosure agreement — startup" } },
+    { id: "d-3", by: "turki-alsubaie", ago: { ar: "منذ 3 أيام", en: "3 days ago" }, specialty: "realestate",
+      title: { ar: "مذكرة مراجعة عقد إيجار تجاري", en: "Commercial lease review memo" } }
+  ];
+
+  /* Canned assistant exchanges. No model runs here — see the page disclaimer. */
+  var ASSISTANT = [
+    { id: "nda",
+      q: { ar: "كيف أصيغ بند سرية في عقد عمل؟", en: "How do I word a confidentiality clause in an employment contract?" },
+      a: { ar: "بند السرية الجيد يحدد ثلاثة أشياء بوضوح: ما الذي يُعد سراً (تعريف المعلومة السرية)، ومدى الالتزام أثناء العلاقة وبعد انتهائها، والاستثناءات كالمعلومات المتاحة للعموم أو المطلوبة بأمر نظامي. اجعل المدة محددة برقم — «ثلاث سنوات من تاريخ انتهاء العقد» أوضح من «إلى الأبد» وأقرب للقبول أمام القضاء. وتجنّب الصياغات المطلقة التي تمنع الموظف من العمل في المجال كلياً، لأنها قد تُقرأ كشرط تقييد مبالغ فيه.",
+           en: "A solid confidentiality clause pins down three things: what counts as confidential (a definition), how long the duty runs both during and after the relationship, and the carve-outs — information already public, or disclosure required by law. Put a number on the term: \u2018three years from the end of the contract\u2019 reads better before a court than \u2018in perpetuity\u2019. Avoid absolute wording that bars the employee from the field entirely; that tends to be read as an excessive restraint." } },
+    { id: "termination",
+      q: { ar: "ما الفرق بين المادة 75 والمادة 77 في نظام العمل؟", en: "What is the difference between Articles 75 and 77 of the Labour Law?" },
+      a: { ar: "المادة 75 تعالج إنهاء العقد غير محدد المدة بإشعار مسبق من أي من الطرفين — أي إنهاء مشروع متى استوفى مدة الإشعار. أما المادة 77 فتعالج ما يحدث إذا أُنهي العقد لسبب غير مشروع، وتقرر تعويضاً يُتفق عليه في العقد، وإن لم يُتفق فأجر خمسة عشر يوماً عن كل سنة للعقد غير محدد المدة، وأجر المدة المتبقية للعقد محدد المدة. باختصار: 75 عن كيفية الإنهاء، و77 عن ثمنه إذا كان بلا مبرر.",
+           en: "Article 75 covers ending an open-ended contract with prior notice from either side — lawful termination, provided the notice period is served. Article 77 covers what happens when a contract is ended without a valid reason: compensation as agreed in the contract, and failing that, fifteen days' wages per year of service for an open-ended contract, or the wages for the remaining term of a fixed-term one. In short: 75 is about how you end it, 77 is about what it costs when there was no good reason." } },
+    { id: "company",
+      q: { ar: "ما الخطوات النظامية لتأسيس شركة ذات مسؤولية محدودة؟", en: "What are the steps to set up a limited liability company?" },
+      a: { ar: "المسار العملي: حجز الاسم التجاري، ثم إعداد عقد التأسيس وتوثيقه، ثم إصدار السجل التجاري، ثم التسجيل لدى الزكاة والضريبة والجمارك والتأمينات الاجتماعية، وأخيراً فتح الحساب البنكي للشركة. أهم ما يُغفل عادة هو عقد التأسيس نفسه: حدّد فيه آلية اتخاذ القرار، وكيفية تقييم الحصة عند خروج شريك، وآلية فض النزاع. البنود هذه رخيصة اليوم وباهظة إن تُركت للاحقاً.",
+           en: "The practical path: reserve the trade name, draft and notarise the articles of association, issue the commercial registration, register with ZATCA and the social insurance authority, then open the company bank account. What most founders skip is the articles themselves: set out how decisions get made, how a departing partner's share is valued, and how disputes are resolved. Those clauses are cheap now and expensive later." } },
+    { id: "property",
+      q: { ar: "ما الذي أتحقق منه قبل شراء عقار؟", en: "What should I check before buying a property?" },
+      a: { ar: "ابدأ بالصك: تأكد من مطابقة بياناته للواقع (المساحة والحدود والأطوال)، ومن خلوه من الرهن أو الحجز عبر الاستعلام النظامي. ثم تحقق من مخطط البلدية ومن أن الاستخدام المصرح به يطابق غرضك، ومن عدم وجود نزع ملكية مخطط له. وإذا كان البيع على الخارطة، فتأكد من ترخيص المشروع ومن أن الدفعات تمر عبر حساب الضمان. اطلب من البائع إفادة بخلو العقار من الالتزامات المالية قبل التوقيع.",
+           en: "Start with the title deed: check that its details match reality (area, boundaries, dimensions) and that it is free of mortgage or attachment via the official search. Then check the municipal plan, that the permitted use matches your purpose, and that no expropriation is planned. For an off-plan sale, confirm the project's licence and that payments run through the escrow account. Ask the seller for written confirmation that the property carries no outstanding financial obligations before you sign." } }
+  ];
+
   global.DATA = {
     specialties: SPECIALTIES,
     cities: CITIES,
@@ -1857,6 +2252,15 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
     reviews: REVIEWS,
     services: SERVICES,
     references: REFERENCES,
+    interns: INTERNS,
+    tasks: TASKS,
+    drafts: DRAFTS,
+    assistant: ASSISTANT,
+
+    internById: function (id) {
+      for (var i = 0; i < INTERNS.length; i++) if (INTERNS[i].id === id) return INTERNS[i];
+      return null;
+    },
 
     lawyerById: function (id) {
       for (var i = 0; i < LAWYERS.length; i++) if (LAWYERS[i].id === id) return LAWYERS[i];
@@ -1962,12 +2366,17 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
   }
 
   /* ---------- Nav model ---------- */
-  var NAV = [
-    { key: "nav.home",    href: "index.html",   id: "home" },
-    { key: "nav.lawyers", href: "lawyers.html", id: "lawyers" },
-    { key: "nav.blog",    href: "blog.html",    id: "blog" },
-    { key: "nav.about",   href: "about.html",   id: "about" }
-  ];
+  /* The middle slot belongs to whichever role you are signed in as — a client
+     browses lawyers, a lawyer works their dashboard, a trainee the task bank.
+     Everything else is common to all three. */
+  function navItems() {
+    var role = global.Roles ? global.Roles.info : null;
+    var items = [{ key: "nav.home", href: "index.html", id: "home" }];
+    if (role) items.push(role.nav);
+    items.push({ key: "nav.blog", href: "blog.html", id: "blog" });
+    items.push({ key: "nav.assistant", href: "assistant.html", id: "assistant" });
+    return items;
+  }
 
   function themeButton() {
     return '<button class="icon-btn" type="button" data-action="toggle-theme" ' +
@@ -1981,8 +2390,18 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
       Icons.svg("globe", "icon-sm") + '<span class="lang-btn__code" data-lang-code>EN</span></button>';
   }
 
+  /** The header badge: who you are, and a way into your own workspace. */
+  function roleBadge() {
+    var role = global.Roles ? global.Roles.info : null;
+    if (!role) return "";
+    return '<a class="role-badge" href="account.html" data-role-badge>' +
+      '<span class="role-badge__mark">' + Icons.svg(role.icon, "icon-sm") + "</span>" +
+      '<span class="role-badge__text"><strong data-i18n="account.signedInAs"></strong>' +
+        '<span data-i18n="' + role.nameKey + '"></span></span></a>';
+  }
+
   function header(active) {
-    var links = NAV.map(function (item) {
+    var links = navItems().map(function (item) {
       return '<a class="nav__link' + (item.id === active ? " is-active" : "") + '" href="' + item.href +
         '" data-i18n="' + item.key + '"' + (item.id === active ? ' aria-current="page"' : "") + "></a>";
     }).join("");
@@ -1991,16 +2410,14 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
       brand() +
       '<nav class="nav" data-i18n-attr="aria-label:a11y.menu">' + links + "</nav>" +
       '<div class="header-actions">' +
-        themeButton() + langButton() +
-        '<a class="btn btn--outline btn--sm" href="login.html" data-i18n="nav.login"></a>' +
-        '<a class="btn btn--primary btn--sm" href="lawyers.html" data-i18n="nav.cta"></a>' +
+        themeButton() + langButton() + roleBadge() +
         '<button class="icon-btn burger" type="button" data-action="open-drawer" data-i18n-attr="aria-label:a11y.menu">' +
           Icons.svg("menu") + "</button>" +
       "</div></div></header>";
   }
 
   function drawer(active) {
-    var links = NAV.map(function (item) {
+    var links = navItems().map(function (item) {
       return '<a class="drawer__link' + (item.id === active ? " is-active" : "") + '" href="' + item.href +
         '" data-i18n="' + item.key + '"></a>';
     }).join("");
@@ -2012,11 +2429,11 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
           '<button class="icon-btn" type="button" data-action="close-drawer" data-i18n-attr="aria-label:a11y.close">' +
           Icons.svg("close") + "</button></div>" +
         links +
+        '<a class="drawer__link" href="about.html" data-i18n="nav.about"></a>' +
         '<div class="divider"></div>' +
-        '<a class="drawer__link" href="dashboard-lawyer.html" data-i18n="nav.dashboardLawyer"></a>' +
-        '<a class="drawer__link" href="dashboard-client.html" data-i18n="nav.dashboardClient"></a>' +
+        '<a class="drawer__link" href="account.html" data-i18n="account.heading"></a>' +
+        '<a class="drawer__link" href="login.html" data-i18n="nav.login"></a>' +
         '<div class="divider"></div>' +
-        '<a class="btn btn--outline btn--block" href="login.html" data-i18n="nav.login" style="margin-bottom:var(--s-3)"></a>' +
         '<a class="btn btn--primary btn--block" href="lawyers.html" data-i18n="nav.cta"></a>' +
       "</div></div>";
   }
@@ -2035,10 +2452,12 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
           '<p class="lead small" style="margin-top:var(--s-4)" data-i18n="footer.about"></p>' +
         "</div>" +
         col("footer.platform", [
-          { href: "lawyers.html", key: "nav.lawyers" },
-          { href: "blog.html",    key: "nav.blog" },
-          { href: "about.html",   key: "nav.about" },
-          { href: "login.html",   key: "nav.login" }
+          { href: "lawyers.html",   key: "nav.lawyers" },
+          { href: "tasks.html",     key: "nav.tasks" },
+          { href: "assistant.html", key: "nav.assistant" },
+          { href: "blog.html",      key: "nav.blog" },
+          { href: "about.html",     key: "nav.about" },
+          { href: "login.html",     key: "nav.login" }
         ]) +
         col("footer.legal", [
           { href: "about.html#faq", key: "footer.faq" },
@@ -2076,7 +2495,28 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
     return filled;
   }
 
-  global.Layout = { mount: mount, header: header, footer: footer, brand: brand, nav: NAV };
+  /** Rebuild the chrome in place — the nav changes when the role does. */
+  function refresh() {
+    var page = document.documentElement.getAttribute("data-page") || "";
+    var oldHeader = document.querySelector(".site-header");
+    var oldDrawer = document.querySelector("[data-drawer]");
+    if (!oldHeader) return;
+
+    var holder = document.createElement("div");
+    holder.innerHTML = header(page) + drawer(page);
+    var newHeader = holder.firstChild, newDrawer = holder.lastChild;
+
+    oldHeader.replaceWith(newHeader);
+    if (oldDrawer) oldDrawer.replaceWith(newDrawer);
+    else document.body.appendChild(newDrawer);
+
+    if (global.I18N) global.I18N.apply(newHeader), global.I18N.apply(newDrawer);
+  }
+
+  global.Layout = {
+    mount: mount, refresh: refresh, header: header, footer: footer,
+    brand: brand, navItems: navItems
+  };
   global.Icons = Icons;
 
   mount();
@@ -2382,6 +2822,14 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
     rerender();
   });
 
+  // A role change rewrites the navigation and anything drawn per-role.
+  document.addEventListener("rolechange", function () {
+    if (global.Layout && global.Layout.refresh) global.Layout.refresh();
+    syncLangButtons();
+    syncThemeButtons();
+    rerender();
+  });
+
   document.addEventListener("themechange", syncThemeButtons);
 
   /* ---------- boot ---------- */
@@ -2502,6 +2950,22 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
             '<span class="step__num">' + I18N.num(i + 1) + "</span>" +
             '<h3 class="subtitle" style="margin-top:var(--s-4)">' + esc(tx(s.title)) + "</h3>" +
             '<p class="small muted" style="margin-top:var(--s-2)">' + esc(tx(s.body)) + "</p></article>";
+        }).join("");
+      }
+
+      var roleCards = $("[data-role-cards]");
+      if (roleCards) {
+        roleCards.innerHTML = global.Roles.all().map(function (r) {
+          var descKey = r.id === "client" ? "role.clientDesc"
+                      : r.id === "lawyer" ? "role.lawyerDesc" : "role.internDesc";
+          return '<article class="card card--hover card--rule-' +
+              (r.id === "lawyer" ? "gold" : "navy") + ' feature reveal">' +
+            '<span class="feature__icon">' + Icons.svg(r.icon, "icon-lg") + "</span>" +
+            '<h3 class="subtitle">' + esc(I18N.t(r.nameKey)) + "</h3>" +
+            '<p class="small muted">' + esc(I18N.t(descKey)) + "</p>" +
+            '<a class="btn btn--outline btn--sm" style="margin-top:auto;align-self:flex-start" href="' +
+              r.home + '">' + esc(I18N.t("home.enterWorkspace")) +
+              Icons.svg("arrow", "icon-sm icon-flip") + "</a></article>";
         }).join("");
       }
 
@@ -3194,6 +3658,8 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
       "</div>";
   }
 
+  var signedDrafts = [];
+
   function initLawyerDash() {
     var TOOLS = [
       ["bold", "italic", "underline"],
@@ -3242,6 +3708,31 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
           esc(I18N.t("dash.image")) + "</button>";
       }
 
+      /* drafts prepared by trainees, waiting on this lawyer's signature */
+      var drafts = $("[data-drafts]");
+      if (drafts) {
+        var pending = DATA.drafts.filter(function (d) { return signedDrafts.indexOf(d.id) === -1; });
+        var badge = $("[data-drafts-count]");
+        if (badge) badge.textContent = I18N.num(pending.length);
+
+        drafts.innerHTML = pending.length
+          ? pending.map(function (d) {
+              var who = DATA.internById(d.by);
+              var spec = DATA.labelOf(DATA.specialties, d.specialty);
+              return '<div class="list-row">' +
+                '<span class="list-row__icon" style="color:var(--accent)">' +
+                  Icons.svg("file-text", "icon-sm") + "</span>" +
+                '<div class="grow"><strong class="small">' + esc(tx(d.title)) + "</strong>" +
+                  '<p class="tiny muted">' + esc(I18N.t("drafts.preparedBy")) + ": " +
+                    esc(who ? tx(who.name) : "—") + ' <span class="dot"></span> ' +
+                    esc(tx(spec)) + ' <span class="dot"></span> ' +
+                    esc(I18N.t("drafts.submittedAgo")) + " " + esc(tx(d.ago)) + "</p></div>" +
+                '<button class="btn btn--primary btn--sm" type="button" data-sign="' + esc(d.id) + '">' +
+                  Icons.svg("check", "icon-sm") + esc(I18N.t("drafts.sign")) + "</button></div>";
+            }).join("")
+          : '<p class="muted center" style="padding:var(--s-6)">' + esc(I18N.t("drafts.empty")) + "</p>";
+      }
+
       var reqs = $("[data-dash-requests]");
       if (reqs) {
         var rows = [
@@ -3284,6 +3775,17 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
         if (btn) btn.classList.toggle("is-active");
       });
     }
+    var draftsHost = $("[data-drafts]");
+    if (draftsHost) {
+      draftsHost.addEventListener("click", function (ev) {
+        var btn = ev.target.closest("[data-sign]");
+        if (!btn) return;
+        signedDrafts.push(btn.getAttribute("data-sign"));
+        App.toast(I18N.t("drafts.signed"), "check");
+        App.rerender();
+      });
+    }
+
     var pub = $("[data-editor-publish]");
     if (pub) pub.addEventListener("click", function () { App.toast(I18N.t("dash.published"), "check"); });
     var draft = $("[data-editor-draft]");
@@ -3394,6 +3896,283 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
     }, 1000);
   }
 
+  /* ============================================================= TASK BANK */
+  // Accepted tasks live for the session only — there is no backend to persist to.
+  var acceptedTasks = [];
+
+  function levelKey(level) {
+    return level === "advanced" ? "tasks.levelAdvanced"
+         : level === "mid" ? "tasks.levelMid" : "tasks.levelBasic";
+  }
+
+  function initTasks() {
+    var list = $("[data-task-list]");
+    if (!list) return;
+    var filter = "all";
+
+    function taskCard(t) {
+      var sup = DATA.lawyerById(t.supervisor);
+      var spec = DATA.labelOf(DATA.specialties, t.specialty);
+      var taken = acceptedTasks.indexOf(t.id) !== -1;
+
+      return '<article class="card card--hover task-card' + (taken ? " is-taken" : "") + '">' +
+        '<div class="task-card__body">' +
+          '<div class="row between gap-3 wrap">' +
+            '<span class="tag">' + esc(tx(spec)) + "</span>" +
+            '<span class="status status--' + (t.level === "advanced" ? "warn" : t.level === "mid" ? "info" : "muted") + '">' +
+              esc(I18N.t(levelKey(t.level))) + "</span>" +
+          "</div>" +
+          '<h3 class="subtitle">' + esc(tx(t.title)) + "</h3>" +
+          '<p class="small muted">' + esc(tx(t.body)) + "</p>" +
+          '<div class="task-card__meta">' +
+            '<div><span class="tiny muted">' + esc(I18N.t("tasks.reward")) + "</span>" +
+              '<strong class="reward"><span class="num">' + I18N.num(t.reward) + "</span> " +
+              esc(I18N.t("profile.sar")) + "</strong></div>" +
+            '<div><span class="tiny muted">' + esc(I18N.t("tasks.deadline")) + "</span>" +
+              "<strong>" + esc(I18N.t("tasks.days", { n: I18N.num(t.days) })) + "</strong></div>" +
+            '<div><span class="tiny muted">' + esc(I18N.t("tasks.supervisor")) + "</span>" +
+              "<strong>" + esc(sup ? tx(sup.name) : "—") + "</strong></div>" +
+          "</div>" +
+        "</div>" +
+        '<div class="task-card__foot">' +
+          (taken
+            ? '<span class="status status--ok" style="width:100%;justify-content:center;height:44px">' +
+              Icons.svg("check", "icon-sm") + esc(I18N.t("tasks.inProgress")) + "</span>"
+            : '<button class="btn btn--primary btn--block" type="button" data-accept="' + esc(t.id) + '">' +
+              esc(I18N.t("tasks.accept")) + "</button>") +
+        "</div></article>";
+    }
+
+    function draw() {
+      var open = DATA.tasks.filter(function (t) {
+        return filter === "all" || t.specialty === filter;
+      });
+      list.innerHTML = open.map(taskCard).join("");
+
+      /* headline figures */
+      var stats = $("[data-task-stats]");
+      if (stats) {
+        var earned = DATA.tasks.reduce(function (sum, t) {
+          return acceptedTasks.indexOf(t.id) !== -1 ? sum + t.reward : sum;
+        }, 0);
+        var cells = [
+          { icon: "file-text", label: I18N.t("tasks.openCount"), value: I18N.num(DATA.tasks.length), rule: "navy" },
+          { icon: "check",     label: I18N.t("tasks.mine"),      value: I18N.num(acceptedTasks.length), rule: "navy" },
+          { icon: "wallet",    label: I18N.t("tasks.earnings"),
+            value: I18N.num(earned) + " " + I18N.t("profile.sar"), rule: "gold" }
+        ];
+        stats.innerHTML = cells.map(function (c) {
+          return '<article class="card card--rule-' + c.rule + ' stat">' +
+            '<div class="stat__top"><span class="small muted">' + esc(c.label) + "</span>" +
+              '<span class="stat__icon">' + Icons.svg(c.icon) + "</span></div>" +
+            '<div class="stat__value">' + esc(c.value) + "</div></article>";
+        }).join("");
+      }
+
+      /* accepted list */
+      var mine = $("[data-task-mine]");
+      if (mine) {
+        var taken = DATA.tasks.filter(function (t) { return acceptedTasks.indexOf(t.id) !== -1; });
+        mine.innerHTML = taken.length
+          ? taken.map(function (t) {
+              var sup = DATA.lawyerById(t.supervisor);
+              return '<div class="list-row">' +
+                '<span class="list-row__icon">' + Icons.svg("file-text", "icon-sm") + "</span>" +
+                '<div class="grow"><strong class="small">' + esc(tx(t.title)) + "</strong>" +
+                  '<p class="tiny muted">' + esc(I18N.t("tasks.supervisor")) + ": " +
+                  esc(sup ? tx(sup.name) : "—") + "</p></div>" +
+                '<div class="stack gap-1" style="align-items:flex-end">' +
+                  '<span class="status status--info">' + esc(I18N.t("tasks.inProgress")) + "</span>" +
+                  '<span class="tiny faint num">' + I18N.num(t.reward) + " " + esc(I18N.t("profile.sar")) + "</span>" +
+                "</div></div>";
+            }).join("")
+          : '<p class="muted center" style="padding:var(--s-6)">' + esc(I18N.t("tasks.noneAccepted")) + "</p>";
+      }
+    }
+
+    App.onRender(function () {
+      var sel = $("[data-task-filter]");
+      if (sel) {
+        var used = {};
+        DATA.tasks.forEach(function (t) { used[t.specialty] = true; });
+        sel.innerHTML = '<option value="all">' + esc(I18N.t("tasks.filterAll")) + "</option>" +
+          DATA.specialties.filter(function (sp) { return used[sp.id]; }).map(function (sp) {
+            return '<option value="' + esc(sp.id) + '">' + esc(tx(sp)) + "</option>";
+          }).join("");
+        sel.value = filter;
+      }
+
+      // The bank is a trainee workspace; anyone else gets an invitation to switch.
+      var gate = $("[data-role-gate]");
+      if (gate) gate.classList.toggle("hidden", global.Roles.is("intern"));
+
+      draw();
+    });
+
+    list.addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-accept]");
+      if (!btn) return;
+      var id = btn.getAttribute("data-accept");
+      if (acceptedTasks.indexOf(id) === -1) acceptedTasks.push(id);
+      App.toast(I18N.t("tasks.accepted"), "check");
+      draw();
+    });
+
+    var sel = $("[data-task-filter]");
+    if (sel) sel.addEventListener("change", function () { filter = sel.value; draw(); });
+
+    var become = $("[data-become-intern]");
+    if (become) {
+      become.addEventListener("click", function () {
+        global.Roles.set("intern");
+        App.toast(I18N.t("role.changed", { role: I18N.t("role.intern") }), "graduation");
+      });
+    }
+  }
+
+  /* ============================================================= ASSISTANT */
+  function initAssistant() {
+    var log = $("[data-chat-log]");
+    if (!log) return;
+    var turns = [];   // { who: "bot" | "user", text }
+
+    function bubble(turn) {
+      var mine = turn.who === "user";
+      return '<div class="bubble' + (mine ? " bubble--user" : "") + '">' +
+        '<span class="bubble__who">' + esc(mine ? I18N.t("ai.you") : I18N.t("brand.name")) + "</span>" +
+        "<p>" + esc(turn.text) + "</p></div>";
+    }
+
+    function draw() {
+      log.innerHTML = turns.length
+        ? turns.map(bubble).join("")
+        : bubble({ who: "bot", text: I18N.t("ai.greeting") });
+      log.scrollTop = log.scrollHeight;
+    }
+
+    /** Match a question to the closest canned answer; fall back to a hand-off. */
+    function answer(question) {
+      var q = question.toLowerCase();
+      var best = null, bestScore = 0;
+      DATA.assistant.forEach(function (entry) {
+        var words = tx(entry.q).toLowerCase().split(/[\s،,؟?.]+/).filter(function (w) { return w.length > 3; });
+        var score = words.reduce(function (n, w) { return q.indexOf(w) !== -1 ? n + 1 : n; }, 0);
+        if (score > bestScore) { bestScore = score; best = entry; }
+      });
+      if (best && bestScore >= 1) return tx(best.a);
+      return I18N.t("ai.disclaimer");
+    }
+
+    App.onRender(function () {
+      var host = $("[data-chat-suggestions]");
+      if (host) {
+        host.innerHTML = DATA.assistant.map(function (entry) {
+          return '<button type="button" class="chip" data-ask="' + esc(entry.id) + '">' +
+            esc(tx(entry.q)) + "</button>";
+        }).join("");
+      }
+      draw();
+    });
+
+    function ask(text) {
+      turns.push({ who: "user", text: text });
+      draw();
+      // A brief pause reads as a reply rather than an instant lookup.
+      setTimeout(function () {
+        turns.push({ who: "bot", text: answer(text) });
+        draw();
+      }, 420);
+    }
+
+    var sugg = $("[data-chat-suggestions]");
+    if (sugg) {
+      sugg.addEventListener("click", function (ev) {
+        var chip = ev.target.closest("[data-ask]");
+        if (!chip) return;
+        var entry = DATA.assistant.filter(function (e) { return e.id === chip.getAttribute("data-ask"); })[0];
+        if (entry) ask(tx(entry.q));
+      });
+    }
+
+    var form = $("[data-chat-form]");
+    if (form) {
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var input = $("[data-chat-input]");
+        var text = input.value.trim();
+        if (!text) return;
+        input.value = "";
+        ask(text);
+      });
+    }
+
+    var clear = $("[data-chat-clear]");
+    if (clear) clear.addEventListener("click", function () { turns = []; draw(); });
+  }
+
+  /* =============================================================== ACCOUNT */
+  function initAccount() {
+    var switcher = $("[data-role-switcher]");
+    if (!switcher) return;
+
+    App.onRender(function () {
+      var role = global.Roles.info;
+
+      var ident = $("[data-account-identity]");
+      if (ident) {
+        ident.innerHTML =
+          '<div class="row gap-5 wrap" style="align-items:center">' +
+            '<img class="avatar avatar--lg avatar--round" alt="" width="88" height="88" src="' +
+              App.avatarOf({ ar: "فهد", en: "Fahad Al-Otaibi" }, "account") + '">' +
+            '<div class="grow"><p class="tiny muted" data-i18n="account.signedInAs"></p>' +
+              '<h2 class="title">' + esc(tx({ ar: "فهد العتيبي", en: "Fahad Al-Otaibi" })) + "</h2>" +
+              '<p class="small muted">' + esc(I18N.t("role.current")) + ": " +
+                '<strong style="color:var(--accent)">' + esc(I18N.t(role.nameKey)) + "</strong></p></div>" +
+            '<a class="btn btn--primary" href="' + role.home + '">' +
+              esc(I18N.t("role.workspace")) + Icons.svg("arrow", "icon-sm icon-flip") + "</a>" +
+          "</div>";
+        I18N.apply(ident);
+      }
+
+      switcher.innerHTML = global.Roles.all().map(function (r) {
+        var on = r.id === role.id;
+        return '<button type="button" class="role-card' + (on ? " is-active" : "") + '" data-pick-role="' + r.id + '">' +
+          '<span class="role-card__icon">' + Icons.svg(r.icon, "icon-lg") + "</span>" +
+          "<strong>" + esc(I18N.t(r.nameKey)) + "</strong>" +
+          '<span class="tiny muted">' + esc(I18N.t(r.id === "client" ? "role.clientDesc"
+            : r.id === "lawyer" ? "role.lawyerDesc" : "role.internDesc")) + "</span>" +
+          (on ? '<span class="role-card__check">' + Icons.svg("check", "icon-sm") + "</span>" : "") +
+          "</button>";
+      }).join("");
+
+      var links = $("[data-account-links]");
+      if (links) {
+        var items = [
+          { href: "dashboard-client.html", key: "nav.dashboardClient", icon: "grid" },
+          { href: "dashboard-lawyer.html", key: "nav.dashboardLawyer", icon: "briefcase" },
+          { href: "tasks.html",            key: "nav.tasks",           icon: "graduation" },
+          { href: "assistant.html",        key: "nav.assistant",       icon: "sparkle" },
+          { href: "about.html",            key: "nav.about",           icon: "shield-check" },
+          { href: "login.html",            key: "dash.logout",         icon: "logout" }
+        ];
+        links.innerHTML = items.map(function (it) {
+          return '<a class="account-link" href="' + it.href + '">' +
+            Icons.svg(it.icon, "icon-sm") + "<span>" + esc(I18N.t(it.key)) + "</span>" +
+            Icons.svg("chevron", "icon-sm account-link__go") + "</a>";
+        }).join("");
+      }
+    });
+
+    switcher.addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-pick-role]");
+      if (!btn) return;
+      var id = btn.getAttribute("data-pick-role");
+      if (global.Roles.is(id)) return;
+      global.Roles.set(id);
+      App.toast(I18N.t("role.changed", { role: I18N.t(global.Roles.info.nameKey) }), "check");
+    });
+  }
+
   /* ================================================================= route */
   function mount() {
     var page = document.documentElement.getAttribute("data-page") || "";
@@ -3405,6 +4184,9 @@ window.__ROUTES__ = {"index":{"page":"home","chrome":"site","titleKey":"home.tit
     else if (page === "login") initAuth();
     else if (page === "dashboard") initLawyerDash();
     else if (page === "dashboard-client") initClientDash();
+    else if (page === "tasks") initTasks();
+    else if (page === "assistant") initAssistant();
+    else if (page === "account") initAccount();
   }
 
   global.Pages = { mount: mount };

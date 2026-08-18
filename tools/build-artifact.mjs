@@ -23,6 +23,9 @@ const ROUTES = [
   { name: 'blog',             file: 'blog.html',             page: 'blog',             chrome: 'site' },
   { name: 'about',            file: 'about.html',            page: 'about',            chrome: 'site' },
   { name: 'login',            file: 'login.html',            page: 'login',            chrome: 'site' },
+  { name: 'tasks',            file: 'tasks.html',            page: 'tasks',            chrome: 'site' },
+  { name: 'assistant',        file: 'assistant.html',        page: 'assistant',        chrome: 'site' },
+  { name: 'account',          file: 'account.html',          page: 'account',          chrome: 'site' },
   { name: 'dashboard-lawyer', file: 'dashboard-lawyer.html', page: 'dashboard',        chrome: 'app'  },
   { name: 'dashboard-client', file: 'dashboard-client.html', page: 'dashboard-client', chrome: 'app'  },
 ];
@@ -66,9 +69,9 @@ for (const r of ROUTES) {
 }
 
 const css = read('assets/css/style.css');
-const js = ['theme', 'i18n', 'data', 'layout', 'app', 'pages']
+const js = ['theme', 'i18n', 'roles', 'data', 'layout', 'app', 'pages']
   .map((n) => read(`assets/js/${n}.js`));
-const [theme, i18n, data, layout, app, pages] = js;
+const [theme, i18n, roles, data, layout, app, pages] = js;
 const router = read('tools/router.js');
 
 /* charset first: the encoding pre-scan reads the opening bytes of the served
@@ -79,7 +82,7 @@ const out = `<meta charset="utf-8">
 <meta name="theme-color" content="#f7f8fd">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
 
 <style>
 ${css}
@@ -108,6 +111,7 @@ window.__ROUTES__ = ${JSON.stringify(routeMap)};
 </script>
 <script>${theme}</script>
 <script>${i18n}</script>
+<script>${roles}</script>
 <script>${data}</script>
 <script>${layout}</script>
 <script>${app}</script>

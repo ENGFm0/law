@@ -92,6 +92,22 @@
         }).join("");
       }
 
+      var roleCards = $("[data-role-cards]");
+      if (roleCards) {
+        roleCards.innerHTML = global.Roles.all().map(function (r) {
+          var descKey = r.id === "client" ? "role.clientDesc"
+                      : r.id === "lawyer" ? "role.lawyerDesc" : "role.internDesc";
+          return '<article class="card card--hover card--rule-' +
+              (r.id === "lawyer" ? "gold" : "navy") + ' feature reveal">' +
+            '<span class="feature__icon">' + Icons.svg(r.icon, "icon-lg") + "</span>" +
+            '<h3 class="subtitle">' + esc(I18N.t(r.nameKey)) + "</h3>" +
+            '<p class="small muted">' + esc(I18N.t(descKey)) + "</p>" +
+            '<a class="btn btn--outline btn--sm" style="margin-top:auto;align-self:flex-start" href="' +
+              r.home + '">' + esc(I18N.t("home.enterWorkspace")) +
+              Icons.svg("arrow", "icon-sm icon-flip") + "</a></article>";
+        }).join("");
+      }
+
       var featured = $("[data-featured-lawyers]");
       if (featured) {
         featured.innerHTML = DATA.lawyers.slice(0, 3).map(function (l) {
@@ -781,6 +797,8 @@
       "</div>";
   }
 
+  var signedDrafts = [];
+
   function initLawyerDash() {
     var TOOLS = [
       ["bold", "italic", "underline"],
@@ -829,6 +847,31 @@
           esc(I18N.t("dash.image")) + "</button>";
       }
 
+      /* drafts prepared by trainees, waiting on this lawyer's signature */
+      var drafts = $("[data-drafts]");
+      if (drafts) {
+        var pending = DATA.drafts.filter(function (d) { return signedDrafts.indexOf(d.id) === -1; });
+        var badge = $("[data-drafts-count]");
+        if (badge) badge.textContent = I18N.num(pending.length);
+
+        drafts.innerHTML = pending.length
+          ? pending.map(function (d) {
+              var who = DATA.internById(d.by);
+              var spec = DATA.labelOf(DATA.specialties, d.specialty);
+              return '<div class="list-row">' +
+                '<span class="list-row__icon" style="color:var(--accent)">' +
+                  Icons.svg("file-text", "icon-sm") + "</span>" +
+                '<div class="grow"><strong class="small">' + esc(tx(d.title)) + "</strong>" +
+                  '<p class="tiny muted">' + esc(I18N.t("drafts.preparedBy")) + ": " +
+                    esc(who ? tx(who.name) : "—") + ' <span class="dot"></span> ' +
+                    esc(tx(spec)) + ' <span class="dot"></span> ' +
+                    esc(I18N.t("drafts.submittedAgo")) + " " + esc(tx(d.ago)) + "</p></div>" +
+                '<button class="btn btn--primary btn--sm" type="button" data-sign="' + esc(d.id) + '">' +
+                  Icons.svg("check", "icon-sm") + esc(I18N.t("drafts.sign")) + "</button></div>";
+            }).join("")
+          : '<p class="muted center" style="padding:var(--s-6)">' + esc(I18N.t("drafts.empty")) + "</p>";
+      }
+
       var reqs = $("[data-dash-requests]");
       if (reqs) {
         var rows = [
@@ -871,6 +914,17 @@
         if (btn) btn.classList.toggle("is-active");
       });
     }
+    var draftsHost = $("[data-drafts]");
+    if (draftsHost) {
+      draftsHost.addEventListener("click", function (ev) {
+        var btn = ev.target.closest("[data-sign]");
+        if (!btn) return;
+        signedDrafts.push(btn.getAttribute("data-sign"));
+        App.toast(I18N.t("drafts.signed"), "check");
+        App.rerender();
+      });
+    }
+
     var pub = $("[data-editor-publish]");
     if (pub) pub.addEventListener("click", function () { App.toast(I18N.t("dash.published"), "check"); });
     var draft = $("[data-editor-draft]");
@@ -981,6 +1035,283 @@
     }, 1000);
   }
 
+  /* ============================================================= TASK BANK */
+  // Accepted tasks live for the session only — there is no backend to persist to.
+  var acceptedTasks = [];
+
+  function levelKey(level) {
+    return level === "advanced" ? "tasks.levelAdvanced"
+         : level === "mid" ? "tasks.levelMid" : "tasks.levelBasic";
+  }
+
+  function initTasks() {
+    var list = $("[data-task-list]");
+    if (!list) return;
+    var filter = "all";
+
+    function taskCard(t) {
+      var sup = DATA.lawyerById(t.supervisor);
+      var spec = DATA.labelOf(DATA.specialties, t.specialty);
+      var taken = acceptedTasks.indexOf(t.id) !== -1;
+
+      return '<article class="card card--hover task-card' + (taken ? " is-taken" : "") + '">' +
+        '<div class="task-card__body">' +
+          '<div class="row between gap-3 wrap">' +
+            '<span class="tag">' + esc(tx(spec)) + "</span>" +
+            '<span class="status status--' + (t.level === "advanced" ? "warn" : t.level === "mid" ? "info" : "muted") + '">' +
+              esc(I18N.t(levelKey(t.level))) + "</span>" +
+          "</div>" +
+          '<h3 class="subtitle">' + esc(tx(t.title)) + "</h3>" +
+          '<p class="small muted">' + esc(tx(t.body)) + "</p>" +
+          '<div class="task-card__meta">' +
+            '<div><span class="tiny muted">' + esc(I18N.t("tasks.reward")) + "</span>" +
+              '<strong class="reward"><span class="num">' + I18N.num(t.reward) + "</span> " +
+              esc(I18N.t("profile.sar")) + "</strong></div>" +
+            '<div><span class="tiny muted">' + esc(I18N.t("tasks.deadline")) + "</span>" +
+              "<strong>" + esc(I18N.t("tasks.days", { n: I18N.num(t.days) })) + "</strong></div>" +
+            '<div><span class="tiny muted">' + esc(I18N.t("tasks.supervisor")) + "</span>" +
+              "<strong>" + esc(sup ? tx(sup.name) : "—") + "</strong></div>" +
+          "</div>" +
+        "</div>" +
+        '<div class="task-card__foot">' +
+          (taken
+            ? '<span class="status status--ok" style="width:100%;justify-content:center;height:44px">' +
+              Icons.svg("check", "icon-sm") + esc(I18N.t("tasks.inProgress")) + "</span>"
+            : '<button class="btn btn--primary btn--block" type="button" data-accept="' + esc(t.id) + '">' +
+              esc(I18N.t("tasks.accept")) + "</button>") +
+        "</div></article>";
+    }
+
+    function draw() {
+      var open = DATA.tasks.filter(function (t) {
+        return filter === "all" || t.specialty === filter;
+      });
+      list.innerHTML = open.map(taskCard).join("");
+
+      /* headline figures */
+      var stats = $("[data-task-stats]");
+      if (stats) {
+        var earned = DATA.tasks.reduce(function (sum, t) {
+          return acceptedTasks.indexOf(t.id) !== -1 ? sum + t.reward : sum;
+        }, 0);
+        var cells = [
+          { icon: "file-text", label: I18N.t("tasks.openCount"), value: I18N.num(DATA.tasks.length), rule: "navy" },
+          { icon: "check",     label: I18N.t("tasks.mine"),      value: I18N.num(acceptedTasks.length), rule: "navy" },
+          { icon: "wallet",    label: I18N.t("tasks.earnings"),
+            value: I18N.num(earned) + " " + I18N.t("profile.sar"), rule: "gold" }
+        ];
+        stats.innerHTML = cells.map(function (c) {
+          return '<article class="card card--rule-' + c.rule + ' stat">' +
+            '<div class="stat__top"><span class="small muted">' + esc(c.label) + "</span>" +
+              '<span class="stat__icon">' + Icons.svg(c.icon) + "</span></div>" +
+            '<div class="stat__value">' + esc(c.value) + "</div></article>";
+        }).join("");
+      }
+
+      /* accepted list */
+      var mine = $("[data-task-mine]");
+      if (mine) {
+        var taken = DATA.tasks.filter(function (t) { return acceptedTasks.indexOf(t.id) !== -1; });
+        mine.innerHTML = taken.length
+          ? taken.map(function (t) {
+              var sup = DATA.lawyerById(t.supervisor);
+              return '<div class="list-row">' +
+                '<span class="list-row__icon">' + Icons.svg("file-text", "icon-sm") + "</span>" +
+                '<div class="grow"><strong class="small">' + esc(tx(t.title)) + "</strong>" +
+                  '<p class="tiny muted">' + esc(I18N.t("tasks.supervisor")) + ": " +
+                  esc(sup ? tx(sup.name) : "—") + "</p></div>" +
+                '<div class="stack gap-1" style="align-items:flex-end">' +
+                  '<span class="status status--info">' + esc(I18N.t("tasks.inProgress")) + "</span>" +
+                  '<span class="tiny faint num">' + I18N.num(t.reward) + " " + esc(I18N.t("profile.sar")) + "</span>" +
+                "</div></div>";
+            }).join("")
+          : '<p class="muted center" style="padding:var(--s-6)">' + esc(I18N.t("tasks.noneAccepted")) + "</p>";
+      }
+    }
+
+    App.onRender(function () {
+      var sel = $("[data-task-filter]");
+      if (sel) {
+        var used = {};
+        DATA.tasks.forEach(function (t) { used[t.specialty] = true; });
+        sel.innerHTML = '<option value="all">' + esc(I18N.t("tasks.filterAll")) + "</option>" +
+          DATA.specialties.filter(function (sp) { return used[sp.id]; }).map(function (sp) {
+            return '<option value="' + esc(sp.id) + '">' + esc(tx(sp)) + "</option>";
+          }).join("");
+        sel.value = filter;
+      }
+
+      // The bank is a trainee workspace; anyone else gets an invitation to switch.
+      var gate = $("[data-role-gate]");
+      if (gate) gate.classList.toggle("hidden", global.Roles.is("intern"));
+
+      draw();
+    });
+
+    list.addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-accept]");
+      if (!btn) return;
+      var id = btn.getAttribute("data-accept");
+      if (acceptedTasks.indexOf(id) === -1) acceptedTasks.push(id);
+      App.toast(I18N.t("tasks.accepted"), "check");
+      draw();
+    });
+
+    var sel = $("[data-task-filter]");
+    if (sel) sel.addEventListener("change", function () { filter = sel.value; draw(); });
+
+    var become = $("[data-become-intern]");
+    if (become) {
+      become.addEventListener("click", function () {
+        global.Roles.set("intern");
+        App.toast(I18N.t("role.changed", { role: I18N.t("role.intern") }), "graduation");
+      });
+    }
+  }
+
+  /* ============================================================= ASSISTANT */
+  function initAssistant() {
+    var log = $("[data-chat-log]");
+    if (!log) return;
+    var turns = [];   // { who: "bot" | "user", text }
+
+    function bubble(turn) {
+      var mine = turn.who === "user";
+      return '<div class="bubble' + (mine ? " bubble--user" : "") + '">' +
+        '<span class="bubble__who">' + esc(mine ? I18N.t("ai.you") : I18N.t("brand.name")) + "</span>" +
+        "<p>" + esc(turn.text) + "</p></div>";
+    }
+
+    function draw() {
+      log.innerHTML = turns.length
+        ? turns.map(bubble).join("")
+        : bubble({ who: "bot", text: I18N.t("ai.greeting") });
+      log.scrollTop = log.scrollHeight;
+    }
+
+    /** Match a question to the closest canned answer; fall back to a hand-off. */
+    function answer(question) {
+      var q = question.toLowerCase();
+      var best = null, bestScore = 0;
+      DATA.assistant.forEach(function (entry) {
+        var words = tx(entry.q).toLowerCase().split(/[\s،,؟?.]+/).filter(function (w) { return w.length > 3; });
+        var score = words.reduce(function (n, w) { return q.indexOf(w) !== -1 ? n + 1 : n; }, 0);
+        if (score > bestScore) { bestScore = score; best = entry; }
+      });
+      if (best && bestScore >= 1) return tx(best.a);
+      return I18N.t("ai.disclaimer");
+    }
+
+    App.onRender(function () {
+      var host = $("[data-chat-suggestions]");
+      if (host) {
+        host.innerHTML = DATA.assistant.map(function (entry) {
+          return '<button type="button" class="chip" data-ask="' + esc(entry.id) + '">' +
+            esc(tx(entry.q)) + "</button>";
+        }).join("");
+      }
+      draw();
+    });
+
+    function ask(text) {
+      turns.push({ who: "user", text: text });
+      draw();
+      // A brief pause reads as a reply rather than an instant lookup.
+      setTimeout(function () {
+        turns.push({ who: "bot", text: answer(text) });
+        draw();
+      }, 420);
+    }
+
+    var sugg = $("[data-chat-suggestions]");
+    if (sugg) {
+      sugg.addEventListener("click", function (ev) {
+        var chip = ev.target.closest("[data-ask]");
+        if (!chip) return;
+        var entry = DATA.assistant.filter(function (e) { return e.id === chip.getAttribute("data-ask"); })[0];
+        if (entry) ask(tx(entry.q));
+      });
+    }
+
+    var form = $("[data-chat-form]");
+    if (form) {
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        var input = $("[data-chat-input]");
+        var text = input.value.trim();
+        if (!text) return;
+        input.value = "";
+        ask(text);
+      });
+    }
+
+    var clear = $("[data-chat-clear]");
+    if (clear) clear.addEventListener("click", function () { turns = []; draw(); });
+  }
+
+  /* =============================================================== ACCOUNT */
+  function initAccount() {
+    var switcher = $("[data-role-switcher]");
+    if (!switcher) return;
+
+    App.onRender(function () {
+      var role = global.Roles.info;
+
+      var ident = $("[data-account-identity]");
+      if (ident) {
+        ident.innerHTML =
+          '<div class="row gap-5 wrap" style="align-items:center">' +
+            '<img class="avatar avatar--lg avatar--round" alt="" width="88" height="88" src="' +
+              App.avatarOf({ ar: "فهد", en: "Fahad Al-Otaibi" }, "account") + '">' +
+            '<div class="grow"><p class="tiny muted" data-i18n="account.signedInAs"></p>' +
+              '<h2 class="title">' + esc(tx({ ar: "فهد العتيبي", en: "Fahad Al-Otaibi" })) + "</h2>" +
+              '<p class="small muted">' + esc(I18N.t("role.current")) + ": " +
+                '<strong style="color:var(--accent)">' + esc(I18N.t(role.nameKey)) + "</strong></p></div>" +
+            '<a class="btn btn--primary" href="' + role.home + '">' +
+              esc(I18N.t("role.workspace")) + Icons.svg("arrow", "icon-sm icon-flip") + "</a>" +
+          "</div>";
+        I18N.apply(ident);
+      }
+
+      switcher.innerHTML = global.Roles.all().map(function (r) {
+        var on = r.id === role.id;
+        return '<button type="button" class="role-card' + (on ? " is-active" : "") + '" data-pick-role="' + r.id + '">' +
+          '<span class="role-card__icon">' + Icons.svg(r.icon, "icon-lg") + "</span>" +
+          "<strong>" + esc(I18N.t(r.nameKey)) + "</strong>" +
+          '<span class="tiny muted">' + esc(I18N.t(r.id === "client" ? "role.clientDesc"
+            : r.id === "lawyer" ? "role.lawyerDesc" : "role.internDesc")) + "</span>" +
+          (on ? '<span class="role-card__check">' + Icons.svg("check", "icon-sm") + "</span>" : "") +
+          "</button>";
+      }).join("");
+
+      var links = $("[data-account-links]");
+      if (links) {
+        var items = [
+          { href: "dashboard-client.html", key: "nav.dashboardClient", icon: "grid" },
+          { href: "dashboard-lawyer.html", key: "nav.dashboardLawyer", icon: "briefcase" },
+          { href: "tasks.html",            key: "nav.tasks",           icon: "graduation" },
+          { href: "assistant.html",        key: "nav.assistant",       icon: "sparkle" },
+          { href: "about.html",            key: "nav.about",           icon: "shield-check" },
+          { href: "login.html",            key: "dash.logout",         icon: "logout" }
+        ];
+        links.innerHTML = items.map(function (it) {
+          return '<a class="account-link" href="' + it.href + '">' +
+            Icons.svg(it.icon, "icon-sm") + "<span>" + esc(I18N.t(it.key)) + "</span>" +
+            Icons.svg("chevron", "icon-sm account-link__go") + "</a>";
+        }).join("");
+      }
+    });
+
+    switcher.addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-pick-role]");
+      if (!btn) return;
+      var id = btn.getAttribute("data-pick-role");
+      if (global.Roles.is(id)) return;
+      global.Roles.set(id);
+      App.toast(I18N.t("role.changed", { role: I18N.t(global.Roles.info.nameKey) }), "check");
+    });
+  }
+
   /* ================================================================= route */
   function mount() {
     var page = document.documentElement.getAttribute("data-page") || "";
@@ -992,6 +1323,9 @@
     else if (page === "login") initAuth();
     else if (page === "dashboard") initLawyerDash();
     else if (page === "dashboard-client") initClientDash();
+    else if (page === "tasks") initTasks();
+    else if (page === "assistant") initAssistant();
+    else if (page === "account") initAccount();
   }
 
   global.Pages = { mount: mount };
