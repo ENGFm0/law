@@ -29,7 +29,8 @@ Pages.define("verify", function (global) {
     email: App.param("email") || "",
     password: "Verify!" + Math.random().toString(36).slice(2, 10),
   };
-  var googleState = { checked: false, signedIn: false, email: "", profile: null };
+  var googleState = { checked: false, signedIn: false, email: "", profile: null,
+                      provider: "", wrongProvider: false };
 
   function draw() {
     var cfg = global.SANAD_CONFIG || {};
@@ -96,7 +97,13 @@ Pages.define("verify", function (global) {
     var g = googleState;
     return '<div class="card card--pad" style="margin-top:var(--s-6)">' +
       '<h2 class="subtitle">الدخول عبر Google</h2>' +
-      (g.checked
+      (g.wrongProvider
+        ? '<p class="note-inline" style="margin-top:var(--s-4)">' +
+            '<span>توجد جلسة قائمة لكنها ليست من Google (المصدر: ' + esc(g.provider) +
+            ' — ' + esc(g.email) + '). سجّل الخروج ثم جرّب، وإلا قرأ الفحص جلسة ' +
+            'قديمة وأعطى نتيجة كاذبة.</span></p>'
+        : "") +
+      (g.checked && !g.wrongProvider
         ? '<div style="margin-top:var(--s-4)">' +
             verdict("عاد من Google بجلسة", g.signedIn, g.email || "") +
             verdict("أنشأت قاعدة البيانات ملفه تلقائياً", !!g.profile,
@@ -110,12 +117,12 @@ Pages.define("verify", function (global) {
               ? verdict("حمل اسمه من Google", !!App.tx(g.profile.name), App.tx(g.profile.name))
               : "") +
           "</div>"
-        : '<p class="small muted" style="margin-top:var(--s-2)">' +
+        : g.wrongProvider ? "" : '<p class="small muted" style="margin-top:var(--s-2)">' +
           'اضغط الزر، وستعود إلى هذه الصفحة بالنتيجة.</p>') +
       '<div class="row gap-3 wrap" style="margin-top:var(--s-5)">' +
         '<button class="btn btn--outline" type="button" data-try-google>' +
           (g.checked ? "جرّب مرة أخرى" : "جرّب الدخول عبر Google") + "</button>" +
-        (g.signedIn
+        (g.signedIn || g.wrongProvider
           ? '<button class="btn btn--ghost" type="button" data-google-out>سجّل الخروج</button>'
           : "") +
       "</div></div>";
@@ -333,7 +340,10 @@ Pages.define("verify", function (global) {
     if (ev.target.closest("[data-run]") && !running) run();
 
     if (ev.target.closest("[data-try-google]")) {
-      global.SB.signInWithGoogle(global.location.href)
+      // Leave whatever session is here behind, or the check on the way back
+      // reads the old one and reports it as a Google sign-in.
+      global.SB.signOut()
+        .then(function () { return global.SB.signInWithGoogle(global.location.href); })
         .catch(function (e) { App.toast(String(e && e.message || e), "close"); });
       return;
     }
@@ -347,17 +357,36 @@ Pages.define("verify", function (global) {
     }
   });
 
-  /* On the way back from Google the client restores the session from the URL,
-     so the answer is simply: is anyone signed in, and did they get a profile? */
+  /* On the way back from Google the client restores the session from the URL.
+
+     But "somebody is signed in" is not the question — a session left over from
+     the email checks answers it just as well, and did: it reported an address
+     from an earlier run as a Google sign-in, with four green ticks. So the
+     provider is what decides, and anything else is called out rather than
+     counted. */
   function checkGoogle() {
     if (!global.SB.hasKeys()) return;
     global.SB.load().then(function (sb) {
       return sb.auth.getSession().then(function (res) {
         var session = res.data && res.data.session;
         if (!session) return;
+
+        var meta = session.user.app_metadata || {};
+        var provider = meta.provider || (meta.providers || [])[0] || "unknown";
+        googleState.provider = provider;
+        googleState.email = session.user.email || "";
+
+        if (provider !== "google") {
+          googleState.wrongProvider = true;
+          googleState.checked = false;
+          googleState.signedIn = false;
+          draw();
+          return;
+        }
+
+        googleState.wrongProvider = false;
         googleState.checked = true;
         googleState.signedIn = true;
-        googleState.email = session.user.email || "";
         return global.SB.profile(session.user.id).then(function (p) {
           googleState.profile = p;
           draw();
