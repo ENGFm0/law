@@ -82,20 +82,52 @@
   }
 
   var Signal = {
-    /** Which transport is actually carrying messages right now. */
+    /** Which transport is configured to carry messages. Asked of the config,
+        not of whether the library has finished downloading — those are
+        different questions, and answering the second one here is what made a
+        call started a moment too early fall back to a channel that cannot
+        leave this browser, silently, with both people staring at a spinner. */
     kind: function () {
-      return (cfg.supabase && cfg.supabase.url && global.supabase) ? "supabase" : "local";
+      return (cfg.supabase && cfg.supabase.url && cfg.supabase.anonKey)
+        ? "supabase" : "local";
+    },
+
+    /** Resolves when the transport can actually be opened. */
+    ready: function () {
+      if (Signal.kind() !== "supabase") return Promise.resolve();
+      if (global.supabase) return Promise.resolve();
+      return (global.SB && global.SB.load) ? global.SB.load() : Promise.resolve();
     },
 
     /** True when a call can reach a different device. */
     isRemote: function () { return Signal.kind() === "supabase"; },
 
+    /** Opens the channel. Returns immediately with a handle that queues what
+        you send until the real transport is up, so callers do not have to know
+        whether a library is still on its way. */
     open: function (room, onMessage) {
-      if (Signal.kind() === "supabase") {
-        var t = supabaseTransport(room, onMessage);
-        if (t) return t;
-      }
-      return localTransport(room, onMessage);
+      if (Signal.kind() !== "supabase") return localTransport(room, onMessage);
+
+      var real = global.supabase ? supabaseTransport(room, onMessage) : null;
+      if (real) return real;
+
+      var queued = [], closed = false;
+      var handle = {
+        id: null,
+        send: function (body) { real ? real.send(body) : queued.push(body); },
+        close: function () { closed = true; if (real) real.close(); }
+      };
+      Signal.ready().then(function () {
+        if (closed) return;
+        real = supabaseTransport(room, onMessage);
+        // The library refused to load. A call that cannot reach the other
+        // person is better said than mimed, so this does not quietly become a
+        // same-browser channel.
+        if (!real) { handle.failed = true; return; }
+        handle.id = real.id;
+        queued.splice(0).forEach(function (b) { real.send(b); });
+      }).catch(function () { handle.failed = true; });
+      return handle;
     }
   };
 
