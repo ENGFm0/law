@@ -29,9 +29,9 @@
   var work = read(sessionStorage, WORK_KEY, {});
   [
     "requests", "requestStates", "services", "removedServices", "reviews",
-    "articles", "articleStates", "comments", "endorsements"
+    "articles", "articleStates", "comments", "endorsements", "applications"
   ].forEach(function (k) {
-    if (!work[k]) work[k] = (k.indexOf("States") !== -1 ? {} : []);
+    if (!work[k]) work[k] = (k.indexOf("States") !== -1 || k === "applications" ? {} : []);
   });
 
   var listeners = [];
@@ -169,6 +169,22 @@
     },
     removedServices: function () { return work.removedServices || []; },
 
+    /* ---------------- trainees applying for an open task ----------------
+       A lawyer may hand a task to one trainee, or open it to all of them. In
+       the second case the trainees apply here and the lawyer picks. */
+    applicants: function (requestId) { return work.applications[requestId] || []; },
+    apply: function (requestId, internId) {
+      var list = work.applications[requestId] || (work.applications[requestId] = []);
+      if (list.indexOf(internId) !== -1) return false;
+      list.push(internId);
+      notify();
+      return true;
+    },
+    clearApplicants: function (requestId) {
+      delete work.applications[requestId];
+      notify();
+    },
+
     reviews: function () { return work.reviews; },
     addReview: function (rev) {
       rev.id = uid("rev");
@@ -233,7 +249,8 @@
     /* ---------------- housekeeping ---------------- */
     resetWork: function () {
       work = { requests: [], requestStates: {}, services: [], removedServices: [],
-               reviews: [], articles: [], articleStates: {}, comments: [], endorsements: [] };
+               reviews: [], articles: [], articleStates: {}, comments: [],
+               endorsements: [], applications: {} };
       notify();
     },
     resetAll: function () {

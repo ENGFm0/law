@@ -81,3 +81,20 @@ S.signOut();
 ok('signing out returns to guest', S.isGuest());
 ok('signing back in works', S.signIn('t@t.sa','x').ok);
 ok('wrong password is refused', S.signIn('t@t.sa','nope').error === 'badPassword');
+
+console.log('— ROUTING WORK TO TRAINEES —');
+// A lawyer may name one trainee, or open the task and let them compete.
+St.setRequest('r-6', { status: 'open_to_interns', assignedTo: null });
+ok('an opened task is still a live request',
+   M.requestsForClient('u-munira', 'open').some(r => r.id === 'r-6'));
+ok('it shows up in the open pool', M.openInternTasks().some(r => r.id === 'r-6'));
+ok('it belongs to nobody yet', !M.requestsForIntern('u-jaid').some(r => r.id === 'r-6'));
+St.apply('r-6', 'u-jaid');
+St.apply('r-6', 'u-turki');
+ok('two trainees applied', St.applicants('r-6').length === 2);
+ok('applying twice changes nothing', St.apply('r-6', 'u-jaid') === false);
+St.clearApplicants('r-6');
+St.setRequest('r-6', { assignedTo: 'u-turki', status: 'with_intern' });
+ok('the chosen trainee holds it', M.requestsForIntern('u-turki').some(r => r.id === 'r-6'));
+ok('the pool closes behind it', !M.openInternTasks().some(r => r.id === 'r-6'));
+ok('and the applicants are cleared', St.applicants('r-6').length === 0);

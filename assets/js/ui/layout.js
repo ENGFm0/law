@@ -41,6 +41,7 @@
     var services = { key: "nav.services", tab: "tab.services", href: "services.html",id: "services", icon: "tag" };
     var blog     = { key: "nav.blog",     tab: "tab.blog",     href: "blog.html",    id: "blog",     icon: "file-text" };
     var people   = { key: "nav.lawyers",  tab: "tab.lawyers",  href: "lawyers.html", id: "lawyers",  icon: "scale" };
+    var drafting = { key: "nav.assistant",tab: "tab.assistant",href: "assistant.html",id: "assistant",icon: "sparkle" };
 
     if (role === "intern") {
       // A trainee sells no services; the slot carries their skills instead.
@@ -48,6 +49,11 @@
     }
     if (role === "guest") {
       return [home, people, services, blog];
+    }
+    // The drafting workspace is a lawyer's daily tool, so it earns a slot of
+    // its own rather than hiding behind a link on the dashboard.
+    if (role === "lawyer") {
+      return [home, requests, drafting, services, blog, people];
     }
     return [home, requests, services, blog, people];
   }
@@ -99,7 +105,10 @@
 
   /** Phones navigate from the bottom; the account tab closes the set. */
   function tabbar(active) {
-    var items = navItems().slice();
+    // Six targets is what fits legibly at 390px, so the phone bar takes the
+    // first five and always ends with the account. Anything cut here is still
+    // in the header on wider screens and in the footer everywhere.
+    var items = navItems().slice(0, 5);
     items.push(Session.isGuest()
       ? { key: "auth.signIn", tab: "auth.signIn", href: "login.html", id: "login", icon: "user" }
       : { key: "account.heading", tab: "tab.account", href: "account.html", id: "account", icon: "user" });

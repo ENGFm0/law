@@ -20,41 +20,91 @@ Pages.define("services", function (global) {
   var filters = { type: "", specialty: "", sort: "price" };
   var skills = null;   // trainee's working copy, loaded on first draw
 
-  /* ====================================================== client ========== */
-  function offers() {
+  /* ====================================================== client ==========
+     Two ways in, stated up front. Either the client names the service and the
+     lawyers who offer it line up by price, or they describe the case once and
+     let the lawyers come to them — that second road is the auction. */
+  function routeCards() {
+    return '<div class="grid grid-2" style="margin-bottom:var(--s-10)">' +
+      '<div class="card card--pad card--rule-navy feature">' +
+        '<span class="feature__icon">' + Icons.svg("tag", "icon-lg") + "</span>" +
+        '<h2 class="subtitle" data-i18n="svc.routePick"></h2>' +
+        '<p class="small muted" data-i18n="svc.routePickBody"></p></div>' +
+      '<a class="card card--pad card--hover card--rule-gold feature" href="quotes.html">' +
+        '<span class="feature__icon">' + Icons.svg("gavel", "icon-lg") + "</span>" +
+        '<h2 class="subtitle" data-i18n="svc.routeAuction"></h2>' +
+        '<p class="small muted" data-i18n="svc.routeAuctionBody"></p></a>' +
+    "</div>";
+  }
+
+  /** Everyone who offers one service type, cheapest first by default. */
+  function offersOfType(typeId) {
     var out = [];
     M.listedLawyers().forEach(function (u) {
-      M.servicesOf(u.id).forEach(function (s) {
-        out.push({ svc: s, owner: u, type: M.serviceType(s.typeId) });
+      M.servicesOf(u.id).forEach(function (svc) {
+        if (svc.typeId !== typeId) return;
+        if (filters.specialty && (u.specialties || []).indexOf(filters.specialty) === -1) return;
+        out.push({ svc: svc, owner: u });
       });
     });
-    return out.filter(function (o) {
-      if (!o.type) return false;
-      if (filters.type && o.svc.typeId !== filters.type) return false;
-      if (filters.specialty && (o.owner.specialties || []).indexOf(filters.specialty) === -1) return false;
-      return true;
-    }).sort(function (a, b) {
+    return out.sort(function (a, b) {
       return filters.sort === "rating"
         ? M.ratingOf(b.owner.id).avg - M.ratingOf(a.owner.id).avg
         : a.svc.price - b.svc.price;
     });
   }
 
-  function clientView() {
-    var list = offers();
-    return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
-      '<header style="margin-bottom:var(--s-8)">' +
-        '<h1 class="headline" data-i18n="svc.heading"></h1>' +
-        '<p class="lead" data-i18n="svc.lead"></p></header>' +
+  function countFor(typeId) {
+    return M.listedLawyers().filter(function (u) {
+      return M.servicesOf(u.id).some(function (s) { return s.typeId === typeId; });
+    }).length;
+  }
+
+  function cheapestFor(typeId) {
+    var all = [];
+    M.listedLawyers().forEach(function (u) {
+      M.servicesOf(u.id).forEach(function (s) { if (s.typeId === typeId) all.push(s.price); });
+    });
+    return all.length ? Math.min.apply(null, all) : null;
+  }
+
+  /* --- step one: which service --- */
+  function typePicker() {
+    return '<h2 class="title" style="margin-bottom:var(--s-5)" data-i18n="svc.pickType"></h2>' +
+      '<div class="grid grid-3">' + M.serviceTypes().map(function (t) {
+        var from = cheapestFor(t.id);
+        return '<button type="button" class="card card--pad card--hover feature" ' +
+          'data-pick-type="' + esc(t.id) + '" style="text-align:start">' +
+          '<span class="feature__icon">' + Icons.svg(t.icon, "icon-lg") + "</span>" +
+          '<h3 class="subtitle">' + esc(tx(t.title)) + "</h3>" +
+          '<p class="small muted">' + esc(tx(t.meta)) + "</p>" +
+          '<p class="small" style="margin-top:auto;padding-top:var(--s-3)">' +
+            (from !== null
+              ? esc(I18N.t("svc.fromPrice")) + ' <strong class="num">' + I18N.num(from) + "</strong> " +
+                esc(I18N.t("common.sar")) + ' <span class="dot"></span> <span class="muted">' +
+                esc(I18N.t("svc.offeredBy", { n: I18N.num(countFor(t.id)) })) + "</span>"
+              : '<span class="muted">' + esc(I18N.t("svc.noneForType")) + "</span>") +
+          "</p></button>";
+      }).join("") + "</div>";
+  }
+
+  /* --- step two: who offers it --- */
+  function lawyersForType() {
+    var type = M.serviceType(filters.type);
+    var list = offersOfType(filters.type);
+
+    return '<div class="row between wrap gap-4" style="margin-bottom:var(--s-6)">' +
+        '<h2 class="title">' + esc(I18N.t("svc.lawyersFor", { name: tx(type.title) })) + "</h2>" +
+        '<button class="btn btn--ghost btn--sm" type="button" data-clear-type>' +
+          Icons.svg("arrow-back", "icon-sm") + esc(I18N.t("svc.changeType")) + "</button>" +
+      "</div>" +
 
       '<div class="results-bar">' +
         '<div class="row gap-3 wrap">' +
-          '<label class="field"><span class="label" data-i18n="svc.filterType"></span>' +
-            select("type", M.serviceTypes().map(function (t) { return { id: t.id, label: tx(t.title) }; }),
-                   filters.type, "svc.allTypes") + "</label>" +
           '<label class="field"><span class="label" data-i18n="dir.specialties"></span>' +
-            select("specialty", global.SEED.specialties.map(function (s) { return { id: s.id, label: tx(s) }; }),
-                   filters.specialty, "dir.anySpecialty") + "</label>" +
+            select("specialty", global.SEED.specialties.map(function (sp) {
+              return { id: sp.id, label: tx(sp) };
+            }), filters.specialty, "dir.anySpecialty") + "</label>" +
           '<label class="field"><span class="label" data-i18n="dir.sortBy"></span>' +
             select("sort", [{ id: "price", label: I18N.t("svc.sortPrice") },
                             { id: "rating", label: I18N.t("svc.sortRating") }], filters.sort) + "</label>" +
@@ -63,8 +113,19 @@ Pages.define("services", function (global) {
       "</div>" +
 
       (list.length
-        ? '<div class="grid grid-2" style="margin-top:var(--s-6)">' + list.map(offerCard).join("") + "</div>"
-        : C.empty("tag", "svc.none")) +
+        ? '<div class="grid grid-2" style="margin-top:var(--s-6)">' +
+          list.map(function (o, i) { return offerCard(o, type, i === 0 && filters.sort === "price"); }).join("") +
+          "</div>"
+        : C.empty("tag", "svc.noneForType"));
+  }
+
+  function clientView() {
+    return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
+      '<header style="margin-bottom:var(--s-8)">' +
+        '<h1 class="headline" data-i18n="svc.routeTitle"></h1>' +
+        '<p class="lead" data-i18n="svc.routeLead"></p></header>' +
+      routeCards() +
+      (filters.type ? lawyersForType() : typePicker()) +
     "</div>";
   }
 
@@ -77,19 +138,24 @@ Pages.define("services", function (global) {
       }).join("") + "</select>";
   }
 
-  function offerCard(o) {
-    return '<article class="card card--pad card--hover">' +
+  function offerCard(o, type, best) {
+    return '<article class="card card--pad card--hover' + (best ? " card--rule-gold" : "") + '">' +
       '<div class="row between wrap gap-3">' +
-        '<div class="row gap-3"><span class="stat__icon">' + Icons.svg(o.type.icon, "icon-sm") + "</span>" +
-          '<div><h3 class="subtitle">' + esc(tx(o.type.title)) + "</h3>" +
-            '<p class="tiny muted">' + esc(tx(o.type.meta)) + "</p></div></div>" +
+        '<span class="row gap-3">' + C.avatar(o.owner, "sm") +
+          "<span>" + C.personLink(o.owner) +
+            '<p class="tiny muted">' + esc(tx(o.owner.title || {})) + "</p></span></span>" +
         '<strong class="title"><span class="num">' + I18N.num(o.svc.price) + "</span> " +
           esc(I18N.t("common.sar")) + "</strong>" +
       "</div>" +
+      '<div class="meta-row" style="margin-top:var(--s-4)">' + C.ratingLine(o.owner.id) +
+        '<span class="dot"></span><span class="muted">' +
+          esc(I18N.t("lawyer.years", { n: I18N.num(o.owner.years || 0) })) + "</span>" +
+        (best ? '<span class="dot"></span><span class="tag">' +
+          esc(I18N.t("quotes.bestPrice")) + "</span>" : "") +
+      "</div>" +
       '<div class="row between wrap gap-3" style="margin-top:var(--s-5);padding-top:var(--s-4);' +
         'border-top:1px solid var(--border)">' +
-        '<span class="row gap-2 small">' + C.avatar(o.owner, "sm") + C.personLink(o.owner) +
-          '<span class="dot"></span>' + C.ratingLine(o.owner.id) + "</span>" +
+        '<span class="tiny muted">' + esc(tx(type.meta)) + "</span>" +
         '<button class="btn btn--primary btn--sm" type="button" data-order="' + esc(o.svc.id) + '" ' +
           'data-i18n="req.order"></button>' +
       "</div></article>";
@@ -234,18 +300,23 @@ Pages.define("services", function (global) {
   host.addEventListener("click", function (ev) {
     var t = ev.target;
 
+    var pt = t.closest("[data-pick-type]");
+    if (pt) { filters.type = pt.getAttribute("data-pick-type"); App.rerender(); return; }
+    if (t.closest("[data-clear-type]")) { filters.type = ""; App.rerender(); return; }
+
     var ord = t.closest("[data-order]");
     if (ord) {
       if (Session.isGuest()) { App.toast(I18N.t("svc.orderSignIn"), "lock");
         setTimeout(function () { App.go("login.html"); }, 900); return; }
-      var all = offers();
+      var all = offersOfType(filters.type);
       var pick = null;
       for (var i = 0; i < all.length; i++) if (all[i].svc.id === ord.getAttribute("data-order")) pick = all[i];
       if (!pick) return;
+      var picked = M.serviceType(pick.svc.typeId);
       Store.addRequest({
         clientId: Session.user().id, lawyerId: pick.owner.id, typeId: pick.svc.typeId,
-        price: pick.svc.price, status: "new", ai: pick.type.tier === "quick", hours: 3,
-        title: pick.type.title,
+        price: pick.svc.price, status: "new", ai: picked.tier === "quick", hours: 3,
+        title: picked.title,
         brief: { ar: "", en: "" },
         ago: { ar: I18N.t("common.today"), en: I18N.t("common.today") }
       });

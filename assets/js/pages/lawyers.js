@@ -87,7 +87,15 @@ Pages.define("lawyers", function (global) {
       "</div></div>";
   }
 
-  /** The board. A signed-in professional finds their own row marked. */
+  /** The board is a professional's own scoreboard, not a client's shopping
+      aid — a client judges a lawyer by rating and price, never by a league
+      position. So it is drawn for lawyers and trainees only. A trainee sees
+      their own cohort; a lawyer sees both, because they supervise one of them. */
+  function canSeeBoard(role) {
+    if (Session.is("lawyer")) return true;
+    return Session.is("intern") && role === "intern";
+  }
+
   function board(role) {
     var me = Session.user();
     var rows = M.leaderboard(role);
@@ -131,7 +139,7 @@ Pages.define("lawyers", function (global) {
       (list.length
         ? '<div class="grid grid-3">' + list.map(isLawyers ? C.lawyerCard : C.internCard).join("") + "</div>"
         : C.empty("search", "dir.empty")) +
-      board(state.tab) +
+      (canSeeBoard(state.tab) ? board(state.tab) : "") +
     "</div>";
 
     I18N.apply(host);

@@ -18,7 +18,8 @@ Pages.define("lawyer", function (global) {
 
   function head(u) {
     var city = M.city(u.city);
-    var rank = M.rankOf(u.id, "lawyer");
+    // Rank is a professional's business; a client sees the rating instead.
+    var rank = Session.is("lawyer") ? M.rankOf(u.id, "lawyer") : { rank: null };
     return '<header class="card card--pad" style="margin-bottom:var(--s-8)">' +
       '<div class="row gap-6 wrap" style="align-items:flex-start">' +
         C.avatar(u, "lg") +

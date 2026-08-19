@@ -21,7 +21,9 @@ Pages.define("intern", function (global) {
               ["reviews", "profile.tabReviews"], ["articles", "profile.tabArticles"]];
 
   function head(u) {
-    var rank = M.rankOf(u.id, "intern");
+    // Same rule as a lawyer's page: the league table is for the profession.
+    var rank = (Session.is("lawyer") || Session.is("intern"))
+      ? M.rankOf(u.id, "intern") : { rank: null };
     var prog = M.certProgress(u.id);
     return '<header class="card card--pad" style="margin-bottom:var(--s-8)">' +
       '<div class="row gap-6 wrap" style="align-items:flex-start">' +

@@ -516,7 +516,9 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .verified .icon { fill: currentColor; stroke: none; }
 
 .meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); font-size: .8125rem; color: var(--text-muted); }
-.meta-row .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border-strong); }
+.dot { display: inline-block; width: 3px; height: 3px; border-radius: 50%;
+       background: var(--border-strong); vertical-align: middle; }
+.meta-row .dot { display: block; }
 
 .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--border); }
 .price-grid > div { padding: var(--s-4) var(--s-2); text-align: center; }
@@ -2085,6 +2087,36 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
       "account.roleAdded": "أضيف دور {role} إلى حسابك.",
       "account.guest": "لست مسجّلاً بعد.",
       "account.viewProfile": "ملفك العام",
+      "status.open_to_interns": "مفتوحة للمتدربين",
+      "inbox.routeTitle": "توجيه المهمة",
+      "inbox.pickOne": "اختر متدرباً بعينه",
+      "inbox.openToAll": "اعرضها على الجميع",
+      "inbox.openToAllHint": "تظهر لكل المتدربين ويتقدّمون لها، وتختار أنت من بينهم.",
+      "inbox.broadcastDone": "عُرضت المهمة على كل المتدربين.",
+      "inbox.applicants": "المتقدّمون",
+      "inbox.noApplicants": "لم يتقدّم أحد بعد.",
+      "inbox.pickApplicant": "اختره",
+      "inbox.withdrawOffer": "أعد المهمة إليك",
+      "task.openPool": "مهام مفتوحة للمنافسة",
+      "task.openPoolLead": "مهام عرضها محامون على كل المتدربين. تقدّم لها، والمحامي يختار.",
+      "task.apply": "أتقدّم للمهمة",
+      "task.applied": "تقدّمت — بانتظار اختيار المحامي",
+      "task.appliedToast": "سُجّل تقدّمك للمهمة.",
+      "task.competing": "{n} متقدّم",
+      "task.noOpen": "لا توجد مهام مفتوحة الآن.",
+      "svc.routeTitle": "كيف تريد أن تصل إلى محامٍ؟",
+      "svc.routePick": "اختر الخدمة",
+      "svc.routePickBody": "حدّد ما تحتاجه، وتظهر لك أسعار المحامين الذين يقدّمونه.",
+      "svc.routeAuction": "انشر طلبك",
+      "svc.routeAuctionBody": "اكتب حالتك مرة واحدة، وتصل كل المحامين فيتنافسون على سعرها.",
+      "svc.pickType": "اختر نوع الخدمة",
+      "svc.lawyersFor": "المحامون الذين يقدّمون: {name}",
+      "svc.changeType": "غيّر الخدمة",
+      "svc.fromPrice": "من",
+      "svc.offeredBy": "{n} محامٍ",
+      "svc.noneForType": "لا يقدّم أحد هذه الخدمة حالياً.",
+      "rank.prosOnly": "لوحة الترتيب تظهر للمحامين والمتدربين فقط — العملاء يرون التقييم.",
+      "svc.routeLead": "طريقان، وكلاهما بسعر تعرفه قبل أن تدفع.",
     },
 
     en: {
@@ -2861,6 +2893,36 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
       "account.roleAdded": "The {role} role was added to your account.",
       "account.guest": "You are not signed in yet.",
       "account.viewProfile": "Your public profile",
+      "status.open_to_interns": "Open to trainees",
+      "inbox.routeTitle": "Route this task",
+      "inbox.pickOne": "Pick one trainee",
+      "inbox.openToAll": "Open it to everyone",
+      "inbox.openToAllHint": "Every trainee sees it and applies; you choose between them.",
+      "inbox.broadcastDone": "The task is now open to every trainee.",
+      "inbox.applicants": "Applicants",
+      "inbox.noApplicants": "Nobody has applied yet.",
+      "inbox.pickApplicant": "Choose",
+      "inbox.withdrawOffer": "Take the task back",
+      "task.openPool": "Tasks open to compete for",
+      "task.openPoolLead": "Tasks lawyers opened to every trainee. Apply, and the lawyer chooses.",
+      "task.apply": "Apply for it",
+      "task.applied": "Applied — waiting for the lawyer to choose",
+      "task.appliedToast": "Your application is in.",
+      "task.competing": "{n} applicants",
+      "task.noOpen": "No open tasks right now.",
+      "svc.routeTitle": "How do you want to reach a lawyer?",
+      "svc.routePick": "Pick the service",
+      "svc.routePickBody": "Say what you need, and see the price from every lawyer who offers it.",
+      "svc.routeAuction": "Post your case",
+      "svc.routeAuctionBody": "Describe it once; it reaches every lawyer and they compete on the price.",
+      "svc.pickType": "Choose a service type",
+      "svc.lawyersFor": "Lawyers offering: {name}",
+      "svc.changeType": "Change the service",
+      "svc.fromPrice": "from",
+      "svc.offeredBy": "{n} lawyers",
+      "svc.noneForType": "Nobody offers this service right now.",
+      "rank.prosOnly": "The leaderboard is shown to lawyers and trainees only — clients see ratings.",
+      "svc.routeLead": "Two roads in, and both quote you a price before you pay.",
     }
   };
 
@@ -3013,9 +3075,9 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
   var work = read(sessionStorage, WORK_KEY, {});
   [
     "requests", "requestStates", "services", "removedServices", "reviews",
-    "articles", "articleStates", "comments", "endorsements"
+    "articles", "articleStates", "comments", "endorsements", "applications"
   ].forEach(function (k) {
-    if (!work[k]) work[k] = (k.indexOf("States") !== -1 ? {} : []);
+    if (!work[k]) work[k] = (k.indexOf("States") !== -1 || k === "applications" ? {} : []);
   });
 
   var listeners = [];
@@ -3153,6 +3215,22 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
     },
     removedServices: function () { return work.removedServices || []; },
 
+    /* ---------------- trainees applying for an open task ----------------
+       A lawyer may hand a task to one trainee, or open it to all of them. In
+       the second case the trainees apply here and the lawyer picks. */
+    applicants: function (requestId) { return work.applications[requestId] || []; },
+    apply: function (requestId, internId) {
+      var list = work.applications[requestId] || (work.applications[requestId] = []);
+      if (list.indexOf(internId) !== -1) return false;
+      list.push(internId);
+      notify();
+      return true;
+    },
+    clearApplicants: function (requestId) {
+      delete work.applications[requestId];
+      notify();
+    },
+
     reviews: function () { return work.reviews; },
     addReview: function (rev) {
       rev.id = uid("rev");
@@ -3217,7 +3295,8 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
     /* ---------------- housekeeping ---------------- */
     resetWork: function () {
       work = { requests: [], requestStates: {}, services: [], removedServices: [],
-               reviews: [], articles: [], articleStates: {}, comments: [], endorsements: [] };
+               reviews: [], articles: [], articleStates: {}, comments: [],
+               endorsements: [], applications: {} };
       notify();
     },
     resetAll: function () {
@@ -4013,7 +4092,7 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
   // A booked appointment is still a live request — it belongs with the current
   // ones, not the history.
   var OPEN_STATES = ["new", "quoting", "assigned", "scheduled", "drafted",
-                     "with_intern", "in_progress"];
+                     "open_to_interns", "with_intern", "in_progress"];
 
   function requestsForClient(clientId, which) {
     return requests().filter(function (r) {
@@ -4030,6 +4109,14 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
 
   function requestsForIntern(internId) {
     return requests().filter(function (r) { return requestState(r).assignedTo === internId; });
+  }
+
+  /** Tasks a lawyer opened to every trainee, still waiting to be handed out. */
+  function openInternTasks() {
+    return requests().filter(function (r) {
+      var st = requestState(r);
+      return st.status === "open_to_interns" && !st.assignedTo;
+    });
   }
 
   /* ---------- training hours & endorsements ----------
@@ -4115,7 +4202,7 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
     priceBand: priceBand, checkPrice: checkPrice,
     requests: requests, request: request, requestState: requestState,
     requestsForClient: requestsForClient, requestsForLawyer: requestsForLawyer,
-    requestsForIntern: requestsForIntern,
+    requestsForIntern: requestsForIntern, openInternTasks: openInternTasks,
     CERT_HOURS: CERT_HOURS, hoursOf: hoursOf, certProgress: certProgress,
     endorsementsFor: endorsementsFor,
     articles: articles, allArticles: allArticles, article: article, articlesBy: articlesBy,
@@ -4605,6 +4692,7 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
     var services = { key: "nav.services", tab: "tab.services", href: "services.html",id: "services", icon: "tag" };
     var blog     = { key: "nav.blog",     tab: "tab.blog",     href: "blog.html",    id: "blog",     icon: "file-text" };
     var people   = { key: "nav.lawyers",  tab: "tab.lawyers",  href: "lawyers.html", id: "lawyers",  icon: "scale" };
+    var drafting = { key: "nav.assistant",tab: "tab.assistant",href: "assistant.html",id: "assistant",icon: "sparkle" };
 
     if (role === "intern") {
       // A trainee sells no services; the slot carries their skills instead.
@@ -4612,6 +4700,11 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
     }
     if (role === "guest") {
       return [home, people, services, blog];
+    }
+    // The drafting workspace is a lawyer's daily tool, so it earns a slot of
+    // its own rather than hiding behind a link on the dashboard.
+    if (role === "lawyer") {
+      return [home, requests, drafting, services, blog, people];
     }
     return [home, requests, services, blog, people];
   }
@@ -4663,7 +4756,10 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
 
   /** Phones navigate from the bottom; the account tab closes the set. */
   function tabbar(active) {
-    var items = navItems().slice();
+    // Six targets is what fits legibly at 390px, so the phone bar takes the
+    // first five and always ends with the account. Anything cut here is still
+    // in the header on wider screens and in the footer everywhere.
+    var items = navItems().slice(0, 5);
     items.push(Session.isGuest()
       ? { key: "auth.signIn", tab: "auth.signIn", href: "login.html", id: "login", icon: "user" }
       : { key: "account.heading", tab: "tab.account", href: "account.html", id: "account", icon: "user" });
@@ -4896,7 +4992,7 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
   /* ---------- requests ---------- */
   var STATUS_STYLE = {
     new: "warn", quoting: "info", assigned: "info", scheduled: "info",
-    drafted: "ok", with_intern: "info", in_progress: "warn",
+    drafted: "ok", open_to_interns: "warn", with_intern: "info", in_progress: "warn",
     delivered: "ok", completed: "muted", cancelled: "muted"
   };
 
@@ -5278,7 +5374,8 @@ Pages.define("requests", function (global) {
      routing are how the work gets done, not something the client ordered — so
      all three collapse into one honest word: in progress. */
   var CLIENT_STATUS = {
-    drafted: "in_progress", with_intern: "in_progress", assigned: "in_progress"
+    drafted: "in_progress", with_intern: "in_progress", assigned: "in_progress",
+    open_to_interns: "in_progress"
   };
 
   function clientRow(r) {
@@ -5368,6 +5465,16 @@ Pages.define("requests", function (global) {
     var t = M.serviceType(r.typeId) || {};
     if (st.status === "delivered" || st.status === "completed") return "";
 
+    if (st.status === "open_to_interns" && !st.assignedTo) {
+      var n = Store.applicants(r.id).length;
+      return '<span class="tiny muted">' +
+          esc(I18N.t("task.competing", { n: I18N.num(n) })) + "</span>" +
+        '<button class="btn btn--outline btn--sm" type="button" data-open="' + esc(r.id) + '">' +
+          esc(I18N.t("inbox.applicants")) + "</button>" +
+        '<button class="btn btn--ghost btn--sm" type="button" data-unassign="' + esc(r.id) + '">' +
+          esc(I18N.t("inbox.withdrawOffer")) + "</button>";
+    }
+
     if (st.assignedTo) {
       var who = M.user(st.assignedTo);
       return '<span class="tiny muted">' +
@@ -5438,10 +5545,46 @@ Pages.define("requests", function (global) {
                     esc(I18N.t("common.sar")) + "</strong>" +
                   '<div class="inbox-row__actions">' + lawyerActions(r) + "</div>" +
                 "</div></div>" +
-              (open === r.id ? draftPanel(r) : "") + "</div>";
+              (open === r.id
+                ? (M.requestState(r).status === "open_to_interns" && !M.requestState(r).assignedTo
+                    ? applicantsPanel(r)
+                    : draftPanel(r))
+                : "") + "</div>";
           }).join("")
         : '<p class="muted center" style="padding:var(--s-8)">' + esc(I18N.t("inbox.empty")) + "</p>") +
     "</div>";
+  }
+
+  /** Who put their hand up for an opened task, and the button that ends it. */
+  function applicantsPanel(r) {
+    var ids = Store.applicants(r.id);
+    return '<section class="panel" style="margin:var(--s-2) 0 var(--s-5)">' +
+      '<div class="panel__head row between wrap gap-3">' +
+        '<h2 class="subtitle">' + esc(I18N.t("inbox.applicants")) + " — " + esc(tx(r.title)) + "</h2>" +
+        '<button class="icon-btn" type="button" data-draft-close>' + Icons.svg("close", "icon-sm") + "</button>" +
+      "</div>" +
+      '<div style="padding:var(--s-5)">' +
+        (ids.length
+          ? '<div class="req-list">' + ids.map(function (id) {
+              var u = M.user(id);
+              if (!u) return "";
+              var prog = M.certProgress(u.id);
+              return '<div class="req-row">' +
+                '<span class="req-row__icon">' + C.avatar(u, "sm") + "</span>" +
+                '<div class="grow" style="min-width:0">' + C.personLink(u) +
+                  '<p class="tiny muted">' + esc(tx(u.university || {})) + ' <span class="dot"></span> ' +
+                    esc(I18N.t("cert.hoursShort", { n: I18N.num(prog.hours) })) + "</p>" +
+                  '<div class="row gap-2 wrap" style="margin-top:var(--s-2)">' +
+                    (u.skills || []).slice(0, 3).map(function (sk) {
+                      return '<span class="tag">' + esc(tx(sk)) + "</span>";
+                    }).join("") + "</div></div>" +
+                '<div class="req-row__side">' + C.ratingLine(u.id) +
+                  '<button class="btn btn--accent btn--sm" type="button" ' +
+                    'data-pick-intern="' + esc(u.id) + '" data-for="' + esc(r.id) + '">' +
+                    esc(I18N.t("inbox.pickApplicant")) + "</button></div></div>";
+            }).join("") + "</div>"
+          : '<p class="small muted">' + esc(I18N.t("inbox.noApplicants")) + "</p>") +
+      "</div></section>";
   }
 
   /** The drafting surface. The assistant's text lands here and nowhere else. */
@@ -5474,20 +5617,28 @@ Pages.define("requests", function (global) {
       "</div></section>";
   }
 
-  /** Three names is not worth a modal. */
+  /** Two ways to hand work down: name someone, or let them compete for it.
+      Three names is not worth a modal, so this is an inline chooser. */
   function openAssign(id, anchor) {
     var existing = $(".assign-pop");
     if (existing) existing.remove();
     var pop = document.createElement("div");
     pop.className = "assign-pop";
-    pop.innerHTML = '<p class="tiny muted">' + esc(I18N.t("inbox.assignTo")) + "</p>" +
+    pop.innerHTML = '<p class="tiny muted">' + esc(I18N.t("inbox.pickOne")) + "</p>" +
       M.interns().map(function (i) {
         return '<button type="button" data-pick-intern="' + esc(i.id) + '" data-for="' + esc(id) + '">' +
           '<img class="avatar avatar--sm" alt="" width="28" height="28" src="' +
             App.avatarOf(i.name, i.id) + '">' +
           "<span>" + esc(tx(i.name)) + "</span>" +
           '<span class="tiny muted num">' + I18N.num(M.hoursOf(i.id)) + "</span></button>";
-      }).join("");
+      }).join("") +
+      '<hr class="divider" style="margin:var(--s-2) 0">' +
+      '<button type="button" data-broadcast="' + esc(id) + '">' +
+        '<span class="stat__icon" style="width:28px;height:28px">' +
+          Icons.svg("gavel", "icon-sm") + "</span>" +
+        "<span><strong>" + esc(I18N.t("inbox.openToAll")) + "</strong>" +
+        '<span class="tiny muted" style="display:block">' +
+          esc(I18N.t("inbox.openToAllHint")) + "</span></span></button>";
     anchor.appendChild(pop);
   }
 
@@ -5495,6 +5646,7 @@ Pages.define("requests", function (global) {
   function internView() {
     var me = Session.user();
     var mine = M.requestsForIntern(me.id);
+    var pool = M.openInternTasks();
 
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       '<header style="margin-bottom:var(--s-8)">' +
@@ -5503,7 +5655,45 @@ Pages.define("requests", function (global) {
       (mine.length
         ? mine.map(internRow).join("")
         : C.empty("inbox", "task.none")) +
-    "</div>";
+
+      '<section style="margin-top:var(--s-12)">' +
+        '<h2 class="headline" data-i18n="task.openPool"></h2>' +
+        '<p class="lead" style="margin-bottom:var(--s-6)" data-i18n="task.openPoolLead"></p>' +
+        (pool.length
+          ? pool.map(function (r) { return openTaskRow(r, me); }).join("")
+          : C.empty("gavel", "task.noOpen")) +
+      "</section></div>";
+  }
+
+  /** An opened task: every trainee sees it, applies, and the lawyer picks. */
+  function openTaskRow(r, me) {
+    var lawyer = M.user(r.lawyerId);
+    var t = M.serviceType(r.typeId) || {};
+    var applicants = Store.applicants(r.id);
+    var applied = applicants.indexOf(me.id) !== -1;
+
+    return '<article class="card card--pad card--rule-gold" style="margin-bottom:var(--s-4)">' +
+      '<div class="row between wrap gap-4">' +
+        '<div class="grow" style="min-width:0">' +
+          '<div class="row gap-2 wrap"><h3 class="subtitle">' + esc(tx(r.title)) + "</h3>" +
+            '<span class="tag">' + esc(tx(t.title || {})) + "</span></div>" +
+          '<p class="small muted" style="margin-top:var(--s-2)">' + esc(tx(r.brief)) + "</p>" +
+          '<div class="meta-row" style="margin-top:var(--s-3)">' +
+            '<span class="row gap-2">' + Icons.svg("scale", "icon-sm") +
+              '<span class="tiny muted">' + esc(I18N.t("task.supervisor")) + ":</span> " +
+              (lawyer ? C.personLink(lawyer) : "") + "</span>" +
+            '<span class="dot"></span>' +
+            '<span class="tiny muted">' + esc(I18N.t("task.hoursWorth", { n: I18N.num(r.hours || 4) })) + "</span>" +
+            '<span class="dot"></span>' +
+            '<span class="tiny muted">' +
+              esc(I18N.t("task.competing", { n: I18N.num(applicants.length) })) + "</span>" +
+          "</div>" +
+        "</div>" +
+        (applied
+          ? '<span class="status status--ok">' + esc(I18N.t("task.applied")) + "</span>"
+          : '<button class="btn btn--accent btn--sm" type="button" data-apply="' + esc(r.id) + '">' +
+            Icons.svg("send", "icon-sm") + esc(I18N.t("task.apply")) + "</button>") +
+      "</div></article>";
   }
 
   function internRow(r) {
@@ -5631,23 +5821,42 @@ Pages.define("requests", function (global) {
     var as = t.closest("[data-assign]");
     if (as) { openAssign(as.getAttribute("data-assign"), as.parentNode); return; }
 
+    var bc = hit("data-broadcast");
+    if (bc) {
+      open = null;
+      Store.clearApplicants(bc);
+      Store.setRequest(bc, { assignedTo: null, status: "open_to_interns" });
+      App.toast(I18N.t("inbox.broadcastDone"), "gavel");
+      return;
+    }
+
     var pick = t.closest("[data-pick-intern]");
     if (pick) {
       var who = M.user(pick.getAttribute("data-pick-intern"));
+      var forId = pick.getAttribute("data-for");
       open = null;
-      Store.setRequest(pick.getAttribute("data-for"), { assignedTo: who.id, status: "with_intern" });
+      Store.clearApplicants(forId);
+      Store.setRequest(forId, { assignedTo: who.id, status: "with_intern" });
       App.toast(I18N.t("inbox.assignDone", { name: tx(who.name) }), "graduation");
       return;
     }
 
     var un = hit("data-unassign");
     if (un) {
+      Store.clearApplicants(un);
       Store.setRequest(un, { assignedTo: null, status: "new" });
       App.toast(I18N.t("inbox.unassigned"), "arrow-back");
       return;
     }
 
     /* --- intern --- */
+    var ap2 = hit("data-apply");
+    if (ap2) {
+      Store.apply(ap2, Session.user().id);
+      App.toast(I18N.t("task.appliedToast"), "send");
+      return;
+    }
+
     var to = hit("data-task-open");
     if (to) {
       open = open === to ? null : to;
@@ -5702,41 +5911,91 @@ Pages.define("services", function (global) {
   var filters = { type: "", specialty: "", sort: "price" };
   var skills = null;   // trainee's working copy, loaded on first draw
 
-  /* ====================================================== client ========== */
-  function offers() {
+  /* ====================================================== client ==========
+     Two ways in, stated up front. Either the client names the service and the
+     lawyers who offer it line up by price, or they describe the case once and
+     let the lawyers come to them — that second road is the auction. */
+  function routeCards() {
+    return '<div class="grid grid-2" style="margin-bottom:var(--s-10)">' +
+      '<div class="card card--pad card--rule-navy feature">' +
+        '<span class="feature__icon">' + Icons.svg("tag", "icon-lg") + "</span>" +
+        '<h2 class="subtitle" data-i18n="svc.routePick"></h2>' +
+        '<p class="small muted" data-i18n="svc.routePickBody"></p></div>' +
+      '<a class="card card--pad card--hover card--rule-gold feature" href="quotes.html">' +
+        '<span class="feature__icon">' + Icons.svg("gavel", "icon-lg") + "</span>" +
+        '<h2 class="subtitle" data-i18n="svc.routeAuction"></h2>' +
+        '<p class="small muted" data-i18n="svc.routeAuctionBody"></p></a>' +
+    "</div>";
+  }
+
+  /** Everyone who offers one service type, cheapest first by default. */
+  function offersOfType(typeId) {
     var out = [];
     M.listedLawyers().forEach(function (u) {
-      M.servicesOf(u.id).forEach(function (s) {
-        out.push({ svc: s, owner: u, type: M.serviceType(s.typeId) });
+      M.servicesOf(u.id).forEach(function (svc) {
+        if (svc.typeId !== typeId) return;
+        if (filters.specialty && (u.specialties || []).indexOf(filters.specialty) === -1) return;
+        out.push({ svc: svc, owner: u });
       });
     });
-    return out.filter(function (o) {
-      if (!o.type) return false;
-      if (filters.type && o.svc.typeId !== filters.type) return false;
-      if (filters.specialty && (o.owner.specialties || []).indexOf(filters.specialty) === -1) return false;
-      return true;
-    }).sort(function (a, b) {
+    return out.sort(function (a, b) {
       return filters.sort === "rating"
         ? M.ratingOf(b.owner.id).avg - M.ratingOf(a.owner.id).avg
         : a.svc.price - b.svc.price;
     });
   }
 
-  function clientView() {
-    var list = offers();
-    return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
-      '<header style="margin-bottom:var(--s-8)">' +
-        '<h1 class="headline" data-i18n="svc.heading"></h1>' +
-        '<p class="lead" data-i18n="svc.lead"></p></header>' +
+  function countFor(typeId) {
+    return M.listedLawyers().filter(function (u) {
+      return M.servicesOf(u.id).some(function (s) { return s.typeId === typeId; });
+    }).length;
+  }
+
+  function cheapestFor(typeId) {
+    var all = [];
+    M.listedLawyers().forEach(function (u) {
+      M.servicesOf(u.id).forEach(function (s) { if (s.typeId === typeId) all.push(s.price); });
+    });
+    return all.length ? Math.min.apply(null, all) : null;
+  }
+
+  /* --- step one: which service --- */
+  function typePicker() {
+    return '<h2 class="title" style="margin-bottom:var(--s-5)" data-i18n="svc.pickType"></h2>' +
+      '<div class="grid grid-3">' + M.serviceTypes().map(function (t) {
+        var from = cheapestFor(t.id);
+        return '<button type="button" class="card card--pad card--hover feature" ' +
+          'data-pick-type="' + esc(t.id) + '" style="text-align:start">' +
+          '<span class="feature__icon">' + Icons.svg(t.icon, "icon-lg") + "</span>" +
+          '<h3 class="subtitle">' + esc(tx(t.title)) + "</h3>" +
+          '<p class="small muted">' + esc(tx(t.meta)) + "</p>" +
+          '<p class="small" style="margin-top:auto;padding-top:var(--s-3)">' +
+            (from !== null
+              ? esc(I18N.t("svc.fromPrice")) + ' <strong class="num">' + I18N.num(from) + "</strong> " +
+                esc(I18N.t("common.sar")) + ' <span class="dot"></span> <span class="muted">' +
+                esc(I18N.t("svc.offeredBy", { n: I18N.num(countFor(t.id)) })) + "</span>"
+              : '<span class="muted">' + esc(I18N.t("svc.noneForType")) + "</span>") +
+          "</p></button>";
+      }).join("") + "</div>";
+  }
+
+  /* --- step two: who offers it --- */
+  function lawyersForType() {
+    var type = M.serviceType(filters.type);
+    var list = offersOfType(filters.type);
+
+    return '<div class="row between wrap gap-4" style="margin-bottom:var(--s-6)">' +
+        '<h2 class="title">' + esc(I18N.t("svc.lawyersFor", { name: tx(type.title) })) + "</h2>" +
+        '<button class="btn btn--ghost btn--sm" type="button" data-clear-type>' +
+          Icons.svg("arrow-back", "icon-sm") + esc(I18N.t("svc.changeType")) + "</button>" +
+      "</div>" +
 
       '<div class="results-bar">' +
         '<div class="row gap-3 wrap">' +
-          '<label class="field"><span class="label" data-i18n="svc.filterType"></span>' +
-            select("type", M.serviceTypes().map(function (t) { return { id: t.id, label: tx(t.title) }; }),
-                   filters.type, "svc.allTypes") + "</label>" +
           '<label class="field"><span class="label" data-i18n="dir.specialties"></span>' +
-            select("specialty", global.SEED.specialties.map(function (s) { return { id: s.id, label: tx(s) }; }),
-                   filters.specialty, "dir.anySpecialty") + "</label>" +
+            select("specialty", global.SEED.specialties.map(function (sp) {
+              return { id: sp.id, label: tx(sp) };
+            }), filters.specialty, "dir.anySpecialty") + "</label>" +
           '<label class="field"><span class="label" data-i18n="dir.sortBy"></span>' +
             select("sort", [{ id: "price", label: I18N.t("svc.sortPrice") },
                             { id: "rating", label: I18N.t("svc.sortRating") }], filters.sort) + "</label>" +
@@ -5745,8 +6004,19 @@ Pages.define("services", function (global) {
       "</div>" +
 
       (list.length
-        ? '<div class="grid grid-2" style="margin-top:var(--s-6)">' + list.map(offerCard).join("") + "</div>"
-        : C.empty("tag", "svc.none")) +
+        ? '<div class="grid grid-2" style="margin-top:var(--s-6)">' +
+          list.map(function (o, i) { return offerCard(o, type, i === 0 && filters.sort === "price"); }).join("") +
+          "</div>"
+        : C.empty("tag", "svc.noneForType"));
+  }
+
+  function clientView() {
+    return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
+      '<header style="margin-bottom:var(--s-8)">' +
+        '<h1 class="headline" data-i18n="svc.routeTitle"></h1>' +
+        '<p class="lead" data-i18n="svc.routeLead"></p></header>' +
+      routeCards() +
+      (filters.type ? lawyersForType() : typePicker()) +
     "</div>";
   }
 
@@ -5759,19 +6029,24 @@ Pages.define("services", function (global) {
       }).join("") + "</select>";
   }
 
-  function offerCard(o) {
-    return '<article class="card card--pad card--hover">' +
+  function offerCard(o, type, best) {
+    return '<article class="card card--pad card--hover' + (best ? " card--rule-gold" : "") + '">' +
       '<div class="row between wrap gap-3">' +
-        '<div class="row gap-3"><span class="stat__icon">' + Icons.svg(o.type.icon, "icon-sm") + "</span>" +
-          '<div><h3 class="subtitle">' + esc(tx(o.type.title)) + "</h3>" +
-            '<p class="tiny muted">' + esc(tx(o.type.meta)) + "</p></div></div>" +
+        '<span class="row gap-3">' + C.avatar(o.owner, "sm") +
+          "<span>" + C.personLink(o.owner) +
+            '<p class="tiny muted">' + esc(tx(o.owner.title || {})) + "</p></span></span>" +
         '<strong class="title"><span class="num">' + I18N.num(o.svc.price) + "</span> " +
           esc(I18N.t("common.sar")) + "</strong>" +
       "</div>" +
+      '<div class="meta-row" style="margin-top:var(--s-4)">' + C.ratingLine(o.owner.id) +
+        '<span class="dot"></span><span class="muted">' +
+          esc(I18N.t("lawyer.years", { n: I18N.num(o.owner.years || 0) })) + "</span>" +
+        (best ? '<span class="dot"></span><span class="tag">' +
+          esc(I18N.t("quotes.bestPrice")) + "</span>" : "") +
+      "</div>" +
       '<div class="row between wrap gap-3" style="margin-top:var(--s-5);padding-top:var(--s-4);' +
         'border-top:1px solid var(--border)">' +
-        '<span class="row gap-2 small">' + C.avatar(o.owner, "sm") + C.personLink(o.owner) +
-          '<span class="dot"></span>' + C.ratingLine(o.owner.id) + "</span>" +
+        '<span class="tiny muted">' + esc(tx(type.meta)) + "</span>" +
         '<button class="btn btn--primary btn--sm" type="button" data-order="' + esc(o.svc.id) + '" ' +
           'data-i18n="req.order"></button>' +
       "</div></article>";
@@ -5916,18 +6191,23 @@ Pages.define("services", function (global) {
   host.addEventListener("click", function (ev) {
     var t = ev.target;
 
+    var pt = t.closest("[data-pick-type]");
+    if (pt) { filters.type = pt.getAttribute("data-pick-type"); App.rerender(); return; }
+    if (t.closest("[data-clear-type]")) { filters.type = ""; App.rerender(); return; }
+
     var ord = t.closest("[data-order]");
     if (ord) {
       if (Session.isGuest()) { App.toast(I18N.t("svc.orderSignIn"), "lock");
         setTimeout(function () { App.go("login.html"); }, 900); return; }
-      var all = offers();
+      var all = offersOfType(filters.type);
       var pick = null;
       for (var i = 0; i < all.length; i++) if (all[i].svc.id === ord.getAttribute("data-order")) pick = all[i];
       if (!pick) return;
+      var picked = M.serviceType(pick.svc.typeId);
       Store.addRequest({
         clientId: Session.user().id, lawyerId: pick.owner.id, typeId: pick.svc.typeId,
-        price: pick.svc.price, status: "new", ai: pick.type.tier === "quick", hours: 3,
-        title: pick.type.title,
+        price: pick.svc.price, status: "new", ai: picked.tier === "quick", hours: 3,
+        title: picked.title,
         brief: { ar: "", en: "" },
         ago: { ar: I18N.t("common.today"), en: I18N.t("common.today") }
       });
@@ -6066,7 +6346,15 @@ Pages.define("lawyers", function (global) {
       "</div></div>";
   }
 
-  /** The board. A signed-in professional finds their own row marked. */
+  /** The board is a professional's own scoreboard, not a client's shopping
+      aid — a client judges a lawyer by rating and price, never by a league
+      position. So it is drawn for lawyers and trainees only. A trainee sees
+      their own cohort; a lawyer sees both, because they supervise one of them. */
+  function canSeeBoard(role) {
+    if (Session.is("lawyer")) return true;
+    return Session.is("intern") && role === "intern";
+  }
+
   function board(role) {
     var me = Session.user();
     var rows = M.leaderboard(role);
@@ -6110,7 +6398,7 @@ Pages.define("lawyers", function (global) {
       (list.length
         ? '<div class="grid grid-3">' + list.map(isLawyers ? C.lawyerCard : C.internCard).join("") + "</div>"
         : C.empty("search", "dir.empty")) +
-      board(state.tab) +
+      (canSeeBoard(state.tab) ? board(state.tab) : "") +
     "</div>";
 
     I18N.apply(host);
@@ -6168,7 +6456,8 @@ Pages.define("lawyer", function (global) {
 
   function head(u) {
     var city = M.city(u.city);
-    var rank = M.rankOf(u.id, "lawyer");
+    // Rank is a professional's business; a client sees the rating instead.
+    var rank = Session.is("lawyer") ? M.rankOf(u.id, "lawyer") : { rank: null };
     return '<header class="card card--pad" style="margin-bottom:var(--s-8)">' +
       '<div class="row gap-6 wrap" style="align-items:flex-start">' +
         C.avatar(u, "lg") +
@@ -6370,7 +6659,9 @@ Pages.define("intern", function (global) {
               ["reviews", "profile.tabReviews"], ["articles", "profile.tabArticles"]];
 
   function head(u) {
-    var rank = M.rankOf(u.id, "intern");
+    // Same rule as a lawyer's page: the league table is for the profession.
+    var rank = (Session.is("lawyer") || Session.is("intern"))
+      ? M.rankOf(u.id, "intern") : { rank: null };
     var prog = M.certProgress(u.id);
     return '<header class="card card--pad" style="margin-bottom:var(--s-8)">' +
       '<div class="row gap-6 wrap" style="align-items:flex-start">' +

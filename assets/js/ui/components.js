@@ -146,7 +146,7 @@
   /* ---------- requests ---------- */
   var STATUS_STYLE = {
     new: "warn", quoting: "info", assigned: "info", scheduled: "info",
-    drafted: "ok", with_intern: "info", in_progress: "warn",
+    drafted: "ok", open_to_interns: "warn", with_intern: "info", in_progress: "warn",
     delivered: "ok", completed: "muted", cancelled: "muted"
   };
 

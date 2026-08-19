@@ -507,7 +507,9 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .verified .icon { fill: currentColor; stroke: none; }
 
 .meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); font-size: .8125rem; color: var(--text-muted); }
-.meta-row .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border-strong); }
+.dot { display: inline-block; width: 3px; height: 3px; border-radius: 50%;
+       background: var(--border-strong); vertical-align: middle; }
+.meta-row .dot { display: block; }
 
 .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--border); }
 .price-grid > div { padding: var(--s-4) var(--s-2); text-align: center; }

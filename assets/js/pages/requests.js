@@ -57,7 +57,8 @@ Pages.define("requests", function (global) {
      routing are how the work gets done, not something the client ordered — so
      all three collapse into one honest word: in progress. */
   var CLIENT_STATUS = {
-    drafted: "in_progress", with_intern: "in_progress", assigned: "in_progress"
+    drafted: "in_progress", with_intern: "in_progress", assigned: "in_progress",
+    open_to_interns: "in_progress"
   };
 
   function clientRow(r) {
@@ -147,6 +148,16 @@ Pages.define("requests", function (global) {
     var t = M.serviceType(r.typeId) || {};
     if (st.status === "delivered" || st.status === "completed") return "";
 
+    if (st.status === "open_to_interns" && !st.assignedTo) {
+      var n = Store.applicants(r.id).length;
+      return '<span class="tiny muted">' +
+          esc(I18N.t("task.competing", { n: I18N.num(n) })) + "</span>" +
+        '<button class="btn btn--outline btn--sm" type="button" data-open="' + esc(r.id) + '">' +
+          esc(I18N.t("inbox.applicants")) + "</button>" +
+        '<button class="btn btn--ghost btn--sm" type="button" data-unassign="' + esc(r.id) + '">' +
+          esc(I18N.t("inbox.withdrawOffer")) + "</button>";
+    }
+
     if (st.assignedTo) {
       var who = M.user(st.assignedTo);
       return '<span class="tiny muted">' +
@@ -217,10 +228,46 @@ Pages.define("requests", function (global) {
                     esc(I18N.t("common.sar")) + "</strong>" +
                   '<div class="inbox-row__actions">' + lawyerActions(r) + "</div>" +
                 "</div></div>" +
-              (open === r.id ? draftPanel(r) : "") + "</div>";
+              (open === r.id
+                ? (M.requestState(r).status === "open_to_interns" && !M.requestState(r).assignedTo
+                    ? applicantsPanel(r)
+                    : draftPanel(r))
+                : "") + "</div>";
           }).join("")
         : '<p class="muted center" style="padding:var(--s-8)">' + esc(I18N.t("inbox.empty")) + "</p>") +
     "</div>";
+  }
+
+  /** Who put their hand up for an opened task, and the button that ends it. */
+  function applicantsPanel(r) {
+    var ids = Store.applicants(r.id);
+    return '<section class="panel" style="margin:var(--s-2) 0 var(--s-5)">' +
+      '<div class="panel__head row between wrap gap-3">' +
+        '<h2 class="subtitle">' + esc(I18N.t("inbox.applicants")) + " — " + esc(tx(r.title)) + "</h2>" +
+        '<button class="icon-btn" type="button" data-draft-close>' + Icons.svg("close", "icon-sm") + "</button>" +
+      "</div>" +
+      '<div style="padding:var(--s-5)">' +
+        (ids.length
+          ? '<div class="req-list">' + ids.map(function (id) {
+              var u = M.user(id);
+              if (!u) return "";
+              var prog = M.certProgress(u.id);
+              return '<div class="req-row">' +
+                '<span class="req-row__icon">' + C.avatar(u, "sm") + "</span>" +
+                '<div class="grow" style="min-width:0">' + C.personLink(u) +
+                  '<p class="tiny muted">' + esc(tx(u.university || {})) + ' <span class="dot"></span> ' +
+                    esc(I18N.t("cert.hoursShort", { n: I18N.num(prog.hours) })) + "</p>" +
+                  '<div class="row gap-2 wrap" style="margin-top:var(--s-2)">' +
+                    (u.skills || []).slice(0, 3).map(function (sk) {
+                      return '<span class="tag">' + esc(tx(sk)) + "</span>";
+                    }).join("") + "</div></div>" +
+                '<div class="req-row__side">' + C.ratingLine(u.id) +
+                  '<button class="btn btn--accent btn--sm" type="button" ' +
+                    'data-pick-intern="' + esc(u.id) + '" data-for="' + esc(r.id) + '">' +
+                    esc(I18N.t("inbox.pickApplicant")) + "</button></div></div>";
+            }).join("") + "</div>"
+          : '<p class="small muted">' + esc(I18N.t("inbox.noApplicants")) + "</p>") +
+      "</div></section>";
   }
 
   /** The drafting surface. The assistant's text lands here and nowhere else. */
@@ -253,20 +300,28 @@ Pages.define("requests", function (global) {
       "</div></section>";
   }
 
-  /** Three names is not worth a modal. */
+  /** Two ways to hand work down: name someone, or let them compete for it.
+      Three names is not worth a modal, so this is an inline chooser. */
   function openAssign(id, anchor) {
     var existing = $(".assign-pop");
     if (existing) existing.remove();
     var pop = document.createElement("div");
     pop.className = "assign-pop";
-    pop.innerHTML = '<p class="tiny muted">' + esc(I18N.t("inbox.assignTo")) + "</p>" +
+    pop.innerHTML = '<p class="tiny muted">' + esc(I18N.t("inbox.pickOne")) + "</p>" +
       M.interns().map(function (i) {
         return '<button type="button" data-pick-intern="' + esc(i.id) + '" data-for="' + esc(id) + '">' +
           '<img class="avatar avatar--sm" alt="" width="28" height="28" src="' +
             App.avatarOf(i.name, i.id) + '">' +
           "<span>" + esc(tx(i.name)) + "</span>" +
           '<span class="tiny muted num">' + I18N.num(M.hoursOf(i.id)) + "</span></button>";
-      }).join("");
+      }).join("") +
+      '<hr class="divider" style="margin:var(--s-2) 0">' +
+      '<button type="button" data-broadcast="' + esc(id) + '">' +
+        '<span class="stat__icon" style="width:28px;height:28px">' +
+          Icons.svg("gavel", "icon-sm") + "</span>" +
+        "<span><strong>" + esc(I18N.t("inbox.openToAll")) + "</strong>" +
+        '<span class="tiny muted" style="display:block">' +
+          esc(I18N.t("inbox.openToAllHint")) + "</span></span></button>";
     anchor.appendChild(pop);
   }
 
@@ -274,6 +329,7 @@ Pages.define("requests", function (global) {
   function internView() {
     var me = Session.user();
     var mine = M.requestsForIntern(me.id);
+    var pool = M.openInternTasks();
 
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       '<header style="margin-bottom:var(--s-8)">' +
@@ -282,7 +338,45 @@ Pages.define("requests", function (global) {
       (mine.length
         ? mine.map(internRow).join("")
         : C.empty("inbox", "task.none")) +
-    "</div>";
+
+      '<section style="margin-top:var(--s-12)">' +
+        '<h2 class="headline" data-i18n="task.openPool"></h2>' +
+        '<p class="lead" style="margin-bottom:var(--s-6)" data-i18n="task.openPoolLead"></p>' +
+        (pool.length
+          ? pool.map(function (r) { return openTaskRow(r, me); }).join("")
+          : C.empty("gavel", "task.noOpen")) +
+      "</section></div>";
+  }
+
+  /** An opened task: every trainee sees it, applies, and the lawyer picks. */
+  function openTaskRow(r, me) {
+    var lawyer = M.user(r.lawyerId);
+    var t = M.serviceType(r.typeId) || {};
+    var applicants = Store.applicants(r.id);
+    var applied = applicants.indexOf(me.id) !== -1;
+
+    return '<article class="card card--pad card--rule-gold" style="margin-bottom:var(--s-4)">' +
+      '<div class="row between wrap gap-4">' +
+        '<div class="grow" style="min-width:0">' +
+          '<div class="row gap-2 wrap"><h3 class="subtitle">' + esc(tx(r.title)) + "</h3>" +
+            '<span class="tag">' + esc(tx(t.title || {})) + "</span></div>" +
+          '<p class="small muted" style="margin-top:var(--s-2)">' + esc(tx(r.brief)) + "</p>" +
+          '<div class="meta-row" style="margin-top:var(--s-3)">' +
+            '<span class="row gap-2">' + Icons.svg("scale", "icon-sm") +
+              '<span class="tiny muted">' + esc(I18N.t("task.supervisor")) + ":</span> " +
+              (lawyer ? C.personLink(lawyer) : "") + "</span>" +
+            '<span class="dot"></span>' +
+            '<span class="tiny muted">' + esc(I18N.t("task.hoursWorth", { n: I18N.num(r.hours || 4) })) + "</span>" +
+            '<span class="dot"></span>' +
+            '<span class="tiny muted">' +
+              esc(I18N.t("task.competing", { n: I18N.num(applicants.length) })) + "</span>" +
+          "</div>" +
+        "</div>" +
+        (applied
+          ? '<span class="status status--ok">' + esc(I18N.t("task.applied")) + "</span>"
+          : '<button class="btn btn--accent btn--sm" type="button" data-apply="' + esc(r.id) + '">' +
+            Icons.svg("send", "icon-sm") + esc(I18N.t("task.apply")) + "</button>") +
+      "</div></article>";
   }
 
   function internRow(r) {
@@ -410,23 +504,42 @@ Pages.define("requests", function (global) {
     var as = t.closest("[data-assign]");
     if (as) { openAssign(as.getAttribute("data-assign"), as.parentNode); return; }
 
+    var bc = hit("data-broadcast");
+    if (bc) {
+      open = null;
+      Store.clearApplicants(bc);
+      Store.setRequest(bc, { assignedTo: null, status: "open_to_interns" });
+      App.toast(I18N.t("inbox.broadcastDone"), "gavel");
+      return;
+    }
+
     var pick = t.closest("[data-pick-intern]");
     if (pick) {
       var who = M.user(pick.getAttribute("data-pick-intern"));
+      var forId = pick.getAttribute("data-for");
       open = null;
-      Store.setRequest(pick.getAttribute("data-for"), { assignedTo: who.id, status: "with_intern" });
+      Store.clearApplicants(forId);
+      Store.setRequest(forId, { assignedTo: who.id, status: "with_intern" });
       App.toast(I18N.t("inbox.assignDone", { name: tx(who.name) }), "graduation");
       return;
     }
 
     var un = hit("data-unassign");
     if (un) {
+      Store.clearApplicants(un);
       Store.setRequest(un, { assignedTo: null, status: "new" });
       App.toast(I18N.t("inbox.unassigned"), "arrow-back");
       return;
     }
 
     /* --- intern --- */
+    var ap2 = hit("data-apply");
+    if (ap2) {
+      Store.apply(ap2, Session.user().id);
+      App.toast(I18N.t("task.appliedToast"), "send");
+      return;
+    }
+
     var to = hit("data-task-open");
     if (to) {
       open = open === to ? null : to;

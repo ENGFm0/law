@@ -139,7 +139,7 @@
   // A booked appointment is still a live request — it belongs with the current
   // ones, not the history.
   var OPEN_STATES = ["new", "quoting", "assigned", "scheduled", "drafted",
-                     "with_intern", "in_progress"];
+                     "open_to_interns", "with_intern", "in_progress"];
 
   function requestsForClient(clientId, which) {
     return requests().filter(function (r) {
@@ -156,6 +156,14 @@
 
   function requestsForIntern(internId) {
     return requests().filter(function (r) { return requestState(r).assignedTo === internId; });
+  }
+
+  /** Tasks a lawyer opened to every trainee, still waiting to be handed out. */
+  function openInternTasks() {
+    return requests().filter(function (r) {
+      var st = requestState(r);
+      return st.status === "open_to_interns" && !st.assignedTo;
+    });
   }
 
   /* ---------- training hours & endorsements ----------
@@ -241,7 +249,7 @@
     priceBand: priceBand, checkPrice: checkPrice,
     requests: requests, request: request, requestState: requestState,
     requestsForClient: requestsForClient, requestsForLawyer: requestsForLawyer,
-    requestsForIntern: requestsForIntern,
+    requestsForIntern: requestsForIntern, openInternTasks: openInternTasks,
     CERT_HOURS: CERT_HOURS, hoursOf: hoursOf, certProgress: certProgress,
     endorsementsFor: endorsementsFor,
     articles: articles, allArticles: allArticles, article: article, articlesBy: articlesBy,
