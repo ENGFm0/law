@@ -145,6 +145,10 @@
     if (!target) return;
     var action = target.getAttribute("data-action");
 
+    if (action === "sign-out") {
+      global.Session.signOut().then(function () { go("login.html"); });
+      return;
+    }
     if (action === "toggle-theme") {
       global.Theme.toggle();
     } else if (action === "toggle-lang") {
@@ -189,6 +193,42 @@
   }
   document.addEventListener("langchange", syncDemoBanner);
 
+  /** The sign-in and sign-up pages, shown to somebody who is already signed
+      in. Offering them a fresh account is nonsense, and offering no way out is
+      worse — it was the one screen with no route back to being somebody else.
+      An account still finishing its details is left alone: that page is the
+      thing it has been sent to do. */
+  function syncSignedInPanel() {
+    var panel = document.querySelector("[data-signed-in-panel]");
+    if (!panel) return;
+    var S = global.Session, me = S && S.user();
+    var completing = param("complete") === "1";
+    var show = !!me && !completing && !(me.onboarded === false);
+    panel.hidden = !show;
+
+    // Whatever the page came with is the wrong thing to be reading.
+    $$("#main > *:not([data-signed-in-panel])").forEach(function (el) {
+      el.hidden = show;
+    });
+    if (!show) return;
+
+    panel.innerHTML =
+      '<div class="container" style="max-width:560px;padding-block:var(--s-16)">' +
+        '<div class="card card--pad center">' +
+          '<h1 class="headline" data-i18n="auth.alreadyIn"></h1>' +
+          '<p class="lead" style="margin-top:var(--s-3)">' +
+            esc(global.I18N.t("auth.alreadyInAs", { name: tx(me.name).split(" ")[0] })) + "</p>" +
+          '<div class="row center gap-3 wrap" style="margin-top:var(--s-6)">' +
+            '<a class="btn btn--primary" href="account.html" data-i18n="auth.goAccount"></a>' +
+            '<button class="btn btn--ghost" type="button" data-action="sign-out" ' +
+              'data-i18n="auth.switchAccount"></button>' +
+          "</div></div></div>";
+    global.I18N.apply(panel);
+  }
+  document.addEventListener("langchange", syncSignedInPanel);
+  document.addEventListener("sessionchange", syncSignedInPanel);
+  document.addEventListener("storechange", syncSignedInPanel);
+
   /* ---------- boot ---------- */
   function boot() {
     // Dashboard pages carry no header/footer slot, so layout.js never triggers
@@ -197,6 +237,7 @@
     syncLangButtons();
     syncThemeButtons();
     syncDemoBanner();
+    syncSignedInPanel();
     observeReveals();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

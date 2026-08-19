@@ -194,8 +194,7 @@ Pages.define("signup", function (global) {
     $("[data-back]").hidden = i <= 0;
     $("[data-next]").hidden = i >= seq.length - 1;
     $("[data-finish]").hidden = i < seq.length - 1;
-    var gslot = $("[data-google-slot]");
-    if (gslot) gslot.innerHTML = (!completing && state.step === 1) ? global.C.googleButton() : "";
+    drawGoogle();
     if (state.step === 3) drawProof();
     if (state.step === 4) drawReview();
     drawStepper();
@@ -225,15 +224,34 @@ Pages.define("signup", function (global) {
     return null;
   }
 
-  App.onRender(function () {
-    // Google returns a client, so the door only belongs on the first step —
-    // a lawyer still has a licence to give us before anything else happens.
-    // And there is no door to offer somebody already through it.
+  /* The door belongs after the role, not before it. Offering Google first
+     meant whoever took it arrived as a client with no say in the matter — the
+     one question the wizard exists to ask, skipped by the shortest path
+     through it. So the role is picked, and only then does this appear beside
+     the email fields as the other way to answer the same form.
+
+     And the markup is translated on the spot: it is injected after the page's
+     translation pass, so a button built here and left alone is a bare icon
+     with no words on it. */
+  function drawGoogle() {
     var slot = $("[data-google-slot]");
-    if (slot) slot.innerHTML = (!completing && state.step === 1) ? global.C.googleButton() : "";
+    if (!slot) return;
+    var show = !completing && state.step === 2;
+    slot.innerHTML = show ? global.C.googleButton() : "";
+    if (show) I18N.apply(slot);
+  }
+
+  App.onRender(function () {
+    drawGoogle();
 
     if (completing) {
       var me = Session.user();
+      // What they picked before being sent to Google.
+      if (!state.role) {
+        var kept = null;
+        try { kept = localStorage.getItem("sanad.pendingRole"); } catch (e) {}
+        if (kept) { state.role = kept; drawRoles(); }
+      }
       // The two questions that no longer apply, and the answer Google gave us.
       $$("[data-signed-in-hide]", form).forEach(function (el) { el.hidden = true; });
       var nameField = form.querySelector('[name="name"]');
@@ -255,6 +273,10 @@ Pages.define("signup", function (global) {
 
   form.addEventListener("click", function (ev) {
     if (ev.target.closest("[data-google]")) {
+      // Google will not carry the role across the redirect, so it waits here
+      // and the completion step picks it up — otherwise choosing "lawyer" and
+      // then signing in with Google would quietly make you a client.
+      try { localStorage.setItem("sanad.pendingRole", state.role || ""); } catch (e) {}
       global.SB.signInWithGoogle(global.location.origin +
         global.location.pathname.replace(/signup\.html$/, "index.html"))
         .catch(function () { App.toast(I18N.t("auth.googleFailed"), "close"); });
@@ -344,7 +366,10 @@ Pages.define("signup", function (global) {
     // would fail on the address it already has.
     var done = completing
       ? global.SB.complete(Session.user().id, payload).then(function (res) {
-          if (res.ok) Store.notifyAll();
+          if (res.ok) {
+            try { localStorage.removeItem("sanad.pendingRole"); } catch (e) {}
+            Store.notifyAll();
+          }
           return res;
         })
       : Store.register(payload);

@@ -32,6 +32,7 @@
 <script src="assets/js/ui/layout.js"></script>
 
 <main id="main">
+  <div data-signed-in-panel hidden></div>
   <div class="container" style="max-width:820px;padding-bottom:var(--s-20)">
     <p class="demo-banner" data-demo-banner hidden></p>
 
@@ -45,7 +46,6 @@
     <form class="card card--pad" data-signup novalidate>
       <!-- step 1: who are you -->
       <section data-step="1">
-        <div data-google-slot></div>
         <h2 class="title" data-i18n="signup.pickRole"></h2>
         <p class="small muted" style="margin-top:var(--s-2)" data-i18n="signup.pickRoleHint"></p>
         <div class="grid grid-3" style="margin-top:var(--s-5)" data-role-picker></div>
@@ -53,6 +53,7 @@
 
       <!-- step 2: the basics everyone gives -->
       <section data-step="2" hidden>
+        <div data-google-slot></div>
         <h2 class="title" data-i18n="signup.basics"></h2>
         <div class="grid grid-2" style="gap:var(--s-4);margin-top:var(--s-5)">
           <label class="field"><span class="label" data-i18n="auth.fullName"></span>

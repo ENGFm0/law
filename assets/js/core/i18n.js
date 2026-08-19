@@ -1061,6 +1061,14 @@
 
       /* --- finishing an account Google created --- */
       "signup.completeLead": "دخلت بحساب قوقل — بقي أن تخبرنا بدورك وبياناتك.",
+
+      /* --- a signed-in visitor is not signing up --- */
+      "auth.alreadyIn": "أنت مسجّل الدخول",
+      "auth.alreadyInAs": "دخلت باسم {name}. لا حاجة لإنشاء حساب آخر.",
+      "auth.goAccount": "إلى حسابي",
+      "auth.switchAccount": "تسجيل الخروج والدخول بحساب آخر",
+      "signup.howToSignUp": "كيف تريد إنشاء الحساب؟",
+      "signup.orByEmail": "أو أكمل بالبريد وكلمة المرور",
     },
 
     en: {
@@ -2084,6 +2092,14 @@
 
       /* --- finishing an account Google created --- */
       "signup.completeLead": "You are signed in with Google — all that is left is your role and your details.",
+
+      /* --- a signed-in visitor is not signing up --- */
+      "auth.alreadyIn": "You are already signed in",
+      "auth.alreadyInAs": "Signed in as {name}. There is no need to create another account.",
+      "auth.goAccount": "Go to my account",
+      "auth.switchAccount": "Sign out and use another account",
+      "signup.howToSignUp": "How would you like to sign up?",
+      "signup.orByEmail": "or continue with an email and password",
     }
   };
 

@@ -13,16 +13,17 @@ const p = await ctx.newPage();
 p.on('pageerror', e=>errs.push(e.message));
 const U='http://localhost:8099/';
 await p.goto(U+'index.html');
-await p.evaluate(()=>localStorage.setItem('sanad.session.user','u-fahad'));
+await p.evaluate(()=>localStorage.removeItem('sanad.session.user'));
 
 console.log('— ORDINARY SIGN-UP IS UNCHANGED —');
 await p.goto(U+'signup.html'); await p.waitForTimeout(500);
-ok('the Google door is on the first step', await p.$('[data-google]') !== null);
-await p.click('[data-pick="client"]'); await p.click('[data-next]'); await p.waitForTimeout(300);
+await p.click('[data-pick="client"]'); await p.click('[data-next]'); await p.waitForTimeout(400);
 ok('email is asked for', await p.$eval('[name="email"]', e=>!e.closest('.field').hidden));
 ok('and a password', await p.$eval('[name="password"]', e=>!e.closest('.field').hidden));
+ok('with Google offered beside them', await p.$('[data-google]') !== null);
 
 console.log('— FINISHING AN ACCOUNT GOOGLE MADE —');
+await p.evaluate(()=>localStorage.setItem('sanad.session.user','u-fahad'));
 await p.goto(U+'signup.html?complete=1'); await p.waitForTimeout(600);
 const lead = await p.$eval('[data-signup-head]', e=>e.textContent.trim());
 ok('the page says what is left to do', /دخلت بحساب قوقل/.test(lead), lead);
