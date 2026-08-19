@@ -125,6 +125,11 @@
             }
             var user = res.data.user;
             if (!user) return { ok: false, error: "confirmEmail" };
+            // With "Confirm email" on, Supabase creates the user but withholds
+            // the session until they click the link. Nothing can be written to
+            // `profiles` yet, because row-level security has no auth.uid() to
+            // match — so say that plainly instead of failing on the insert.
+            if (!res.data.session) return { ok: false, error: "confirmEmail" };
 
             // A client is live at once; a lawyer or trainee waits for a licence
             // check, and cannot set that field themselves — the database

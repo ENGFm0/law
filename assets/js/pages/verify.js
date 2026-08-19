@@ -19,6 +19,10 @@ Pages.define("verify", function (global) {
 
   var rows = [];
   var running = false;
+  // Supabase refuses reserved domains such as example.com outright, and with
+  // "Confirm email" on it withholds the session until a link is clicked. So the
+  // account checks use an address the tester actually controls.
+  var creds = { email: "", password: "Verify!" + Math.random().toString(36).slice(2, 10) };
 
   function draw() {
     var cfg = global.SANAD_CONFIG || {};
@@ -32,6 +36,20 @@ Pages.define("verify", function (global) {
         line("عنوان المشروع", sb.url || "—") +
         line("نوع المفتاح", keyKind(sb.anonKey)) +
       "</div>" +
+
+      '<div class="card card--pad" style="margin-top:var(--s-6)">' +
+        '<h2 class="subtitle">فحوص الحساب</h2>' +
+        '<p class="small muted" style="margin:var(--s-2) 0 var(--s-4)">' +
+          'اكتب بريداً تملكه — سيُنشأ به حساب مؤقت ثم تحذفه. اتركه فارغاً ' +
+          'لتشغيل فحوص القراءة وحدها.</p>' +
+        '<div class="grid grid-2" style="gap:var(--s-4)">' +
+          '<label class="field"><span class="label">البريد</span>' +
+            '<input class="input" type="email" dir="ltr" data-email value="' +
+              esc(creds.email) + '" placeholder="you@yourdomain.com"></label>' +
+          '<label class="field"><span class="label">كلمة المرور</span>' +
+            '<input class="input" dir="ltr" data-password value="' +
+              esc(creds.password) + '"></label>' +
+        "</div></div>" +
 
       '<button class="btn btn--accent btn--lg" style="margin-top:var(--s-6)" type="button" ' +
         'data-run' + (running ? " disabled" : "") + ">" +
@@ -97,8 +115,10 @@ Pages.define("verify", function (global) {
     draw();
 
     var cfg = (global.SANAD_CONFIG || {}).supabase || {};
-    var email = "verify+" + Date.now() + "@example.com";
-    var password = "Verify!" + Math.random().toString(36).slice(2, 10);
+    var emailInput = $("[data-email]", host), pwInput = $("[data-password]", host);
+    creds.email = emailInput ? emailInput.value.trim() : "";
+    creds.password = pwInput ? pwInput.value : creds.password;
+    var email = creds.email, password = creds.password;
     var sb = null, myId = null;
 
     var r = add("المفتاح علني لا سري");
@@ -123,6 +143,11 @@ Pages.define("verify", function (global) {
         anon.error ? anon.error.message : "رجع " + anon.data.length + " صفاً");
     } catch (e) { settle(r, false, String(e)); }
 
+    if (!email) {
+      add("فحوص القراءة انتهت — اكتب بريداً لتشغيل فحوص الحساب").ok = true;
+      running = false; draw(); return;
+    }
+
     r = add("إنشاء حساب حقيقي (كلمة المرور لا تمر بكودنا)");
     var reg = null;
     try {
@@ -135,7 +160,13 @@ Pages.define("verify", function (global) {
     } catch (e) { settle(r, false, String(e)); }
 
     if (!myId) {
-      add("توقّف الفحص — لم يُنشأ الحساب").ok = false;
+      var why = reg && reg.error === "confirmEmail"
+        ? 'خيار "Confirm email" مفعّل. أطفئه من Authentication ← Providers ← ' +
+          'Email، أو افتح رابط التأكيد في بريدك ثم أعد الفحص.'
+        : (reg && /invalid/i.test(reg.message || "")
+            ? "Supabase ترفض هذا النطاق. استخدم بريداً على نطاق حقيقي تملكه."
+            : (reg && (reg.message || reg.error)) || "سبب غير معروف");
+      settle(add("توقّف الفحص — لم يُنشأ الحساب"), false, why);
       running = false; draw(); return;
     }
 
@@ -182,8 +213,8 @@ Pages.define("verify", function (global) {
       }
     } catch (e) { settle(r, false, String(e)); }
 
-    r = add("تنظيف: حذف حساب الفحص");
-    settle(r, true, "الحساب " + email + " — احذفه من Authentication ← Users");
+    r = add("تنظيف: احذف حساب الفحص بنفسك");
+    settle(r, true, email + " — من Authentication ← Users");
 
     running = false;
     draw();
