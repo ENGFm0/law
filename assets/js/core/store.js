@@ -29,7 +29,8 @@
   var work = read(sessionStorage, WORK_KEY, {});
   [
     "requests", "requestStates", "services", "removedServices", "reviews",
-    "articles", "articleStates", "comments", "endorsements", "applications"
+    "articles", "articleStates", "comments", "endorsements", "applications",
+    "agreements"
   ].forEach(function (k) {
     if (!work[k]) work[k] = (k.indexOf("States") !== -1 || k === "applications" ? {} : []);
   });
@@ -185,6 +186,29 @@
       notify();
     },
 
+    /* ---------------- what a trainee is paid ----------------
+       By default a routed task carries a percentage of what the client paid.
+       A lawyer may instead put a standing agreement in place — so many cases,
+       or a monthly or yearly retainer — and then that governs instead. */
+    agreements: function () { return work.agreements; },
+    addAgreement: function (a) {
+      a.id = uid("ag");
+      a.startedAt = Date.now();
+      // One live agreement per pair; a new one replaces whatever stood before.
+      work.agreements = work.agreements.filter(function (x) {
+        return !(x.lawyerId === a.lawyerId && x.internId === a.internId);
+      });
+      work.agreements.push(a);
+      notify();
+      return a;
+    },
+    endAgreement: function (lawyerId, internId) {
+      work.agreements = work.agreements.filter(function (x) {
+        return !(x.lawyerId === lawyerId && x.internId === internId);
+      });
+      notify();
+    },
+
     reviews: function () { return work.reviews; },
     addReview: function (rev) {
       rev.id = uid("rev");
@@ -250,7 +274,7 @@
     resetWork: function () {
       work = { requests: [], requestStates: {}, services: [], removedServices: [],
                reviews: [], articles: [], articleStates: {}, comments: [],
-               endorsements: [], applications: {} };
+               endorsements: [], applications: {}, agreements: [] };
       notify();
     },
     resetAll: function () {

@@ -62,11 +62,10 @@ Pages.define("lawyer", function (global) {
     var list = M.servicesOf(u.id);
     if (!list.length) return '<p class="small muted" data-i18n="profile.noServices"></p>';
     return '<div class="req-list">' + list.map(function (s) {
-      var t = M.serviceType(s.typeId) || {};
       return '<div class="req-row">' +
-        '<span class="req-row__icon">' + Icons.svg(t.icon || "tag", "icon-sm") + "</span>" +
-        '<div class="grow"><strong class="small">' + esc(tx(t.title || {})) + "</strong>" +
-          '<p class="tiny muted">' + esc(tx(t.meta || {})) + "</p></div>" +
+        '<span class="req-row__icon">' + Icons.svg(M.serviceIcon(s), "icon-sm") + "</span>" +
+        '<div class="grow"><strong class="small">' + esc(tx(M.serviceTitle(s))) + "</strong>" +
+          '<p class="tiny muted">' + esc(tx(M.serviceMeta(s))) + "</p></div>" +
         '<div class="req-row__side"><strong class="small"><span class="num">' +
           I18N.num(s.price) + "</span> " + esc(I18N.t("common.sar")) + "</strong>" +
           '<button class="btn btn--primary btn--sm" type="button" data-order="' + esc(s.id) + '" ' +
@@ -131,10 +130,9 @@ Pages.define("lawyer", function (global) {
       '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="profile.bookHint"></p>' +
       (list.length
         ? '<div class="stack gap-2" style="margin-top:var(--s-5)">' + list.map(function (s) {
-            var t = M.serviceType(s.typeId) || {};
             return '<button type="button" class="doc-option" data-order="' + esc(s.id) + '">' +
-              '<span class="row gap-3">' + Icons.svg(t.icon || "tag", "icon-sm") +
-                "<span>" + esc(tx(t.title || {})) + "</span></span>" +
+              '<span class="row gap-3">' + Icons.svg(M.serviceIcon(s), "icon-sm") +
+                "<span>" + esc(tx(M.serviceTitle(s))) + "</span></span>" +
               '<span class="doc-option__price"><span class="num">' + I18N.num(s.price) + "</span> " +
                 esc(I18N.t("common.sar")) + "</span></button>";
           }).join("") + "</div>"
@@ -190,7 +188,7 @@ Pages.define("lawyer", function (global) {
     Store.addRequest({
       clientId: Session.user().id, lawyerId: u.id, typeId: svc.typeId, price: svc.price,
       status: "new", ai: type.tier === "quick", hours: 3,
-      title: type.title, brief: { ar: "", en: "" },
+      title: M.serviceTitle(svc), brief: { ar: "", en: "" },
       ago: { ar: I18N.t("common.today"), en: I18N.t("common.today") }
     });
     App.toast(I18N.t("req.ordered", { name: tx(u.name) }), "check");

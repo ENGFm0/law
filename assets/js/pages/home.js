@@ -146,14 +146,20 @@ Pages.define("home", function (global) {
     });
     var revenue = mine.reduce(function (t, r) { return t + (r.price || 0); }, 0);
     var rating = M.ratingOf(u.id);
+    // What has gone out to trainees is part of reading the month honestly.
+    var toInterns = mine.reduce(function (t, r) {
+      var pay = M.taskPay(r);
+      return t + (pay && pay.kind === "share" ? pay.amount : 0);
+    }, 0);
 
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       greeting("dash.lawyerLead") +
       (Session.isVerified() ? "" : pendingNotice()) +
-      '<div class="grid grid-4">' +
+      '<div class="grid grid-5">' +
         stat("inbox", "dash.awaitingYou", I18N.num(needsMe.length), "gold") +
         stat("file-text", "dash.activeRequests", I18N.num(live.length)) +
         stat("wallet", "dash.revenue", I18N.num(revenue)) +
+        stat("graduation", "pay.paidOut", I18N.num(toInterns)) +
         stat("star", "dash.overallRating", rating.avg.toFixed(1)) +
       "</div>" +
 
@@ -196,10 +202,11 @@ Pages.define("home", function (global) {
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       greeting("dash.internLead") +
       (Session.isVerified() ? "" : pendingNotice()) +
-      '<div class="grid grid-3">' +
+      '<div class="grid grid-4">' +
         stat("inbox", "dash.assignedCount", I18N.num(mine.length), "gold") +
         stat("check", "dash.doneCount", I18N.num(done.length)) +
         stat("clock", "dash.hoursLogged", I18N.num(prog.hours)) +
+        stat("wallet", "pay.earned", I18N.num(M.earnedBy(u.id))) +
       "</div>" +
 
       '<div class="grid dash-split" style="margin-top:var(--s-10)">' +

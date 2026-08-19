@@ -162,6 +162,7 @@ Pages.define("requests", function (global) {
       var who = M.user(st.assignedTo);
       return '<span class="tiny muted">' +
           esc(I18N.t("inbox.assignedTo", { name: who ? tx(who.name) : "" })) + "</span>" +
+        '<span>' + payLine(r, "pay.share") + "</span>" +
         '<button class="btn btn--ghost btn--sm" type="button" data-unassign="' + esc(r.id) + '">' +
           esc(I18N.t("inbox.unassign")) + "</button>";
     }
@@ -307,12 +308,28 @@ Pages.define("requests", function (global) {
     if (existing) existing.remove();
     var pop = document.createElement("div");
     pop.className = "assign-pop";
-    pop.innerHTML = '<p class="tiny muted">' + esc(I18N.t("inbox.pickOne")) + "</p>" +
+    var me = Session.user();
+    var r = M.request(id);
+    pop.innerHTML =
+      '<label class="field" style="padding:0 var(--s-2) var(--s-2)">' +
+        '<span class="tiny muted">' + esc(I18N.t("pay.shareLabel")) + "</span>" +
+        '<input class="input num" type="number" min="0" max="100" step="5" dir="ltr" ' +
+          'data-share value="' + M.DEFAULT_SHARE + '"></label>' +
+      '<p class="tiny faint" style="padding:0 var(--s-2) var(--s-3)">' +
+        esc(I18N.t("pay.shareHint")) + "</p>" +
+      '<hr class="divider" style="margin:0 0 var(--s-2)">' +
+      '<p class="tiny muted">' + esc(I18N.t("inbox.pickOne")) + "</p>" +
       M.interns().map(function (i) {
+        // A standing agreement already settles the terms, so say so here.
+        var deal = M.agreementFor(me.id, i.id);
         return '<button type="button" data-pick-intern="' + esc(i.id) + '" data-for="' + esc(id) + '">' +
           '<img class="avatar avatar--sm" alt="" width="28" height="28" src="' +
             App.avatarOf(i.name, i.id) + '">' +
-          "<span>" + esc(tx(i.name)) + "</span>" +
+          "<span>" + esc(tx(i.name)) +
+            (deal ? '<span class="tiny muted" style="display:block">' +
+              esc(I18N.t("pay.underAgreement", { kind: I18N.t("pay.kind" +
+                deal.kind.charAt(0).toUpperCase() + deal.kind.slice(1)) })) + "</span>" : "") +
+          "</span>" +
           '<span class="tiny muted num">' + I18N.num(M.hoursOf(i.id)) + "</span></button>";
       }).join("") +
       '<hr class="divider" style="margin:var(--s-2) 0">' +
@@ -397,6 +414,7 @@ Pages.define("requests", function (global) {
               (lawyer ? C.personLink(lawyer) : "") + "</span>" +
             '<span class="dot"></span>' +
             '<span class="tiny muted">' + esc(I18N.t("task.hoursWorth", { n: I18N.num(r.hours || 4) })) + "</span>" +
+            '<span class="dot"></span>' + payLine(r, "pay.yourShare") +
           "</div>" +
         "</div>" +
         '<div class="row gap-2 wrap">' +
@@ -416,6 +434,30 @@ Pages.define("requests", function (global) {
                 Icons.svg("send", "icon-sm") + esc(I18N.t("task.deliver")) + "</button></div></div>"
         : "") +
     "</article>";
+  }
+
+  /** The share typed into the routing chooser, if it is open. */
+  function readShare() {
+    var el = $("[data-share]", host);
+    if (!el) return null;
+    var n = +el.value;
+    return isNaN(n) ? null : Math.max(0, Math.min(100, n));
+  }
+
+  /** One line saying what this task pays, for whoever is entitled to see it. */
+  function payLine(r, labelKey) {
+    var pay = M.taskPay(r);
+    if (!pay) return "";
+    if (pay.kind === "share") {
+      return '<span class="tiny muted">' + esc(I18N.t(labelKey)) + ": </span>" +
+        '<strong class="tiny" style="color:var(--accent)"><span class="num">' +
+          I18N.num(pay.amount) + "</span> " + esc(I18N.t("common.sar")) + "</strong>" +
+        '<span class="tiny faint"> (' + esc(I18N.t("pay.ofPrice",
+          { pct: I18N.num(pay.pct), price: I18N.num(r.price || 0) })) + ")</span>";
+    }
+    var kindKey = "pay.kind" + pay.kind.charAt(0).toUpperCase() + pay.kind.slice(1);
+    return '<span class="tag">' +
+      esc(I18N.t("pay.underAgreement", { kind: I18N.t(kindKey) })) + "</span>";
   }
 
   /* ====================================================== draw ============ */
@@ -508,7 +550,7 @@ Pages.define("requests", function (global) {
     if (bc) {
       open = null;
       Store.clearApplicants(bc);
-      Store.setRequest(bc, { assignedTo: null, status: "open_to_interns" });
+      Store.setRequest(bc, { assignedTo: null, status: "open_to_interns", internShare: readShare() });
       App.toast(I18N.t("inbox.broadcastDone"), "gavel");
       return;
     }
@@ -517,9 +559,12 @@ Pages.define("requests", function (global) {
     if (pick) {
       var who = M.user(pick.getAttribute("data-pick-intern"));
       var forId = pick.getAttribute("data-for");
+      var share = readShare();
       open = null;
       Store.clearApplicants(forId);
-      Store.setRequest(forId, { assignedTo: who.id, status: "with_intern" });
+      Store.setRequest(forId, share == null
+        ? { assignedTo: who.id, status: "with_intern" }
+        : { assignedTo: who.id, status: "with_intern", internShare: share });
       App.toast(I18N.t("inbox.assignDone", { name: tx(who.name) }), "graduation");
       return;
     }

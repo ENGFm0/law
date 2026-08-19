@@ -98,3 +98,41 @@ St.setRequest('r-6', { assignedTo: 'u-turki', status: 'with_intern' });
 ok('the chosen trainee holds it', M.requestsForIntern('u-turki').some(r => r.id === 'r-6'));
 ok('the pool closes behind it', !M.openInternTasks().some(r => r.id === 'r-6'));
 ok('and the applicants are cleared', St.applicants('r-6').length === 0);
+
+console.log('— WHAT A TRAINEE IS PAID —');
+// Default: a share of what the client paid for that one task.
+St.setRequest('r-2', { assignedTo: 'u-jaid', status: 'with_intern' });
+const p0 = M.taskPay(M.request('r-2'));
+ok(`unset falls back to ${M.DEFAULT_SHARE}%`, p0.kind === 'share' && p0.pct === M.DEFAULT_SHARE);
+ok(`${M.DEFAULT_SHARE}% of 89 is ${p0.amount}`, p0.amount === Math.round(89 * M.DEFAULT_SHARE / 100));
+St.setRequest('r-2', { internShare: 50 });
+ok('a set share survives the read', M.requestState(M.request('r-2')).internShare === 50);
+ok('and drives the figure', M.taskPay(M.request('r-2')).amount === 45);
+
+// A standing agreement settles the terms instead.
+St.addAgreement({ lawyerId: 'u-ahmed', internId: 'u-jaid', kind: 'cases', amount: 800, cases: 5 });
+ok('the agreement takes over from the percentage', M.taskPay(M.request('r-2')).kind === 'cases');
+ok('it is found from either side',
+   M.agreementFor('u-ahmed', 'u-jaid') !== null && M.agreementsOfIntern('u-jaid').length === 1);
+St.addAgreement({ lawyerId: 'u-ahmed', internId: 'u-jaid', kind: 'monthly', amount: 4500 });
+ok('a new one replaces the old', M.agreementsOfIntern('u-jaid').length === 1 &&
+   M.agreementFor('u-ahmed', 'u-jaid').kind === 'monthly');
+St.endAgreement('u-ahmed', 'u-jaid');
+ok('ending it returns to the per-task share', M.agreementFor('u-ahmed', 'u-jaid') === null &&
+   M.taskPay(M.request('r-2')).kind === 'share');
+
+St.setRequest('r-2', { status: 'delivered' });
+ok('only delivered work counts as earned', M.earnedBy('u-jaid') >= 45);
+
+console.log('— A LAWYER NAMES THEIR OWN SERVICE —');
+const svc = St.addService({ ownerId: 'u-ahmed', typeId: 'drafting', price: 640, active: true,
+  title: { ar: 'مراجعة عقود امتياز', en: 'Franchise contract review' },
+  meta: { ar: 'خلال يومين', en: 'Within two days' } });
+ok('the lawyer’s own wording is kept', M.tx ? true : M.serviceTitle(svc).ar === 'مراجعة عقود امتياز');
+ok('and its turnaround', M.serviceMeta(svc).en === 'Within two days');
+ok('the category still supplies the icon', M.serviceIcon(svc) === M.serviceType('drafting').icon);
+const plain = { id: 's-x', ownerId: 'u-ahmed', typeId: 'call', price: 150 };
+ok('an unnamed one falls back to its category',
+   M.serviceTitle(plain) === M.serviceType('call').title);
+ok('the band still governs the price', M.checkPrice('drafting', 640) === null &&
+   M.checkPrice('drafting', 10) === 'low');

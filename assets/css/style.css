@@ -209,7 +209,10 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .small     { font-size: .875rem; }
 .tiny      { font-size: .75rem; }
 .center    { text-align: center; }
-.num       { font-variant-numeric: tabular-nums; direction: ltr; display: inline-block; }
+/* Numbers read left-to-right inside Arabic text. `unicode-bidi: isolate` does
+   that on its own — an earlier `display: inline-block` did too, but it also
+   dropped any <td class="num"> out of its table row. */
+.num       { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
 
 .eyebrow {
   display: inline-flex; align-items: center; gap: var(--s-2);
@@ -1163,3 +1166,9 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   background: var(--surface);
 }
 .testimony p { line-height: 1.75; }
+
+/* A five-across stat row, folding the same way the others do. */
+.grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 1200px) { .grid-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px)  { .grid-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 460px)  { .grid-5 { grid-template-columns: 1fr; } }

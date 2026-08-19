@@ -18,7 +18,9 @@ Pages.define("services", function (global) {
   if (!host) return;
 
   var filters = { type: "", specialty: "", sort: "price" };
-  var skills = null;   // trainee's working copy, loaded on first draw
+  var skills = null;    // trainee's working copy, loaded on first draw
+  var draft = {};       // the service being written
+  var editing = null;   // the service being changed, if any
 
   /* ====================================================== client ==========
      Two ways in, stated up front. Either the client names the service and the
@@ -139,11 +141,12 @@ Pages.define("services", function (global) {
   }
 
   function offerCard(o, type, best) {
+    var named = M.serviceTitle(o.svc);
     return '<article class="card card--pad card--hover' + (best ? " card--rule-gold" : "") + '">' +
       '<div class="row between wrap gap-3">' +
         '<span class="row gap-3">' + C.avatar(o.owner, "sm") +
           "<span>" + C.personLink(o.owner) +
-            '<p class="tiny muted">' + esc(tx(o.owner.title || {})) + "</p></span></span>" +
+            '<p class="tiny muted">' + esc(tx(named)) + "</p></span></span>" +
         '<strong class="title"><span class="num">' + I18N.num(o.svc.price) + "</span> " +
           esc(I18N.t("common.sar")) + "</strong>" +
       "</div>" +
@@ -155,18 +158,23 @@ Pages.define("services", function (global) {
       "</div>" +
       '<div class="row between wrap gap-3" style="margin-top:var(--s-5);padding-top:var(--s-4);' +
         'border-top:1px solid var(--border)">' +
-        '<span class="tiny muted">' + esc(tx(type.meta)) + "</span>" +
+        '<span class="tiny muted">' + esc(tx(M.serviceMeta(o.svc))) + "</span>" +
         '<button class="btn btn--primary btn--sm" type="button" data-order="' + esc(o.svc.id) + '" ' +
           'data-i18n="req.order"></button>' +
       "</div></article>";
   }
 
-  /* ====================================================== lawyer ========== */
+  /* ====================================================== lawyer ==========
+     The lawyer writes the service themselves — its name and its turnaround.
+     The category behind it is not a label, it is the price band: whatever they
+     charge has to sit between the platform's floor and ceiling for that kind
+     of work, which is what stops both undercutting and gouging. */
   function lawyerView() {
     var me = Session.user();
     var mine = M.servicesOf(me.id);
-    var taken = mine.map(function (s) { return s.typeId; });
-    var open = M.serviceTypes().filter(function (t) { return taken.indexOf(t.id) === -1; });
+    var types = M.serviceTypes();
+    var cat = editing ? editing.typeId : (draft.typeId || types[0].id);
+    var band = M.priceBand(cat);
 
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       '<header style="margin-bottom:var(--s-8)">' +
@@ -183,39 +191,62 @@ Pages.define("services", function (global) {
         "</section>" +
 
         '<aside class="card card--pad">' +
-          '<h2 class="subtitle" data-i18n="svc.addTitle"></h2>' +
-          (open.length
-            ? '<div class="stack gap-4" style="margin-top:var(--s-5)">' +
-                '<label class="field"><span class="label" data-i18n="svc.filterType"></span>' +
-                  '<select class="select" data-new-type>' + open.map(function (t) {
-                    return '<option value="' + esc(t.id) + '">' + esc(tx(t.title)) + "</option>";
-                  }).join("") + "</select></label>" +
-                '<label class="field"><span class="label" data-i18n="svc.priceLabel"></span>' +
-                  '<input class="input num" type="number" data-new-price dir="ltr"></label>' +
-                '<p class="tiny muted" data-band></p>' +
-                '<p class="form-error" data-svc-error hidden></p>' +
-                '<button class="btn btn--primary" type="button" data-add-svc data-i18n="svc.add"></button>' +
-              "</div>"
-            : '<p class="small muted" style="margin-top:var(--s-4)" data-i18n="svc.allTaken"></p>') +
+          '<h2 class="subtitle" data-i18n="' + (editing ? "svc.editTitle" : "svc.addTitle") + '"></h2>' +
+          '<div class="stack gap-4" style="margin-top:var(--s-5)">' +
+            '<label class="field"><span class="label" data-i18n="svc.category"></span>' +
+              '<select class="select" data-new-type>' + types.map(function (t) {
+                return '<option value="' + esc(t.id) + '"' + (cat === t.id ? " selected" : "") + ">" +
+                  esc(tx(t.title)) + "</option>";
+              }).join("") + "</select>" +
+              '<span class="tiny faint" data-i18n="svc.categoryHint"></span></label>' +
+
+            '<label class="field"><span class="label" data-i18n="svc.customTitle"></span>' +
+              '<input class="input" data-new-title value="' + esc(draft.title || "") + '" ' +
+                'placeholder="' + esc(tx(M.serviceType(cat).title)) + '">' +
+              '<span class="tiny faint" data-i18n="svc.customTitleHint"></span></label>' +
+
+            '<label class="field"><span class="label" data-i18n="svc.customMeta"></span>' +
+              '<input class="input" data-new-meta value="' + esc(draft.meta || "") + '" ' +
+                'placeholder="' + esc(tx(M.serviceType(cat).meta)) + '"></label>' +
+
+            '<label class="field"><span class="label" data-i18n="svc.priceLabel"></span>' +
+              '<input class="input num" type="number" data-new-price dir="ltr" ' +
+                'min="' + band.min + '" max="' + band.max + '" ' +
+                'value="' + (draft.price != null ? draft.price : "") + '"></label>' +
+            '<p class="tiny muted" data-band></p>' +
+            '<p class="form-error" data-svc-error hidden></p>' +
+            '<div class="row gap-2">' +
+              '<button class="btn btn--primary" type="button" data-add-svc data-i18n="' +
+                (editing ? "svc.saveChanges" : "svc.add") + '"></button>' +
+              (editing ? '<button class="btn btn--ghost" type="button" data-cancel-edit ' +
+                'data-i18n="signup.back"></button>' : "") +
+            "</div>" +
+          "</div>" +
         "</aside>" +
       "</div></div>";
   }
 
   function myServiceRow(s) {
-    var t = M.serviceType(s.typeId) || {};
     var band = M.priceBand(s.typeId);
+    var type = M.serviceType(s.typeId) || {};
+    var name = tx(M.serviceTitle(s));
+    var category = tx(type.title || {});
     return '<div class="req-row">' +
-      '<span class="req-row__icon">' + Icons.svg(t.icon || "tag", "icon-sm") + "</span>" +
+      '<span class="req-row__icon">' + Icons.svg(M.serviceIcon(s), "icon-sm") + "</span>" +
       '<div class="grow" style="min-width:0">' +
-        "<strong class=\"small\">" + esc(tx(t.title || {})) + "</strong>" +
-        '<p class="tiny muted">' + esc(tx(t.meta || {})) + "</p>" +
+        '<div class="row gap-2 wrap"><strong class="small">' + esc(name) + "</strong>" +
+          // The category tag only earns its place when it says something new.
+          (name === category ? "" : '<span class="tag">' + esc(category) + "</span>") + "</div>" +
+        '<p class="tiny muted">' + esc(tx(M.serviceMeta(s))) + "</p>" +
         '<p class="tiny faint">' + esc(I18N.t("svc.band",
           { min: I18N.num(band.min), max: I18N.num(band.max) })) + "</p>" +
       "</div>" +
       '<div class="req-row__side"><div class="row gap-2">' +
-        '<input class="input num" type="number" dir="ltr" style="width:96px" ' +
-          'value="' + s.price + '" data-price-for="' + esc(s.id) + '">' +
-        '<button class="btn btn--ghost btn--sm" type="button" data-del-svc="' + esc(s.id) + '" ' +
+        '<strong class="small"><span class="num">' + I18N.num(s.price) + "</span> " +
+          esc(I18N.t("common.sar")) + "</strong>" +
+        '<button class="icon-btn" type="button" data-edit-svc="' + esc(s.id) + '" ' +
+          'data-i18n-attr="aria-label:svc.editTitle">' + Icons.svg("edit", "icon-sm") + "</button>" +
+        '<button class="icon-btn" type="button" data-del-svc="' + esc(s.id) + '" ' +
           'data-i18n-attr="aria-label:svc.remove">' + Icons.svg("trash", "icon-sm") + "</button>" +
       "</div></div></div>";
   }
@@ -265,6 +296,16 @@ Pages.define("services", function (global) {
     out.textContent = I18N.t("svc.band", { min: I18N.num(band.min), max: I18N.num(band.max) });
   }
 
+  function readForm() {
+    var g = function (sel) { var el = $(sel, host); return el ? el.value.trim() : ""; };
+    return {
+      typeId: g("[data-new-type]"),
+      title: g("[data-new-title]"),
+      meta: g("[data-new-meta]"),
+      price: +g("[data-new-price]")
+    };
+  }
+
   function svcError(key) {
     var el = $("[data-svc-error]", host);
     if (!el) return;
@@ -276,7 +317,13 @@ Pages.define("services", function (global) {
   host.addEventListener("change", function (ev) {
     var f = ev.target.closest("[data-filter]");
     if (f) { filters[f.getAttribute("data-filter")] = f.value; App.rerender(); return; }
-    if (ev.target.closest("[data-new-type]")) { showBand(); return; }
+    if (ev.target.closest("[data-new-type]")) {
+      draft = readForm();
+      draft.title = draft.title; draft.meta = draft.meta;
+      showBand();
+      App.rerender();
+      return;
+    }
 
     // Editing a live price in place: validated against the band, saved at once.
     var pf = ev.target.closest("[data-price-for]");
@@ -316,7 +363,7 @@ Pages.define("services", function (global) {
       Store.addRequest({
         clientId: Session.user().id, lawyerId: pick.owner.id, typeId: pick.svc.typeId,
         price: pick.svc.price, status: "new", ai: picked.tier === "quick", hours: 3,
-        title: picked.title,
+        title: M.serviceTitle(pick.svc),
         brief: { ar: "", en: "" },
         ago: { ar: I18N.t("common.today"), en: I18N.t("common.today") }
       });
@@ -326,19 +373,47 @@ Pages.define("services", function (global) {
     }
 
     if (t.closest("[data-add-svc]")) {
-      var sel = $("[data-new-type]", host), input = $("[data-new-price]", host);
-      var price = +input.value;
-      var bad = M.checkPrice(sel.value, price);
+      var f = readForm();
+      var bad = M.checkPrice(f.typeId, f.price);
       if (bad) { svcError(bad === "low" ? "svc.tooLow" : bad === "high" ? "svc.tooHigh" : "svc.empty"); return; }
       svcError(null);
-      Store.addService({ ownerId: Session.user().id, typeId: sel.value, price: price, active: true });
-      App.toast(I18N.t("svc.added"), "check");
+      var record = {
+        ownerId: Session.user().id, typeId: f.typeId, price: f.price, active: true,
+        title: f.title ? { ar: f.title, en: f.title } : null,
+        meta: f.meta ? { ar: f.meta, en: f.meta } : null
+      };
+      if (editing) {
+        record.id = editing.id;
+        Store.removeService(editing.id);
+        editing = null;
+      }
+      Store.addService(record);
+      draft = {};
+      App.toast(I18N.t(record.id ? "svc.updated" : "svc.added"), "check");
       return;
     }
 
+    var ed = t.closest("[data-edit-svc]");
+    if (ed) {
+      var found = M.servicesOf(Session.user().id)
+        .filter(function (x) { return x.id === ed.getAttribute("data-edit-svc"); })[0];
+      if (!found) return;
+      editing = found;
+      draft = { typeId: found.typeId, price: found.price,
+                title: found.title ? tx(found.title) : "", meta: found.meta ? tx(found.meta) : "" };
+      App.rerender();
+      return;
+    }
+
+    if (t.closest("[data-cancel-edit]")) { editing = null; draft = {}; App.rerender(); return; }
+
     var del = t.closest("[data-del-svc]");
-    if (del) { Store.removeService(del.getAttribute("data-del-svc"));
-      App.toast(I18N.t("svc.removed"), "trash"); return; }
+    if (del) {
+      if (editing && editing.id === del.getAttribute("data-del-svc")) { editing = null; draft = {}; }
+      Store.removeService(del.getAttribute("data-del-svc"));
+      App.toast(I18N.t("svc.removed"), "trash");
+      return;
+    }
 
     if (t.closest("[data-skill-add]")) { addSkill(); return; }
 

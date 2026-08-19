@@ -218,7 +218,10 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .small     { font-size: .875rem; }
 .tiny      { font-size: .75rem; }
 .center    { text-align: center; }
-.num       { font-variant-numeric: tabular-nums; direction: ltr; display: inline-block; }
+/* Numbers read left-to-right inside Arabic text. `unicode-bidi: isolate` does
+   that on its own — an earlier `display: inline-block` did too, but it also
+   dropped any <td class="num"> out of its table row. */
+.num       { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
 
 .eyebrow {
   display: inline-flex; align-items: center; gap: var(--s-2);
@@ -1173,6 +1176,12 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 }
 .testimony p { line-height: 1.75; }
 
+/* A five-across stat row, folding the same way the others do. */
+.grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 1200px) { .grid-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px)  { .grid-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 460px)  { .grid-5 { grid-template-columns: 1fr; } }
+
 
 /* --- bundle-only: the router swaps views inside #app --- */
 #app { display: flex; flex-direction: column; flex: 1; }
@@ -2117,6 +2126,46 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
       "svc.noneForType": "لا يقدّم أحد هذه الخدمة حالياً.",
       "rank.prosOnly": "لوحة الترتيب تظهر للمحامين والمتدربين فقط — العملاء يرون التقييم.",
       "svc.routeLead": "طريقان، وكلاهما بسعر تعرفه قبل أن تدفع.",
+      "svc.category": "الفئة",
+      "svc.categoryHint": "الفئة تحدّد الحد الأدنى والأعلى المسموح للسعر.",
+      "svc.customTitle": "اسم الخدمة",
+      "svc.customTitleHint": "اكتب اسمها بنفسك، أو اتركه فارغاً ليأخذ اسم الفئة.",
+      "svc.customMeta": "مدة التسليم أو وصف مختصر",
+      "svc.editTitle": "عدّل الخدمة",
+      "svc.saveChanges": "احفظ التعديل",
+      "svc.updated": "حُدّثت الخدمة.",
+      "pay.tab": "الأجر والاتفاق",
+      "pay.title": "الأجر والاتفاق",
+      "pay.onlyParties": "هذا القسم يظهر للمحامي المشرف وللمتدرب نفسه فقط.",
+      "pay.share": "حصة المتدرب",
+      "pay.yourShare": "حصتك",
+      "pay.shareLabel": "نسبة المتدرب من قيمة المهمة (٪)",
+      "pay.shareHint": "تُحسب من سعر الطلب الذي يدفعه العميل.",
+      "pay.ofPrice": "{pct}٪ من {price} ر.س",
+      "pay.standing": "اتفاق ثابت",
+      "pay.none": "لا يوجد اتفاق ثابت — الأجر نسبة من كل مهمة على حدة.",
+      "pay.newAgreement": "اتفاق جديد",
+      "pay.kind": "نوع الاتفاق",
+      "pay.kindCases": "بعدد القضايا",
+      "pay.kindMonthly": "شهري",
+      "pay.kindYearly": "سنوي",
+      "pay.cases": "عدد القضايا المتفق عليها",
+      "pay.amount": "المبلغ (ر.س)",
+      "pay.perCase": "لكل قضية",
+      "pay.perMonth": "شهرياً",
+      "pay.perYear": "سنوياً",
+      "pay.create": "أنشئ الاتفاق",
+      "pay.end": "أنهِ الاتفاق",
+      "pay.created": "أُنشئ الاتفاق مع {name}.",
+      "pay.ended": "أُنهي الاتفاق.",
+      "pay.needAmount": "اكتب مبلغاً أكبر من صفر.",
+      "pay.needCases": "اكتب عدد القضايا.",
+      "pay.with": "الاتفاق مع {name}",
+      "pay.underAgreement": "ضمن اتفاق {kind}",
+      "pay.casesProgress": "{done} من {total} قضية",
+      "pay.earned": "ما كسبته من المهام",
+      "pay.paidOut": "أجور المتدربين",
+      "pay.agreementActive": "اتفاق قائم",
     },
 
     en: {
@@ -2923,6 +2972,46 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
       "svc.noneForType": "Nobody offers this service right now.",
       "rank.prosOnly": "The leaderboard is shown to lawyers and trainees only — clients see ratings.",
       "svc.routeLead": "Two roads in, and both quote you a price before you pay.",
+      "svc.category": "Category",
+      "svc.categoryHint": "The category sets the floor and ceiling your price must sit between.",
+      "svc.customTitle": "Service name",
+      "svc.customTitleHint": "Name it yourself, or leave it blank to take the category's name.",
+      "svc.customMeta": "Turnaround or a short description",
+      "svc.editTitle": "Edit service",
+      "svc.saveChanges": "Save changes",
+      "svc.updated": "Service updated.",
+      "pay.tab": "Pay & agreement",
+      "pay.title": "Pay and agreement",
+      "pay.onlyParties": "This section is shown to the supervising lawyer and to the trainee alone.",
+      "pay.share": "The trainee's share",
+      "pay.yourShare": "Your share",
+      "pay.shareLabel": "Trainee's share of the task price (%)",
+      "pay.shareHint": "Taken from the price the client pays for that request.",
+      "pay.ofPrice": "{pct}% of SAR {price}",
+      "pay.standing": "Standing agreement",
+      "pay.none": "No standing agreement — pay is a share of each task on its own.",
+      "pay.newAgreement": "New agreement",
+      "pay.kind": "Kind of agreement",
+      "pay.kindCases": "By number of cases",
+      "pay.kindMonthly": "Monthly",
+      "pay.kindYearly": "Yearly",
+      "pay.cases": "Cases agreed",
+      "pay.amount": "Amount (SAR)",
+      "pay.perCase": "per case",
+      "pay.perMonth": "per month",
+      "pay.perYear": "per year",
+      "pay.create": "Create the agreement",
+      "pay.end": "End the agreement",
+      "pay.created": "Agreement with {name} created.",
+      "pay.ended": "Agreement ended.",
+      "pay.needAmount": "Enter an amount above zero.",
+      "pay.needCases": "Enter the number of cases.",
+      "pay.with": "Agreement with {name}",
+      "pay.underAgreement": "Under a {kind} agreement",
+      "pay.casesProgress": "{done} of {total} cases",
+      "pay.earned": "Earned from tasks",
+      "pay.paidOut": "Paid to trainees",
+      "pay.agreementActive": "Agreement in place",
     }
   };
 
@@ -3075,7 +3164,8 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
   var work = read(sessionStorage, WORK_KEY, {});
   [
     "requests", "requestStates", "services", "removedServices", "reviews",
-    "articles", "articleStates", "comments", "endorsements", "applications"
+    "articles", "articleStates", "comments", "endorsements", "applications",
+    "agreements"
   ].forEach(function (k) {
     if (!work[k]) work[k] = (k.indexOf("States") !== -1 || k === "applications" ? {} : []);
   });
@@ -3231,6 +3321,29 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
       notify();
     },
 
+    /* ---------------- what a trainee is paid ----------------
+       By default a routed task carries a percentage of what the client paid.
+       A lawyer may instead put a standing agreement in place — so many cases,
+       or a monthly or yearly retainer — and then that governs instead. */
+    agreements: function () { return work.agreements; },
+    addAgreement: function (a) {
+      a.id = uid("ag");
+      a.startedAt = Date.now();
+      // One live agreement per pair; a new one replaces whatever stood before.
+      work.agreements = work.agreements.filter(function (x) {
+        return !(x.lawyerId === a.lawyerId && x.internId === a.internId);
+      });
+      work.agreements.push(a);
+      notify();
+      return a;
+    },
+    endAgreement: function (lawyerId, internId) {
+      work.agreements = work.agreements.filter(function (x) {
+        return !(x.lawyerId === lawyerId && x.internId === internId);
+      });
+      notify();
+    },
+
     reviews: function () { return work.reviews; },
     addReview: function (rev) {
       rev.id = uid("rev");
@@ -3296,7 +3409,7 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
     resetWork: function () {
       work = { requests: [], requestStates: {}, services: [], removedServices: [],
                reviews: [], articles: [], articleStates: {}, comments: [],
-               endorsements: [], applications: {} };
+               endorsements: [], applications: {}, agreements: [] };
       notify();
     },
     resetAll: function () {
@@ -4058,6 +4171,23 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
     return seeded.concat(added).filter(function (s) { return removed.indexOf(s.id) === -1; });
   }
 
+  /* A lawyer names their own service; the category behind it only fixes the
+     price band and the icon. Anything unnamed falls back to the category. */
+  function serviceTitle(s) {
+    if (s.title) return s.title;
+    var t = serviceType(s.typeId);
+    return t ? t.title : {};
+  }
+  function serviceMeta(s) {
+    if (s.meta) return s.meta;
+    var t = serviceType(s.typeId);
+    return t ? t.meta : {};
+  }
+  function serviceIcon(s) {
+    var t = serviceType(s.typeId);
+    return (t && t.icon) || "tag";
+  }
+
   function priceBand(typeId) {
     var t = serviceType(typeId);
     return t ? { min: t.minPrice, max: t.maxPrice } : { min: 0, max: 0 };
@@ -4078,15 +4208,24 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
   }
   function request(id) { return byId(requests(), id); }
 
-  /** Live state comes from the store; the seed row is only the starting point. */
+  /** Live state comes from the store; the seed row is only the starting point.
+      Whatever the store holds wins, field by field — enumerating a fixed list
+      here once meant a newly stored field (the trainee's share) silently
+      vanished on the way out. */
   function requestState(r) {
-    var live = Store.requestState(r.id);
-    return {
-      status: live.status || r.status,
-      assignedTo: live.assignedTo !== undefined ? live.assignedTo : (r.assignedTo || null),
-      body: live.body || r.body || null,
-      rated: !!live.rated
+    var out = {
+      status: r.status,
+      assignedTo: r.assignedTo || null,
+      body: r.body || null,
+      rated: false,
+      internShare: null
     };
+    var live = Store.requestState(r.id);
+    Object.keys(live).forEach(function (k) {
+      if (live[k] !== undefined) out[k] = live[k];
+    });
+    out.rated = !!out.rated;
+    return out;
   }
 
   // A booked appointment is still a live request — it belongs with the current
@@ -4117,6 +4256,55 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
       var st = requestState(r);
       return st.status === "open_to_interns" && !st.assignedTo;
     });
+  }
+
+  /* ---------- what a trainee is paid ----------
+     Two ways, and the standing one wins. Without an agreement each routed task
+     carries its own percentage of what the client paid; with one, the pair have
+     already settled the terms and the per-task share does not apply. */
+  var DEFAULT_SHARE = 30;
+
+  function agreementFor(lawyerId, internId) {
+    var all = Store.agreements();
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].lawyerId === lawyerId && all[i].internId === internId) return all[i];
+    }
+    return null;
+  }
+
+  function agreementsOfIntern(internId) {
+    return Store.agreements().filter(function (a) { return a.internId === internId; });
+  }
+
+  /** What this one task pays the trainee, and under what arrangement. */
+  function taskPay(r) {
+    var st = requestState(r);
+    if (!st.assignedTo) return null;
+    var deal = agreementFor(r.lawyerId, st.assignedTo);
+    if (deal) {
+      return { kind: deal.kind, agreement: deal, amount: deal.kind === "cases" ? deal.amount : 0 };
+    }
+    var pct = st.internShare != null ? st.internShare : DEFAULT_SHARE;
+    return { kind: "share", pct: pct, amount: Math.round((r.price || 0) * pct / 100) };
+  }
+
+  /** Everything a trainee has actually earned from delivered work. */
+  function earnedBy(internId) {
+    return requestsForIntern(internId).reduce(function (total, r) {
+      var st = requestState(r).status;
+      if (st !== "delivered" && st !== "completed") return total;
+      var pay = taskPay(r);
+      return total + (pay ? pay.amount : 0);
+    }, 0);
+  }
+
+  /** How far through a by-the-case agreement the pair have got. */
+  function casesDone(deal) {
+    return requests().filter(function (r) {
+      var st = requestState(r);
+      return r.lawyerId === deal.lawyerId && st.assignedTo === deal.internId &&
+             (st.status === "delivered" || st.status === "completed");
+    }).length;
   }
 
   /* ---------- training hours & endorsements ----------
@@ -4200,6 +4388,10 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
     scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard,
     serviceTypes: serviceTypes, serviceType: serviceType, servicesOf: servicesOf,
     priceBand: priceBand, checkPrice: checkPrice,
+    serviceTitle: serviceTitle, serviceMeta: serviceMeta, serviceIcon: serviceIcon,
+    DEFAULT_SHARE: DEFAULT_SHARE, agreementFor: agreementFor,
+    agreementsOfIntern: agreementsOfIntern, taskPay: taskPay,
+    earnedBy: earnedBy, casesDone: casesDone,
     requests: requests, request: request, requestState: requestState,
     requestsForClient: requestsForClient, requestsForLawyer: requestsForLawyer,
     requestsForIntern: requestsForIntern, openInternTasks: openInternTasks,
@@ -5191,14 +5383,20 @@ Pages.define("home", function (global) {
     });
     var revenue = mine.reduce(function (t, r) { return t + (r.price || 0); }, 0);
     var rating = M.ratingOf(u.id);
+    // What has gone out to trainees is part of reading the month honestly.
+    var toInterns = mine.reduce(function (t, r) {
+      var pay = M.taskPay(r);
+      return t + (pay && pay.kind === "share" ? pay.amount : 0);
+    }, 0);
 
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       greeting("dash.lawyerLead") +
       (Session.isVerified() ? "" : pendingNotice()) +
-      '<div class="grid grid-4">' +
+      '<div class="grid grid-5">' +
         stat("inbox", "dash.awaitingYou", I18N.num(needsMe.length), "gold") +
         stat("file-text", "dash.activeRequests", I18N.num(live.length)) +
         stat("wallet", "dash.revenue", I18N.num(revenue)) +
+        stat("graduation", "pay.paidOut", I18N.num(toInterns)) +
         stat("star", "dash.overallRating", rating.avg.toFixed(1)) +
       "</div>" +
 
@@ -5241,10 +5439,11 @@ Pages.define("home", function (global) {
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       greeting("dash.internLead") +
       (Session.isVerified() ? "" : pendingNotice()) +
-      '<div class="grid grid-3">' +
+      '<div class="grid grid-4">' +
         stat("inbox", "dash.assignedCount", I18N.num(mine.length), "gold") +
         stat("check", "dash.doneCount", I18N.num(done.length)) +
         stat("clock", "dash.hoursLogged", I18N.num(prog.hours)) +
+        stat("wallet", "pay.earned", I18N.num(M.earnedBy(u.id))) +
       "</div>" +
 
       '<div class="grid dash-split" style="margin-top:var(--s-10)">' +
@@ -5479,6 +5678,7 @@ Pages.define("requests", function (global) {
       var who = M.user(st.assignedTo);
       return '<span class="tiny muted">' +
           esc(I18N.t("inbox.assignedTo", { name: who ? tx(who.name) : "" })) + "</span>" +
+        '<span>' + payLine(r, "pay.share") + "</span>" +
         '<button class="btn btn--ghost btn--sm" type="button" data-unassign="' + esc(r.id) + '">' +
           esc(I18N.t("inbox.unassign")) + "</button>";
     }
@@ -5624,12 +5824,28 @@ Pages.define("requests", function (global) {
     if (existing) existing.remove();
     var pop = document.createElement("div");
     pop.className = "assign-pop";
-    pop.innerHTML = '<p class="tiny muted">' + esc(I18N.t("inbox.pickOne")) + "</p>" +
+    var me = Session.user();
+    var r = M.request(id);
+    pop.innerHTML =
+      '<label class="field" style="padding:0 var(--s-2) var(--s-2)">' +
+        '<span class="tiny muted">' + esc(I18N.t("pay.shareLabel")) + "</span>" +
+        '<input class="input num" type="number" min="0" max="100" step="5" dir="ltr" ' +
+          'data-share value="' + M.DEFAULT_SHARE + '"></label>' +
+      '<p class="tiny faint" style="padding:0 var(--s-2) var(--s-3)">' +
+        esc(I18N.t("pay.shareHint")) + "</p>" +
+      '<hr class="divider" style="margin:0 0 var(--s-2)">' +
+      '<p class="tiny muted">' + esc(I18N.t("inbox.pickOne")) + "</p>" +
       M.interns().map(function (i) {
+        // A standing agreement already settles the terms, so say so here.
+        var deal = M.agreementFor(me.id, i.id);
         return '<button type="button" data-pick-intern="' + esc(i.id) + '" data-for="' + esc(id) + '">' +
           '<img class="avatar avatar--sm" alt="" width="28" height="28" src="' +
             App.avatarOf(i.name, i.id) + '">' +
-          "<span>" + esc(tx(i.name)) + "</span>" +
+          "<span>" + esc(tx(i.name)) +
+            (deal ? '<span class="tiny muted" style="display:block">' +
+              esc(I18N.t("pay.underAgreement", { kind: I18N.t("pay.kind" +
+                deal.kind.charAt(0).toUpperCase() + deal.kind.slice(1)) })) + "</span>" : "") +
+          "</span>" +
           '<span class="tiny muted num">' + I18N.num(M.hoursOf(i.id)) + "</span></button>";
       }).join("") +
       '<hr class="divider" style="margin:var(--s-2) 0">' +
@@ -5714,6 +5930,7 @@ Pages.define("requests", function (global) {
               (lawyer ? C.personLink(lawyer) : "") + "</span>" +
             '<span class="dot"></span>' +
             '<span class="tiny muted">' + esc(I18N.t("task.hoursWorth", { n: I18N.num(r.hours || 4) })) + "</span>" +
+            '<span class="dot"></span>' + payLine(r, "pay.yourShare") +
           "</div>" +
         "</div>" +
         '<div class="row gap-2 wrap">' +
@@ -5733,6 +5950,30 @@ Pages.define("requests", function (global) {
                 Icons.svg("send", "icon-sm") + esc(I18N.t("task.deliver")) + "</button></div></div>"
         : "") +
     "</article>";
+  }
+
+  /** The share typed into the routing chooser, if it is open. */
+  function readShare() {
+    var el = $("[data-share]", host);
+    if (!el) return null;
+    var n = +el.value;
+    return isNaN(n) ? null : Math.max(0, Math.min(100, n));
+  }
+
+  /** One line saying what this task pays, for whoever is entitled to see it. */
+  function payLine(r, labelKey) {
+    var pay = M.taskPay(r);
+    if (!pay) return "";
+    if (pay.kind === "share") {
+      return '<span class="tiny muted">' + esc(I18N.t(labelKey)) + ": </span>" +
+        '<strong class="tiny" style="color:var(--accent)"><span class="num">' +
+          I18N.num(pay.amount) + "</span> " + esc(I18N.t("common.sar")) + "</strong>" +
+        '<span class="tiny faint"> (' + esc(I18N.t("pay.ofPrice",
+          { pct: I18N.num(pay.pct), price: I18N.num(r.price || 0) })) + ")</span>";
+    }
+    var kindKey = "pay.kind" + pay.kind.charAt(0).toUpperCase() + pay.kind.slice(1);
+    return '<span class="tag">' +
+      esc(I18N.t("pay.underAgreement", { kind: I18N.t(kindKey) })) + "</span>";
   }
 
   /* ====================================================== draw ============ */
@@ -5825,7 +6066,7 @@ Pages.define("requests", function (global) {
     if (bc) {
       open = null;
       Store.clearApplicants(bc);
-      Store.setRequest(bc, { assignedTo: null, status: "open_to_interns" });
+      Store.setRequest(bc, { assignedTo: null, status: "open_to_interns", internShare: readShare() });
       App.toast(I18N.t("inbox.broadcastDone"), "gavel");
       return;
     }
@@ -5834,9 +6075,12 @@ Pages.define("requests", function (global) {
     if (pick) {
       var who = M.user(pick.getAttribute("data-pick-intern"));
       var forId = pick.getAttribute("data-for");
+      var share = readShare();
       open = null;
       Store.clearApplicants(forId);
-      Store.setRequest(forId, { assignedTo: who.id, status: "with_intern" });
+      Store.setRequest(forId, share == null
+        ? { assignedTo: who.id, status: "with_intern" }
+        : { assignedTo: who.id, status: "with_intern", internShare: share });
       App.toast(I18N.t("inbox.assignDone", { name: tx(who.name) }), "graduation");
       return;
     }
@@ -5909,7 +6153,9 @@ Pages.define("services", function (global) {
   if (!host) return;
 
   var filters = { type: "", specialty: "", sort: "price" };
-  var skills = null;   // trainee's working copy, loaded on first draw
+  var skills = null;    // trainee's working copy, loaded on first draw
+  var draft = {};       // the service being written
+  var editing = null;   // the service being changed, if any
 
   /* ====================================================== client ==========
      Two ways in, stated up front. Either the client names the service and the
@@ -6030,11 +6276,12 @@ Pages.define("services", function (global) {
   }
 
   function offerCard(o, type, best) {
+    var named = M.serviceTitle(o.svc);
     return '<article class="card card--pad card--hover' + (best ? " card--rule-gold" : "") + '">' +
       '<div class="row between wrap gap-3">' +
         '<span class="row gap-3">' + C.avatar(o.owner, "sm") +
           "<span>" + C.personLink(o.owner) +
-            '<p class="tiny muted">' + esc(tx(o.owner.title || {})) + "</p></span></span>" +
+            '<p class="tiny muted">' + esc(tx(named)) + "</p></span></span>" +
         '<strong class="title"><span class="num">' + I18N.num(o.svc.price) + "</span> " +
           esc(I18N.t("common.sar")) + "</strong>" +
       "</div>" +
@@ -6046,18 +6293,23 @@ Pages.define("services", function (global) {
       "</div>" +
       '<div class="row between wrap gap-3" style="margin-top:var(--s-5);padding-top:var(--s-4);' +
         'border-top:1px solid var(--border)">' +
-        '<span class="tiny muted">' + esc(tx(type.meta)) + "</span>" +
+        '<span class="tiny muted">' + esc(tx(M.serviceMeta(o.svc))) + "</span>" +
         '<button class="btn btn--primary btn--sm" type="button" data-order="' + esc(o.svc.id) + '" ' +
           'data-i18n="req.order"></button>' +
       "</div></article>";
   }
 
-  /* ====================================================== lawyer ========== */
+  /* ====================================================== lawyer ==========
+     The lawyer writes the service themselves — its name and its turnaround.
+     The category behind it is not a label, it is the price band: whatever they
+     charge has to sit between the platform's floor and ceiling for that kind
+     of work, which is what stops both undercutting and gouging. */
   function lawyerView() {
     var me = Session.user();
     var mine = M.servicesOf(me.id);
-    var taken = mine.map(function (s) { return s.typeId; });
-    var open = M.serviceTypes().filter(function (t) { return taken.indexOf(t.id) === -1; });
+    var types = M.serviceTypes();
+    var cat = editing ? editing.typeId : (draft.typeId || types[0].id);
+    var band = M.priceBand(cat);
 
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       '<header style="margin-bottom:var(--s-8)">' +
@@ -6074,39 +6326,62 @@ Pages.define("services", function (global) {
         "</section>" +
 
         '<aside class="card card--pad">' +
-          '<h2 class="subtitle" data-i18n="svc.addTitle"></h2>' +
-          (open.length
-            ? '<div class="stack gap-4" style="margin-top:var(--s-5)">' +
-                '<label class="field"><span class="label" data-i18n="svc.filterType"></span>' +
-                  '<select class="select" data-new-type>' + open.map(function (t) {
-                    return '<option value="' + esc(t.id) + '">' + esc(tx(t.title)) + "</option>";
-                  }).join("") + "</select></label>" +
-                '<label class="field"><span class="label" data-i18n="svc.priceLabel"></span>' +
-                  '<input class="input num" type="number" data-new-price dir="ltr"></label>' +
-                '<p class="tiny muted" data-band></p>' +
-                '<p class="form-error" data-svc-error hidden></p>' +
-                '<button class="btn btn--primary" type="button" data-add-svc data-i18n="svc.add"></button>' +
-              "</div>"
-            : '<p class="small muted" style="margin-top:var(--s-4)" data-i18n="svc.allTaken"></p>') +
+          '<h2 class="subtitle" data-i18n="' + (editing ? "svc.editTitle" : "svc.addTitle") + '"></h2>' +
+          '<div class="stack gap-4" style="margin-top:var(--s-5)">' +
+            '<label class="field"><span class="label" data-i18n="svc.category"></span>' +
+              '<select class="select" data-new-type>' + types.map(function (t) {
+                return '<option value="' + esc(t.id) + '"' + (cat === t.id ? " selected" : "") + ">" +
+                  esc(tx(t.title)) + "</option>";
+              }).join("") + "</select>" +
+              '<span class="tiny faint" data-i18n="svc.categoryHint"></span></label>' +
+
+            '<label class="field"><span class="label" data-i18n="svc.customTitle"></span>' +
+              '<input class="input" data-new-title value="' + esc(draft.title || "") + '" ' +
+                'placeholder="' + esc(tx(M.serviceType(cat).title)) + '">' +
+              '<span class="tiny faint" data-i18n="svc.customTitleHint"></span></label>' +
+
+            '<label class="field"><span class="label" data-i18n="svc.customMeta"></span>' +
+              '<input class="input" data-new-meta value="' + esc(draft.meta || "") + '" ' +
+                'placeholder="' + esc(tx(M.serviceType(cat).meta)) + '"></label>' +
+
+            '<label class="field"><span class="label" data-i18n="svc.priceLabel"></span>' +
+              '<input class="input num" type="number" data-new-price dir="ltr" ' +
+                'min="' + band.min + '" max="' + band.max + '" ' +
+                'value="' + (draft.price != null ? draft.price : "") + '"></label>' +
+            '<p class="tiny muted" data-band></p>' +
+            '<p class="form-error" data-svc-error hidden></p>' +
+            '<div class="row gap-2">' +
+              '<button class="btn btn--primary" type="button" data-add-svc data-i18n="' +
+                (editing ? "svc.saveChanges" : "svc.add") + '"></button>' +
+              (editing ? '<button class="btn btn--ghost" type="button" data-cancel-edit ' +
+                'data-i18n="signup.back"></button>' : "") +
+            "</div>" +
+          "</div>" +
         "</aside>" +
       "</div></div>";
   }
 
   function myServiceRow(s) {
-    var t = M.serviceType(s.typeId) || {};
     var band = M.priceBand(s.typeId);
+    var type = M.serviceType(s.typeId) || {};
+    var name = tx(M.serviceTitle(s));
+    var category = tx(type.title || {});
     return '<div class="req-row">' +
-      '<span class="req-row__icon">' + Icons.svg(t.icon || "tag", "icon-sm") + "</span>" +
+      '<span class="req-row__icon">' + Icons.svg(M.serviceIcon(s), "icon-sm") + "</span>" +
       '<div class="grow" style="min-width:0">' +
-        "<strong class=\"small\">" + esc(tx(t.title || {})) + "</strong>" +
-        '<p class="tiny muted">' + esc(tx(t.meta || {})) + "</p>" +
+        '<div class="row gap-2 wrap"><strong class="small">' + esc(name) + "</strong>" +
+          // The category tag only earns its place when it says something new.
+          (name === category ? "" : '<span class="tag">' + esc(category) + "</span>") + "</div>" +
+        '<p class="tiny muted">' + esc(tx(M.serviceMeta(s))) + "</p>" +
         '<p class="tiny faint">' + esc(I18N.t("svc.band",
           { min: I18N.num(band.min), max: I18N.num(band.max) })) + "</p>" +
       "</div>" +
       '<div class="req-row__side"><div class="row gap-2">' +
-        '<input class="input num" type="number" dir="ltr" style="width:96px" ' +
-          'value="' + s.price + '" data-price-for="' + esc(s.id) + '">' +
-        '<button class="btn btn--ghost btn--sm" type="button" data-del-svc="' + esc(s.id) + '" ' +
+        '<strong class="small"><span class="num">' + I18N.num(s.price) + "</span> " +
+          esc(I18N.t("common.sar")) + "</strong>" +
+        '<button class="icon-btn" type="button" data-edit-svc="' + esc(s.id) + '" ' +
+          'data-i18n-attr="aria-label:svc.editTitle">' + Icons.svg("edit", "icon-sm") + "</button>" +
+        '<button class="icon-btn" type="button" data-del-svc="' + esc(s.id) + '" ' +
           'data-i18n-attr="aria-label:svc.remove">' + Icons.svg("trash", "icon-sm") + "</button>" +
       "</div></div></div>";
   }
@@ -6156,6 +6431,16 @@ Pages.define("services", function (global) {
     out.textContent = I18N.t("svc.band", { min: I18N.num(band.min), max: I18N.num(band.max) });
   }
 
+  function readForm() {
+    var g = function (sel) { var el = $(sel, host); return el ? el.value.trim() : ""; };
+    return {
+      typeId: g("[data-new-type]"),
+      title: g("[data-new-title]"),
+      meta: g("[data-new-meta]"),
+      price: +g("[data-new-price]")
+    };
+  }
+
   function svcError(key) {
     var el = $("[data-svc-error]", host);
     if (!el) return;
@@ -6167,7 +6452,13 @@ Pages.define("services", function (global) {
   host.addEventListener("change", function (ev) {
     var f = ev.target.closest("[data-filter]");
     if (f) { filters[f.getAttribute("data-filter")] = f.value; App.rerender(); return; }
-    if (ev.target.closest("[data-new-type]")) { showBand(); return; }
+    if (ev.target.closest("[data-new-type]")) {
+      draft = readForm();
+      draft.title = draft.title; draft.meta = draft.meta;
+      showBand();
+      App.rerender();
+      return;
+    }
 
     // Editing a live price in place: validated against the band, saved at once.
     var pf = ev.target.closest("[data-price-for]");
@@ -6207,7 +6498,7 @@ Pages.define("services", function (global) {
       Store.addRequest({
         clientId: Session.user().id, lawyerId: pick.owner.id, typeId: pick.svc.typeId,
         price: pick.svc.price, status: "new", ai: picked.tier === "quick", hours: 3,
-        title: picked.title,
+        title: M.serviceTitle(pick.svc),
         brief: { ar: "", en: "" },
         ago: { ar: I18N.t("common.today"), en: I18N.t("common.today") }
       });
@@ -6217,19 +6508,47 @@ Pages.define("services", function (global) {
     }
 
     if (t.closest("[data-add-svc]")) {
-      var sel = $("[data-new-type]", host), input = $("[data-new-price]", host);
-      var price = +input.value;
-      var bad = M.checkPrice(sel.value, price);
+      var f = readForm();
+      var bad = M.checkPrice(f.typeId, f.price);
       if (bad) { svcError(bad === "low" ? "svc.tooLow" : bad === "high" ? "svc.tooHigh" : "svc.empty"); return; }
       svcError(null);
-      Store.addService({ ownerId: Session.user().id, typeId: sel.value, price: price, active: true });
-      App.toast(I18N.t("svc.added"), "check");
+      var record = {
+        ownerId: Session.user().id, typeId: f.typeId, price: f.price, active: true,
+        title: f.title ? { ar: f.title, en: f.title } : null,
+        meta: f.meta ? { ar: f.meta, en: f.meta } : null
+      };
+      if (editing) {
+        record.id = editing.id;
+        Store.removeService(editing.id);
+        editing = null;
+      }
+      Store.addService(record);
+      draft = {};
+      App.toast(I18N.t(record.id ? "svc.updated" : "svc.added"), "check");
       return;
     }
 
+    var ed = t.closest("[data-edit-svc]");
+    if (ed) {
+      var found = M.servicesOf(Session.user().id)
+        .filter(function (x) { return x.id === ed.getAttribute("data-edit-svc"); })[0];
+      if (!found) return;
+      editing = found;
+      draft = { typeId: found.typeId, price: found.price,
+                title: found.title ? tx(found.title) : "", meta: found.meta ? tx(found.meta) : "" };
+      App.rerender();
+      return;
+    }
+
+    if (t.closest("[data-cancel-edit]")) { editing = null; draft = {}; App.rerender(); return; }
+
     var del = t.closest("[data-del-svc]");
-    if (del) { Store.removeService(del.getAttribute("data-del-svc"));
-      App.toast(I18N.t("svc.removed"), "trash"); return; }
+    if (del) {
+      if (editing && editing.id === del.getAttribute("data-del-svc")) { editing = null; draft = {}; }
+      Store.removeService(del.getAttribute("data-del-svc"));
+      App.toast(I18N.t("svc.removed"), "trash");
+      return;
+    }
 
     if (t.closest("[data-skill-add]")) { addSkill(); return; }
 
@@ -6500,11 +6819,10 @@ Pages.define("lawyer", function (global) {
     var list = M.servicesOf(u.id);
     if (!list.length) return '<p class="small muted" data-i18n="profile.noServices"></p>';
     return '<div class="req-list">' + list.map(function (s) {
-      var t = M.serviceType(s.typeId) || {};
       return '<div class="req-row">' +
-        '<span class="req-row__icon">' + Icons.svg(t.icon || "tag", "icon-sm") + "</span>" +
-        '<div class="grow"><strong class="small">' + esc(tx(t.title || {})) + "</strong>" +
-          '<p class="tiny muted">' + esc(tx(t.meta || {})) + "</p></div>" +
+        '<span class="req-row__icon">' + Icons.svg(M.serviceIcon(s), "icon-sm") + "</span>" +
+        '<div class="grow"><strong class="small">' + esc(tx(M.serviceTitle(s))) + "</strong>" +
+          '<p class="tiny muted">' + esc(tx(M.serviceMeta(s))) + "</p></div>" +
         '<div class="req-row__side"><strong class="small"><span class="num">' +
           I18N.num(s.price) + "</span> " + esc(I18N.t("common.sar")) + "</strong>" +
           '<button class="btn btn--primary btn--sm" type="button" data-order="' + esc(s.id) + '" ' +
@@ -6569,10 +6887,9 @@ Pages.define("lawyer", function (global) {
       '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="profile.bookHint"></p>' +
       (list.length
         ? '<div class="stack gap-2" style="margin-top:var(--s-5)">' + list.map(function (s) {
-            var t = M.serviceType(s.typeId) || {};
             return '<button type="button" class="doc-option" data-order="' + esc(s.id) + '">' +
-              '<span class="row gap-3">' + Icons.svg(t.icon || "tag", "icon-sm") +
-                "<span>" + esc(tx(t.title || {})) + "</span></span>" +
+              '<span class="row gap-3">' + Icons.svg(M.serviceIcon(s), "icon-sm") +
+                "<span>" + esc(tx(M.serviceTitle(s))) + "</span></span>" +
               '<span class="doc-option__price"><span class="num">' + I18N.num(s.price) + "</span> " +
                 esc(I18N.t("common.sar")) + "</span></button>";
           }).join("") + "</div>"
@@ -6628,7 +6945,7 @@ Pages.define("lawyer", function (global) {
     Store.addRequest({
       clientId: Session.user().id, lawyerId: u.id, typeId: svc.typeId, price: svc.price,
       status: "new", ai: type.tier === "quick", hours: 3,
-      title: type.title, brief: { ar: "", en: "" },
+      title: M.serviceTitle(svc), brief: { ar: "", en: "" },
       ago: { ar: I18N.t("common.today"), en: I18N.t("common.today") }
     });
     App.toast(I18N.t("req.ordered", { name: tx(u.name) }), "check");
@@ -6655,8 +6972,20 @@ Pages.define("intern", function (global) {
 
   var id = App.param("id");
   var tab = "skills";
-  var TABS = [["skills", "profile.tabSkills"], ["cert", "profile.tabCert"],
-              ["reviews", "profile.tabReviews"], ["articles", "profile.tabArticles"]];
+  var deal = { kind: "cases", amount: "", cases: "" };   // the form being filled
+
+  /** Pay is between the two parties, so the tab only exists for them. */
+  function canSeePay(u) {
+    var me = Session.user();
+    if (!me) return false;
+    return Session.is("lawyer") || me.id === u.id;
+  }
+
+  function tabsFor(u) {
+    var t = [["skills", "profile.tabSkills"], ["cert", "profile.tabCert"]];
+    if (canSeePay(u)) t.push(["pay", "pay.tab"]);
+    return t.concat([["reviews", "profile.tabReviews"], ["articles", "profile.tabArticles"]]);
+  }
 
   function head(u) {
     // Same rule as a lawyer's page: the league table is for the profession.
@@ -6736,6 +7065,87 @@ Pages.define("intern", function (global) {
       : '<p class="small muted" style="margin-top:var(--s-3)" data-i18n="cert.noneYet"></p>');
   }
 
+  /* ---------- pay: a share per task, or terms settled in advance ---------- */
+  function payPanel(u) {
+    var me = Session.user();
+    var mine = Session.is("lawyer") ? M.agreementFor(me.id, u.id) : null;
+    var all = M.agreementsOfIntern(u.id);
+    var isSelf = me.id === u.id;
+
+    return '<p class="note-inline" data-i18n="pay.onlyParties"></p>' +
+
+      '<div class="card card--pad" style="margin-top:var(--s-6)">' +
+        '<div class="row between wrap gap-3">' +
+          '<h2 class="subtitle" data-i18n="pay.earned"></h2>' +
+          '<strong class="title" style="color:var(--accent)"><span class="num">' +
+            I18N.num(M.earnedBy(u.id)) + "</span> " + esc(I18N.t("common.sar")) + "</strong>" +
+        "</div>" +
+        '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="pay.shareHint"></p></div>' +
+
+      '<h2 class="subtitle" style="margin-top:var(--s-8)" data-i18n="pay.standing"></h2>' +
+      (all.length
+        ? '<div class="stack gap-3" style="margin-top:var(--s-4)">' +
+            all.map(function (a) { return agreementCard(a, u); }).join("") + "</div>"
+        : '<p class="small muted" style="margin-top:var(--s-3)" data-i18n="pay.none"></p>') +
+
+      (Session.is("lawyer") && !mine ? agreementForm(u) : "") +
+      (isSelf ? "" : "");
+  }
+
+  function kindLabel(kind) {
+    return I18N.t("pay.kind" + kind.charAt(0).toUpperCase() + kind.slice(1));
+  }
+
+  function agreementCard(a, u) {
+    var lawyer = M.user(a.lawyerId);
+    var me = Session.user();
+    var perKey = a.kind === "cases" ? "pay.perCase" : a.kind === "monthly" ? "pay.perMonth" : "pay.perYear";
+    return '<article class="card card--pad card--rule-gold">' +
+      '<div class="row between wrap gap-4">' +
+        '<div class="row gap-3">' + C.avatar(lawyer, "sm") +
+          "<div><strong class=\"small\">" +
+            esc(I18N.t("pay.with", { name: lawyer ? tx(lawyer.name) : "" })) + "</strong>" +
+            '<p class="tiny muted">' + esc(kindLabel(a.kind)) +
+              (a.kind === "cases"
+                ? " · " + esc(I18N.t("pay.casesProgress",
+                    { done: I18N.num(M.casesDone(a)), total: I18N.num(a.cases) }))
+                : "") + "</p></div></div>" +
+        '<div class="row gap-4">' +
+          '<strong class="title" style="color:var(--accent)"><span class="num">' +
+            I18N.num(a.amount) + "</span> " + esc(I18N.t("common.sar")) +
+            ' <span class="tiny muted">' + esc(I18N.t(perKey)) + "</span></strong>" +
+          (me && me.id === a.lawyerId
+            ? '<button class="btn btn--ghost btn--sm" type="button" data-end-deal="' +
+              esc(a.internId) + '" data-i18n="pay.end"></button>'
+            : "") +
+        "</div></div></article>";
+  }
+
+  function agreementForm(u) {
+    return '<div class="card card--pad" style="margin-top:var(--s-6)">' +
+      '<h3 class="subtitle" data-i18n="pay.newAgreement"></h3>' +
+      '<div class="grid grid-3" style="gap:var(--s-4);margin-top:var(--s-5)">' +
+        '<label class="field"><span class="label" data-i18n="pay.kind"></span>' +
+          '<select class="select" data-deal-kind>' +
+            [["cases", "pay.kindCases"], ["monthly", "pay.kindMonthly"], ["yearly", "pay.kindYearly"]]
+              .map(function (k) {
+                return '<option value="' + k[0] + '"' + (deal.kind === k[0] ? " selected" : "") + ">" +
+                  esc(I18N.t(k[1])) + "</option>";
+              }).join("") + "</select></label>" +
+        '<label class="field"><span class="label" data-i18n="pay.amount"></span>' +
+          '<input class="input num" type="number" min="0" dir="ltr" data-deal-amount value="' +
+            esc(deal.amount) + '"></label>' +
+        (deal.kind === "cases"
+          ? '<label class="field"><span class="label" data-i18n="pay.cases"></span>' +
+            '<input class="input num" type="number" min="1" dir="ltr" data-deal-cases value="' +
+              esc(deal.cases) + '"></label>'
+          : "<span></span>") +
+      "</div>" +
+      '<p class="form-error" data-deal-error hidden></p>' +
+      '<button class="btn btn--primary" type="button" style="margin-top:var(--s-5)" ' +
+        'data-make-deal data-i18n="pay.create"></button></div>';
+  }
+
   function reviewsPanel(u) {
     var list = M.reviewsFor(u.id);
     if (!list.length) return '<p class="small muted" data-i18n="profile.noReviews"></p>';
@@ -6768,14 +7178,19 @@ Pages.define("intern", function (global) {
       return;
     }
 
+    // A tab can disappear when the viewer changes, so fall back to the first.
+    var allowed = tabsFor(u).map(function (t) { return t[0]; });
+    if (allowed.indexOf(tab) === -1) tab = allowed[0];
+
     var body = tab === "skills" ? skillsPanel(u)
              : tab === "cert" ? certPanel(u)
+             : tab === "pay" ? payPanel(u)
              : tab === "reviews" ? reviewsPanel(u)
              : articlesPanel(u);
 
     host.innerHTML = '<div class="container" style="padding-block:var(--s-8) var(--s-20);max-width:940px">' +
       head(u) +
-      '<div class="tabs" role="tablist">' + TABS.map(function (t) {
+      '<div class="tabs" role="tablist">' + tabsFor(u).map(function (t) {
         return '<button class="tab' + (tab === t[0] ? " is-active" : "") + '" type="button" ' +
           'role="tab" data-tab="' + t[0] + '" data-i18n="' + t[1] + '"></button>';
       }).join("") + "</div>" +
@@ -6789,6 +7204,29 @@ Pages.define("intern", function (global) {
     var t = ev.target.closest("[data-tab]");
     if (t) { tab = t.getAttribute("data-tab"); App.rerender(); return; }
 
+    if (ev.target.closest("[data-make-deal]")) {
+      var u2 = M.user(id);
+      var amount = +($("[data-deal-amount]", host) || {}).value;
+      var cases = +(($("[data-deal-cases]", host) || {}).value || 0);
+      var err = $("[data-deal-error]", host);
+      var fail = function (key) { if (err) { err.hidden = false; err.textContent = I18N.t(key); } };
+      if (!amount || amount <= 0) { fail("pay.needAmount"); return; }
+      if (deal.kind === "cases" && !cases) { fail("pay.needCases"); return; }
+      if (err) err.hidden = true;
+      Store.addAgreement({ lawyerId: Session.user().id, internId: u2.id,
+                           kind: deal.kind, amount: amount, cases: cases });
+      deal = { kind: "cases", amount: "", cases: "" };
+      App.toast(I18N.t("pay.created", { name: tx(u2.name) }), "check");
+      return;
+    }
+
+    var endDeal = ev.target.closest("[data-end-deal]");
+    if (endDeal) {
+      Store.endAgreement(Session.user().id, endDeal.getAttribute("data-end-deal"));
+      App.toast(I18N.t("pay.ended"), "close");
+      return;
+    }
+
     if (ev.target.closest("[data-issue]")) {
       var u = M.user(id);
       Store.addEndorsement({
@@ -6798,6 +7236,15 @@ Pages.define("intern", function (global) {
       });
       App.toast(I18N.t("cert.issuedToast"), "badge");
     }
+  });
+
+  host.addEventListener("change", function (ev) {
+    var k = ev.target.closest("[data-deal-kind]");
+    if (!k) return;
+    // Keep what is already typed; only the "cases" field comes and goes.
+    deal.kind = k.value;
+    deal.amount = ($("[data-deal-amount]", host) || {}).value || "";
+    App.rerender();
   });
 });
 

@@ -17,8 +17,20 @@ Pages.define("intern", function (global) {
 
   var id = App.param("id");
   var tab = "skills";
-  var TABS = [["skills", "profile.tabSkills"], ["cert", "profile.tabCert"],
-              ["reviews", "profile.tabReviews"], ["articles", "profile.tabArticles"]];
+  var deal = { kind: "cases", amount: "", cases: "" };   // the form being filled
+
+  /** Pay is between the two parties, so the tab only exists for them. */
+  function canSeePay(u) {
+    var me = Session.user();
+    if (!me) return false;
+    return Session.is("lawyer") || me.id === u.id;
+  }
+
+  function tabsFor(u) {
+    var t = [["skills", "profile.tabSkills"], ["cert", "profile.tabCert"]];
+    if (canSeePay(u)) t.push(["pay", "pay.tab"]);
+    return t.concat([["reviews", "profile.tabReviews"], ["articles", "profile.tabArticles"]]);
+  }
 
   function head(u) {
     // Same rule as a lawyer's page: the league table is for the profession.
@@ -98,6 +110,87 @@ Pages.define("intern", function (global) {
       : '<p class="small muted" style="margin-top:var(--s-3)" data-i18n="cert.noneYet"></p>');
   }
 
+  /* ---------- pay: a share per task, or terms settled in advance ---------- */
+  function payPanel(u) {
+    var me = Session.user();
+    var mine = Session.is("lawyer") ? M.agreementFor(me.id, u.id) : null;
+    var all = M.agreementsOfIntern(u.id);
+    var isSelf = me.id === u.id;
+
+    return '<p class="note-inline" data-i18n="pay.onlyParties"></p>' +
+
+      '<div class="card card--pad" style="margin-top:var(--s-6)">' +
+        '<div class="row between wrap gap-3">' +
+          '<h2 class="subtitle" data-i18n="pay.earned"></h2>' +
+          '<strong class="title" style="color:var(--accent)"><span class="num">' +
+            I18N.num(M.earnedBy(u.id)) + "</span> " + esc(I18N.t("common.sar")) + "</strong>" +
+        "</div>" +
+        '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="pay.shareHint"></p></div>' +
+
+      '<h2 class="subtitle" style="margin-top:var(--s-8)" data-i18n="pay.standing"></h2>' +
+      (all.length
+        ? '<div class="stack gap-3" style="margin-top:var(--s-4)">' +
+            all.map(function (a) { return agreementCard(a, u); }).join("") + "</div>"
+        : '<p class="small muted" style="margin-top:var(--s-3)" data-i18n="pay.none"></p>') +
+
+      (Session.is("lawyer") && !mine ? agreementForm(u) : "") +
+      (isSelf ? "" : "");
+  }
+
+  function kindLabel(kind) {
+    return I18N.t("pay.kind" + kind.charAt(0).toUpperCase() + kind.slice(1));
+  }
+
+  function agreementCard(a, u) {
+    var lawyer = M.user(a.lawyerId);
+    var me = Session.user();
+    var perKey = a.kind === "cases" ? "pay.perCase" : a.kind === "monthly" ? "pay.perMonth" : "pay.perYear";
+    return '<article class="card card--pad card--rule-gold">' +
+      '<div class="row between wrap gap-4">' +
+        '<div class="row gap-3">' + C.avatar(lawyer, "sm") +
+          "<div><strong class=\"small\">" +
+            esc(I18N.t("pay.with", { name: lawyer ? tx(lawyer.name) : "" })) + "</strong>" +
+            '<p class="tiny muted">' + esc(kindLabel(a.kind)) +
+              (a.kind === "cases"
+                ? " · " + esc(I18N.t("pay.casesProgress",
+                    { done: I18N.num(M.casesDone(a)), total: I18N.num(a.cases) }))
+                : "") + "</p></div></div>" +
+        '<div class="row gap-4">' +
+          '<strong class="title" style="color:var(--accent)"><span class="num">' +
+            I18N.num(a.amount) + "</span> " + esc(I18N.t("common.sar")) +
+            ' <span class="tiny muted">' + esc(I18N.t(perKey)) + "</span></strong>" +
+          (me && me.id === a.lawyerId
+            ? '<button class="btn btn--ghost btn--sm" type="button" data-end-deal="' +
+              esc(a.internId) + '" data-i18n="pay.end"></button>'
+            : "") +
+        "</div></div></article>";
+  }
+
+  function agreementForm(u) {
+    return '<div class="card card--pad" style="margin-top:var(--s-6)">' +
+      '<h3 class="subtitle" data-i18n="pay.newAgreement"></h3>' +
+      '<div class="grid grid-3" style="gap:var(--s-4);margin-top:var(--s-5)">' +
+        '<label class="field"><span class="label" data-i18n="pay.kind"></span>' +
+          '<select class="select" data-deal-kind>' +
+            [["cases", "pay.kindCases"], ["monthly", "pay.kindMonthly"], ["yearly", "pay.kindYearly"]]
+              .map(function (k) {
+                return '<option value="' + k[0] + '"' + (deal.kind === k[0] ? " selected" : "") + ">" +
+                  esc(I18N.t(k[1])) + "</option>";
+              }).join("") + "</select></label>" +
+        '<label class="field"><span class="label" data-i18n="pay.amount"></span>' +
+          '<input class="input num" type="number" min="0" dir="ltr" data-deal-amount value="' +
+            esc(deal.amount) + '"></label>' +
+        (deal.kind === "cases"
+          ? '<label class="field"><span class="label" data-i18n="pay.cases"></span>' +
+            '<input class="input num" type="number" min="1" dir="ltr" data-deal-cases value="' +
+              esc(deal.cases) + '"></label>'
+          : "<span></span>") +
+      "</div>" +
+      '<p class="form-error" data-deal-error hidden></p>' +
+      '<button class="btn btn--primary" type="button" style="margin-top:var(--s-5)" ' +
+        'data-make-deal data-i18n="pay.create"></button></div>';
+  }
+
   function reviewsPanel(u) {
     var list = M.reviewsFor(u.id);
     if (!list.length) return '<p class="small muted" data-i18n="profile.noReviews"></p>';
@@ -130,14 +223,19 @@ Pages.define("intern", function (global) {
       return;
     }
 
+    // A tab can disappear when the viewer changes, so fall back to the first.
+    var allowed = tabsFor(u).map(function (t) { return t[0]; });
+    if (allowed.indexOf(tab) === -1) tab = allowed[0];
+
     var body = tab === "skills" ? skillsPanel(u)
              : tab === "cert" ? certPanel(u)
+             : tab === "pay" ? payPanel(u)
              : tab === "reviews" ? reviewsPanel(u)
              : articlesPanel(u);
 
     host.innerHTML = '<div class="container" style="padding-block:var(--s-8) var(--s-20);max-width:940px">' +
       head(u) +
-      '<div class="tabs" role="tablist">' + TABS.map(function (t) {
+      '<div class="tabs" role="tablist">' + tabsFor(u).map(function (t) {
         return '<button class="tab' + (tab === t[0] ? " is-active" : "") + '" type="button" ' +
           'role="tab" data-tab="' + t[0] + '" data-i18n="' + t[1] + '"></button>';
       }).join("") + "</div>" +
@@ -151,6 +249,29 @@ Pages.define("intern", function (global) {
     var t = ev.target.closest("[data-tab]");
     if (t) { tab = t.getAttribute("data-tab"); App.rerender(); return; }
 
+    if (ev.target.closest("[data-make-deal]")) {
+      var u2 = M.user(id);
+      var amount = +($("[data-deal-amount]", host) || {}).value;
+      var cases = +(($("[data-deal-cases]", host) || {}).value || 0);
+      var err = $("[data-deal-error]", host);
+      var fail = function (key) { if (err) { err.hidden = false; err.textContent = I18N.t(key); } };
+      if (!amount || amount <= 0) { fail("pay.needAmount"); return; }
+      if (deal.kind === "cases" && !cases) { fail("pay.needCases"); return; }
+      if (err) err.hidden = true;
+      Store.addAgreement({ lawyerId: Session.user().id, internId: u2.id,
+                           kind: deal.kind, amount: amount, cases: cases });
+      deal = { kind: "cases", amount: "", cases: "" };
+      App.toast(I18N.t("pay.created", { name: tx(u2.name) }), "check");
+      return;
+    }
+
+    var endDeal = ev.target.closest("[data-end-deal]");
+    if (endDeal) {
+      Store.endAgreement(Session.user().id, endDeal.getAttribute("data-end-deal"));
+      App.toast(I18N.t("pay.ended"), "close");
+      return;
+    }
+
     if (ev.target.closest("[data-issue]")) {
       var u = M.user(id);
       Store.addEndorsement({
@@ -160,5 +281,14 @@ Pages.define("intern", function (global) {
       });
       App.toast(I18N.t("cert.issuedToast"), "badge");
     }
+  });
+
+  host.addEventListener("change", function (ev) {
+    var k = ev.target.closest("[data-deal-kind]");
+    if (!k) return;
+    // Keep what is already typed; only the "cases" field comes and goes.
+    deal.kind = k.value;
+    deal.amount = ($("[data-deal-amount]", host) || {}).value || "";
+    App.rerender();
   });
 });

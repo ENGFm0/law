@@ -105,6 +105,23 @@
     return seeded.concat(added).filter(function (s) { return removed.indexOf(s.id) === -1; });
   }
 
+  /* A lawyer names their own service; the category behind it only fixes the
+     price band and the icon. Anything unnamed falls back to the category. */
+  function serviceTitle(s) {
+    if (s.title) return s.title;
+    var t = serviceType(s.typeId);
+    return t ? t.title : {};
+  }
+  function serviceMeta(s) {
+    if (s.meta) return s.meta;
+    var t = serviceType(s.typeId);
+    return t ? t.meta : {};
+  }
+  function serviceIcon(s) {
+    var t = serviceType(s.typeId);
+    return (t && t.icon) || "tag";
+  }
+
   function priceBand(typeId) {
     var t = serviceType(typeId);
     return t ? { min: t.minPrice, max: t.maxPrice } : { min: 0, max: 0 };
@@ -125,15 +142,24 @@
   }
   function request(id) { return byId(requests(), id); }
 
-  /** Live state comes from the store; the seed row is only the starting point. */
+  /** Live state comes from the store; the seed row is only the starting point.
+      Whatever the store holds wins, field by field — enumerating a fixed list
+      here once meant a newly stored field (the trainee's share) silently
+      vanished on the way out. */
   function requestState(r) {
-    var live = Store.requestState(r.id);
-    return {
-      status: live.status || r.status,
-      assignedTo: live.assignedTo !== undefined ? live.assignedTo : (r.assignedTo || null),
-      body: live.body || r.body || null,
-      rated: !!live.rated
+    var out = {
+      status: r.status,
+      assignedTo: r.assignedTo || null,
+      body: r.body || null,
+      rated: false,
+      internShare: null
     };
+    var live = Store.requestState(r.id);
+    Object.keys(live).forEach(function (k) {
+      if (live[k] !== undefined) out[k] = live[k];
+    });
+    out.rated = !!out.rated;
+    return out;
   }
 
   // A booked appointment is still a live request — it belongs with the current
@@ -164,6 +190,55 @@
       var st = requestState(r);
       return st.status === "open_to_interns" && !st.assignedTo;
     });
+  }
+
+  /* ---------- what a trainee is paid ----------
+     Two ways, and the standing one wins. Without an agreement each routed task
+     carries its own percentage of what the client paid; with one, the pair have
+     already settled the terms and the per-task share does not apply. */
+  var DEFAULT_SHARE = 30;
+
+  function agreementFor(lawyerId, internId) {
+    var all = Store.agreements();
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].lawyerId === lawyerId && all[i].internId === internId) return all[i];
+    }
+    return null;
+  }
+
+  function agreementsOfIntern(internId) {
+    return Store.agreements().filter(function (a) { return a.internId === internId; });
+  }
+
+  /** What this one task pays the trainee, and under what arrangement. */
+  function taskPay(r) {
+    var st = requestState(r);
+    if (!st.assignedTo) return null;
+    var deal = agreementFor(r.lawyerId, st.assignedTo);
+    if (deal) {
+      return { kind: deal.kind, agreement: deal, amount: deal.kind === "cases" ? deal.amount : 0 };
+    }
+    var pct = st.internShare != null ? st.internShare : DEFAULT_SHARE;
+    return { kind: "share", pct: pct, amount: Math.round((r.price || 0) * pct / 100) };
+  }
+
+  /** Everything a trainee has actually earned from delivered work. */
+  function earnedBy(internId) {
+    return requestsForIntern(internId).reduce(function (total, r) {
+      var st = requestState(r).status;
+      if (st !== "delivered" && st !== "completed") return total;
+      var pay = taskPay(r);
+      return total + (pay ? pay.amount : 0);
+    }, 0);
+  }
+
+  /** How far through a by-the-case agreement the pair have got. */
+  function casesDone(deal) {
+    return requests().filter(function (r) {
+      var st = requestState(r);
+      return r.lawyerId === deal.lawyerId && st.assignedTo === deal.internId &&
+             (st.status === "delivered" || st.status === "completed");
+    }).length;
   }
 
   /* ---------- training hours & endorsements ----------
@@ -247,6 +322,10 @@
     scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard,
     serviceTypes: serviceTypes, serviceType: serviceType, servicesOf: servicesOf,
     priceBand: priceBand, checkPrice: checkPrice,
+    serviceTitle: serviceTitle, serviceMeta: serviceMeta, serviceIcon: serviceIcon,
+    DEFAULT_SHARE: DEFAULT_SHARE, agreementFor: agreementFor,
+    agreementsOfIntern: agreementsOfIntern, taskPay: taskPay,
+    earnedBy: earnedBy, casesDone: casesDone,
     requests: requests, request: request, requestState: requestState,
     requestsForClient: requestsForClient, requestsForLawyer: requestsForLawyer,
     requestsForIntern: requestsForIntern, openInternTasks: openInternTasks,
