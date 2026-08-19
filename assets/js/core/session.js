@@ -12,7 +12,14 @@
   "use strict";
 
   var Store = global.Store;
-  var ROLE_KEY = "sanad.activeRole";
+  // Kept only to be cleared. The active role used to be a browser preference
+  // because a switcher on the account page let you change it; that switcher is
+  // gone and the account row is the only truth now. A leftover value here
+  // outranked the database and could pin somebody to a role they no longer
+  // had as their main one — which is how a staff account went on being shown
+  // the client's site with no way to correct it.
+  var STALE_ROLE_KEY = "sanad.activeRole";
+  try { localStorage.removeItem(STALE_ROLE_KEY); } catch (e) {}
 
   var ROLES = {
     client: {
@@ -47,13 +54,6 @@
     document.dispatchEvent(new CustomEvent("sessionchange"));
   }
 
-  function readRole() {
-    try { return localStorage.getItem(ROLE_KEY); } catch (e) { return null; }
-  }
-  function writeRole(r) {
-    try { r ? localStorage.setItem(ROLE_KEY, r) : localStorage.removeItem(ROLE_KEY); } catch (e) {}
-  }
-
   var Session = {
     /** The signed-in person, or null for a guest. */
     user: function () {
@@ -68,9 +68,12 @@
     role: function () {
       var u = Session.user();
       if (!u) return "guest";
-      var saved = readRole();
-      if (saved && u.roles.indexOf(saved) !== -1) return saved;
-      return u.activeRole && u.roles.indexOf(u.activeRole) !== -1 ? u.activeRole : u.roles[0];
+      var roles = u.roles || [];
+      if (u.activeRole && roles.indexOf(u.activeRole) !== -1) return u.activeRole;
+      // Staff is never taken, only granted, and it is the whole reason such an
+      // account exists — so it outranks a client role that came with sign-up.
+      if (roles.indexOf("staff") !== -1) return "staff";
+      return roles[0] || "client";
     },
 
     info: function () { return ROLES[Session.role()] || null; },
@@ -89,7 +92,6 @@
     switchRole: function (r) {
       var u = Session.user();
       if (!u || u.roles.indexOf(r) === -1) return false;
-      writeRole(r);
       Store.updateAccount(u.id, { activeRole: r });
       notify();
       return true;
@@ -121,7 +123,6 @@
         return Promise.resolve({ ok: false, error: "badPassword" });
       }
       Store.signIn(acc.id);
-      writeRole(acc.activeRole || acc.roles[0]);
       notify();
       return Promise.resolve({ ok: true, user: acc });
     },
@@ -131,7 +132,6 @@
       var done = (SB && SB.configured()) ? SB.signOut() : Promise.resolve();
       return done.then(function () {
         Store.signOut();
-        writeRole(null);
         notify();
       });
     },

@@ -1,8 +1,14 @@
 import { chromium } from 'playwright';
+import { readFileSync } from 'node:fs';
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 let pass = 0, fail = 0; const errs = [];
 const ok = (l,c,x) => { if(c){pass++;console.log('  PASS '+l);} else {fail++;console.log('  FAIL '+l+(x!==undefined?'  <'+String(x).slice(0,90)+'>':''));} };
 const ctx = await b.newContext({ viewport: { width: 1280, height: 950 } });
+// These exercise the seeded demo people, so they pin the demo backend: the
+// published site runs on the real one, where there are no seeded people at all.
+const __cfg = readFileSync('assets/js/config.js','utf8').replace('backend: "supabase"','backend: "browser"');
+await ctx.route('**/assets/js/config.js', r => r.fulfill({ contentType:'application/javascript', body:__cfg }));
+
 await ctx.route('**://fonts.*/**', r => r.abort());
 const tab = await ctx.newPage();
 tab.on('pageerror', e => errs.push('JS: ' + e.message));
