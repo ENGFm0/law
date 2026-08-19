@@ -137,6 +137,8 @@ Pages.define("verify", function (global) {
     rows = [];
     running = true;
     draw();
+    // Every run starts from a clean session, whatever the last one left.
+    try { if (global.SB.hasKeys()) await global.SB.signOut(); } catch (e) {}
 
     var cfg = (global.SANAD_CONFIG || {}).supabase || {};
     var emailInput = $("[data-email]", host), pwInput = $("[data-password]", host);
@@ -160,11 +162,19 @@ Pages.define("verify", function (global) {
       else settle(r, bands.data.length === 5, bands.data.length + " من ٥ نطاقات");
     } catch (e) { settle(r, false, String(e)); }
 
+    // The client persists its session, so a previous run leaves one behind and
+    // this query would run signed in — reading that user's own rows and looking
+    // like a leak. Sign out first, and prove there is no session before asking.
     r = add("الطلبات محجوبة عن غير المسجَّل");
     try {
+      await global.SB.signOut();
+      var live = await sb.auth.getSession();
+      var stillIn = !!(live.data && live.data.session);
       var anon = await sb.from("requests").select("id");
-      settle(r, !anon.error && anon.data.length === 0,
-        anon.error ? anon.error.message : "رجع " + anon.data.length + " صفاً");
+      settle(r, !stillIn && !anon.error && anon.data.length === 0,
+        stillIn ? "بقيت جلسة سابقة — لم يُختبر الوضع المجهول"
+                : anon.error ? anon.error.message
+                : "رجع " + anon.data.length + " صفاً");
     } catch (e) { settle(r, false, String(e)); }
 
     if (!email) {
