@@ -66,6 +66,22 @@
     });
   }
 
+  /* ---------- notices ---------- */
+  function noticesFor(userId) {
+    return Store.notices().filter(function (n) { return n.to === userId; })
+      .slice().sort(function (a, b) { return b.at - a.at; });
+  }
+  function unreadFor(userId) {
+    return Store.notices().filter(function (n) { return n.to === userId && !n.read; }).length;
+  }
+  /** Everyone who should hear about something happening on a request. */
+  function partiesOf(r, exclude) {
+    var st = requestState(r);
+    return [r.clientId, r.lawyerId, st.assignedTo].filter(function (id, i, a) {
+      return id && id !== exclude && a.indexOf(id) === i;
+    });
+  }
+
   /* ---------- reviews & rating ---------- */
   function reviewsFor(userId) {
     return seeded(SEED.reviews).concat(Store.reviews()).filter(function (r) {
@@ -570,6 +586,7 @@
     byId: byId,
     users: users, user: user, lawyers: lawyers, interns: interns, listedLawyers: listedLawyers,
     pendingVerification: pendingVerification,
+    noticesFor: noticesFor, unreadFor: unreadFor, partiesOf: partiesOf,
     reviewsFor: reviewsFor, ratingOf: ratingOf, ratingSpread: ratingSpread,
     scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard, ranked: ranked,
     serviceTypes: serviceTypes, serviceType: serviceType, servicesOf: servicesOf,

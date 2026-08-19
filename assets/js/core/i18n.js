@@ -1036,6 +1036,28 @@
       "status.pending": "قيد المراجعة",
       "status.verified": "موثَّق",
       "status.rejected": "مرفوض",
+
+      /* --- short labels for the phone bar --- */
+      "tab.login": "الدخول",
+
+      /* --- notices (US-021) --- */
+      "notice.title": "التنبيهات",
+      "notice.none": "لا تنبيهات.",
+      "notice.readAll": "تعليم الكل مقروءاً",
+      "notice.open": "فتح",
+      "notice.delivered": "سُلّم عملك — لديك مهلة لقبوله",
+      "notice.accepted": "قُبل تسليمك",
+      "notice.revision": "طُلب تعديل على تسليمك",
+      "notice.disputed": "اعتُرض على تسليم — المبلغ مجمَّد",
+      "notice.resolved": "صدر قرار في النزاع",
+      "notice.routed": "وُجّهت إليك مهمة جديدة",
+      "notice.opened": "طُرحت مهمة مفتوحة للمتدربين",
+      "notice.offer": "عرض جديد على استشارتك",
+      "notice.rated": "وصلك تقييم جديد",
+      "notice.approved": "اعتُمد حسابك — ظهرت في الدليل",
+      "notice.rejected": "لم يُعتمد حسابك — راجع السبب",
+      "notice.signed": "وُقّع مقالك ونُشر",
+      "a11y.notices": "التنبيهات",
     },
 
     en: {
@@ -2034,6 +2056,28 @@
       "status.pending": "Under review",
       "status.verified": "Verified",
       "status.rejected": "Rejected",
+
+      /* --- short labels for the phone bar --- */
+      "tab.login": "Sign in",
+
+      /* --- notices (US-021) --- */
+      "notice.title": "Notifications",
+      "notice.none": "Nothing yet.",
+      "notice.readAll": "Mark all read",
+      "notice.open": "Open",
+      "notice.delivered": "Your work was delivered — you have a window to accept it",
+      "notice.accepted": "Your delivery was accepted",
+      "notice.revision": "A revision was asked for",
+      "notice.disputed": "A delivery was refused — the money is frozen",
+      "notice.resolved": "The dispute has been decided",
+      "notice.routed": "A task has been routed to you",
+      "notice.opened": "A task has been opened to trainees",
+      "notice.offer": "A new offer on your consultation",
+      "notice.rated": "You have a new rating",
+      "notice.approved": "Your account was approved — you are now listed",
+      "notice.rejected": "Your account was not approved — see the reason",
+      "notice.signed": "Your article was signed and published",
+      "a11y.notices": "Notifications",
     }
   };
 

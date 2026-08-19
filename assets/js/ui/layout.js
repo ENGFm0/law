@@ -76,6 +76,58 @@
       Icons.svg("globe", "icon-sm") + '<span class="lang-btn__code" data-lang-code>EN</span></button>';
   }
 
+  /** The bell, and the list behind it.
+
+      A notice carries a type and what it points at, never the contents of the
+      thing itself: someone glancing at the screen learns that a request moved,
+      not what is in it. */
+  var NOTICE_TEXT = {
+    delivered: "notice.delivered", accepted: "notice.accepted",
+    revision: "notice.revision", disputed: "notice.disputed",
+    resolved: "notice.resolved", routed: "notice.routed", opened: "notice.opened",
+    offer: "notice.offer", rated: "notice.rated", approved: "notice.approved",
+    rejected: "notice.rejected", signed: "notice.signed"
+  };
+  var NOTICE_HREF = {
+    offer: "quotes.html", approved: "account.html", rejected: "account.html",
+    signed: "blog.html"
+  };
+
+  function bell() {
+    var u = Session.user();
+    if (!u || !global.Models) return "";
+    var n = global.Models.unreadFor(u.id);
+    return '<button class="icon-btn notice-bell" type="button" data-action="notices" ' +
+      'data-i18n-attr="aria-label:a11y.notices">' + Icons.svg("bell", "icon-sm") +
+      (n ? '<span class="notice-bell__count">' + I18N.num(Math.min(n, 99)) + "</span>" : "") +
+      "</button>";
+  }
+
+  function noticePanel() {
+    var u = Session.user();
+    if (!u || !global.Models) return "";
+    var list = global.Models.noticesFor(u.id);
+    return '<div class="notice-panel" data-notice-panel hidden>' +
+      '<div class="notice-panel__head">' +
+        '<strong data-i18n="notice.title"></strong>' +
+        (list.length
+          ? '<button class="btn btn--ghost btn--sm" type="button" data-action="notices-read-all">' +
+            global.App.esc(I18N.t("notice.readAll")) + "</button>"
+          : "") +
+      "</div>" +
+      (list.length
+        ? '<ul class="notice-panel__list">' + list.slice(0, 20).map(function (n) {
+            var href = NOTICE_HREF[n.type] ||
+              ("requests.html" + (n.ref ? "?id=" + encodeURIComponent(n.ref) : ""));
+            return '<li><a class="notice' + (n.read ? "" : " is-unread") + '" href="' + href +
+              '" data-notice="' + global.App.esc(n.id) + '">' +
+              '<span class="notice__dot" aria-hidden="true"></span>' +
+              "<span>" + global.App.esc(I18N.t(NOTICE_TEXT[n.type] || n.type)) + "</span></a></li>";
+          }).join("") + "</ul>"
+        : '<p class="small muted" style="padding:var(--s-4)" data-i18n="notice.none"></p>') +
+    "</div>";
+  }
+
   /** Signed in: who you are and a way to your account. Guest: a way in. */
   function identity() {
     var u = Session.user();
@@ -105,7 +157,9 @@
     return '<header class="site-header"><div class="container site-header__inner">' +
       brand() +
       '<nav class="nav" data-i18n-attr="aria-label:a11y.menu">' + links + "</nav>" +
-      '<div class="header-actions">' + themeButton() + langButton() + identity() + "</div>" +
+      '<div class="header-actions">' + themeButton() + langButton() +
+        '<span class="notice-wrap">' + bell() + noticePanel() + "</span>" +
+        identity() + "</div>" +
       "</div></header>";
   }
 
@@ -116,7 +170,7 @@
     // in the header on wider screens and in the footer everywhere.
     var items = navItems().slice(0, 5);
     items.push(Session.isGuest()
-      ? { key: "auth.signIn", tab: "auth.signIn", href: "login.html", id: "login", icon: "user" }
+      ? { key: "auth.signIn", tab: "tab.login", href: "login.html", id: "login", icon: "user" }
       : { key: "account.heading", tab: "tab.account", href: "account.html", id: "account", icon: "user" });
 
     return '<nav class="tabbar" data-tabbar data-i18n-attr="aria-label:a11y.menu">' +
@@ -190,8 +244,50 @@
     if (I18N) { I18N.apply(newHeader); I18N.apply(newTab); }
   }
 
+  /** Redraw the bell and its list without rebuilding the header — a full
+      refresh would close the panel under the hand of whoever just clicked
+      inside it. */
+  function syncNotices() {
+    var wrap = document.querySelector(".notice-wrap");
+    if (!wrap) return;
+    var panel = wrap.querySelector("[data-notice-panel]");
+    var wasOpen = panel && !panel.hidden;
+    wrap.innerHTML = bell() + noticePanel();
+    var fresh = wrap.querySelector("[data-notice-panel]");
+    if (fresh) fresh.hidden = !wasOpen;
+    if (I18N) I18N.apply(wrap);
+  }
+  document.addEventListener("storechange", syncNotices);
+  // The notice text is written into the list rather than carried on a
+  // data-i18n attribute, so switching language has to redraw it — otherwise
+  // the page turns English around a list that stays Arabic.
+  document.addEventListener("langchange", syncNotices);
+  document.addEventListener("sessionchange", syncNotices);
+
+  /* The panel is opened and closed here rather than in a page, because the
+     header outlives every page and no page owns it. */
+  document.addEventListener("click", function (ev) {
+    var t = ev.target;
+    var panel = document.querySelector("[data-notice-panel]");
+    var onBell = t.closest && t.closest('[data-action="notices"]');
+    if (onBell) { if (panel) panel.hidden = !panel.hidden; return; }
+
+    var all = t.closest && t.closest('[data-action="notices-read-all"]');
+    if (all) {
+      var me = Session.user();
+      if (me) global.Store.readAllNotices(me.id);
+      return;
+    }
+
+    var one = t.closest && t.closest("[data-notice]");
+    if (one) { global.Store.readNotice(one.getAttribute("data-notice")); return; }
+
+    if (panel && !panel.hidden && !(t.closest && t.closest(".notice-wrap"))) panel.hidden = true;
+  });
+
   global.Layout = { mount: mount, refresh: refresh, header: header, tabbar: tabbar,
-                    footer: footer, brand: brand, navItems: navItems };
+                    footer: footer, brand: brand, navItems: navItems,
+                    syncNotices: syncNotices };
 
   mount();
   if (document.readyState === "loading") {

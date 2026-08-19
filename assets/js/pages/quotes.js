@@ -299,7 +299,10 @@ Pages.define("quotes", function (global) {
       var price = Math.max(40, Math.round(base * factor / 5) * 5);
       var eta = 2 + ((i * 3) % 10);
       offerTimers.push(setTimeout(function () {
-        Store.addOffer({ lawyer: l.id, price: price, eta: eta });
+        if (Store.addOffer({ lawyer: l.id, price: price, eta: eta })) {
+          var q = Store.getQuote();
+          if (q && q.clientId) Store.notify({ to: q.clientId, type: "offer", ref: l.id });
+        }
       }, 2200 + i * 2600));
     });
   }
@@ -373,6 +376,9 @@ Pages.define("quotes", function (global) {
         id: "4821", brief: brief, city: draft.city, specialty: draft.specialty,
         mode: draft.mode, minutes: draft.window,
         expiresAt: Date.now() + draft.window * 60000,
+        // Whose consultation it is — without it there is nobody to tell when
+        // an offer lands on it.
+        clientId: Session.user() ? Session.user().id : null,
         status: "open", offers: []
       });
       App.toast(I18N.t("quotes.published"), "check");

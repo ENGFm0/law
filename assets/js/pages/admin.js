@@ -249,6 +249,7 @@ Pages.define("admin", function (global) {
       Store.updateAccount(ap, { status: "verified" });
       Store.log({ action: "approve", byId: me.id, targetId: ap,
                   subject: tx((M.user(ap) || {}).name || {}) });
+      Store.notify({ to: ap, type: "approved", ref: ap });
       App.toast(I18N.t("admin.approved"), "check");
       return;
     }
@@ -265,6 +266,7 @@ Pages.define("admin", function (global) {
       Store.updateAccount(rs, { status: "rejected", rejectedReason: why });
       Store.log({ action: "reject", byId: me.id, targetId: rs, reason: why,
                   subject: tx((M.user(rs) || {}).name || {}) });
+      Store.notify({ to: rs, type: "rejected", ref: rs });
       rejecting = null;
       App.toast(I18N.t("admin.rejected"), "check");
       return;
@@ -287,6 +289,13 @@ Pages.define("admin", function (global) {
       });
       Store.log({ action: "resolve", byId: me.id, targetId: rv, reason: reason,
                   subject: pick });
+      // Both sides are told, and they are told the same thing.
+      var dq = Store.disputes().filter(function (x) { return x.id === rv; })[0];
+      if (dq) {
+        M.partiesOf(M.request(dq.requestId), null).forEach(function (id) {
+          Store.notify({ to: id, type: "resolved", ref: dq.requestId });
+        });
+      }
       delete outcome[rv];
       deciding = null;
       App.toast(I18N.t("admin.decided"), "check");

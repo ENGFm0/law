@@ -616,6 +616,7 @@ Pages.define("requests", function (global) {
         body: { ar: box ? box.value : "", en: box ? box.value : "" }
       });
       Store.setRequest(r.id, { rated: true, status: "completed" });
+      Store.notify({ to: r.lawyerId, type: "rated", ref: r.id });
       delete rating[send];
       open = null;
       App.toast(I18N.t("rate.done"), "check");
@@ -626,6 +627,9 @@ Pages.define("requests", function (global) {
     var acc = hit("data-accept");
     if (acc) {
       Store.setRequest(acc, { status: "completed", acceptedAt: Date.now() });
+      M.partiesOf(M.request(acc), Session.user().id).forEach(function (id) {
+        Store.notify({ to: id, type: "accepted", ref: acc });
+      });
       App.toast(I18N.t("accept.done"), "check");
       return;
     }
@@ -650,6 +654,7 @@ Pages.define("requests", function (global) {
         revisions: (M.requestState(M.request(rs)).revisions || 0) + 1,
         revisionNote: rwhat
       });
+      Store.notify({ to: M.request(rs).lawyerId, type: "revision", ref: rs });
       revising = null;
       App.toast(I18N.t("accept.reviseDone"), "check");
       return;
@@ -661,6 +666,11 @@ Pages.define("requests", function (global) {
       var why = abody ? abody.value.trim() : "";
       if (!why) { App.toast(I18N.t("accept.disputeNeed"), "alert"); return; }
       Store.openDispute({ requestId: as2, byId: Session.user().id, reason: why });
+      // Everyone who has money or work in this, plus whoever has to decide it.
+      M.partiesOf(M.request(as2), Session.user().id)
+        .concat(M.users().filter(function (u) { return u.roles.indexOf("staff") !== -1; })
+                         .map(function (u) { return u.id; }))
+        .forEach(function (id) { Store.notify({ to: id, type: "disputed", ref: as2 }); });
       arguing = null;
       App.toast(I18N.t("accept.disputeSent"), "alert");
       return;
@@ -688,13 +698,18 @@ Pages.define("requests", function (global) {
     if (ap) {
       var body = $("[data-draft-body]", host);
       Store.setRequest(ap, { status: "delivered", body: body ? body.value : null });
+      Store.notify({ to: M.request(ap).clientId, type: "delivered", ref: ap });
       open = null;
       App.toast(I18N.t("inbox.completed"), "check");
       return;
     }
 
     var dl = hit("data-deliver");
-    if (dl) { Store.setRequest(dl, { status: "delivered" }); App.toast(I18N.t("inbox.completed"), "check"); return; }
+    if (dl) {
+      Store.setRequest(dl, { status: "delivered" });
+      Store.notify({ to: M.request(dl).clientId, type: "delivered", ref: dl });
+      App.toast(I18N.t("inbox.completed"), "check"); return;
+    }
 
     var as = t.closest("[data-assign]");
     if (as) { openAssign(as.getAttribute("data-assign"), as.parentNode); return; }
@@ -704,6 +719,9 @@ Pages.define("requests", function (global) {
       open = null;
       Store.clearApplicants(bc);
       Store.setRequest(bc, { assignedTo: null, status: "open_to_interns", internShare: readShare() });
+      M.interns().forEach(function (u) {
+        if (u.status === "verified") Store.notify({ to: u.id, type: "opened", ref: bc });
+      });
       App.toast(I18N.t("inbox.broadcastDone"), "gavel");
       return;
     }
@@ -718,6 +736,7 @@ Pages.define("requests", function (global) {
       Store.setRequest(forId, share == null
         ? { assignedTo: who.id, status: "with_intern" }
         : { assignedTo: who.id, status: "with_intern", internShare: share });
+      Store.notify({ to: who.id, type: "routed", ref: forId });
       App.toast(I18N.t("inbox.assignDone", { name: tx(who.name) }), "graduation");
       return;
     }

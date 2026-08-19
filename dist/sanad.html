@@ -397,6 +397,18 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 
 .header-actions { display: flex; align-items: center; gap: var(--s-2); }
 
+/* A phone header has 390px and five things that each want room. Left alone
+   they add up to 413 and the browser zooms the entire page out to fit — which
+   is what made every signed-in page look shrunken rather than merely tight.
+   So on a phone the header carries only what the bottom bar cannot: the mark,
+   theme, language, the bell, and who you are. */
+@media (max-width: 640px) {
+  .header-actions .btn { display: none; }   /* sign in / register live in the tab bar */
+  .brand__text { display: none; }           /* the mark alone is the brand here */
+  .site-header__inner { gap: var(--s-3); }
+  .icon-btn--wide { padding-inline: var(--s-2); }
+}
+
 .icon-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--s-1);
   width: 40px; height: 40px; border-radius: var(--r);
@@ -416,12 +428,57 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .nav { display: none; }
 }
 
+/* ---------- 11a2. Notices ---------- */
+.notice-wrap { position: relative; display: inline-flex; }
+.notice-bell { position: relative; }
+.notice-bell__count {
+  position: absolute; inset-block-start: 2px; inset-inline-end: 2px;
+  min-width: 17px; height: 17px; padding: 0 4px; border-radius: var(--r-full);
+  background: var(--danger); color: #fff;
+  font-size: .625rem; font-weight: 700; line-height: 17px; text-align: center;
+}
+.notice-panel {
+  position: absolute; inset-block-start: calc(100% + var(--s-2)); inset-inline-end: 0;
+  z-index: 90; width: min(320px, calc(100vw - var(--s-8)));
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-3); overflow: hidden;
+}
+.notice-panel[hidden] { display: none; }
+.notice-panel__head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4); border-block-end: 1px solid var(--border);
+}
+.notice-panel__list { max-height: min(60vh, 380px); overflow-y: auto; }
+.notice {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4); font-size: .875rem; color: var(--text-muted);
+  border-block-end: 1px solid var(--border);
+}
+.notice:hover { background: var(--surface-2); }
+.notice__dot { width: 7px; height: 7px; border-radius: var(--r-full); background: transparent; flex: none; }
+/* Unread is not carried by colour alone: the weight changes with it. */
+.notice.is-unread { color: var(--text); font-weight: 600; }
+.notice.is-unread .notice__dot { background: var(--accent); }
+
+@media (max-width: 640px) {
+  /* On a phone the list is a sheet, not a dropdown clinging to a 40px button. */
+  .notice-panel {
+    position: fixed; inset-inline: var(--s-3); inset-block-start: auto;
+    inset-block-end: calc(72px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+  }
+}
+
 /* ---------- 11b. Bottom tab bar (phones) ---------- */
 .tabbar { display: none; }
 @media (max-width: 1024px) {
   .tabbar {
     position: fixed; inset-inline: 0; bottom: 0; z-index: 80;
-    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+    /* minmax(0, 1fr) rather than 1fr: a plain `1fr` track will not shrink
+       below its content's min-content width, so one long label — "تسجيل
+       الدخول" was the culprit — pushed the bar past the viewport and the
+       phone browser zoomed the whole page out to fit it. */
+    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
     background: color-mix(in srgb, var(--surface) 92%, transparent);
     backdrop-filter: blur(16px) saturate(160%);
     border-top: 1px solid var(--border);
@@ -433,6 +490,7 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .tabbar__link {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 3px; padding: var(--s-2) var(--s-1) var(--s-3);
+    min-height: 56px;                    /* a comfortable thumb target */
     font-size: .6875rem; font-weight: 600; color: var(--text-faint);
     transition: color .18s;
     position: relative; min-width: 0;
@@ -1157,9 +1215,18 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 }
 .req-row__actions { display: flex; gap: var(--s-2); flex-wrap: wrap; justify-content: flex-end; }
 @media (max-width: 720px) {
-  .req-row { flex-wrap: wrap; }
-  .req-row__side { align-items: stretch; width: 100%; }
-  .req-row__actions .btn { flex: 1; }
+  /* The icon and the title belong on one line. Left to wrap on its own the
+     text block took a line of its own and the row read as three stacked
+     fragments rather than one request. `flex: 1 1 0` lets it shrink to the
+     space that is left instead of demanding its content width first. */
+  .req-row { flex-wrap: wrap; row-gap: var(--s-3); gap: var(--s-3); }
+  .req-row > .grow { flex: 1 1 0; }
+  .req-row__side {
+    width: 100%; flex-direction: row; align-items: center; flex-wrap: wrap;
+    gap: var(--s-2) var(--s-3);
+  }
+  .req-row__actions { width: 100%; justify-content: flex-start; }
+  .req-row__actions .btn { flex: 1 1 auto; min-height: 44px; }
 }
 
 /* ---------- leaderboard ---------- */
@@ -2462,6 +2529,28 @@ window.SANAD_CONFIG = {
       "status.pending": "قيد المراجعة",
       "status.verified": "موثَّق",
       "status.rejected": "مرفوض",
+
+      /* --- short labels for the phone bar --- */
+      "tab.login": "الدخول",
+
+      /* --- notices (US-021) --- */
+      "notice.title": "التنبيهات",
+      "notice.none": "لا تنبيهات.",
+      "notice.readAll": "تعليم الكل مقروءاً",
+      "notice.open": "فتح",
+      "notice.delivered": "سُلّم عملك — لديك مهلة لقبوله",
+      "notice.accepted": "قُبل تسليمك",
+      "notice.revision": "طُلب تعديل على تسليمك",
+      "notice.disputed": "اعتُرض على تسليم — المبلغ مجمَّد",
+      "notice.resolved": "صدر قرار في النزاع",
+      "notice.routed": "وُجّهت إليك مهمة جديدة",
+      "notice.opened": "طُرحت مهمة مفتوحة للمتدربين",
+      "notice.offer": "عرض جديد على استشارتك",
+      "notice.rated": "وصلك تقييم جديد",
+      "notice.approved": "اعتُمد حسابك — ظهرت في الدليل",
+      "notice.rejected": "لم يُعتمد حسابك — راجع السبب",
+      "notice.signed": "وُقّع مقالك ونُشر",
+      "a11y.notices": "التنبيهات",
     },
 
     en: {
@@ -3460,6 +3549,28 @@ window.SANAD_CONFIG = {
       "status.pending": "Under review",
       "status.verified": "Verified",
       "status.rejected": "Rejected",
+
+      /* --- short labels for the phone bar --- */
+      "tab.login": "Sign in",
+
+      /* --- notices (US-021) --- */
+      "notice.title": "Notifications",
+      "notice.none": "Nothing yet.",
+      "notice.readAll": "Mark all read",
+      "notice.open": "Open",
+      "notice.delivered": "Your work was delivered — you have a window to accept it",
+      "notice.accepted": "Your delivery was accepted",
+      "notice.revision": "A revision was asked for",
+      "notice.disputed": "A delivery was refused — the money is frozen",
+      "notice.resolved": "The dispute has been decided",
+      "notice.routed": "A task has been routed to you",
+      "notice.opened": "A task has been opened to trainees",
+      "notice.offer": "A new offer on your consultation",
+      "notice.rated": "You have a new rating",
+      "notice.approved": "Your account was approved — you are now listed",
+      "notice.rejected": "Your account was not approved — see the reason",
+      "notice.signed": "Your article was signed and published",
+      "a11y.notices": "Notifications",
     }
   };
 
@@ -3614,7 +3725,7 @@ window.SANAD_CONFIG = {
   [
     "requests", "requestStates", "services", "removedServices", "reviews",
     "articles", "articleStates", "comments", "endorsements", "applications",
-    "agreements", "disputes", "audit", "profiles"
+    "agreements", "disputes", "audit", "profiles", "notices"
   ].forEach(function (k) {
     if (!work[k]) {
       work[k] = (k.indexOf("States") !== -1 || k === "applications" || k === "profiles")
@@ -3845,6 +3956,40 @@ window.SANAD_CONFIG = {
       notify();
     },
 
+    /* ---------------- notices ----------------
+       A bid that closes unseen, or a delivery whose acceptance window runs
+       out while the client is looking the other way, spoils the best flow
+       anyone could design. So the events that carry a deadline or a decision
+       tell the people they belong to.
+
+       The notice carries a type and a reference, never the contents of the
+       thing it points at — someone reading over a shoulder learns that a
+       request moved, not what it says. */
+    notices: function () { return work.notices; },
+    notify: function (n) {
+      if (!n.to) return null;
+      // The same event twice is one notice: a page that redraws must not be
+      // able to fill somebody's list with copies of itself.
+      var dup = work.notices.some(function (x) {
+        return x.to === n.to && x.type === n.type && x.ref === n.ref;
+      });
+      if (dup) return null;
+      n.id = uid("n");
+      n.at = Date.now();
+      n.read = false;
+      work.notices.push(n);
+      notify();
+      return n;
+    },
+    readNotice: function (id) {
+      work.notices.forEach(function (n) { if (n.id === id) n.read = true; });
+      notify();
+    },
+    readAllNotices: function (to) {
+      work.notices.forEach(function (n) { if (n.to === to) n.read = true; });
+      notify();
+    },
+
     /* ---------------- the audit trail ----------------
        Approvals, rejections and decisions are written down because the point
        of them is that somebody can be asked afterwards why. Append only. */
@@ -3962,7 +4107,7 @@ window.SANAD_CONFIG = {
       work = { requests: [], requestStates: {}, services: [], removedServices: [],
                reviews: [], articles: [], articleStates: {}, comments: [],
                endorsements: [], applications: {}, agreements: [], disputes: [],
-               audit: [], profiles: {} };
+               audit: [], profiles: {}, notices: [] };
       notify();
     },
     resetAll: function () {
@@ -4704,6 +4849,22 @@ window.SANAD_CONFIG = {
     });
   }
 
+  /* ---------- notices ---------- */
+  function noticesFor(userId) {
+    return Store.notices().filter(function (n) { return n.to === userId; })
+      .slice().sort(function (a, b) { return b.at - a.at; });
+  }
+  function unreadFor(userId) {
+    return Store.notices().filter(function (n) { return n.to === userId && !n.read; }).length;
+  }
+  /** Everyone who should hear about something happening on a request. */
+  function partiesOf(r, exclude) {
+    var st = requestState(r);
+    return [r.clientId, r.lawyerId, st.assignedTo].filter(function (id, i, a) {
+      return id && id !== exclude && a.indexOf(id) === i;
+    });
+  }
+
   /* ---------- reviews & rating ---------- */
   function reviewsFor(userId) {
     return seeded(SEED.reviews).concat(Store.reviews()).filter(function (r) {
@@ -5208,6 +5369,7 @@ window.SANAD_CONFIG = {
     byId: byId,
     users: users, user: user, lawyers: lawyers, interns: interns, listedLawyers: listedLawyers,
     pendingVerification: pendingVerification,
+    noticesFor: noticesFor, unreadFor: unreadFor, partiesOf: partiesOf,
     reviewsFor: reviewsFor, ratingOf: ratingOf, ratingSpread: ratingSpread,
     scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard, ranked: ranked,
     serviceTypes: serviceTypes, serviceType: serviceType, servicesOf: servicesOf,
@@ -6669,6 +6831,58 @@ window.SANAD_CONFIG = {
       Icons.svg("globe", "icon-sm") + '<span class="lang-btn__code" data-lang-code>EN</span></button>';
   }
 
+  /** The bell, and the list behind it.
+
+      A notice carries a type and what it points at, never the contents of the
+      thing itself: someone glancing at the screen learns that a request moved,
+      not what is in it. */
+  var NOTICE_TEXT = {
+    delivered: "notice.delivered", accepted: "notice.accepted",
+    revision: "notice.revision", disputed: "notice.disputed",
+    resolved: "notice.resolved", routed: "notice.routed", opened: "notice.opened",
+    offer: "notice.offer", rated: "notice.rated", approved: "notice.approved",
+    rejected: "notice.rejected", signed: "notice.signed"
+  };
+  var NOTICE_HREF = {
+    offer: "quotes.html", approved: "account.html", rejected: "account.html",
+    signed: "blog.html"
+  };
+
+  function bell() {
+    var u = Session.user();
+    if (!u || !global.Models) return "";
+    var n = global.Models.unreadFor(u.id);
+    return '<button class="icon-btn notice-bell" type="button" data-action="notices" ' +
+      'data-i18n-attr="aria-label:a11y.notices">' + Icons.svg("bell", "icon-sm") +
+      (n ? '<span class="notice-bell__count">' + I18N.num(Math.min(n, 99)) + "</span>" : "") +
+      "</button>";
+  }
+
+  function noticePanel() {
+    var u = Session.user();
+    if (!u || !global.Models) return "";
+    var list = global.Models.noticesFor(u.id);
+    return '<div class="notice-panel" data-notice-panel hidden>' +
+      '<div class="notice-panel__head">' +
+        '<strong data-i18n="notice.title"></strong>' +
+        (list.length
+          ? '<button class="btn btn--ghost btn--sm" type="button" data-action="notices-read-all">' +
+            global.App.esc(I18N.t("notice.readAll")) + "</button>"
+          : "") +
+      "</div>" +
+      (list.length
+        ? '<ul class="notice-panel__list">' + list.slice(0, 20).map(function (n) {
+            var href = NOTICE_HREF[n.type] ||
+              ("requests.html" + (n.ref ? "?id=" + encodeURIComponent(n.ref) : ""));
+            return '<li><a class="notice' + (n.read ? "" : " is-unread") + '" href="' + href +
+              '" data-notice="' + global.App.esc(n.id) + '">' +
+              '<span class="notice__dot" aria-hidden="true"></span>' +
+              "<span>" + global.App.esc(I18N.t(NOTICE_TEXT[n.type] || n.type)) + "</span></a></li>";
+          }).join("") + "</ul>"
+        : '<p class="small muted" style="padding:var(--s-4)" data-i18n="notice.none"></p>') +
+    "</div>";
+  }
+
   /** Signed in: who you are and a way to your account. Guest: a way in. */
   function identity() {
     var u = Session.user();
@@ -6698,7 +6912,9 @@ window.SANAD_CONFIG = {
     return '<header class="site-header"><div class="container site-header__inner">' +
       brand() +
       '<nav class="nav" data-i18n-attr="aria-label:a11y.menu">' + links + "</nav>" +
-      '<div class="header-actions">' + themeButton() + langButton() + identity() + "</div>" +
+      '<div class="header-actions">' + themeButton() + langButton() +
+        '<span class="notice-wrap">' + bell() + noticePanel() + "</span>" +
+        identity() + "</div>" +
       "</div></header>";
   }
 
@@ -6709,7 +6925,7 @@ window.SANAD_CONFIG = {
     // in the header on wider screens and in the footer everywhere.
     var items = navItems().slice(0, 5);
     items.push(Session.isGuest()
-      ? { key: "auth.signIn", tab: "auth.signIn", href: "login.html", id: "login", icon: "user" }
+      ? { key: "auth.signIn", tab: "tab.login", href: "login.html", id: "login", icon: "user" }
       : { key: "account.heading", tab: "tab.account", href: "account.html", id: "account", icon: "user" });
 
     return '<nav class="tabbar" data-tabbar data-i18n-attr="aria-label:a11y.menu">' +
@@ -6783,8 +6999,50 @@ window.SANAD_CONFIG = {
     if (I18N) { I18N.apply(newHeader); I18N.apply(newTab); }
   }
 
+  /** Redraw the bell and its list without rebuilding the header — a full
+      refresh would close the panel under the hand of whoever just clicked
+      inside it. */
+  function syncNotices() {
+    var wrap = document.querySelector(".notice-wrap");
+    if (!wrap) return;
+    var panel = wrap.querySelector("[data-notice-panel]");
+    var wasOpen = panel && !panel.hidden;
+    wrap.innerHTML = bell() + noticePanel();
+    var fresh = wrap.querySelector("[data-notice-panel]");
+    if (fresh) fresh.hidden = !wasOpen;
+    if (I18N) I18N.apply(wrap);
+  }
+  document.addEventListener("storechange", syncNotices);
+  // The notice text is written into the list rather than carried on a
+  // data-i18n attribute, so switching language has to redraw it — otherwise
+  // the page turns English around a list that stays Arabic.
+  document.addEventListener("langchange", syncNotices);
+  document.addEventListener("sessionchange", syncNotices);
+
+  /* The panel is opened and closed here rather than in a page, because the
+     header outlives every page and no page owns it. */
+  document.addEventListener("click", function (ev) {
+    var t = ev.target;
+    var panel = document.querySelector("[data-notice-panel]");
+    var onBell = t.closest && t.closest('[data-action="notices"]');
+    if (onBell) { if (panel) panel.hidden = !panel.hidden; return; }
+
+    var all = t.closest && t.closest('[data-action="notices-read-all"]');
+    if (all) {
+      var me = Session.user();
+      if (me) global.Store.readAllNotices(me.id);
+      return;
+    }
+
+    var one = t.closest && t.closest("[data-notice]");
+    if (one) { global.Store.readNotice(one.getAttribute("data-notice")); return; }
+
+    if (panel && !panel.hidden && !(t.closest && t.closest(".notice-wrap"))) panel.hidden = true;
+  });
+
   global.Layout = { mount: mount, refresh: refresh, header: header, tabbar: tabbar,
-                    footer: footer, brand: brand, navItems: navItems };
+                    footer: footer, brand: brand, navItems: navItems,
+                    syncNotices: syncNotices };
 
   mount();
   if (document.readyState === "loading") {
@@ -7985,6 +8243,7 @@ Pages.define("requests", function (global) {
         body: { ar: box ? box.value : "", en: box ? box.value : "" }
       });
       Store.setRequest(r.id, { rated: true, status: "completed" });
+      Store.notify({ to: r.lawyerId, type: "rated", ref: r.id });
       delete rating[send];
       open = null;
       App.toast(I18N.t("rate.done"), "check");
@@ -7995,6 +8254,9 @@ Pages.define("requests", function (global) {
     var acc = hit("data-accept");
     if (acc) {
       Store.setRequest(acc, { status: "completed", acceptedAt: Date.now() });
+      M.partiesOf(M.request(acc), Session.user().id).forEach(function (id) {
+        Store.notify({ to: id, type: "accepted", ref: acc });
+      });
       App.toast(I18N.t("accept.done"), "check");
       return;
     }
@@ -8019,6 +8281,7 @@ Pages.define("requests", function (global) {
         revisions: (M.requestState(M.request(rs)).revisions || 0) + 1,
         revisionNote: rwhat
       });
+      Store.notify({ to: M.request(rs).lawyerId, type: "revision", ref: rs });
       revising = null;
       App.toast(I18N.t("accept.reviseDone"), "check");
       return;
@@ -8030,6 +8293,11 @@ Pages.define("requests", function (global) {
       var why = abody ? abody.value.trim() : "";
       if (!why) { App.toast(I18N.t("accept.disputeNeed"), "alert"); return; }
       Store.openDispute({ requestId: as2, byId: Session.user().id, reason: why });
+      // Everyone who has money or work in this, plus whoever has to decide it.
+      M.partiesOf(M.request(as2), Session.user().id)
+        .concat(M.users().filter(function (u) { return u.roles.indexOf("staff") !== -1; })
+                         .map(function (u) { return u.id; }))
+        .forEach(function (id) { Store.notify({ to: id, type: "disputed", ref: as2 }); });
       arguing = null;
       App.toast(I18N.t("accept.disputeSent"), "alert");
       return;
@@ -8057,13 +8325,18 @@ Pages.define("requests", function (global) {
     if (ap) {
       var body = $("[data-draft-body]", host);
       Store.setRequest(ap, { status: "delivered", body: body ? body.value : null });
+      Store.notify({ to: M.request(ap).clientId, type: "delivered", ref: ap });
       open = null;
       App.toast(I18N.t("inbox.completed"), "check");
       return;
     }
 
     var dl = hit("data-deliver");
-    if (dl) { Store.setRequest(dl, { status: "delivered" }); App.toast(I18N.t("inbox.completed"), "check"); return; }
+    if (dl) {
+      Store.setRequest(dl, { status: "delivered" });
+      Store.notify({ to: M.request(dl).clientId, type: "delivered", ref: dl });
+      App.toast(I18N.t("inbox.completed"), "check"); return;
+    }
 
     var as = t.closest("[data-assign]");
     if (as) { openAssign(as.getAttribute("data-assign"), as.parentNode); return; }
@@ -8073,6 +8346,9 @@ Pages.define("requests", function (global) {
       open = null;
       Store.clearApplicants(bc);
       Store.setRequest(bc, { assignedTo: null, status: "open_to_interns", internShare: readShare() });
+      M.interns().forEach(function (u) {
+        if (u.status === "verified") Store.notify({ to: u.id, type: "opened", ref: bc });
+      });
       App.toast(I18N.t("inbox.broadcastDone"), "gavel");
       return;
     }
@@ -8087,6 +8363,7 @@ Pages.define("requests", function (global) {
       Store.setRequest(forId, share == null
         ? { assignedTo: who.id, status: "with_intern" }
         : { assignedTo: who.id, status: "with_intern", internShare: share });
+      Store.notify({ to: who.id, type: "routed", ref: forId });
       App.toast(I18N.t("inbox.assignDone", { name: tx(who.name) }), "graduation");
       return;
     }
@@ -9931,7 +10208,10 @@ Pages.define("quotes", function (global) {
       var price = Math.max(40, Math.round(base * factor / 5) * 5);
       var eta = 2 + ((i * 3) % 10);
       offerTimers.push(setTimeout(function () {
-        Store.addOffer({ lawyer: l.id, price: price, eta: eta });
+        if (Store.addOffer({ lawyer: l.id, price: price, eta: eta })) {
+          var q = Store.getQuote();
+          if (q && q.clientId) Store.notify({ to: q.clientId, type: "offer", ref: l.id });
+        }
       }, 2200 + i * 2600));
     });
   }
@@ -10005,6 +10285,9 @@ Pages.define("quotes", function (global) {
         id: "4821", brief: brief, city: draft.city, specialty: draft.specialty,
         mode: draft.mode, minutes: draft.window,
         expiresAt: Date.now() + draft.window * 60000,
+        // Whose consultation it is — without it there is nobody to tell when
+        // an offer lands on it.
+        clientId: Session.user() ? Session.user().id : null,
         status: "open", offers: []
       });
       App.toast(I18N.t("quotes.published"), "check");
@@ -11470,6 +11753,7 @@ Pages.define("admin", function (global) {
       Store.updateAccount(ap, { status: "verified" });
       Store.log({ action: "approve", byId: me.id, targetId: ap,
                   subject: tx((M.user(ap) || {}).name || {}) });
+      Store.notify({ to: ap, type: "approved", ref: ap });
       App.toast(I18N.t("admin.approved"), "check");
       return;
     }
@@ -11486,6 +11770,7 @@ Pages.define("admin", function (global) {
       Store.updateAccount(rs, { status: "rejected", rejectedReason: why });
       Store.log({ action: "reject", byId: me.id, targetId: rs, reason: why,
                   subject: tx((M.user(rs) || {}).name || {}) });
+      Store.notify({ to: rs, type: "rejected", ref: rs });
       rejecting = null;
       App.toast(I18N.t("admin.rejected"), "check");
       return;
@@ -11508,6 +11793,13 @@ Pages.define("admin", function (global) {
       });
       Store.log({ action: "resolve", byId: me.id, targetId: rv, reason: reason,
                   subject: pick });
+      // Both sides are told, and they are told the same thing.
+      var dq = Store.disputes().filter(function (x) { return x.id === rv; })[0];
+      if (dq) {
+        M.partiesOf(M.request(dq.requestId), null).forEach(function (id) {
+          Store.notify({ to: id, type: "resolved", ref: dq.requestId });
+        });
+      }
       delete outcome[rv];
       deciding = null;
       App.toast(I18N.t("admin.decided"), "check");

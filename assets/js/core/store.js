@@ -31,7 +31,7 @@
   [
     "requests", "requestStates", "services", "removedServices", "reviews",
     "articles", "articleStates", "comments", "endorsements", "applications",
-    "agreements", "disputes", "audit", "profiles"
+    "agreements", "disputes", "audit", "profiles", "notices"
   ].forEach(function (k) {
     if (!work[k]) {
       work[k] = (k.indexOf("States") !== -1 || k === "applications" || k === "profiles")
@@ -262,6 +262,40 @@
       notify();
     },
 
+    /* ---------------- notices ----------------
+       A bid that closes unseen, or a delivery whose acceptance window runs
+       out while the client is looking the other way, spoils the best flow
+       anyone could design. So the events that carry a deadline or a decision
+       tell the people they belong to.
+
+       The notice carries a type and a reference, never the contents of the
+       thing it points at — someone reading over a shoulder learns that a
+       request moved, not what it says. */
+    notices: function () { return work.notices; },
+    notify: function (n) {
+      if (!n.to) return null;
+      // The same event twice is one notice: a page that redraws must not be
+      // able to fill somebody's list with copies of itself.
+      var dup = work.notices.some(function (x) {
+        return x.to === n.to && x.type === n.type && x.ref === n.ref;
+      });
+      if (dup) return null;
+      n.id = uid("n");
+      n.at = Date.now();
+      n.read = false;
+      work.notices.push(n);
+      notify();
+      return n;
+    },
+    readNotice: function (id) {
+      work.notices.forEach(function (n) { if (n.id === id) n.read = true; });
+      notify();
+    },
+    readAllNotices: function (to) {
+      work.notices.forEach(function (n) { if (n.to === to) n.read = true; });
+      notify();
+    },
+
     /* ---------------- the audit trail ----------------
        Approvals, rejections and decisions are written down because the point
        of them is that somebody can be asked afterwards why. Append only. */
@@ -379,7 +413,7 @@
       work = { requests: [], requestStates: {}, services: [], removedServices: [],
                reviews: [], articles: [], articleStates: {}, comments: [],
                endorsements: [], applications: {}, agreements: [], disputes: [],
-               audit: [], profiles: {} };
+               audit: [], profiles: {}, notices: [] };
       notify();
     },
     resetAll: function () {

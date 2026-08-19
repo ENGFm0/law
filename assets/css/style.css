@@ -388,6 +388,18 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 
 .header-actions { display: flex; align-items: center; gap: var(--s-2); }
 
+/* A phone header has 390px and five things that each want room. Left alone
+   they add up to 413 and the browser zooms the entire page out to fit — which
+   is what made every signed-in page look shrunken rather than merely tight.
+   So on a phone the header carries only what the bottom bar cannot: the mark,
+   theme, language, the bell, and who you are. */
+@media (max-width: 640px) {
+  .header-actions .btn { display: none; }   /* sign in / register live in the tab bar */
+  .brand__text { display: none; }           /* the mark alone is the brand here */
+  .site-header__inner { gap: var(--s-3); }
+  .icon-btn--wide { padding-inline: var(--s-2); }
+}
+
 .icon-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--s-1);
   width: 40px; height: 40px; border-radius: var(--r);
@@ -407,12 +419,57 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .nav { display: none; }
 }
 
+/* ---------- 11a2. Notices ---------- */
+.notice-wrap { position: relative; display: inline-flex; }
+.notice-bell { position: relative; }
+.notice-bell__count {
+  position: absolute; inset-block-start: 2px; inset-inline-end: 2px;
+  min-width: 17px; height: 17px; padding: 0 4px; border-radius: var(--r-full);
+  background: var(--danger); color: #fff;
+  font-size: .625rem; font-weight: 700; line-height: 17px; text-align: center;
+}
+.notice-panel {
+  position: absolute; inset-block-start: calc(100% + var(--s-2)); inset-inline-end: 0;
+  z-index: 90; width: min(320px, calc(100vw - var(--s-8)));
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); box-shadow: var(--shadow-3); overflow: hidden;
+}
+.notice-panel[hidden] { display: none; }
+.notice-panel__head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4); border-block-end: 1px solid var(--border);
+}
+.notice-panel__list { max-height: min(60vh, 380px); overflow-y: auto; }
+.notice {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4); font-size: .875rem; color: var(--text-muted);
+  border-block-end: 1px solid var(--border);
+}
+.notice:hover { background: var(--surface-2); }
+.notice__dot { width: 7px; height: 7px; border-radius: var(--r-full); background: transparent; flex: none; }
+/* Unread is not carried by colour alone: the weight changes with it. */
+.notice.is-unread { color: var(--text); font-weight: 600; }
+.notice.is-unread .notice__dot { background: var(--accent); }
+
+@media (max-width: 640px) {
+  /* On a phone the list is a sheet, not a dropdown clinging to a 40px button. */
+  .notice-panel {
+    position: fixed; inset-inline: var(--s-3); inset-block-start: auto;
+    inset-block-end: calc(72px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+  }
+}
+
 /* ---------- 11b. Bottom tab bar (phones) ---------- */
 .tabbar { display: none; }
 @media (max-width: 1024px) {
   .tabbar {
     position: fixed; inset-inline: 0; bottom: 0; z-index: 80;
-    display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+    /* minmax(0, 1fr) rather than 1fr: a plain `1fr` track will not shrink
+       below its content's min-content width, so one long label — "تسجيل
+       الدخول" was the culprit — pushed the bar past the viewport and the
+       phone browser zoomed the whole page out to fit it. */
+    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
     background: color-mix(in srgb, var(--surface) 92%, transparent);
     backdrop-filter: blur(16px) saturate(160%);
     border-top: 1px solid var(--border);
@@ -424,6 +481,7 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .tabbar__link {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 3px; padding: var(--s-2) var(--s-1) var(--s-3);
+    min-height: 56px;                    /* a comfortable thumb target */
     font-size: .6875rem; font-weight: 600; color: var(--text-faint);
     transition: color .18s;
     position: relative; min-width: 0;
@@ -1148,9 +1206,18 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 }
 .req-row__actions { display: flex; gap: var(--s-2); flex-wrap: wrap; justify-content: flex-end; }
 @media (max-width: 720px) {
-  .req-row { flex-wrap: wrap; }
-  .req-row__side { align-items: stretch; width: 100%; }
-  .req-row__actions .btn { flex: 1; }
+  /* The icon and the title belong on one line. Left to wrap on its own the
+     text block took a line of its own and the row read as three stacked
+     fragments rather than one request. `flex: 1 1 0` lets it shrink to the
+     space that is left instead of demanding its content width first. */
+  .req-row { flex-wrap: wrap; row-gap: var(--s-3); gap: var(--s-3); }
+  .req-row > .grow { flex: 1 1 0; }
+  .req-row__side {
+    width: 100%; flex-direction: row; align-items: center; flex-wrap: wrap;
+    gap: var(--s-2) var(--s-3);
+  }
+  .req-row__actions { width: 100%; justify-content: flex-start; }
+  .req-row__actions .btn { flex: 1 1 auto; min-height: 44px; }
 }
 
 /* ---------- leaderboard ---------- */
