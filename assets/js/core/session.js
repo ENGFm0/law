@@ -92,20 +92,38 @@
       return Session.is("client") || u.status === "verified";
     },
 
+    /* Signing in is asynchronous now, because on Supabase it always was. Both
+       backends return a promise so the pages have one shape to handle, rather
+       than a branch on which data source happens to be configured. */
     signIn: function (email, password) {
+      var SB = global.SB;
+      if (SB && SB.configured()) {
+        return SB.signIn(email, password).then(function (res) {
+          if (!res.ok) return res;
+          Store.signIn(res.id);
+          notify();
+          return { ok: true };
+        });
+      }
       var acc = Store.findAccount(email);
-      if (!acc) return { ok: false, error: "noAccount" };
-      if (acc.password && password !== acc.password) return { ok: false, error: "badPassword" };
+      if (!acc) return Promise.resolve({ ok: false, error: "noAccount" });
+      if (acc.password && password !== acc.password) {
+        return Promise.resolve({ ok: false, error: "badPassword" });
+      }
       Store.signIn(acc.id);
       writeRole(acc.activeRole || acc.roles[0]);
       notify();
-      return { ok: true, user: acc };
+      return Promise.resolve({ ok: true, user: acc });
     },
 
     signOut: function () {
-      Store.signOut();
-      writeRole(null);
-      notify();
+      var SB = global.SB;
+      var done = (SB && SB.configured()) ? SB.signOut() : Promise.resolve();
+      return done.then(function () {
+        Store.signOut();
+        writeRole(null);
+        notify();
+      });
     },
 
     onChange: function (fn, runNow) {

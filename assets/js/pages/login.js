@@ -59,8 +59,12 @@ Pages.define("login", function (global) {
     var email = form.querySelector('[name="email"]').value.trim();
     var pass = form.querySelector('[name="password"]').value;
     if (!email) { error("signup.needEmail"); return; }
-    var res = Session.signIn(email, pass);
-    if (!res.ok) { error("login." + res.error); return; }
-    App.go("index.html");
+    var button = form.querySelector('[type="submit"]');
+    if (button) { button.disabled = true; button.textContent = I18N.t("auth.working"); }
+    Session.signIn(email, pass).then(function (res) {
+      if (button) { button.disabled = false; button.textContent = I18N.t("auth.signIn"); }
+      if (!res.ok) { error("login." + res.error); return; }
+      App.go("index.html");
+    });
   });
 });

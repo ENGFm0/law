@@ -52,16 +52,19 @@ const section = (s) => console.log('— ' + s + ' —');
 const S = loadStore();
 
 section('ACCOUNTS');
-const reg = S.register({ role: 'client', name: { ar: 'ت', en: 'T' },
+// register resolves rather than returns: on Supabase it is a network call, and
+// both backends present the same shape so pages need no branch.
+const reg = await S.register({ role: 'client', name: { ar: 'ت', en: 'T' },
   email: 'A@Test.SA', phone: '05', password: 'pw' });
+ok('register resolves a promise', reg instanceof Object && 'ok' in reg);
 ok('register returns the new account', reg.ok === true && !!reg.user.id);
 ok('a client is verified at once', reg.user.status === 'verified');
 ok('and it signs them in', S.currentId() === reg.user.id);
 ok('email lookup ignores case', S.findAccount('a@test.sa') !== null);
 ok('a repeat email is refused',
-   S.register({ role: 'client', email: 'a@test.sa', password: 'x' }).error === 'emailTaken');
-const lawyer = S.register({ role: 'lawyer', name: { ar: 'م', en: 'L' },
-  email: 'l@test.sa', password: 'pw', licenceNumber: '1', specialties: ['labour'] }).user;
+   (await S.register({ role: 'client', email: 'a@test.sa', password: 'x' })).error === 'emailTaken');
+const lawyer = (await S.register({ role: 'lawyer', name: { ar: 'م', en: 'L' },
+  email: 'l@test.sa', password: 'pw', licenceNumber: '1', specialties: ['labour'] })).user;
 ok('a lawyer starts pending', lawyer.status === 'pending');
 ok('their licence is kept', lawyer.licence.number === '1');
 S.updateAccount(lawyer.id, { bio: 'x' });

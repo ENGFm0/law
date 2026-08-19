@@ -2349,6 +2349,10 @@ window.SANAD_CONFIG = {
       "call.copied": "نُسخ الرابط.",
       "call.markDone": "أنهِ المكالمة وسلّم الطلب",
       "verify.title": "فحص الاتصال | سند",
+      "auth.working": "لحظة…",
+      "signup.signUpFailed": "تعذّر إنشاء الحساب.",
+      "signup.confirmEmail": "أرسلنا رابط تأكيد إلى بريدك. افتحه ثم سجّل الدخول.",
+      "signup.profileFailed": "أُنشئ الحساب ولم يُحفظ الملف. سجّل الدخول وأكمل بياناتك.",
     },
 
     en: {
@@ -3243,6 +3247,10 @@ window.SANAD_CONFIG = {
       "call.copied": "Link copied.",
       "call.markDone": "End and deliver the request",
       "verify.title": "Connection check | Sanad",
+      "auth.working": "Working…",
+      "signup.signUpFailed": "The account could not be created.",
+      "signup.confirmEmail": "We sent a confirmation link to your inbox. Open it, then sign in.",
+      "signup.profileFailed": "The account was created but its profile was not saved. Sign in and complete it.",
     }
   };
 
@@ -3425,8 +3433,22 @@ window.SANAD_CONFIG = {
       return null;
     },
 
-    /** Creates the account and signs them in. Returns { ok, error, user }. */
+    /** Creates the account and signs them in. Resolves to { ok, error, user }.
+        A promise either way: on Supabase the work is a network round trip, and
+        the sign-up wizard should not have to know which backend answered. */
     register: function (data) {
+      var SB = global.SB;
+      if (SB && SB.configured()) {
+        return SB.register(data).then(function (res) {
+          if (res.ok) Store.signIn(res.user.id);
+          return res;
+        });
+      }
+      return Promise.resolve(Store.registerLocal(data));
+    },
+
+    /** The browser backend's own version, kept whole and separately testable. */
+    registerLocal: function (data) {
       if (Store.findAccount(data.email)) return { ok: false, error: "emailTaken" };
       var u = {
         id: uid("u"),
@@ -4758,20 +4780,38 @@ window.SANAD_CONFIG = {
       return Session.is("client") || u.status === "verified";
     },
 
+    /* Signing in is asynchronous now, because on Supabase it always was. Both
+       backends return a promise so the pages have one shape to handle, rather
+       than a branch on which data source happens to be configured. */
     signIn: function (email, password) {
+      var SB = global.SB;
+      if (SB && SB.configured()) {
+        return SB.signIn(email, password).then(function (res) {
+          if (!res.ok) return res;
+          Store.signIn(res.id);
+          notify();
+          return { ok: true };
+        });
+      }
       var acc = Store.findAccount(email);
-      if (!acc) return { ok: false, error: "noAccount" };
-      if (acc.password && password !== acc.password) return { ok: false, error: "badPassword" };
+      if (!acc) return Promise.resolve({ ok: false, error: "noAccount" });
+      if (acc.password && password !== acc.password) {
+        return Promise.resolve({ ok: false, error: "badPassword" });
+      }
       Store.signIn(acc.id);
       writeRole(acc.activeRole || acc.roles[0]);
       notify();
-      return { ok: true, user: acc };
+      return Promise.resolve({ ok: true, user: acc });
     },
 
     signOut: function () {
-      Store.signOut();
-      writeRole(null);
-      notify();
+      var SB = global.SB;
+      var done = (SB && SB.configured()) ? SB.signOut() : Promise.resolve();
+      return done.then(function () {
+        Store.signOut();
+        writeRole(null);
+        notify();
+      });
     },
 
     onChange: function (fn, runNow) {
@@ -9277,8 +9317,7 @@ Pages.define("account", function (global) {
     }
 
     if (ev.target.closest("[data-signout]")) {
-      Session.signOut();
-      App.go("index.html");
+      Session.signOut().then(function () { App.go("index.html"); });
       return;
     }
 
@@ -9455,9 +9494,13 @@ Pages.define("login", function (global) {
     var email = form.querySelector('[name="email"]').value.trim();
     var pass = form.querySelector('[name="password"]').value;
     if (!email) { error("signup.needEmail"); return; }
-    var res = Session.signIn(email, pass);
-    if (!res.ok) { error("login." + res.error); return; }
-    App.go("index.html");
+    var button = form.querySelector('[type="submit"]');
+    if (button) { button.disabled = true; button.textContent = I18N.t("auth.working"); }
+    Session.signIn(email, pass).then(function (res) {
+      if (button) { button.disabled = false; button.textContent = I18N.t("auth.signIn"); }
+      if (!res.ok) { error("login." + res.error); return; }
+      App.go("index.html");
+    });
   });
 });
 
@@ -9750,7 +9793,10 @@ Pages.define("signup", function (global) {
     };
     var name = { ar: d.name, en: d.name };
 
-    var res = Store.register({
+    var button = $("[data-finish]");
+    if (button) { button.disabled = true; button.textContent = I18N.t("auth.working"); }
+
+    Store.register({
       role: state.role, name: name, email: d.email, phone: d.phone,
       city: d.city, password: d.password, avatar: state.avatar,
       licenceNumber: d.licenceNumber, licenceAuthority: d.licenceAuthority,
@@ -9759,11 +9805,22 @@ Pages.define("signup", function (global) {
       university: { ar: d.university, en: d.university }, level: { ar: d.level, en: d.level },
       skills: state.skills.map(function (s) { return { ar: s, en: s }; }),
       cvFile: fileOf("cvFile")
+    }).then(function (res) {
+      if (button) { button.disabled = false; I18N.apply(button.parentNode); }
+      if (!res.ok) {
+        // A backend can fail in ways the demo never could — a refused address,
+        // an unconfirmed mailbox — so show what it said when we have no phrase
+        // of our own for it.
+        error("signup." + res.error);
+        if (res.message && I18N.t("signup." + res.error) === "signup." + res.error) {
+          var el = $("[data-signup-error]");
+          if (el) { el.hidden = false; el.textContent = res.message; }
+        }
+        return;
+      }
+      App.toast(I18N.t("signup.welcome", { name: d.name.split(" ")[0] }), "check");
+      setTimeout(function () { App.go("index.html"); }, 900);
     });
-
-    if (!res.ok) { error("signup." + res.error); return; }
-    App.toast(I18N.t("signup.welcome", { name: d.name.split(" ")[0] }), "check");
-    setTimeout(function () { App.go("index.html"); }, 900);
   });
 
   show();

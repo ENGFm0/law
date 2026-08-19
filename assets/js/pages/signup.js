@@ -287,7 +287,10 @@ Pages.define("signup", function (global) {
     };
     var name = { ar: d.name, en: d.name };
 
-    var res = Store.register({
+    var button = $("[data-finish]");
+    if (button) { button.disabled = true; button.textContent = I18N.t("auth.working"); }
+
+    Store.register({
       role: state.role, name: name, email: d.email, phone: d.phone,
       city: d.city, password: d.password, avatar: state.avatar,
       licenceNumber: d.licenceNumber, licenceAuthority: d.licenceAuthority,
@@ -296,11 +299,22 @@ Pages.define("signup", function (global) {
       university: { ar: d.university, en: d.university }, level: { ar: d.level, en: d.level },
       skills: state.skills.map(function (s) { return { ar: s, en: s }; }),
       cvFile: fileOf("cvFile")
+    }).then(function (res) {
+      if (button) { button.disabled = false; I18N.apply(button.parentNode); }
+      if (!res.ok) {
+        // A backend can fail in ways the demo never could — a refused address,
+        // an unconfirmed mailbox — so show what it said when we have no phrase
+        // of our own for it.
+        error("signup." + res.error);
+        if (res.message && I18N.t("signup." + res.error) === "signup." + res.error) {
+          var el = $("[data-signup-error]");
+          if (el) { el.hidden = false; el.textContent = res.message; }
+        }
+        return;
+      }
+      App.toast(I18N.t("signup.welcome", { name: d.name.split(" ")[0] }), "check");
+      setTimeout(function () { App.go("index.html"); }, 900);
     });
-
-    if (!res.ok) { error("signup." + res.error); return; }
-    App.toast(I18N.t("signup.welcome", { name: d.name.split(" ")[0] }), "check");
-    setTimeout(function () { App.go("index.html"); }, 900);
   });
 
   show();

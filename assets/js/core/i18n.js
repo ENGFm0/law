@@ -932,6 +932,10 @@
       "call.copied": "نُسخ الرابط.",
       "call.markDone": "أنهِ المكالمة وسلّم الطلب",
       "verify.title": "فحص الاتصال | سند",
+      "auth.working": "لحظة…",
+      "signup.signUpFailed": "تعذّر إنشاء الحساب.",
+      "signup.confirmEmail": "أرسلنا رابط تأكيد إلى بريدك. افتحه ثم سجّل الدخول.",
+      "signup.profileFailed": "أُنشئ الحساب ولم يُحفظ الملف. سجّل الدخول وأكمل بياناتك.",
     },
 
     en: {
@@ -1826,6 +1830,10 @@
       "call.copied": "Link copied.",
       "call.markDone": "End and deliver the request",
       "verify.title": "Connection check | Sanad",
+      "auth.working": "Working…",
+      "signup.signUpFailed": "The account could not be created.",
+      "signup.confirmEmail": "We sent a confirmation link to your inbox. Open it, then sign in.",
+      "signup.profileFailed": "The account was created but its profile was not saved. Sign in and complete it.",
     }
   };
 

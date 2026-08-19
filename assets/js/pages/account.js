@@ -113,8 +113,7 @@ Pages.define("account", function (global) {
     }
 
     if (ev.target.closest("[data-signout]")) {
-      Session.signOut();
-      App.go("index.html");
+      Session.signOut().then(function () { App.go("index.html"); });
       return;
     }
 

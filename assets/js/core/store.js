@@ -59,8 +59,22 @@
       return null;
     },
 
-    /** Creates the account and signs them in. Returns { ok, error, user }. */
+    /** Creates the account and signs them in. Resolves to { ok, error, user }.
+        A promise either way: on Supabase the work is a network round trip, and
+        the sign-up wizard should not have to know which backend answered. */
     register: function (data) {
+      var SB = global.SB;
+      if (SB && SB.configured()) {
+        return SB.register(data).then(function (res) {
+          if (res.ok) Store.signIn(res.user.id);
+          return res;
+        });
+      }
+      return Promise.resolve(Store.registerLocal(data));
+    },
+
+    /** The browser backend's own version, kept whole and separately testable. */
+    registerLocal: function (data) {
       if (Store.findAccount(data.email)) return { ok: false, error: "emailTaken" };
       var u = {
         id: uid("u"),
