@@ -163,14 +163,26 @@
         the account already exists and is already signed in. */
     complete: function (id, data) {
       return load().then(function (sb) {
-        var row = fromProfile(data);
-        row.roles = [data.role];
-        row.active_role = data.role;
-        row.onboarded = true;
-        return sb.from("profiles").update(row).eq("id", id).select().single()
-          .then(function (out) {
-            if (out.error) return { ok: false, error: "profileFailed", message: out.error.message };
-            return { ok: true, user: toProfile(out.data) };
+        // Read what the account already holds before overwriting it. Replacing
+        // the roles outright would drop a staff grant on the floor the moment
+        // its owner answered "who are you" — the desk is not something you can
+        // hand back by filling in a form, and nothing in this wizard is asking
+        // to give it up.
+        return sb.from("profiles").select("roles").eq("id", id).maybeSingle()
+          .then(function (cur) {
+            var held = (cur && cur.data && cur.data.roles) || [];
+            var roles = [data.role];
+            if (held.indexOf("staff") !== -1) roles.push("staff");
+
+            var row = fromProfile(data);
+            row.roles = roles;
+            row.active_role = data.role;
+            row.onboarded = true;
+            return sb.from("profiles").update(row).eq("id", id).select().single()
+              .then(function (out) {
+                if (out.error) return { ok: false, error: "profileFailed", message: out.error.message };
+                return { ok: true, user: toProfile(out.data) };
+              });
           });
       });
     },
