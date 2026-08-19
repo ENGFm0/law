@@ -251,6 +251,27 @@
       "</div></div>";
   }
 
+  /* ---------- signing in with Google ----------
+     Shown always, so the page does not change shape between the demo and the
+     connected project. On the demo it says why it cannot work yet rather than
+     failing silently when pressed. */
+  function googleButton() {
+    var live = global.SB && global.SB.configured();
+    var mark =
+      '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" style="stroke:none">' +
+        '<path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.4z"/>' +
+        '<path fill="#34A853" d="M12 22c2.7 0 4.9-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.7-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/>' +
+        '<path fill="#FBBC05" d="M6.4 14a6 6 0 0 1 0-3.8V7.6H3.1a10 10 0 0 0 0 8.8L6.4 14z"/>' +
+        '<path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.6l3.3 2.6C7.2 7.6 9.4 5.9 12 5.9z"/>' +
+      "</svg>";
+    return '<button class="btn btn--outline btn--block" type="button" data-google' +
+      (live ? "" : " disabled") + ">" + mark +
+      '<span data-i18n="auth.google"></span></button>' +
+      (live ? "" : '<p class="tiny faint center" style="margin-top:var(--s-2)" ' +
+        'data-i18n="auth.googleOnly"></p>') +
+      '<div class="or-rule"><span data-i18n="auth.or"></span></div>';
+  }
+
   /* ---------- misc ---------- */
   function empty(iconName, textKey) {
     return '<div class="card empty">' + Icons.svg(iconName, "icon-xl") +
@@ -267,6 +288,7 @@
     ratingLine: ratingLine, verifiedMark: verifiedMark, progressBar: progressBar,
     starPicker: starPicker, ratingSummary: ratingSummary, reviewCard: reviewCard,
     lawyerCard: lawyerCard, internCard: internCard, articleCard: articleCard,
-    statusPill: statusPill, requestRow: requestRow, empty: empty, sectionHead: sectionHead
+    statusPill: statusPill, requestRow: requestRow, empty: empty, sectionHead: sectionHead,
+    googleButton: googleButton
   };
 })(window);

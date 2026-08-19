@@ -936,6 +936,10 @@
       "signup.signUpFailed": "تعذّر إنشاء الحساب.",
       "signup.confirmEmail": "أرسلنا رابط تأكيد إلى بريدك. افتحه ثم سجّل الدخول.",
       "signup.profileFailed": "أُنشئ الحساب ولم يُحفظ الملف. سجّل الدخول وأكمل بياناتك.",
+      "auth.google": "المتابعة عبر Google",
+      "auth.or": "أو",
+      "auth.googleOnly": "متاح بعد ربط المشروع. الوضع الحالي تجريبي.",
+      "auth.googleFailed": "تعذّرت المتابعة عبر Google.",
     },
 
     en: {
@@ -1834,6 +1838,10 @@
       "signup.signUpFailed": "The account could not be created.",
       "signup.confirmEmail": "We sent a confirmation link to your inbox. Open it, then sign in.",
       "signup.profileFailed": "The account was created but its profile was not saved. Sign in and complete it.",
+      "auth.google": "Continue with Google",
+      "auth.or": "or",
+      "auth.googleOnly": "Available once the project is connected. This is the demo.",
+      "auth.googleFailed": "Could not continue with Google.",
     }
   };
 

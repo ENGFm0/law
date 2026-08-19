@@ -134,13 +134,16 @@
             // A client is live at once; a lawyer or trainee waits for a licence
             // check, and cannot set that field themselves — the database
             // trigger keeps it whatever staff last set.
+            // A profile already exists: the database creates one for every new
+            // auth user, because a Google sign-in never passes through here.
+            // So this fills in what the wizard collected rather than inserting.
+            // `status` is deliberately not sent — the guard trigger decides it,
+            // and taking a professional role drops you to pending regardless.
             var row = fromProfile(data);
-            row.id = user.id;
             row.roles = [data.role];
             row.active_role = data.role;
-            row.status = data.role === "client" ? "verified" : "pending";
 
-            return sb.from("profiles").insert(row).select().single()
+            return sb.from("profiles").update(row).eq("id", user.id).select().single()
               .then(function (out) {
                 if (out.error) return { ok: false, error: "profileFailed", message: out.error.message };
                 return { ok: true, user: toProfile(out.data) };
@@ -159,6 +162,21 @@
             }
             return { ok: true, id: res.data.user.id };
           });
+      });
+    },
+
+    /** Hand off to Google and come back signed in.
+
+        Nothing is returned to await: the browser leaves the page entirely and
+        returns to `redirect`, where the session is already restored from the
+        URL by the client. The profile row is waiting either way, made by the
+        database trigger the moment the auth user appeared. */
+    signInWithGoogle: function (redirect) {
+      return load().then(function (sb) {
+        return sb.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: redirect || global.location.origin + global.location.pathname },
+        });
       });
     },
 

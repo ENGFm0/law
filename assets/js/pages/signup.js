@@ -188,6 +188,8 @@ Pages.define("signup", function (global) {
     $("[data-back]").hidden = i <= 0;
     $("[data-next]").hidden = i >= seq.length - 1;
     $("[data-finish]").hidden = i < seq.length - 1;
+    var gslot = $("[data-google-slot]");
+    if (gslot) gslot.innerHTML = state.step === 1 ? global.C.googleButton() : "";
     if (state.step === 3) drawProof();
     if (state.step === 4) drawReview();
     drawStepper();
@@ -216,12 +218,24 @@ Pages.define("signup", function (global) {
   }
 
   App.onRender(function () {
+    // Google returns a client, so the door only belongs on the first step —
+    // a lawyer still has a licence to give us before anything else happens.
+    var slot = $("[data-google-slot]");
+    if (slot) slot.innerHTML = state.step === 1 ? global.C.googleButton() : "";
+
     drawRoles(); drawCities(); drawStepper();
     if (state.step === 3) drawProof();
     if (state.step === 4) drawReview();
   });
 
   form.addEventListener("click", function (ev) {
+    if (ev.target.closest("[data-google]")) {
+      global.SB.signInWithGoogle(global.location.origin +
+        global.location.pathname.replace(/signup\.html$/, "index.html"))
+        .catch(function () { App.toast(I18N.t("auth.googleFailed"), "close"); });
+      return;
+    }
+
     var pick = ev.target.closest("[data-pick]");
     if (pick) { state.role = pick.getAttribute("data-pick"); drawRoles(); drawStepper(); return; }
 

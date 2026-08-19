@@ -49,6 +49,29 @@ Supabase تعطيك نوعين، والفرق بينهما ليس شكلياً:
 > **لا تُشغّل `supabase/local-prelude.sql` على Supabase** — هو بدائل لما توفّره
 > المنصة أصلاً، ووجوده لتشغيل المخطط على PostgreSQL عادي أثناء التطوير.
 
+### الدخول عبر Google — ما عليك ضبطه
+
+الكود جاهز؛ يبقى الربط، وهو عندك لا عندي:
+
+**١ — في Google Cloud Console:**
+- أنشئ مشروعاً ← **APIs & Services ← Credentials ← Create OAuth client ID ← Web application**
+- في **Authorized redirect URIs** ضع:
+  `https://otpjcopyfjodeiufeixx.supabase.co/auth/v1/callback`
+- انسخ **Client ID** و **Client Secret**
+
+**٢ — في Supabase:** Authentication ← Sign In / Providers ← **Google** ← فعّله
+والصق القيمتين ← Save
+
+**٣ — في Supabase:** Authentication ← **URL Configuration** ← أضف إلى
+**Redirect URLs**: `https://engfm0.github.io/law/index.html`
+
+> **٤ — وشغّل الترحيل أولاً:** `supabase/migrations/002-oauth-and-status.sql`
+> في SQL Editor. بدونه يدخل مستخدم Google **بلا ملف شخصي**، فلا يراه الموقع
+> إطلاقاً.
+
+زر Google يظهر في صفحتي الدخول والتسجيل، ويبقى **معطّلاً** ما دام
+`backend` على `"browser"` — مع سطر يوضّح السبب بدل أن يفشل بصمت.
+
 ### التحقق من المتصفح — `verify.html`
 
 بيئة التطوير التي بُني فيها هذا المشروع **تحجب `supabase.co`**، فلا يمكن اختبار

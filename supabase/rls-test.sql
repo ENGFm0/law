@@ -34,12 +34,20 @@ insert into auth.users (id) values
   ('33333333-3333-3333-3333-333333333333'),
   ('44444444-4444-4444-4444-444444444444');
 
--- The trainee starts pending, which is the whole point of the next-to-last check.
+-- Since migration 002 a profile already exists for every auth user, created by
+-- the trigger as a verified client. Setting up a lawyer or a trainee therefore
+-- means updating that row, not inserting one — which is what the application
+-- does too. Run as owner with no JWT claim, so the guard trigger stays out of
+-- the way; it only fires when a user edits themselves.
 insert into public.profiles (id, full_name, roles, status) values
   ('11111111-1111-1111-1111-111111111111','Client A','{client}','verified'),
   ('22222222-2222-2222-2222-222222222222','Client B','{client}','verified'),
   ('33333333-3333-3333-3333-333333333333','Lawyer','{lawyer}','verified'),
-  ('44444444-4444-4444-4444-444444444444','Trainee','{intern}','pending');
+  ('44444444-4444-4444-4444-444444444444','Trainee','{intern}','pending')
+on conflict (id) do update set
+  full_name = excluded.full_name,
+  roles     = excluded.roles,
+  status    = excluded.status;
 
 insert into public.requests (id, client_id, lawyer_id, type_id, title, price, status)
 values ('aaaaaaaa-0000-0000-0000-000000000001',
@@ -119,6 +127,30 @@ insert into public.endorsements (intern_id, lawyer_id, hours) values
 reset role;
 select case when count(*) = 1 then 'PASS' else 'FAIL' end
   || '  accepted once they have supervised them' from public.endorsements;
+
+\echo '── a Google sign-in gets a profile without touching our code ──'
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('99999999-9999-9999-9999-999999999999', 'g@gmail.com',
+   '{"full_name":"Google Person","avatar_url":"https://x/y.png"}'::jsonb)
+on conflict (id) do nothing;
+select case when full_name = 'Google Person' and status = 'verified'
+              and roles = '{client}' then 'PASS' else 'FAIL' end
+  || '  the trigger created it as a verified client' from public.profiles
+  where id = '99999999-9999-9999-9999-999999999999';
+
+\echo '── and cannot then declare itself a licensed lawyer ──'
+set role authenticated;
+set request.jwt.claim.sub = '99999999-9999-9999-9999-999999999999';
+update public.profiles set roles = '{lawyer}', licence_no = '9999', bio = 'claimed'
+  where id = '99999999-9999-9999-9999-999999999999';
+set request.jwt.claim.sub = '';
+reset role;
+select case when status = 'pending' then 'PASS' else 'FAIL' end
+  || '  taking a professional role drops it to pending' from public.profiles
+  where id = '99999999-9999-9999-9999-999999999999';
+select case when bio = 'claimed' then 'PASS' else 'FAIL' end
+  || '  while the rest of that edit still saves' from public.profiles
+  where id = '99999999-9999-9999-9999-999999999999';
 
 \echo '── an unpublished article is not public ──'
 insert into public.articles (id, author_id, title, body, status) values

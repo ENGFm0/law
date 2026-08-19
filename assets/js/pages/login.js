@@ -19,6 +19,9 @@ Pages.define("login", function (global) {
   }
 
   App.onRender(function () {
+    var slot = $("[data-google]") ? null : $("[data-google-slot]");
+    if (slot) slot.innerHTML = global.C.googleButton();
+
     var points = $("[data-auth-points]");
     if (points) {
       points.innerHTML = ["auth.asidePoint1", "auth.asidePoint2", "auth.asidePoint3"].map(function (k) {
@@ -53,6 +56,14 @@ Pages.define("login", function (global) {
       App.go("index.html");
     });
   }
+
+  var authBox = form.closest("section") || document;
+  authBox.addEventListener("click", function (ev) {
+    if (!ev.target.closest("[data-google]")) return;
+    global.SB.signInWithGoogle(global.location.origin +
+      global.location.pathname.replace(/login\.html$/, "index.html"))
+      .catch(function () { App.toast(I18N.t("auth.googleFailed"), "close"); });
+  });
 
   form.addEventListener("submit", function (ev) {
     ev.preventDefault();

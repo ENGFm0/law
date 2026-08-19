@@ -1265,3 +1265,12 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .call-btn--end { background: var(--danger); color: #fff; }
 .call-btn--end:hover { background: #a11616; }
 .call-btn svg { width: 24px; height: 24px; }
+
+/* A labelled rule between "continue with Google" and the form below it. */
+.or-rule {
+  display: flex; align-items: center; gap: var(--s-4);
+  margin: var(--s-6) 0; color: var(--text-faint); font-size: .8125rem;
+}
+.or-rule::before, .or-rule::after {
+  content: ""; flex: 1; height: 1px; background: var(--border);
+}
