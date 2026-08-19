@@ -214,22 +214,48 @@ Pages.define("verify", function (global) {
     } catch (e) { settle(r, false, String(e)); }
     try { await global.SB.signIn(email, password); } catch (e) {}
 
-    r = add("لا أحد يوثّق نفسه");
+    // Self-verification has to be tried on an account that is NOT already
+    // verified, or the check proves nothing. A client starts verified, so this
+    // needs a lawyer — who starts pending and must stay that way.
+    r = add("تسجيل محامٍ — يبدأ «قيد المراجعة»");
+    var lawyerEmail = uniqueAddress(creds.email), lawyerId = null;
     try {
-      await sb.from("profiles").update({ status: "verified", bio: "فحص" }).eq("id", myId);
-      var after = await sb.from("profiles").select("status,bio").eq("id", myId).single();
-      settle(r, !after.error && after.data.bio === "فحص",
-        after.error ? after.error.message : "الحالة بقيت: " + after.data.status);
+      await global.SB.signOut();
+      var lreg = await global.SB.register({
+        role: "lawyer", name: { ar: "محامي فحص", en: "Verify Lawyer" },
+        email: lawyerEmail, password: password, licenceNumber: "0000",
+        specialties: ["labour"],
+      });
+      lawyerId = lreg.ok ? lreg.user.id : null;
+      settle(r, lreg.ok && lreg.user.status === "pending",
+        lreg.ok ? "الحالة: " + lreg.user.status : (lreg.message || lreg.error));
     } catch (e) { settle(r, false, String(e)); }
+
+    r = add("المحامي لا يوثّق نفسه");
+    if (!lawyerId) { settle(r, false, "لم يُنشأ حساب المحامي"); }
+    else {
+      try {
+        await sb.from("profiles").update({ status: "verified", bio: "فحص" }).eq("id", lawyerId);
+        var after = await sb.from("profiles").select("status,bio").eq("id", lawyerId).single();
+        var kept = !after.error && after.data.status === "pending";
+        settle(r, kept, after.error ? after.error.message
+          : kept ? "بقيت: pending ✅" : "صارت: " + after.data.status + " — خطر");
+        settle(add("لكن بقية ملفه تُحفظ"),
+          !after.error && after.data.bio === "فحص",
+          after.error ? after.error.message : "bio = " + after.data.bio);
+      } catch (e) { settle(r, false, String(e)); }
+    }
 
     r = add("سعر خارج النطاق يُرفض في قاعدة البيانات");
     try {
-      var low = await sb.from("services").insert({ owner_id: myId, type_id: "written", price: 5 });
+      var low = await sb.from("services")
+        .insert({ owner_id: lawyerId || myId, type_id: "written", price: 5 });
       settle(r, !!low.error, low.error ? low.error.message.slice(0, 90) : "قُبل — النطاق غير مفعّل");
     } catch (e) { settle(r, false, String(e)); }
 
     r = add("الطلب يظهر لصاحبه بعد الدخول");
     try {
+      await global.SB.signIn(email, password);
       var made = await sb.from("requests").insert({
         client_id: myId, type_id: "written", title: "طلب فحص", price: 100,
       }).select().single();
@@ -240,8 +266,9 @@ Pages.define("verify", function (global) {
       }
     } catch (e) { settle(r, false, String(e)); }
 
-    r = add("تنظيف: احذف حساب الفحص بنفسك");
-    settle(r, true, email + " — من Authentication ← Users");
+    r = add("تنظيف: احذف حسابَي الفحص بنفسك");
+    settle(r, true, email + (lawyerEmail ? "  و  " + lawyerEmail : "") +
+      " — من Authentication ← Users");
 
     running = false;
     draw();
