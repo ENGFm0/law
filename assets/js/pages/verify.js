@@ -41,7 +41,9 @@ Pages.define("verify", function (global) {
         line("الوضع الحالي", cfg.backend || "browser") +
         line("عنوان المشروع", sb.url || "—") +
         line("نوع المفتاح", keyKind(sb.anonKey)) +
-        line("البريد المستخدم", creds.email || "— فارغ، فحوص الحساب ستُتخطّى") +
+        line("البريد المستخدم", creds.email
+          ? uniqueAddress(creds.email).replace(/\+sanad\w+@/, "+sanad…@")
+          : "— فارغ، فحوص الحساب ستُتخطّى") +
         line("إصدار الصفحة", BUILD) +
       "</div>" +
 
@@ -91,6 +93,18 @@ Pages.define("verify", function (global) {
       esc(v) + "</strong></div>";
   }
 
+  /** A fresh address every run, using plus-addressing on the one given.
+
+      A failed run can leave a user behind in auth.users — created, but with no
+      profile, because with email confirmation on there is no session to write
+      one. The next run then dies on "User already registered". Varying the
+      address sidesteps that entirely, and mail still reaches the same inbox. */
+  function uniqueAddress(base) {
+    if (!base || base.indexOf("@") === -1) return base;
+    var at = base.split("@");
+    return at[0].split("+")[0] + "+sanad" + Date.now().toString(36) + "@" + at[1];
+  }
+
   function keyKind(key) {
     if (!key) return "غير مضبوط";
     if (/^sb_secret_|service_role/.test(key)) return "⚠️ سري — أخرجه فوراً";
@@ -128,7 +142,7 @@ Pages.define("verify", function (global) {
     var emailInput = $("[data-email]", host), pwInput = $("[data-password]", host);
     creds.email = emailInput ? emailInput.value.trim() : "";
     creds.password = pwInput ? pwInput.value : creds.password;
-    var email = creds.email, password = creds.password;
+    var email = uniqueAddress(creds.email), password = creds.password;
     var sb = null, myId = null;
 
     var r = add("المفتاح علني لا سري");
@@ -170,12 +184,15 @@ Pages.define("verify", function (global) {
     } catch (e) { settle(r, false, String(e)); }
 
     if (!myId) {
+      var msg = (reg && (reg.message || "")) || "";
       var why = reg && reg.error === "confirmEmail"
-        ? 'خيار "Confirm email" مفعّل. أطفئه من Authentication ← Providers ← ' +
-          'Email، أو افتح رابط التأكيد في بريدك ثم أعد الفحص.'
-        : (reg && /invalid/i.test(reg.message || "")
-            ? "Supabase ترفض هذا النطاق. استخدم بريداً على نطاق حقيقي تملكه."
-            : (reg && (reg.message || reg.error)) || "سبب غير معروف");
+        ? 'خيار "Confirm email" مفعّل. أطفئه من Authentication ← ' +
+          'Sign In / Providers ← Email، ثم أعد الفحص.'
+        : /already registered/i.test(msg)
+            ? "بقي مستخدم من محاولة سابقة. احذفه من Authentication ← Users."
+            : /invalid/i.test(msg)
+              ? "Supabase ترفض هذا النطاق. استخدم بريداً على نطاق حقيقي تملكه."
+              : msg || (reg && reg.error) || "سبب غير معروف";
       settle(add("توقّف الفحص — لم يُنشأ الحساب"), false, why);
       running = false; draw(); return;
     }
