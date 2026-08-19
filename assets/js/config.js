@@ -25,8 +25,10 @@ window.SANAD_CONFIG = {
                     production and there should not be.
 
      Kept explicit so filling in the keys does not silently change what the
-     live site does. Flip it once verify.html reports green. */
-  backend: "browser",
+     live site does. Flipped to "supabase" once verify.html reported green:
+     the published site now runs on the real project, Google sign-in included,
+     and it starts empty because real accounts are the only accounts. */
+  backend: "supabase",
 
   supabase: {
     url: "https://otpjcopyfjodeiufeixx.supabase.co",

@@ -41,6 +41,10 @@ jobs:
           rm -rf _site
           mkdir -p _site/dist
           cp *.html _site/
+          # verify.html is a diagnostic: it creates accounts and writes rows in
+          # the real project. Fine to run locally against your own database,
+          # not something to leave reachable by anyone with the URL.
+          rm -f _site/verify.html
           cp -r assets _site/
           cp dist/sanad.html _site/dist/
           touch _site/.nojekyll   # keep Jekyll from filtering files

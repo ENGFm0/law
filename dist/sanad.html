@@ -374,15 +374,27 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 }
 @supports not (backdrop-filter: blur(1px)) { .site-header { background: var(--surface); } }
 
-.site-header__inner { display: flex; align-items: center; gap: var(--s-6); height: var(--header-h); }
+.site-header__inner { display: flex; align-items: center; gap: var(--s-4); height: var(--header-h); min-width: 0; }
 
-.brand { display: flex; align-items: center; gap: var(--s-3); font-weight: 800; }
+.brand { display: flex; align-items: center; gap: var(--s-3); font-weight: 800; flex: none; }
 .brand__mark { width: 38px; height: 38px; flex: none; }
 .brand__text { display: flex; align-items: baseline; gap: var(--s-2); font-size: 1.125rem; letter-spacing: -.01em; }
 .brand__sep { width: 2px; height: 18px; background: var(--accent); border-radius: 2px; align-self: center; }
 .brand__latin { font-family: var(--font-en); font-weight: 800; }
 
-.nav { display: flex; align-items: center; gap: var(--s-1); margin-inline: auto; }
+/* The nav sits between a brand and a set of actions that both have a fixed
+   claim on the row, and its own width depends on how long six labels happen
+   to be in the current language. Adding the notice bell was enough to push a
+   lawyer's English header past 1200px, and a header that outgrows the page
+   widens the whole document. So the nav is allowed to shrink and, if it ever
+   must, to scroll inside itself — the same rule wide tables follow. It never
+   makes the page wider than the screen. */
+.nav {
+  display: flex; align-items: center; gap: var(--s-1); margin-inline: auto;
+  min-width: 0; flex-shrink: 1;
+  overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none;
+}
+.nav::-webkit-scrollbar { display: none; }
 .nav__link {
   position: relative; padding: var(--s-2) var(--s-4); border-radius: var(--r); white-space: nowrap;
   font-size: .9375rem; font-weight: 600; color: var(--text-muted);
@@ -395,7 +407,7 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   height: 2px; background: var(--accent); border-radius: 2px;
 }
 
-.header-actions { display: flex; align-items: center; gap: var(--s-2); }
+.header-actions { display: flex; align-items: center; gap: var(--s-2); flex: none; }
 
 /* A phone header has 390px and five things that each want room. Left alone
    they add up to 413 and the browser zooms the entire page out to fit — which
@@ -1396,8 +1408,10 @@ window.SANAD_CONFIG = {
                     production and there should not be.
 
      Kept explicit so filling in the keys does not silently change what the
-     live site does. Flip it once verify.html reports green. */
-  backend: "browser",
+     live site does. Flipped to "supabase" once verify.html reported green:
+     the published site now runs on the real project, Google sign-in included,
+     and it starts empty because real accounts are the only accounts. */
+  backend: "supabase",
 
   supabase: {
     url: "https://otpjcopyfjodeiufeixx.supabase.co",
