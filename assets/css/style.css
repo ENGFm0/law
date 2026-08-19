@@ -408,8 +408,29 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 @media (max-width: 640px) {
   .header-actions .btn { display: none; }   /* sign in / register live in the tab bar */
   .brand__text { display: none; }           /* the mark alone is the brand here */
-  .site-header__inner { gap: var(--s-3); }
-  .icon-btn--wide { padding-inline: var(--s-2); }
+
+  /* Who you are is the last tab on the bar at the bottom of the screen, an
+     inch from the thumb. Repeating it up here bought nothing and cost the
+     row its last comfortable gap. */
+  /* Scoped through .header-actions on purpose: the plain .role-badge rule is
+     further down the file and would win on equal specificity from there. */
+  .header-actions .role-badge { display: none; }
+
+  /* Three controls, evenly spaced, reading as icons rather than as a row of
+     little boxes — the borders were doing the work of separating things that
+     spacing separates better. */
+  .site-header__inner { gap: var(--s-2); }
+  .header-actions { gap: var(--s-1); }
+  .header-actions .icon-btn {
+    border-color: transparent; background: transparent;
+    width: 42px; height: 42px;
+  }
+  .header-actions .icon-btn:active { background: var(--surface-2); }
+  .icon-btn--wide { width: 42px; padding-inline: 0; }
+  /* The globe is redundant next to two letters that already say "language". */
+  .icon-btn--wide .icon { display: none; }
+  .lang-btn__code { font-size: .875rem; }
+  .brand__mark { width: 34px; height: 34px; }
 }
 
 .icon-btn {
@@ -429,6 +450,10 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 /* Phone: the top nav collapses into the bottom tab bar below. */
 @media (max-width: 1024px) {
   .nav { display: none; }
+  /* The nav carried `margin-inline: auto` and was what held the brand and the
+     controls apart. With it hidden they bunched together against one edge and
+     left the rest of the row empty, so the spacing has to come from here. */
+  .header-actions { margin-inline-start: auto; }
 }
 
 /* ---------- 11a1. When the backend cannot be reached ---------- */
