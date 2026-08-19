@@ -98,6 +98,36 @@
              amount: Number(a.amount), cases: a.cases, startedAt: a.started_at };
   }
 
+  /* ---------- who you are, before the network says so ----------
+     Every page load was: download a library, ask it who is signed in, fetch
+     the profiles. Three round trips, and the page is painted long before the
+     first one answers — so every navigation showed the guest view for a
+     second and then corrected itself. On a phone that reads as being logged
+     out and logged back in on every tap.
+
+     So the signed-in profile is kept here and read synchronously at startup.
+     The first paint is right, and hydration replaces it a moment later with
+     whatever the database actually says.
+
+     It is a convenience, never a permission: this copy decides what a screen
+     draws and nothing else. Every rule that matters is a row-level policy the
+     server applies to a request carrying a real token, so a stale copy that
+     claims more than it should still cannot read or write a thing. */
+  var ME_KEY = "sanad.me";
+
+  function remember(profile) {
+    try {
+      profile ? localStorage.setItem(ME_KEY, JSON.stringify(profile))
+              : localStorage.removeItem(ME_KEY);
+    } catch (e) { /* private mode */ }
+  }
+  function recall() {
+    try {
+      var raw = localStorage.getItem(ME_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
   /* ---------- the cache ---------- */
   var cache = {
     profiles: [], requests: [], services: [], articles: [],
@@ -105,6 +135,15 @@
     disputes: [], notices: [], audit: [], settings: {},
   };
   var ready = false;
+
+  // Synchronously, before anything draws: if the browser still holds a session
+  // and we remember whose it is, start with that person in the cache.
+  var remembered = recall();
+  if (remembered && remembered.id && remembered.id === Store.currentId()) {
+    cache.profiles = [remembered];
+  } else if (remembered) {
+    remember(null);                    // signed out elsewhere; forget them
+  }
 
   function push(table, row) {
     return SB.load().then(function (sb) {
@@ -323,6 +362,7 @@
     Object.keys(row).forEach(function (k) { if (row[k] == null) delete row[k]; });
     if (changes.skills) row.skills = changes.skills.map(flat);
     if (Object.keys(row).length) patch("profiles", id, row).then(report);
+    if (id === Store.currentId()) keepMe();
     return me;
   };
 
@@ -450,10 +490,26 @@
       cache.audit = (d.audit || []).map(inAudit);
       cache.settings = inSettings(d.settings);
       ready = true;
+      keepMe();
       Store.notifyAll();
       return cache;
     });
   };
+  /** Keep the remembered copy in step with the real one. */
+  function keepMe() {
+    var id = Store.currentId();
+    if (!id) return remember(null);
+    for (var i = 0; i < cache.profiles.length; i++) {
+      if (cache.profiles[i].id === id) return remember(cache.profiles[i]);
+    }
+  }
+
+  var signOut = Store.signOut;
+  Store.signOut = function () {
+    remember(null);
+    return signOut.apply(Store, arguments);
+  };
+
   Store.isReady = function () { return ready; };
   Store.cache = function () { return cache; };
 

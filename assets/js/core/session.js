@@ -129,10 +129,25 @@
 
     signOut: function () {
       var SB = global.SB;
-      var done = (SB && SB.configured()) ? SB.signOut() : Promise.resolve();
-      return done.then(function () {
-        Store.signOut();
-        notify();
+
+      // End it here first. Somebody asking to be signed out should not wait on
+      // a network call, and used to: the remote call went first, so on a slow
+      // connection nothing happened at all, and if the library never loaded it
+      // rejected and nothing ever happened.
+      Store.signOut();
+      notify();
+
+      if (!(SB && SB.configured())) return Promise.resolve();
+      return SB.signOut().catch(function (e) {
+        console.error(e);
+        // The server was not told, so its token is still sitting in this
+        // browser and the next page load would sign them back in — which is
+        // the opposite of what was asked for. Take it out by hand.
+        try {
+          Object.keys(localStorage)
+            .filter(function (k) { return /^sb-.*-auth-token/.test(k); })
+            .forEach(function (k) { localStorage.removeItem(k); });
+        } catch (e2) { /* private mode */ }
       });
     },
 
