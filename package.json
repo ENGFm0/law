@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "name": "sanad",
+  "description": "Test tooling only. The site itself has no build step and no dependencies — it is HTML, CSS and JavaScript served as they are. Playwright is here because the browser suites in tools/ need a browser to drive.",
+  "devDependencies": {
+    "playwright": "^1.62.1"
+  },
+  "scripts": {
+    "test": "sh tools/run-all.sh",
+    "build": "node tools/build-artifact.mjs"
+  }
+}

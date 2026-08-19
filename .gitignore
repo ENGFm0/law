@@ -1,1 +1,4 @@
 __pycache__/
+# No slash: this is a symlink here, and "node_modules/" only matches a
+# real directory — which quietly left it untracked-but-listed.
+node_modules
