@@ -29,18 +29,91 @@
       '" href="' + M.profileHref(u) + '">' + esc(tx(u.name)) + "</a>";
   }
 
-  function stars(value) {
+  function stars(value, size) {
+    var full = Math.round(value);
     var out = "";
     for (var i = 0; i < 5; i++) {
-      out += '<span style="color:' + (i < Math.round(value) ? "var(--accent)" : "var(--border-strong)") +
-        '">' + Icons.svg("star", "icon-sm") + "</span>";
+      var on = i < full;
+      out += '<span style="color:' + (on ? "var(--accent)" : "var(--border-strong)") + '">' +
+        Icons.svg("star", (size || "icon-sm") + (on ? " icon--solid" : "")) + "</span>";
     }
     return '<span class="row gap-1">' + out + "</span>";
   }
 
+  /** A star row you can actually use: hover previews the whole scale up to the
+      star under the pointer, keyboard reaches it, and the number is spelled out
+      in words so 4 versus 5 is not a guess.
+
+      The stars are emitted 5→1 and the row is reversed. CSS has no
+      previous-sibling combinator, so that is what lets `:hover ~ *` light every
+      star BELOW the one hovered — and reversing the row rather than the reading
+      direction keeps star 1 at the start in Arabic and English alike. */
+  function starPicker(picked, forId) {
+    var out = "";
+    for (var i = 5; i >= 1; i--) {
+      out += '<button type="button" class="star-pick' + (i <= picked ? " is-on" : "") +
+        '" data-star="' + i + '" data-for="' + esc(forId) + '" ' +
+        'aria-label="' + esc(I18N.t("rate.starsN", { n: I18N.num(i) })) + '"' +
+        (i === picked ? ' aria-pressed="true"' : "") + ">" +
+        Icons.svg("star", i <= picked ? "icon--solid" : "") + "</button>";
+    }
+    return '<div class="stars-pick" role="group" ' +
+      'aria-label="' + esc(I18N.t("rate.pick")) + '">' +
+      '<div class="stars-pick__row">' + out + "</div>" +
+      '<span class="stars-pick__word' + (picked ? " is-set" : "") + '">' +
+        esc(picked ? I18N.t("rate.v" + picked) : I18N.t("rate.pick")) + "</span></div>";
+  }
+
+  /** The average, and — more usefully — how the ratings actually fall. */
+  function ratingSummary(userId) {
+    var r = M.ratingOf(userId);
+    if (!r.count) return '<p class="small muted">' + esc(I18N.t("rate.noneYet")) + "</p>";
+
+    var spread = M.ratingSpread(userId);
+    var rows = "";
+    for (var star = 5; star >= 1; star--) {
+      var n = spread[star] || 0;
+      var pct = r.count ? Math.round(n / r.count * 100) : 0;
+      rows += '<div class="rating-bar">' +
+        '<span class="rating-bar__label"><span class="num">' + I18N.num(star) + "</span>" +
+          Icons.svg("star", "icon-sm") + "</span>" +
+        '<span class="rating-bar__track"><span style="width:' + pct + '%"></span></span>' +
+        '<span class="rating-bar__n num">' + I18N.num(n) + "</span></div>";
+    }
+
+    return '<div class="rating-summary">' +
+      '<div class="rating-summary__score">' +
+        '<span class="display num">' + I18N.num(r.avg.toFixed(1)) + "</span>" +
+        '<span class="tiny muted">' + esc(I18N.t("rate.outOf", { n: I18N.num(5) })) + "</span>" +
+        stars(r.avg, "icon-lg") +
+        '<span class="tiny muted" style="margin-top:var(--s-2)">' +
+          esc(I18N.t("rate.count", { n: I18N.num(r.count) })) + "</span>" +
+      "</div>" +
+      '<div class="rating-summary__spread">' +
+        '<p class="tiny muted" style="margin-bottom:var(--s-2)">' +
+          esc(I18N.t("rate.spread")) + "</p>" + rows +
+      "</div></div>";
+  }
+
+  /** One written review, with the stars it carried. */
+  function reviewCard(rev) {
+    var author = M.user(rev.authorId);
+    return '<article class="testimony">' +
+      '<div class="row between wrap gap-3">' +
+        '<span class="row gap-3">' + avatar(author, "sm") +
+          "<span><strong class=\"small\">" + esc(author ? tx(author.name) : "") + "</strong>" +
+          '<p class="tiny muted">' + esc(tx(rev.date)) + "</p></span></span>" +
+        '<span class="row gap-2">' + stars(rev.rating) +
+          '<strong class="small num">' + I18N.num(rev.rating) + "</strong></span>" +
+      "</div>" +
+      (tx(rev.body)
+        ? '<p class="small" style="margin-top:var(--s-3)">' + esc(tx(rev.body)) + "</p>"
+        : "") + "</article>";
+  }
+
   function ratingLine(userId) {
     var r = M.ratingOf(userId);
-    return '<span class="rating">' + Icons.svg("star", "icon-sm") +
+    return '<span class="rating">' + Icons.svg("star", "icon-sm icon--solid") +
       num(r.avg.toFixed(1)) + '<span class="muted tiny">' +
       esc(I18N.t("lawyer.reviews", { n: I18N.num(r.count) })) + "</span></span>";
   }
@@ -192,6 +265,7 @@
   global.C = {
     sar: sar, num: num, avatar: avatar, personLink: personLink, stars: stars,
     ratingLine: ratingLine, verifiedMark: verifiedMark, progressBar: progressBar,
+    starPicker: starPicker, ratingSummary: ratingSummary, reviewCard: reviewCard,
     lawyerCard: lawyerCard, internCard: internCard, articleCard: articleCard,
     statusPill: statusPill, requestRow: requestRow, empty: empty, sectionHead: sectionHead
   };

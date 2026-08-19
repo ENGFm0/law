@@ -69,7 +69,14 @@ Pages.define("requests", function (global) {
     return '<div>' + C.requestRow(r, {
       status: CLIENT_STATUS[st.status] || st.status,
       actions: function () {
-        return '<button class="btn btn--ghost btn--sm" type="button" data-detail="' + esc(r.id) + '">' +
+        var type = M.serviceType(r.typeId);
+        var live = type && type.mode === "live" &&
+          ["delivered", "completed", "cancelled"].indexOf(st.status) === -1;
+        return (live
+            ? '<a class="btn btn--primary btn--sm" href="call.html?id=' + esc(r.id) + '">' +
+              Icons.svg(type.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>"
+            : "") +
+          '<button class="btn btn--ghost btn--sm" type="button" data-detail="' + esc(r.id) + '">' +
             esc(I18N.t("req.openDetails")) + "</button>" +
           (canRate
             ? '<button class="btn btn--outline btn--sm" type="button" data-rate="' + esc(r.id) + '">' +
@@ -99,18 +106,16 @@ Pages.define("requests", function (global) {
   }
 
   function rateForm(r) {
-    var picked = rating[r.id] || 0;
-    var buttons = "";
-    for (var i = 1; i <= 5; i++) {
-      buttons += '<button type="button" class="icon-btn" data-star="' + i + '" data-for="' + esc(r.id) + '" ' +
-        'style="color:' + (i <= picked ? "var(--accent)" : "var(--border-strong)") + '">' +
-        Icons.svg("star") + "</button>";
-    }
-    return '<div style="margin-top:var(--s-6);border-top:1px solid var(--border);padding-top:var(--s-5)">' +
+    var lawyer = M.user(r.lawyerId);
+    return '<div class="card card--pad card--rule-gold" style="margin-top:var(--s-6)">' +
       '<h3 class="subtitle" data-i18n="rate.title"></h3>' +
-      '<div class="row gap-1" style="margin:var(--s-3) 0">' + buttons + "</div>" +
-      '<textarea class="textarea" data-rate-body data-i18n-attr="placeholder:rate.placeholder"></textarea>' +
-      '<button class="btn btn--accent btn--sm" type="button" style="margin-top:var(--s-3)" ' +
+      '<p class="tiny muted" style="margin-top:var(--s-1)">' +
+        esc(lawyer ? tx(lawyer.name) : "") + " · " + esc(tx(r.title)) + "</p>" +
+      '<div style="margin:var(--s-5) 0">' + C.starPicker(rating[r.id] || 0, r.id) + "</div>" +
+      '<textarea class="textarea" data-rate-body ' +
+        'data-i18n-attr="placeholder:rate.placeholder"></textarea>' +
+      '<p class="tiny faint" style="margin-top:var(--s-2)" data-i18n="rate.commentOptional"></p>' +
+      '<button class="btn btn--accent" type="button" style="margin-top:var(--s-4)" ' +
         'data-rate-send="' + esc(r.id) + '" data-i18n="rate.submit"></button></div>';
   }
 
@@ -168,8 +173,8 @@ Pages.define("requests", function (global) {
     }
 
     if (t.mode === "live") {
-      return '<button class="btn btn--primary btn--sm" type="button" data-deliver="' + esc(r.id) + '">' +
-        Icons.svg(t.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</button>";
+      return '<a class="btn btn--primary btn--sm" href="call.html?id=' + esc(r.id) + '">' +
+        Icons.svg(t.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>";
     }
 
     var main = r.ai
@@ -313,8 +318,10 @@ Pages.define("requests", function (global) {
     pop.innerHTML =
       '<label class="field" style="padding:0 var(--s-2) var(--s-2)">' +
         '<span class="tiny muted">' + esc(I18N.t("pay.shareLabel")) + "</span>" +
-        '<input class="input num" type="number" min="0" max="100" step="5" dir="ltr" ' +
-          'data-share value="' + M.DEFAULT_SHARE + '"></label>' +
+        '<span class="tiny faint">' + esc(I18N.t("pay.shareFloor",
+          { n: I18N.num(M.MIN_SHARE) })) + "</span>" +
+        '<input class="input num" type="number" min="' + M.MIN_SHARE + '" max="100" step="5" ' +
+          'dir="ltr" data-share value="' + M.DEFAULT_SHARE + '"></label>' +
       '<p class="tiny faint" style="padding:0 var(--s-2) var(--s-3)">' +
         esc(I18N.t("pay.shareHint")) + "</p>" +
       '<hr class="divider" style="margin:0 0 var(--s-2)">' +
@@ -439,9 +446,7 @@ Pages.define("requests", function (global) {
   /** The share typed into the routing chooser, if it is open. */
   function readShare() {
     var el = $("[data-share]", host);
-    if (!el) return null;
-    var n = +el.value;
-    return isNaN(n) ? null : Math.max(0, Math.min(100, n));
+    return el ? M.clampShare(+el.value) : null;
   }
 
   /** One line saying what this task pays, for whoever is entitled to see it. */

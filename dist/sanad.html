@@ -239,6 +239,10 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .icon-sm { width: 16px; height: 16px; }
 .icon-lg { width: 24px; height: 24px; }
 .icon-xl { width: 28px; height: 28px; }
+/* A star that has been earned is solid; an empty one stays an outline. That
+   difference is the whole point of a star rating, and stroke alone loses it. */
+.icon--solid { fill: currentColor; }
+
 /* Arrows must point "forward" in whichever direction the page reads */
 [dir="rtl"] .icon-flip { transform: scaleX(-1); }
 
@@ -1182,6 +1186,95 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 @media (max-width: 760px)  { .grid-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 460px)  { .grid-5 { grid-template-columns: 1fr; } }
 
+/* ---------- rating: picking one, and reading the spread ---------- */
+.stars-pick { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+/* Emitted 5→1 and reversed, so `:hover ~ *` reaches the lower stars. */
+.stars-pick__row { display: flex; flex-direction: row-reverse; align-items: center; gap: var(--s-1); }
+.star-pick {
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: var(--r);
+  color: var(--border-strong); transition: color .12s, transform .12s, background-color .12s;
+}
+.star-pick svg { width: 30px; height: 30px; }
+.star-pick:hover, .star-pick:focus-visible { background: var(--surface-2); transform: translateY(-1px); }
+.star-pick.is-on { color: var(--accent); }
+/* Hovering one star lights it and every star below it, the way a scale reads. */
+.stars-pick__row:hover .star-pick { color: var(--border-strong); }
+.stars-pick__row:hover .star-pick:hover,
+.stars-pick__row:hover .star-pick:hover ~ .star-pick { color: var(--accent); }
+.stars-pick__word { font-weight: 700; font-size: .9375rem; color: var(--text-muted); }
+.stars-pick__word.is-set { color: var(--text); }
+
+.rating-summary {
+  display: grid; grid-template-columns: max-content 1fr; gap: var(--s-8);
+  align-items: center; padding: var(--s-5) 0;
+}
+@media (max-width: 560px) { .rating-summary { grid-template-columns: 1fr; gap: var(--s-5); } }
+.rating-summary__score { display: flex; flex-direction: column; align-items: center; }
+.rating-summary__score .display { line-height: 1; }
+.rating-summary__spread { min-width: 0; }
+.rating-bar { display: grid; grid-template-columns: 46px 1fr 28px; gap: var(--s-3); align-items: center; }
+.rating-bar + .rating-bar { margin-top: var(--s-2); }
+.rating-bar__label { display: inline-flex; align-items: center; gap: var(--s-1); font-size: .8125rem; color: var(--text-muted); }
+.rating-bar__label svg { color: var(--accent); }
+.rating-bar__track { height: 8px; border-radius: var(--r-full); background: var(--surface-3); overflow: hidden; }
+.rating-bar__track > span { display: block; height: 100%; background: var(--accent); border-radius: var(--r-full); }
+.rating-bar__n { font-size: .75rem; color: var(--text-faint); text-align: end; }
+/* Hovering the scale fills the stars it covers, not just tints them. */
+.stars-pick__row:hover .star-pick svg { fill: none; }
+.stars-pick__row:hover .star-pick:hover svg,
+.stars-pick__row:hover .star-pick:hover ~ .star-pick svg { fill: currentColor; }
+
+/* ---------- the call room ---------- */
+.call-card { max-width: 520px; margin-inline: auto; }
+
+.call-stage { max-width: 1000px; margin-inline: auto; }
+.call-stage__remote {
+  position: relative; aspect-ratio: 16 / 9; border-radius: var(--r-xl); overflow: hidden;
+  background: var(--surface-inverse); color: var(--on-inverse);
+}
+@media (max-width: 640px) { .call-stage__remote { aspect-ratio: 3 / 4; } }
+.call-stage__remote > video { width: 100%; height: 100%; object-fit: cover; background: #000; }
+
+.call-stage__placeholder {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; padding: var(--s-6);
+}
+.call-stage__placeholder .small { color: rgba(232, 238, 252, .72); }
+
+.call-stage__badge {
+  position: absolute; inset-block-start: var(--s-4); inset-inline-start: var(--s-4);
+  background: rgba(6, 12, 24, .6); color: #fff; border-radius: var(--r-full);
+  padding: var(--s-1) var(--s-3); font-size: .8125rem; font-weight: 700;
+  backdrop-filter: blur(6px);
+}
+
+.call-stage__self {
+  position: absolute; inset-block-end: var(--s-4); inset-inline-end: var(--s-4);
+  width: 168px; aspect-ratio: 4 / 3; border-radius: var(--r-lg); overflow: hidden;
+  background: #0b1220; border: 2px solid rgba(255, 255, 255, .18); box-shadow: var(--shadow-2);
+  display: grid; place-items: center;
+}
+@media (max-width: 640px) { .call-stage__self { width: 108px; } }
+.call-stage__self > video { width: 100%; height: 100%; object-fit: cover; }
+.call-stage__self > .tiny {
+  position: absolute; inset-block-end: 4px; inset-inline-start: 8px;
+  color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, .8);
+}
+/* A voice call has no picture to show, so the tile is just a label. */
+.call-stage__self.is-audio > video { display: none; }
+
+.call-bar { display: flex; justify-content: center; gap: var(--s-4); margin-top: var(--s-6); }
+.call-btn {
+  width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface-3); color: var(--text); box-shadow: var(--shadow-1);
+  transition: background-color .15s, color .15s, transform .12s;
+}
+.call-btn:hover { transform: translateY(-2px); }
+.call-btn.is-off { background: var(--danger-soft); color: var(--danger); }
+.call-btn--end { background: var(--danger); color: #fff; }
+.call-btn--end:hover { background: #a11616; }
+.call-btn svg { width: 24px; height: 24px; }
+
 
 /* --- bundle-only: the router swaps views inside #app --- */
 #app { display: flex; flex-direction: column; flex: 1; }
@@ -1198,9 +1291,31 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 
 <script>window.__SPA__ = true;
 window.__ASSETS__ = {"cover-contracts.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Contracts%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22ct%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2322375c%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23ct)%22%2F%3E%0A%20%20%3Cg%20transform%3D%22rotate(-8%20400%20225)%22%3E%0A%20%20%20%20%3Crect%20x%3D%22250%22%20y%3D%2280%22%20width%3D%22300%22%20height%3D%22300%22%20rx%3D%2212%22%20fill%3D%22%23f3f6ff%22%20opacity%3D%22.95%22%2F%3E%0A%20%20%20%20%3Cg%20stroke%3D%22%238b93a7%22%20stroke-width%3D%227%22%20stroke-linecap%3D%22round%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M290%20140%20h180%20M290%20180%20h220%20M290%20220%20h150%20M290%20260%20h200%22%2F%3E%0A%20%20%20%20%3C%2Fg%3E%0A%20%20%20%20%3Cpath%20d%3D%22M300%20320%20c30%20-30%2060%2020%2090%20-10%20s60%20-40%20100%2010%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Ccircle%20cx%3D%22660%22%20cy%3D%22360%22%20r%3D%2256%22%20fill%3D%22%23c8912a%22%20opacity%3D%22.25%22%2F%3E%0A%3C%2Fsvg%3E%0A","cover-corporate.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Corporate%20governance%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22cg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%231e3a5f%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23cg)%22%2F%3E%0A%20%20%3Cg%20fill%3D%22%23ffffff%22%20opacity%3D%22.07%22%3E%0A%20%20%20%20%3Crect%20x%3D%2260%22%20y%3D%22180%22%20width%3D%2290%22%20height%3D%22270%22%2F%3E%3Crect%20x%3D%22170%22%20y%3D%22120%22%20width%3D%2270%22%20height%3D%22330%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22260%22%20y%3D%22220%22%20width%3D%22110%22%20height%3D%22230%22%2F%3E%3Crect%20x%3D%22390%22%20y%3D%2290%22%20width%3D%2280%22%20height%3D%22360%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22490%22%20y%3D%22170%22%20width%3D%22100%22%20height%3D%22280%22%2F%3E%3Crect%20x%3D%22610%22%20y%3D%22130%22%20width%3D%2260%22%20height%3D%22320%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22690%22%20y%3D%22230%22%20width%3D%2280%22%20height%3D%22220%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20fill%3D%22%23c8912a%22%20opacity%3D%22.85%22%3E%0A%20%20%20%20%3Crect%20x%3D%22182%22%20y%3D%22150%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22204%22%20y%3D%22150%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22182%22%20y%3D%22180%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22204%22%20y%3D%22210%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22402%22%20y%3D%22120%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22424%22%20y%3D%22150%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22402%22%20y%3D%22200%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22446%22%20y%3D%22120%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22502%22%20y%3D%22200%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22546%22%20y%3D%22240%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22622%22%20y%3D%22160%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22644%22%20y%3D%22200%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cpath%20d%3D%22M0%20380%20L800%20300%20L800%20450%20L0%20450%20Z%22%20fill%3D%22%23060c18%22%20opacity%3D%22.55%22%2F%3E%0A%3C%2Fsvg%3E%0A","cover-family.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Family%20law%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22fm%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23183050%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230d1e38%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23fm)%22%2F%3E%0A%20%20%3Cg%20fill%3D%22none%22%20stroke%3D%22%23e8eefc%22%20stroke-width%3D%225%22%20opacity%3D%22.7%22%3E%0A%20%20%20%20%3Crect%20x%3D%22230%22%20y%3D%22120%22%20width%3D%22210%22%20height%3D%22270%22%20rx%3D%2210%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M265%20175%20h140%20M265%20215%20h140%20M265%20255%20h100%20M265%20295%20h120%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20fill%3D%22%23c8912a%22%20opacity%3D%22.9%22%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22520%22%20cy%3D%22215%22%20r%3D%2246%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%2210%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22580%22%20cy%3D%22215%22%20r%3D%2246%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%2210%22%20opacity%3D%22.6%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Ccircle%20cx%3D%22140%22%20cy%3D%22330%22%20r%3D%2270%22%20fill%3D%22%23c8912a%22%20opacity%3D%22.18%22%2F%3E%0A%3C%2Fsvg%3E%0A","cover-ip.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Intellectual%20property%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22ip%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%230b1b3a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23132a52%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23ip)%22%2F%3E%0A%20%20%3Cg%20stroke%3D%22%234f7fd4%22%20stroke-width%3D%221.5%22%20opacity%3D%22.35%22%20fill%3D%22none%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M0%2090%20H800%20M0%20180%20H800%20M0%20270%20H800%20M0%20360%20H800%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M100%200%20V450%20M250%200%20V450%20M400%200%20V450%20M550%200%20V450%20M700%200%20V450%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20fill%3D%22%234f7fd4%22%20opacity%3D%22.55%22%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22100%22%20cy%3D%22180%22%20r%3D%225%22%2F%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%2290%22%20r%3D%225%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22270%22%20r%3D%225%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22550%22%20cy%3D%22180%22%20r%3D%225%22%2F%3E%3Ccircle%20cx%3D%22700%22%20cy%3D%22360%22%20r%3D%225%22%2F%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%22360%22%20r%3D%225%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20transform%3D%22translate(400%20225)%22%3E%0A%20%20%20%20%3Crect%20x%3D%22-56%22%20y%3D%22-14%22%20width%3D%22112%22%20height%3D%2290%22%20rx%3D%2210%22%20fill%3D%22%23c8912a%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M-30%20-14%20v-26%20a30%2030%200%200%201%2060%200%20v26%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%2214%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%2226%22%20r%3D%2210%22%20fill%3D%22%230b1b3a%22%2F%3E%3Crect%20x%3D%22-4%22%20y%3D%2226%22%20width%3D%228%22%20height%3D%2222%22%20fill%3D%22%230b1b3a%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A","cover-labour.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Labour%20law%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22lb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2312233f%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b1729%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23lb)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22690%22%20cy%3D%22380%22%20r%3D%2270%22%20fill%3D%22%23c8912a%22%20opacity%3D%22.16%22%2F%3E%0A%20%20%3Cg%20transform%3D%22translate(400%20235)%22%3E%0A%20%20%20%20%3Cg%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M-150%2060%20h300%22%2F%3E%3Cpath%20d%3D%22M0%20-110%20v170%22%2F%3E%0A%20%20%20%20%3C%2Fg%3E%0A%20%20%20%20%3Cg%20fill%3D%22none%22%20stroke%3D%22%23e8eefc%22%20stroke-width%3D%226%22%20opacity%3D%22.85%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M-120%20-70%20h240%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M-120%20-70%20l-40%2070%20h80%20z%22%2F%3E%3Cpath%20d%3D%22M120%20-70%20l-40%2070%20h80%20z%22%2F%3E%0A%20%20%20%20%3C%2Fg%3E%0A%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%22-110%22%20r%3D%2212%22%20fill%3D%22%23c8912a%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22-70%22%20y%3D%2260%22%20width%3D%22140%22%20height%3D%2216%22%20rx%3D%226%22%20fill%3D%22%23c8912a%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A","cover-realestate.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Real%20estate%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22re%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231b3a5c%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230c1c30%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23re)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22640%22%20cy%3D%22110%22%20r%3D%2252%22%20fill%3D%22%23c8912a%22%20opacity%3D%22.35%22%2F%3E%0A%20%20%3Cg%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22%20fill%3D%22none%22%20opacity%3D%22.22%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M120%20300%20L240%20220%20L360%20300%20L360%20420%20L120%20420%20Z%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M180%20420%20L180%20350%20L230%20350%20L230%20420%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M400%20340%20L500%20275%20L600%20340%20L600%20420%20L400%20420%20Z%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20fill%3D%22%23c8912a%22%20opacity%3D%22.6%22%3E%0A%20%20%20%20%3Crect%20x%3D%22265%22%20y%3D%22315%22%20width%3D%2226%22%20height%3D%2226%22%2F%3E%3Crect%20x%3D%22265%22%20y%3D%22360%22%20width%3D%2226%22%20height%3D%2226%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22430%22%20y%3D%22360%22%20width%3D%2224%22%20height%3D%2224%22%2F%3E%3Crect%20x%3D%22540%22%20y%3D%22360%22%20width%3D%2224%22%20height%3D%2224%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%22418%22%20width%3D%22800%22%20height%3D%2232%22%20fill%3D%22%23060c18%22%20opacity%3D%22.6%22%2F%3E%0A%20%20%3Cg%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223%22%20opacity%3D%22.8%22%3E%3Cpath%20d%3D%22M60%20130%20L60%20200%20M60%20130%20L140%20130%22%2F%3E%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A","favicon.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Sanad%22%3E%0A%20%20%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2260%22%20height%3D%2260%22%20rx%3D%2214%22%20fill%3D%22none%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M32%2014%20v34%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M16%2022%20h32%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M16%2022%20l-7%2013%20h14%20z%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M48%2022%20l-7%2013%20h14%20z%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2050%20h16%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2214%22%20r%3D%223.6%22%20fill%3D%22%23c8912a%22%2F%3E%0A%3C%2Fsvg%3E%0A","logo.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Sanad%22%3E%0A%20%20%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2260%22%20height%3D%2260%22%20rx%3D%2214%22%20fill%3D%22none%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M32%2014%20v34%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M16%2022%20h32%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M16%2022%20l-7%2013%20h14%20z%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M48%2022%20l-7%2013%20h14%20z%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2050%20h16%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2214%22%20r%3D%223.6%22%20fill%3D%22%23c8912a%22%2F%3E%0A%3C%2Fsvg%3E%0A"};
-window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.title","html":"<main id=\"main\" data-home></main>"},"requests":{"page":"requests","script":"requests","titleKey":"req.title","html":"<main id=\"main\" data-requests></main>"},"services":{"page":"services","script":"services","titleKey":"svc.title","html":"<main id=\"main\" data-services></main>"},"lawyers":{"page":"lawyers","script":"lawyers","titleKey":"dir.title","html":"<main id=\"main\" data-people></main>"},"lawyer":{"page":"lawyers","script":"lawyer","titleKey":"profile.title","html":"<main id=\"main\" data-profile></main>"},"intern":{"page":"lawyers","script":"intern","titleKey":"profile.internTitle","html":"<main id=\"main\" data-profile></main>"},"blog":{"page":"blog","script":"blog","titleKey":"blog.title","html":"<main id=\"main\" data-blog></main>"},"article":{"page":"blog","script":"article","titleKey":"blog.title","html":"<main id=\"main\" data-article></main>"},"editor":{"page":"blog","script":"editor","titleKey":"ed.heading","html":"<main id=\"main\" data-editor></main>"},"quotes":{"page":"quotes","script":"quotes","titleKey":"quotes.title","html":"<main id=\"main\">\n  <div class=\"container\" style=\"max-width:960px;padding-block:var(--s-8) var(--s-20)\">\n    <nav class=\"breadcrumb\">\n      <a href=\"index.html\" data-i18n=\"nav.home\"></a>\n      <span aria-hidden=\"true\">·</span>\n      <span data-i18n=\"nav.quotes\"></span>\n    </nav>\n\n    <!-- ===== the client's side: compose, only while nothing is live ===== -->\n    <section data-quote-compose hidden>\n      <header style=\"margin-bottom:var(--s-8);max-width:660px\">\n        <span class=\"eyebrow\" data-i18n=\"nav.quotes\"></span>\n        <h1 class=\"headline\" style=\"margin-top:var(--s-3)\" data-i18n=\"quotes.heading\"></h1>\n        <p class=\"lead\" data-i18n=\"quotes.lead\"></p>\n      </header>\n\n      <div class=\"quote-layout\">\n        <form class=\"card card--pad stack gap-6\" data-quote-form>\n          <div class=\"field\">\n            <label class=\"label\" for=\"q-brief\" data-i18n=\"quotes.brief\"></label>\n            <!-- Validated in JS rather than with [required]: the native bubble\n                 speaks the browser's language, not the page's. -->\n            <textarea class=\"textarea\" id=\"q-brief\"\n                      data-i18n-attr=\"placeholder:quotes.briefPlaceholder\"></textarea>\n            <p class=\"tiny faint\" data-i18n=\"quotes.briefHint\"></p>\n          </div>\n\n          <div class=\"grid grid-2\" style=\"gap:var(--s-4)\">\n            <div class=\"field\">\n              <label class=\"label\" for=\"q-city\" data-i18n=\"quotes.where\"></label>\n              <select class=\"select\" id=\"q-city\" data-quote-city></select>\n            </div>\n            <div class=\"field\">\n              <label class=\"label\" for=\"q-spec\" data-i18n=\"quotes.specialty\"></label>\n              <select class=\"select\" id=\"q-spec\" data-quote-spec></select>\n            </div>\n          </div>\n\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"quotes.how\"></span>\n            <div class=\"row gap-2 wrap\" data-quote-modes></div>\n          </div>\n\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"quotes.window\"></span>\n            <div class=\"row gap-2 wrap\" data-quote-window></div>\n          </div>\n\n          <button class=\"btn btn--accent btn--lg btn--block\" type=\"submit\" data-i18n=\"quotes.publish\"></button>\n        </form>\n\n        <aside class=\"card card--rule-navy card--pad\" style=\"align-self:start\">\n          <h2 class=\"subtitle\" data-i18n=\"quotes.privacy\"></h2>\n          <p class=\"small muted\" style=\"margin-top:var(--s-3)\" data-i18n=\"quotes.privacyBody\"></p>\n          <hr class=\"divider\">\n          <div data-quote-preview></div>\n        </aside>\n      </div>\n    </section>\n\n    <!-- ===== the live board the client watches ===== -->\n    <section data-quote-live hidden></section>\n\n    <!-- ===== the same auction seen from a lawyer's chair ===== -->\n    <section data-quote-bids hidden></section>\n  </div>\n</main>"},"assistant":{"page":"assistant","script":"assistant","titleKey":"ai.title","html":"<main id=\"main\" data-assistant></main>"},"account":{"page":"account","script":"account","titleKey":"account.title","html":"<main id=\"main\" data-account></main>"},"about":{"page":"about","script":"about","titleKey":"about.title","html":"<main id=\"main\" data-about></main>"},"login":{"page":"login","script":"login","titleKey":"auth.title","html":"<main id=\"main\">\n  <div class=\"auth\">\n    <aside class=\"auth__aside\">\n      <h2 class=\"headline\" data-i18n=\"auth.asideTitle\"></h2>\n      <p class=\"lead\" style=\"color:rgba(232,238,252,.72)\" data-i18n=\"auth.asideBody\"></p>\n      <ul class=\"stack gap-4\" data-auth-points></ul>\n    </aside>\n\n    <section class=\"auth__form\">\n      <p class=\"demo-banner\" data-i18n=\"auth.demoBanner\"></p>\n      <h1 class=\"headline\" style=\"margin-top:var(--s-6)\" data-i18n=\"auth.welcome\"></h1>\n      <p class=\"lead\" style=\"margin:var(--s-2) 0 var(--s-8)\" data-i18n=\"auth.welcomeLead\"></p>\n\n      <form class=\"stack gap-4\" data-login novalidate>\n        <label class=\"field\"><span class=\"label\" data-i18n=\"auth.email\"></span>\n          <input class=\"input\" name=\"email\" type=\"email\" autocomplete=\"email\" dir=\"ltr\"></label>\n        <label class=\"field\"><span class=\"label\" data-i18n=\"auth.password\"></span>\n          <input class=\"input\" name=\"password\" type=\"password\" autocomplete=\"current-password\"></label>\n        <p class=\"form-error\" data-login-error hidden></p>\n        <button class=\"btn btn--primary btn--lg btn--block\" type=\"submit\" data-i18n=\"auth.signIn\"></button>\n      </form>\n\n      <p class=\"center small muted\" style=\"margin-top:var(--s-6)\">\n        <span data-i18n=\"signup.noAccount\"></span>\n        <a href=\"signup.html\" style=\"color:var(--accent);font-weight:700\" data-i18n=\"auth.createAccount\"></a>\n      </p>\n\n      <div style=\"margin-top:var(--s-10)\">\n        <p class=\"small muted center\" data-i18n=\"login.tryAs\"></p>\n        <div class=\"grid grid-3\" style=\"gap:var(--s-3);margin-top:var(--s-3)\" data-demo-accounts></div>\n      </div>\n    </section>\n  </div>\n</main>"},"signup":{"page":"signup","script":"signup","titleKey":"signup.title","html":"<main id=\"main\">\n  <div class=\"container\" style=\"max-width:820px;padding-bottom:var(--s-20)\">\n    <p class=\"demo-banner\" data-i18n=\"auth.demoBanner\"></p>\n\n    <header style=\"margin:var(--s-8) 0\">\n      <h1 class=\"headline\" data-i18n=\"signup.heading\"></h1>\n      <p class=\"lead\" data-i18n=\"signup.lead\"></p>\n    </header>\n\n    <ol class=\"stepper\" data-stepper></ol>\n\n    <form class=\"card card--pad\" data-signup novalidate>\n      <!-- step 1: who are you -->\n      <section data-step=\"1\">\n        <h2 class=\"title\" data-i18n=\"signup.pickRole\"></h2>\n        <p class=\"small muted\" style=\"margin-top:var(--s-2)\" data-i18n=\"signup.pickRoleHint\"></p>\n        <div class=\"grid grid-3\" style=\"margin-top:var(--s-5)\" data-role-picker></div>\n      </section>\n\n      <!-- step 2: the basics everyone gives -->\n      <section data-step=\"2\" hidden>\n        <h2 class=\"title\" data-i18n=\"signup.basics\"></h2>\n        <div class=\"grid grid-2\" style=\"gap:var(--s-4);margin-top:var(--s-5)\">\n          <label class=\"field\"><span class=\"label\" data-i18n=\"auth.fullName\"></span>\n            <input class=\"input\" name=\"name\" autocomplete=\"name\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"auth.email\"></span>\n            <input class=\"input\" name=\"email\" type=\"email\" autocomplete=\"email\" dir=\"ltr\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"signup.phone\"></span>\n            <input class=\"input num\" name=\"phone\" type=\"tel\" inputmode=\"tel\" dir=\"ltr\" placeholder=\"05XXXXXXXX\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"home.city\"></span>\n            <select class=\"select\" name=\"city\" data-city-options></select></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"auth.password\"></span>\n            <input class=\"input\" name=\"password\" type=\"password\" autocomplete=\"new-password\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"signup.avatar\"></span>\n            <input class=\"input\" name=\"avatar\" type=\"file\" accept=\"image/*\"></label>\n        </div>\n        <p class=\"tiny faint\" style=\"margin-top:var(--s-2)\" data-i18n=\"signup.avatarHint\"></p>\n      </section>\n\n      <!-- step 3: proof of standing — differs by role -->\n      <section data-step=\"3\" hidden>\n        <h2 class=\"title\" data-step3-title></h2>\n        <div style=\"margin-top:var(--s-5)\" data-step3-fields></div>\n      </section>\n\n      <!-- step 4: review -->\n      <section data-step=\"4\" hidden>\n        <h2 class=\"title\" data-i18n=\"signup.review\"></h2>\n        <div style=\"margin-top:var(--s-5)\" data-review></div>\n        <label class=\"check\" style=\"margin-top:var(--s-5)\">\n          <input type=\"checkbox\" name=\"terms\"><span data-i18n=\"auth.terms\"></span></label>\n      </section>\n\n      <p class=\"form-error\" data-signup-error hidden></p>\n\n      <div class=\"row between gap-3\" style=\"margin-top:var(--s-8)\">\n        <button class=\"btn btn--outline\" type=\"button\" data-back hidden data-i18n=\"signup.back\"></button>\n        <span class=\"grow\"></span>\n        <button class=\"btn btn--primary btn--lg\" type=\"button\" data-next data-i18n=\"signup.next\"></button>\n        <button class=\"btn btn--accent btn--lg\" type=\"submit\" data-finish hidden data-i18n=\"signup.finish\"></button>\n      </div>\n    </form>\n\n    <p class=\"center small muted\" style=\"margin-top:var(--s-6)\">\n      <span data-i18n=\"signup.haveAccount\"></span>\n      <a href=\"login.html\" style=\"color:var(--accent);font-weight:700\" data-i18n=\"auth.signIn\"></a>\n    </p>\n  </div>\n</main>"}};
+window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.title","html":"<main id=\"main\" data-home></main>"},"requests":{"page":"requests","script":"requests","titleKey":"req.title","html":"<main id=\"main\" data-requests></main>"},"services":{"page":"services","script":"services","titleKey":"svc.title","html":"<main id=\"main\" data-services></main>"},"lawyers":{"page":"lawyers","script":"lawyers","titleKey":"dir.title","html":"<main id=\"main\" data-people></main>"},"lawyer":{"page":"lawyers","script":"lawyer","titleKey":"profile.title","html":"<main id=\"main\" data-profile></main>"},"intern":{"page":"lawyers","script":"intern","titleKey":"profile.internTitle","html":"<main id=\"main\" data-profile></main>"},"blog":{"page":"blog","script":"blog","titleKey":"blog.title","html":"<main id=\"main\" data-blog></main>"},"article":{"page":"blog","script":"article","titleKey":"blog.title","html":"<main id=\"main\" data-article></main>"},"editor":{"page":"blog","script":"editor","titleKey":"ed.heading","html":"<main id=\"main\" data-editor></main>"},"quotes":{"page":"quotes","script":"quotes","titleKey":"quotes.title","html":"<main id=\"main\">\n  <div class=\"container\" style=\"max-width:960px;padding-block:var(--s-8) var(--s-20)\">\n    <nav class=\"breadcrumb\">\n      <a href=\"index.html\" data-i18n=\"nav.home\"></a>\n      <span aria-hidden=\"true\">·</span>\n      <span data-i18n=\"nav.quotes\"></span>\n    </nav>\n\n    <!-- ===== the client's side: compose, only while nothing is live ===== -->\n    <section data-quote-compose hidden>\n      <header style=\"margin-bottom:var(--s-8);max-width:660px\">\n        <span class=\"eyebrow\" data-i18n=\"nav.quotes\"></span>\n        <h1 class=\"headline\" style=\"margin-top:var(--s-3)\" data-i18n=\"quotes.heading\"></h1>\n        <p class=\"lead\" data-i18n=\"quotes.lead\"></p>\n      </header>\n\n      <div class=\"quote-layout\">\n        <form class=\"card card--pad stack gap-6\" data-quote-form>\n          <div class=\"field\">\n            <label class=\"label\" for=\"q-brief\" data-i18n=\"quotes.brief\"></label>\n            <!-- Validated in JS rather than with [required]: the native bubble\n                 speaks the browser's language, not the page's. -->\n            <textarea class=\"textarea\" id=\"q-brief\"\n                      data-i18n-attr=\"placeholder:quotes.briefPlaceholder\"></textarea>\n            <p class=\"tiny faint\" data-i18n=\"quotes.briefHint\"></p>\n          </div>\n\n          <div class=\"grid grid-2\" style=\"gap:var(--s-4)\">\n            <div class=\"field\">\n              <label class=\"label\" for=\"q-city\" data-i18n=\"quotes.where\"></label>\n              <select class=\"select\" id=\"q-city\" data-quote-city></select>\n            </div>\n            <div class=\"field\">\n              <label class=\"label\" for=\"q-spec\" data-i18n=\"quotes.specialty\"></label>\n              <select class=\"select\" id=\"q-spec\" data-quote-spec></select>\n            </div>\n          </div>\n\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"quotes.how\"></span>\n            <div class=\"row gap-2 wrap\" data-quote-modes></div>\n          </div>\n\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"quotes.window\"></span>\n            <div class=\"row gap-2 wrap\" data-quote-window></div>\n          </div>\n\n          <button class=\"btn btn--accent btn--lg btn--block\" type=\"submit\" data-i18n=\"quotes.publish\"></button>\n        </form>\n\n        <aside class=\"card card--rule-navy card--pad\" style=\"align-self:start\">\n          <h2 class=\"subtitle\" data-i18n=\"quotes.privacy\"></h2>\n          <p class=\"small muted\" style=\"margin-top:var(--s-3)\" data-i18n=\"quotes.privacyBody\"></p>\n          <hr class=\"divider\">\n          <div data-quote-preview></div>\n        </aside>\n      </div>\n    </section>\n\n    <!-- ===== the live board the client watches ===== -->\n    <section data-quote-live hidden></section>\n\n    <!-- ===== the same auction seen from a lawyer's chair ===== -->\n    <section data-quote-bids hidden></section>\n  </div>\n</main>"},"assistant":{"page":"assistant","script":"assistant","titleKey":"ai.title","html":"<main id=\"main\" data-assistant></main>"},"account":{"page":"account","script":"account","titleKey":"account.title","html":"<main id=\"main\" data-account></main>"},"about":{"page":"about","script":"about","titleKey":"about.title","html":"<main id=\"main\" data-about></main>"},"login":{"page":"login","script":"login","titleKey":"auth.title","html":"<main id=\"main\">\n  <div class=\"auth\">\n    <aside class=\"auth__aside\">\n      <h2 class=\"headline\" data-i18n=\"auth.asideTitle\"></h2>\n      <p class=\"lead\" style=\"color:rgba(232,238,252,.72)\" data-i18n=\"auth.asideBody\"></p>\n      <ul class=\"stack gap-4\" data-auth-points></ul>\n    </aside>\n\n    <section class=\"auth__form\">\n      <p class=\"demo-banner\" data-i18n=\"auth.demoBanner\"></p>\n      <h1 class=\"headline\" style=\"margin-top:var(--s-6)\" data-i18n=\"auth.welcome\"></h1>\n      <p class=\"lead\" style=\"margin:var(--s-2) 0 var(--s-8)\" data-i18n=\"auth.welcomeLead\"></p>\n\n      <form class=\"stack gap-4\" data-login novalidate>\n        <label class=\"field\"><span class=\"label\" data-i18n=\"auth.email\"></span>\n          <input class=\"input\" name=\"email\" type=\"email\" autocomplete=\"email\" dir=\"ltr\"></label>\n        <label class=\"field\"><span class=\"label\" data-i18n=\"auth.password\"></span>\n          <input class=\"input\" name=\"password\" type=\"password\" autocomplete=\"current-password\"></label>\n        <p class=\"form-error\" data-login-error hidden></p>\n        <button class=\"btn btn--primary btn--lg btn--block\" type=\"submit\" data-i18n=\"auth.signIn\"></button>\n      </form>\n\n      <p class=\"center small muted\" style=\"margin-top:var(--s-6)\">\n        <span data-i18n=\"signup.noAccount\"></span>\n        <a href=\"signup.html\" style=\"color:var(--accent);font-weight:700\" data-i18n=\"auth.createAccount\"></a>\n      </p>\n\n      <div style=\"margin-top:var(--s-10)\">\n        <p class=\"small muted center\" data-i18n=\"login.tryAs\"></p>\n        <div class=\"grid grid-3\" style=\"gap:var(--s-3);margin-top:var(--s-3)\" data-demo-accounts></div>\n      </div>\n    </section>\n  </div>\n</main>"},"signup":{"page":"signup","script":"signup","titleKey":"signup.title","html":"<main id=\"main\">\n  <div class=\"container\" style=\"max-width:820px;padding-bottom:var(--s-20)\">\n    <p class=\"demo-banner\" data-i18n=\"auth.demoBanner\"></p>\n\n    <header style=\"margin:var(--s-8) 0\">\n      <h1 class=\"headline\" data-i18n=\"signup.heading\"></h1>\n      <p class=\"lead\" data-i18n=\"signup.lead\"></p>\n    </header>\n\n    <ol class=\"stepper\" data-stepper></ol>\n\n    <form class=\"card card--pad\" data-signup novalidate>\n      <!-- step 1: who are you -->\n      <section data-step=\"1\">\n        <h2 class=\"title\" data-i18n=\"signup.pickRole\"></h2>\n        <p class=\"small muted\" style=\"margin-top:var(--s-2)\" data-i18n=\"signup.pickRoleHint\"></p>\n        <div class=\"grid grid-3\" style=\"margin-top:var(--s-5)\" data-role-picker></div>\n      </section>\n\n      <!-- step 2: the basics everyone gives -->\n      <section data-step=\"2\" hidden>\n        <h2 class=\"title\" data-i18n=\"signup.basics\"></h2>\n        <div class=\"grid grid-2\" style=\"gap:var(--s-4);margin-top:var(--s-5)\">\n          <label class=\"field\"><span class=\"label\" data-i18n=\"auth.fullName\"></span>\n            <input class=\"input\" name=\"name\" autocomplete=\"name\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"auth.email\"></span>\n            <input class=\"input\" name=\"email\" type=\"email\" autocomplete=\"email\" dir=\"ltr\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"signup.phone\"></span>\n            <input class=\"input num\" name=\"phone\" type=\"tel\" inputmode=\"tel\" dir=\"ltr\" placeholder=\"05XXXXXXXX\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"home.city\"></span>\n            <select class=\"select\" name=\"city\" data-city-options></select></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"auth.password\"></span>\n            <input class=\"input\" name=\"password\" type=\"password\" autocomplete=\"new-password\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"signup.avatar\"></span>\n            <input class=\"input\" name=\"avatar\" type=\"file\" accept=\"image/*\"></label>\n        </div>\n        <p class=\"tiny faint\" style=\"margin-top:var(--s-2)\" data-i18n=\"signup.avatarHint\"></p>\n      </section>\n\n      <!-- step 3: proof of standing — differs by role -->\n      <section data-step=\"3\" hidden>\n        <h2 class=\"title\" data-step3-title></h2>\n        <div style=\"margin-top:var(--s-5)\" data-step3-fields></div>\n      </section>\n\n      <!-- step 4: review -->\n      <section data-step=\"4\" hidden>\n        <h2 class=\"title\" data-i18n=\"signup.review\"></h2>\n        <div style=\"margin-top:var(--s-5)\" data-review></div>\n        <label class=\"check\" style=\"margin-top:var(--s-5)\">\n          <input type=\"checkbox\" name=\"terms\"><span data-i18n=\"auth.terms\"></span></label>\n      </section>\n\n      <p class=\"form-error\" data-signup-error hidden></p>\n\n      <div class=\"row between gap-3\" style=\"margin-top:var(--s-8)\">\n        <button class=\"btn btn--outline\" type=\"button\" data-back hidden data-i18n=\"signup.back\"></button>\n        <span class=\"grow\"></span>\n        <button class=\"btn btn--primary btn--lg\" type=\"button\" data-next data-i18n=\"signup.next\"></button>\n        <button class=\"btn btn--accent btn--lg\" type=\"submit\" data-finish hidden data-i18n=\"signup.finish\"></button>\n      </div>\n    </form>\n\n    <p class=\"center small muted\" style=\"margin-top:var(--s-6)\">\n      <span data-i18n=\"signup.haveAccount\"></span>\n      <a href=\"login.html\" style=\"color:var(--accent);font-weight:700\" data-i18n=\"auth.signIn\"></a>\n    </p>\n  </div>\n</main>"},"call":{"page":"requests","script":"call","titleKey":"call.title","html":"<main id=\"main\" data-call></main>"}};
 </script>
 <script>/* ==========================================================================
+   Runtime configuration.
+
+   Empty here on purpose: the published demo runs with no backend, no keys in
+   the repository, and no network beyond fonts. Filling these in is what moves
+   the site onto real infrastructure — nothing above this file changes.
+
+     supabase — the project the accounts, requests and articles live in, and
+                the Realtime channel calls use to signal across the internet.
+                The anon key is public by design; what protects the data is the
+                row-level security in supabase/schema.sql, never key secrecy.
+
+     turn     — a relay for calls that cannot connect peer to peer (symmetric
+                NAT, strict corporate firewalls). STUN alone covers most
+                networks; this covers the rest, and it is the one piece of call
+                infrastructure that costs money.
+   ========================================================================== */
+window.SANAD_CONFIG = {
+  // supabase: { url: "https://xxxx.supabase.co", anonKey: "…" },
+  // turn: { urls: "turn:turn.example.com:3478", username: "…", credential: "…" },
+};
+
+/* ==========================================================================
    Theme — light / dark
    Runs synchronously in <head>, before any pixel is painted, so a dark-mode
    visitor never gets a white flash on load.
@@ -2166,6 +2281,53 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
       "pay.earned": "ما كسبته من المهام",
       "pay.paidOut": "أجور المتدربين",
       "pay.agreementActive": "اتفاق قائم",
+      "pay.shareFloor": "لا تقل عن {n}٪ — لك أن تزيد.",
+      "rate.v1": "سيّئ",
+      "rate.v2": "مقبول",
+      "rate.v3": "جيد",
+      "rate.v4": "جيد جداً",
+      "rate.v5": "ممتاز",
+      "rate.pick": "اختر من ١ إلى ٥",
+      "rate.average": "متوسط التقييم",
+      "rate.outOf": "من {n}",
+      "rate.count": "{n} تقييم",
+      "rate.spread": "توزيع التقييمات",
+      "rate.starsN": "{n} نجوم",
+      "rate.noneYet": "لا توجد تقييمات بعد.",
+      "rate.fromClient": "تقييم عميل بعد طلب منجز",
+      "rate.commentOptional": "التعليق اختياري.",
+      "call.title": "مكالمة | سند",
+      "call.video": "مكالمة فيديو",
+      "call.audio": "مكالمة صوتية",
+      "call.with": "مع {name}",
+      "call.join": "ادخل المكالمة",
+      "call.joinHint": "سنطلب إذن الكاميرا والميكروفون من متصفحك.",
+      "call.connecting": "جارٍ الاتصال…",
+      "call.waiting": "بانتظار الطرف الآخر…",
+      "call.connected": "متصل",
+      "call.reconnecting": "انقطع الاتصال، نحاول من جديد…",
+      "call.ended": "انتهت المكالمة",
+      "call.endedByPeer": "أنهى الطرف الآخر المكالمة.",
+      "call.duration": "مدة المكالمة",
+      "call.mute": "كتم الميكروفون",
+      "call.unmute": "إلغاء الكتم",
+      "call.camOff": "إيقاف الكاميرا",
+      "call.camOn": "تشغيل الكاميرا",
+      "call.hangUp": "إنهاء",
+      "call.back": "عد إلى الطلبات",
+      "call.you": "أنت",
+      "call.denied": "رُفض إذن الكاميرا أو الميكروفون. اسمح به من إعدادات المتصفح ثم أعد المحاولة.",
+      "call.nodevice": "لم نعثر على كاميرا أو ميكروفون على هذا الجهاز.",
+      "call.unsupported": "متصفحك لا يدعم المكالمات. جرّب متصفحاً حديثاً.",
+      "call.failed": "تعذّر تشغيل الكاميرا أو الميكروفون.",
+      "call.insecure": "المكالمات تحتاج اتصالاً مؤمّناً (https).",
+      "call.retry": "أعد المحاولة",
+      "call.notYours": "هذه المكالمة ليست ضمن طلباتك.",
+      "call.localOnly": "الإشارات محلية الآن: تعمل بين تبويبين على هذا الجهاز فقط.",
+      "call.openSecond": "افتح هذا الرابط في تبويب ثانٍ لتجربة الطرفين.",
+      "call.copyLink": "انسخ رابط الغرفة",
+      "call.copied": "نُسخ الرابط.",
+      "call.markDone": "أنهِ المكالمة وسلّم الطلب",
     },
 
     en: {
@@ -3012,6 +3174,53 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
       "pay.earned": "Earned from tasks",
       "pay.paidOut": "Paid to trainees",
       "pay.agreementActive": "Agreement in place",
+      "pay.shareFloor": "No less than {n}% — you may raise it.",
+      "rate.v1": "Poor",
+      "rate.v2": "Fair",
+      "rate.v3": "Good",
+      "rate.v4": "Very good",
+      "rate.v5": "Excellent",
+      "rate.pick": "Pick from 1 to 5",
+      "rate.average": "Average rating",
+      "rate.outOf": "out of {n}",
+      "rate.count": "{n} ratings",
+      "rate.spread": "How the ratings fall",
+      "rate.starsN": "{n} stars",
+      "rate.noneYet": "No ratings yet.",
+      "rate.fromClient": "From a client, after a delivered request",
+      "rate.commentOptional": "The comment is optional.",
+      "call.title": "Call | Sanad",
+      "call.video": "Video call",
+      "call.audio": "Voice call",
+      "call.with": "with {name}",
+      "call.join": "Join the call",
+      "call.joinHint": "Your browser will ask for camera and microphone permission.",
+      "call.connecting": "Connecting…",
+      "call.waiting": "Waiting for the other side…",
+      "call.connected": "Connected",
+      "call.reconnecting": "Connection lost, retrying…",
+      "call.ended": "The call has ended",
+      "call.endedByPeer": "The other side ended the call.",
+      "call.duration": "Call length",
+      "call.mute": "Mute",
+      "call.unmute": "Unmute",
+      "call.camOff": "Turn the camera off",
+      "call.camOn": "Turn the camera on",
+      "call.hangUp": "Hang up",
+      "call.back": "Back to requests",
+      "call.you": "You",
+      "call.denied": "Camera or microphone permission was refused. Allow it in your browser settings and try again.",
+      "call.nodevice": "No camera or microphone was found on this device.",
+      "call.unsupported": "This browser does not support calls. Try a current one.",
+      "call.failed": "The camera or microphone could not be started.",
+      "call.insecure": "Calls need a secure connection (https).",
+      "call.retry": "Try again",
+      "call.notYours": "This call is not one of your requests.",
+      "call.localOnly": "Signalling is local right now: this connects two tabs on this device only.",
+      "call.openSecond": "Open this link in a second tab to try both sides.",
+      "call.copyLink": "Copy the room link",
+      "call.copied": "Link copied.",
+      "call.markDone": "End and deliver the request",
     }
   };
 
@@ -4126,6 +4335,27 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
     return { avg: Math.round(((baseSum + sum) / count) * 10) / 10, count: count };
   }
 
+  /** How many of each star this person has. Seed history has no rows of its
+      own, so it is spread around the seeded average rather than invented. */
+  function ratingSpread(userId) {
+    var out = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    reviewsFor(userId).forEach(function (r) {
+      var k = Math.max(1, Math.min(5, Math.round(r.rating)));
+      out[k]++;
+    });
+    var u = user(userId);
+    var base = (u && u.seedReviews) || 0;
+    if (base) {
+      var avg = (u && u.seedRating) || 5;
+      var top = Math.min(5, Math.floor(avg));
+      var share = avg - top;                       // how far above `top` it sits
+      var upper = Math.round(base * share);
+      out[Math.min(5, top + 1)] += upper;
+      out[top] += base - upper;
+    }
+    return out;
+  }
+
   /* ---------- ranking ----------
      A blend, as decided: rating carries the most weight, then delivered work,
      then responsiveness. Exposed with its parts so the person ranked can see
@@ -4262,7 +4492,15 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
      Two ways, and the standing one wins. Without an agreement each routed task
      carries its own percentage of what the client paid; with one, the pair have
      already settled the terms and the per-task share does not apply. */
+  // 30% is the floor the platform guarantees a trainee. A lawyer may pay more,
+  // never less, so the share is clamped on the way out as well as on the way in.
+  var MIN_SHARE = 30;
   var DEFAULT_SHARE = 30;
+
+  function clampShare(n) {
+    if (n == null || isNaN(n)) return DEFAULT_SHARE;
+    return Math.max(MIN_SHARE, Math.min(100, Math.round(n)));
+  }
 
   function agreementFor(lawyerId, internId) {
     var all = Store.agreements();
@@ -4284,7 +4522,7 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
     if (deal) {
       return { kind: deal.kind, agreement: deal, amount: deal.kind === "cases" ? deal.amount : 0 };
     }
-    var pct = st.internShare != null ? st.internShare : DEFAULT_SHARE;
+    var pct = clampShare(st.internShare);
     return { kind: "share", pct: pct, amount: Math.round((r.price || 0) * pct / 100) };
   }
 
@@ -4384,12 +4622,13 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
   global.Models = {
     byId: byId,
     users: users, user: user, lawyers: lawyers, interns: interns, listedLawyers: listedLawyers,
-    reviewsFor: reviewsFor, ratingOf: ratingOf,
+    reviewsFor: reviewsFor, ratingOf: ratingOf, ratingSpread: ratingSpread,
     scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard,
     serviceTypes: serviceTypes, serviceType: serviceType, servicesOf: servicesOf,
     priceBand: priceBand, checkPrice: checkPrice,
     serviceTitle: serviceTitle, serviceMeta: serviceMeta, serviceIcon: serviceIcon,
-    DEFAULT_SHARE: DEFAULT_SHARE, agreementFor: agreementFor,
+    MIN_SHARE: MIN_SHARE, DEFAULT_SHARE: DEFAULT_SHARE, clampShare: clampShare,
+    agreementFor: agreementFor,
     agreementsOfIntern: agreementsOfIntern, taskPay: taskPay,
     earnedBy: earnedBy, casesDone: casesDone,
     requests: requests, request: request, requestState: requestState,
@@ -4525,6 +4764,330 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
 })(window);
 
 /* ==========================================================================
+   Signalling — how two browsers agree on a call before the media flows.
+
+   WebRTC carries audio and video directly between two peers, but the two have
+   to exchange an offer, an answer and a handful of ICE candidates first, and
+   that exchange needs a channel neither peer owns. This module is that
+   channel, behind one small interface:
+
+       Signal.open(room, onMessage) -> { send(msg), close() }
+
+   The transport underneath is swappable, and only one of them is real:
+
+     • "local"    — BroadcastChannel between tabs of the same browser. Enough to
+                    build and test the whole call flow, and enough for a demo,
+                    but it will never reach another device.
+     • "supabase" — a Realtime channel. Same shape, works across the internet.
+                    Fill in SANAD_CONFIG.supabase and it takes over by itself.
+
+   Everything above this file is written against the interface, so moving to
+   production is a configuration change rather than a rewrite.
+   ========================================================================== */
+(function (global) {
+  "use strict";
+
+  var cfg = global.SANAD_CONFIG || {};
+
+  /* ---------- transport 1: this browser only ---------- */
+  function localTransport(room, onMessage) {
+    var name = "sanad.call." + room;
+    var me = Math.random().toString(36).slice(2, 10);
+
+    if (typeof BroadcastChannel === "function") {
+      var bc = new BroadcastChannel(name);
+      bc.onmessage = function (ev) {
+        if (ev.data && ev.data.from !== me) onMessage(ev.data.body, ev.data.from);
+      };
+      return {
+        id: me,
+        send: function (body) { bc.postMessage({ from: me, body: body }); },
+        close: function () { try { bc.close(); } catch (e) {} }
+      };
+    }
+
+    // Older browsers: storage events fire in the OTHER tabs, which is exactly
+    // the delivery we need. The key is rewritten each time so it always fires.
+    function onStorage(ev) {
+      if (ev.key !== name || !ev.newValue) return;
+      var msg;
+      try { msg = JSON.parse(ev.newValue); } catch (e) { return; }
+      if (msg && msg.from !== me) onMessage(msg.body, msg.from);
+    }
+    global.addEventListener("storage", onStorage);
+    return {
+      id: me,
+      send: function (body) {
+        try {
+          localStorage.setItem(name, JSON.stringify({ from: me, body: body, at: Date.now() }));
+        } catch (e) {}
+      },
+      close: function () { global.removeEventListener("storage", onStorage); }
+    };
+  }
+
+  /* ---------- transport 2: Supabase Realtime ----------
+     Loaded only when configured, so the site keeps working with no network. */
+  function supabaseTransport(room, onMessage) {
+    var sb = global.supabase && global.supabase.createClient(cfg.supabase.url, cfg.supabase.anonKey);
+    if (!sb) return null;
+    var me = Math.random().toString(36).slice(2, 10);
+    var channel = sb.channel("call:" + room, { config: { broadcast: { self: false } } });
+    channel.on("broadcast", { event: "signal" }, function (payload) {
+      var msg = payload.payload;
+      if (msg && msg.from !== me) onMessage(msg.body, msg.from);
+    }).subscribe();
+    return {
+      id: me,
+      send: function (body) {
+        channel.send({ type: "broadcast", event: "signal", payload: { from: me, body: body } });
+      },
+      close: function () { try { sb.removeChannel(channel); } catch (e) {} }
+    };
+  }
+
+  var Signal = {
+    /** Which transport is actually carrying messages right now. */
+    kind: function () {
+      return (cfg.supabase && cfg.supabase.url && global.supabase) ? "supabase" : "local";
+    },
+
+    /** True when a call can reach a different device. */
+    isRemote: function () { return Signal.kind() === "supabase"; },
+
+    open: function (room, onMessage) {
+      if (Signal.kind() === "supabase") {
+        var t = supabaseTransport(room, onMessage);
+        if (t) return t;
+      }
+      return localTransport(room, onMessage);
+    }
+  };
+
+  global.Signal = Signal;
+})(window);
+
+/* ==========================================================================
+   The call itself — getUserMedia for the local camera and microphone, and an
+   RTCPeerConnection for the other side.
+
+   Negotiation follows the "perfect negotiation" pattern rather than trying to
+   decide who calls whom. Both sides may offer at the same moment; one of them
+   is designated polite and rolls back when that happens, and the other ignores
+   the colliding offer and lets its own stand. Politeness is derived from the
+   two user ids, so each side works it out alone with nothing to exchange.
+
+   An earlier attempt had whoever arrived first make the offer. It deadlocked:
+   the first peer's announcement is sent into an empty room and nobody replays
+   it, so when the second peer arrived neither believed it was their turn.
+
+   ICE candidates are queued until a remote description exists, since a
+   candidate that arrives early is dropped otherwise and the call silently
+   never connects.
+   ========================================================================== */
+(function (global) {
+  "use strict";
+
+  var cfg = global.SANAD_CONFIG || {};
+
+  /* STUN alone reaches most networks. A TURN relay is what carries the rest —
+     symmetric NATs, strict corporate firewalls — and it is the one piece of
+     call infrastructure that has to be paid for. */
+  function iceServers() {
+    var list = [{ urls: "stun:stun.l.google.com:19302" }];
+    if (cfg.turn && cfg.turn.urls) list.push(cfg.turn);
+    return list;
+  }
+
+  /** A description the transport can actually carry. */
+  function plainSdp(desc) {
+    return { type: desc.type, sdp: desc.sdp };
+  }
+
+  function Call(opts) {
+    this.room = opts.room;
+    this.video = opts.video !== false;
+    this.on = opts.on || {};
+    this.pc = null;
+    this.local = null;
+    this.signal = null;
+    this.polite = !!opts.polite;  // rolls back when two offers collide
+    this.makingOffer = false;
+    this.ignoreOffer = false;
+    this.greeted = false;
+    this.pending = [];            // ICE candidates that arrived too early
+    this.started = 0;
+  }
+
+  Call.prototype.emit = function (name, payload) {
+    if (this.on[name]) { try { this.on[name](payload); } catch (e) { console.error(e); } }
+  };
+
+  /** Ask for the camera and microphone. Rejects with a name we can translate. */
+  Call.prototype.getMedia = function () {
+    var self = this;
+    if (!global.navigator.mediaDevices || !global.navigator.mediaDevices.getUserMedia) {
+      return Promise.reject({ code: "unsupported" });
+    }
+    return global.navigator.mediaDevices
+      .getUserMedia({ audio: true, video: self.video })
+      .then(function (stream) {
+        self.local = stream;
+        self.emit("local", stream);
+        return stream;
+      })
+      .catch(function (err) {
+        var name = err && err.name;
+        return Promise.reject({
+          code: name === "NotAllowedError" || name === "SecurityError" ? "denied"
+              : name === "NotFoundError" || name === "OverconstrainedError" ? "nodevice"
+              : "failed",
+          raw: err
+        });
+      });
+  };
+
+  Call.prototype.connect = function () {
+    var self = this;
+    self.pc = new RTCPeerConnection({ iceServers: iceServers() });
+
+    self.local.getTracks().forEach(function (track) {
+      self.pc.addTrack(track, self.local);
+    });
+
+    self.pc.ontrack = function (ev) {
+      self.emit("remote", ev.streams[0]);
+      if (!self.started) { self.started = Date.now(); self.emit("connected"); }
+    };
+    self.pc.onicecandidate = function (ev) {
+      // RTCIceCandidate and RTCSessionDescription are not structured-cloneable
+      // and will not survive a BroadcastChannel or a JSON transport, so both go
+      // over the wire as plain objects.
+      if (ev.candidate) self.post({ ice: ev.candidate.toJSON() });
+    };
+    self.pc.onnegotiationneeded = function () { self.negotiate(); };
+    self.pc.onconnectionstatechange = function () {
+      self.emit("state", self.pc.connectionState);
+      if (self.pc.connectionState === "failed") self.emit("failed");
+    };
+
+    self.signal = global.Signal.open(self.room, function (msg) { self.receive(msg); });
+    // Say we are here. Whoever is already in the room answers with their own
+    // hello, so both sides know to negotiate no matter who arrived first.
+    self.post({ hello: true });
+  };
+
+  Call.prototype.post = function (msg) {
+    if (this.signal) this.signal.send(msg);
+  };
+
+  Call.prototype.receive = function (msg) {
+    var self = this;
+
+    if (msg.hello) {
+      // Answer once, so a peer that arrived first learns of the newcomer.
+      if (!self.greeted) { self.greeted = true; self.post({ hello: true }); }
+      // A peer that was here first already offered into an empty room. Resend
+      // that offer rather than building another: renegotiating from scratch is
+      // what produced spurious rounds and "called in wrong state" errors.
+      if (self.pc.signalingState === "have-local-offer" && self.pc.localDescription) {
+        self.post({ sdp: plainSdp(self.pc.localDescription) });
+      } else {
+        self.negotiate();
+      }
+      return;
+    }
+
+    if (msg.sdp) {
+      var collision = msg.sdp.type === "offer" &&
+        (self.makingOffer || self.pc.signalingState !== "stable");
+      self.ignoreOffer = !self.polite && collision;
+      if (self.ignoreOffer) return;          // ours stands; theirs is dropped
+
+      self.pc.setRemoteDescription(msg.sdp).then(function () {
+        self.flush();
+        if (msg.sdp.type !== "offer") return;
+        return self.pc.setLocalDescription().then(function () {
+          self.post({ sdp: plainSdp(self.pc.localDescription) });
+        });
+      }).catch(function (e) {
+        // Two peers negotiating at once will sometimes deliver a description
+        // that no longer applies. That is the pattern working, not a fault —
+        // the connection state is what says whether the call is in trouble.
+        if (self.pc && self.pc.connectionState === "failed") console.error(e);
+      });
+      return;
+    }
+
+    if (msg.ice) {
+      var candidate = new RTCIceCandidate(msg.ice);
+      if (self.pc.remoteDescription && self.pc.remoteDescription.type) {
+        self.pc.addIceCandidate(candidate).catch(function (e) {
+          if (!self.ignoreOffer) console.error(e);
+        });
+      } else {
+        self.pending.push(candidate);
+      }
+      return;
+    }
+
+    if (msg.bye) self.emit("ended", "peer");
+  };
+
+  Call.prototype.flush = function () {
+    var self = this;
+    var queued = self.pending;
+    self.pending = [];
+    queued.forEach(function (c) { self.pc.addIceCandidate(c).catch(function () {}); });
+  };
+
+  /** Ask for a round of negotiation. Safe to call more than once. */
+  Call.prototype.negotiate = function () {
+    var self = this;
+    if (self.makingOffer || !self.pc) return;
+    self.makingOffer = true;
+    self.pc.setLocalDescription().then(function () {
+      self.post({ sdp: plainSdp(self.pc.localDescription) });
+    }).catch(function (e) {
+      console.error(e);
+    }).then(function () {
+      self.makingOffer = false;
+    });
+  };
+
+  /* ---------- controls ---------- */
+  Call.prototype.setMuted = function (muted) {
+    if (!this.local) return;
+    this.local.getAudioTracks().forEach(function (t) { t.enabled = !muted; });
+  };
+  Call.prototype.setCameraOff = function (off) {
+    if (!this.local) return;
+    this.local.getVideoTracks().forEach(function (t) { t.enabled = !off; });
+  };
+  Call.prototype.hasVideo = function () {
+    return !!(this.local && this.local.getVideoTracks().length);
+  };
+
+  Call.prototype.hangUp = function () {
+    if (this.signal) { this.post({ bye: true }); this.signal.close(); this.signal = null; }
+    if (this.pc) { try { this.pc.close(); } catch (e) {} this.pc = null; }
+    if (this.local) {
+      this.local.getTracks().forEach(function (t) { t.stop(); });
+      this.local = null;
+    }
+    this.emit("ended", "self");
+  };
+
+  global.RTC = {
+    Call: Call,
+    supported: function () {
+      return !!(global.RTCPeerConnection && global.navigator.mediaDevices &&
+                global.navigator.mediaDevices.getUserMedia);
+    }
+  };
+})(window);
+
+/* ==========================================================================
    Icons — inline SVG so nothing depends on an icon font arriving.
    ========================================================================== */
 (function (global) {
@@ -4595,7 +5158,12 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
     trash:     '<path d="M4 7h16M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M6.5 7 7.5 20h9L17.5 7"/>',
     clockFill: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>',
     tag:       '<path d="M3.5 11.5V4.5h7l9.5 9.5-7 7z"/><circle cx="7.5" cy="8.5" r="1.4"/>',
-    send:      '<path d="M21 3 10.5 13.5M21 3l-6.5 18-4-8-8-4z"/>'
+    send:      '<path d="M21 3 10.5 13.5M21 3l-6.5 18-4-8-8-4z"/>',
+    mic:       '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/>',
+    "mic-off": '<path d="M15 5a3 3 0 0 0-6 0v5m0 2.5A3 3 0 0 0 15 11.4"/><path d="M5.5 11a6.5 6.5 0 0 0 10 5.5M18.5 11a6.5 6.5 0 0 1-.4 2.2"/><path d="M12 17.5V21M9 21h6"/><path d="m3 3 18 18"/>',
+    video:     '<rect x="2.5" y="6" width="13" height="12" rx="2"/><path d="m15.5 10.5 6-3v9l-6-3z"/>',
+    "video-off":'<path d="M15.5 9V8a2 2 0 0 0-2-2H7m-3.2.8A2 2 0 0 0 2.5 8v8a2 2 0 0 0 2 2h9a2 2 0 0 0 1.7-1"/><path d="m21.5 7.5-6 3v3"/><path d="m3 3 18 18"/>',
+    "phone-off":'<path d="M10.7 5.3 9 3H5a2 2 0 0 0-2 2.2 17 17 0 0 0 4 9.6"/><path d="M9.5 17.2A17 17 0 0 0 18.8 21 2 2 0 0 0 21 19v-4l-5-2-1.5 2.5"/><path d="m3 3 18 18"/>'
   };
 
   global.Icons = {
@@ -5067,18 +5635,91 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
       '" href="' + M.profileHref(u) + '">' + esc(tx(u.name)) + "</a>";
   }
 
-  function stars(value) {
+  function stars(value, size) {
+    var full = Math.round(value);
     var out = "";
     for (var i = 0; i < 5; i++) {
-      out += '<span style="color:' + (i < Math.round(value) ? "var(--accent)" : "var(--border-strong)") +
-        '">' + Icons.svg("star", "icon-sm") + "</span>";
+      var on = i < full;
+      out += '<span style="color:' + (on ? "var(--accent)" : "var(--border-strong)") + '">' +
+        Icons.svg("star", (size || "icon-sm") + (on ? " icon--solid" : "")) + "</span>";
     }
     return '<span class="row gap-1">' + out + "</span>";
   }
 
+  /** A star row you can actually use: hover previews the whole scale up to the
+      star under the pointer, keyboard reaches it, and the number is spelled out
+      in words so 4 versus 5 is not a guess.
+
+      The stars are emitted 5→1 and the row is reversed. CSS has no
+      previous-sibling combinator, so that is what lets `:hover ~ *` light every
+      star BELOW the one hovered — and reversing the row rather than the reading
+      direction keeps star 1 at the start in Arabic and English alike. */
+  function starPicker(picked, forId) {
+    var out = "";
+    for (var i = 5; i >= 1; i--) {
+      out += '<button type="button" class="star-pick' + (i <= picked ? " is-on" : "") +
+        '" data-star="' + i + '" data-for="' + esc(forId) + '" ' +
+        'aria-label="' + esc(I18N.t("rate.starsN", { n: I18N.num(i) })) + '"' +
+        (i === picked ? ' aria-pressed="true"' : "") + ">" +
+        Icons.svg("star", i <= picked ? "icon--solid" : "") + "</button>";
+    }
+    return '<div class="stars-pick" role="group" ' +
+      'aria-label="' + esc(I18N.t("rate.pick")) + '">' +
+      '<div class="stars-pick__row">' + out + "</div>" +
+      '<span class="stars-pick__word' + (picked ? " is-set" : "") + '">' +
+        esc(picked ? I18N.t("rate.v" + picked) : I18N.t("rate.pick")) + "</span></div>";
+  }
+
+  /** The average, and — more usefully — how the ratings actually fall. */
+  function ratingSummary(userId) {
+    var r = M.ratingOf(userId);
+    if (!r.count) return '<p class="small muted">' + esc(I18N.t("rate.noneYet")) + "</p>";
+
+    var spread = M.ratingSpread(userId);
+    var rows = "";
+    for (var star = 5; star >= 1; star--) {
+      var n = spread[star] || 0;
+      var pct = r.count ? Math.round(n / r.count * 100) : 0;
+      rows += '<div class="rating-bar">' +
+        '<span class="rating-bar__label"><span class="num">' + I18N.num(star) + "</span>" +
+          Icons.svg("star", "icon-sm") + "</span>" +
+        '<span class="rating-bar__track"><span style="width:' + pct + '%"></span></span>' +
+        '<span class="rating-bar__n num">' + I18N.num(n) + "</span></div>";
+    }
+
+    return '<div class="rating-summary">' +
+      '<div class="rating-summary__score">' +
+        '<span class="display num">' + I18N.num(r.avg.toFixed(1)) + "</span>" +
+        '<span class="tiny muted">' + esc(I18N.t("rate.outOf", { n: I18N.num(5) })) + "</span>" +
+        stars(r.avg, "icon-lg") +
+        '<span class="tiny muted" style="margin-top:var(--s-2)">' +
+          esc(I18N.t("rate.count", { n: I18N.num(r.count) })) + "</span>" +
+      "</div>" +
+      '<div class="rating-summary__spread">' +
+        '<p class="tiny muted" style="margin-bottom:var(--s-2)">' +
+          esc(I18N.t("rate.spread")) + "</p>" + rows +
+      "</div></div>";
+  }
+
+  /** One written review, with the stars it carried. */
+  function reviewCard(rev) {
+    var author = M.user(rev.authorId);
+    return '<article class="testimony">' +
+      '<div class="row between wrap gap-3">' +
+        '<span class="row gap-3">' + avatar(author, "sm") +
+          "<span><strong class=\"small\">" + esc(author ? tx(author.name) : "") + "</strong>" +
+          '<p class="tiny muted">' + esc(tx(rev.date)) + "</p></span></span>" +
+        '<span class="row gap-2">' + stars(rev.rating) +
+          '<strong class="small num">' + I18N.num(rev.rating) + "</strong></span>" +
+      "</div>" +
+      (tx(rev.body)
+        ? '<p class="small" style="margin-top:var(--s-3)">' + esc(tx(rev.body)) + "</p>"
+        : "") + "</article>";
+  }
+
   function ratingLine(userId) {
     var r = M.ratingOf(userId);
-    return '<span class="rating">' + Icons.svg("star", "icon-sm") +
+    return '<span class="rating">' + Icons.svg("star", "icon-sm icon--solid") +
       num(r.avg.toFixed(1)) + '<span class="muted tiny">' +
       esc(I18N.t("lawyer.reviews", { n: I18N.num(r.count) })) + "</span></span>";
   }
@@ -5230,6 +5871,7 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
   global.C = {
     sar: sar, num: num, avatar: avatar, personLink: personLink, stars: stars,
     ratingLine: ratingLine, verifiedMark: verifiedMark, progressBar: progressBar,
+    starPicker: starPicker, ratingSummary: ratingSummary, reviewCard: reviewCard,
     lawyerCard: lawyerCard, internCard: internCard, articleCard: articleCard,
     statusPill: statusPill, requestRow: requestRow, empty: empty, sectionHead: sectionHead
   };
@@ -5585,7 +6227,14 @@ Pages.define("requests", function (global) {
     return '<div>' + C.requestRow(r, {
       status: CLIENT_STATUS[st.status] || st.status,
       actions: function () {
-        return '<button class="btn btn--ghost btn--sm" type="button" data-detail="' + esc(r.id) + '">' +
+        var type = M.serviceType(r.typeId);
+        var live = type && type.mode === "live" &&
+          ["delivered", "completed", "cancelled"].indexOf(st.status) === -1;
+        return (live
+            ? '<a class="btn btn--primary btn--sm" href="call.html?id=' + esc(r.id) + '">' +
+              Icons.svg(type.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>"
+            : "") +
+          '<button class="btn btn--ghost btn--sm" type="button" data-detail="' + esc(r.id) + '">' +
             esc(I18N.t("req.openDetails")) + "</button>" +
           (canRate
             ? '<button class="btn btn--outline btn--sm" type="button" data-rate="' + esc(r.id) + '">' +
@@ -5615,18 +6264,16 @@ Pages.define("requests", function (global) {
   }
 
   function rateForm(r) {
-    var picked = rating[r.id] || 0;
-    var buttons = "";
-    for (var i = 1; i <= 5; i++) {
-      buttons += '<button type="button" class="icon-btn" data-star="' + i + '" data-for="' + esc(r.id) + '" ' +
-        'style="color:' + (i <= picked ? "var(--accent)" : "var(--border-strong)") + '">' +
-        Icons.svg("star") + "</button>";
-    }
-    return '<div style="margin-top:var(--s-6);border-top:1px solid var(--border);padding-top:var(--s-5)">' +
+    var lawyer = M.user(r.lawyerId);
+    return '<div class="card card--pad card--rule-gold" style="margin-top:var(--s-6)">' +
       '<h3 class="subtitle" data-i18n="rate.title"></h3>' +
-      '<div class="row gap-1" style="margin:var(--s-3) 0">' + buttons + "</div>" +
-      '<textarea class="textarea" data-rate-body data-i18n-attr="placeholder:rate.placeholder"></textarea>' +
-      '<button class="btn btn--accent btn--sm" type="button" style="margin-top:var(--s-3)" ' +
+      '<p class="tiny muted" style="margin-top:var(--s-1)">' +
+        esc(lawyer ? tx(lawyer.name) : "") + " · " + esc(tx(r.title)) + "</p>" +
+      '<div style="margin:var(--s-5) 0">' + C.starPicker(rating[r.id] || 0, r.id) + "</div>" +
+      '<textarea class="textarea" data-rate-body ' +
+        'data-i18n-attr="placeholder:rate.placeholder"></textarea>' +
+      '<p class="tiny faint" style="margin-top:var(--s-2)" data-i18n="rate.commentOptional"></p>' +
+      '<button class="btn btn--accent" type="button" style="margin-top:var(--s-4)" ' +
         'data-rate-send="' + esc(r.id) + '" data-i18n="rate.submit"></button></div>';
   }
 
@@ -5684,8 +6331,8 @@ Pages.define("requests", function (global) {
     }
 
     if (t.mode === "live") {
-      return '<button class="btn btn--primary btn--sm" type="button" data-deliver="' + esc(r.id) + '">' +
-        Icons.svg(t.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</button>";
+      return '<a class="btn btn--primary btn--sm" href="call.html?id=' + esc(r.id) + '">' +
+        Icons.svg(t.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>";
     }
 
     var main = r.ai
@@ -5829,8 +6476,10 @@ Pages.define("requests", function (global) {
     pop.innerHTML =
       '<label class="field" style="padding:0 var(--s-2) var(--s-2)">' +
         '<span class="tiny muted">' + esc(I18N.t("pay.shareLabel")) + "</span>" +
-        '<input class="input num" type="number" min="0" max="100" step="5" dir="ltr" ' +
-          'data-share value="' + M.DEFAULT_SHARE + '"></label>' +
+        '<span class="tiny faint">' + esc(I18N.t("pay.shareFloor",
+          { n: I18N.num(M.MIN_SHARE) })) + "</span>" +
+        '<input class="input num" type="number" min="' + M.MIN_SHARE + '" max="100" step="5" ' +
+          'dir="ltr" data-share value="' + M.DEFAULT_SHARE + '"></label>' +
       '<p class="tiny faint" style="padding:0 var(--s-2) var(--s-3)">' +
         esc(I18N.t("pay.shareHint")) + "</p>" +
       '<hr class="divider" style="margin:0 0 var(--s-2)">' +
@@ -5955,9 +6604,7 @@ Pages.define("requests", function (global) {
   /** The share typed into the routing chooser, if it is open. */
   function readShare() {
     var el = $("[data-share]", host);
-    if (!el) return null;
-    var n = +el.value;
-    return isNaN(n) ? null : Math.max(0, Math.min(100, n));
+    return el ? M.clampShare(+el.value) : null;
   }
 
   /** One line saying what this task pays, for whoever is entitled to see it. */
@@ -6858,19 +7505,12 @@ Pages.define("lawyer", function (global) {
   }
 
   function reviewsPanel(u) {
-    var list = M.reviewsFor(u.id);
-    if (!list.length) return '<p class="small muted" data-i18n="profile.noReviews"></p>';
-    return '<div class="stack gap-4">' + list.map(function (r) {
-      var author = M.user(r.authorId);
-      return '<article class="testimony">' +
-        '<div class="row between wrap gap-3">' +
-          '<span class="row gap-3">' + C.avatar(author, "sm") +
-            "<span><strong class=\"small\">" + esc(author ? tx(author.name) : "") + "</strong>" +
-            '<p class="tiny muted">' + esc(tx(r.date)) + "</p></span></span>" +
-          C.stars(r.rating) +
-        "</div>" +
-        '<p class="small" style="margin-top:var(--s-3)">' + esc(tx(r.body)) + "</p></article>";
-    }).join("") + "</div>";
+    var list = M.reviewsFor(u.id).slice().reverse();
+    return C.ratingSummary(u.id) +
+      (list.length
+        ? '<div class="stack gap-4" style="margin-top:var(--s-6)">' +
+          list.map(C.reviewCard).join("") + "</div>"
+        : "");
   }
 
   function articlesPanel(u) {
@@ -7147,18 +7787,12 @@ Pages.define("intern", function (global) {
   }
 
   function reviewsPanel(u) {
-    var list = M.reviewsFor(u.id);
-    if (!list.length) return '<p class="small muted" data-i18n="profile.noReviews"></p>';
-    return '<div class="stack gap-4">' + list.map(function (r) {
-      var author = M.user(r.authorId);
-      return '<article class="testimony">' +
-        '<div class="row between wrap gap-3">' +
-          '<span class="row gap-3">' + C.avatar(author, "sm") +
-            "<span><strong class=\"small\">" + esc(author ? tx(author.name) : "") + "</strong>" +
-            '<p class="tiny muted">' + esc(tx(r.date)) + "</p></span></span>" + C.stars(r.rating) +
-        "</div>" +
-        '<p class="small" style="margin-top:var(--s-3)">' + esc(tx(r.body)) + "</p></article>";
-    }).join("") + "</div>";
+    var list = M.reviewsFor(u.id).slice().reverse();
+    return C.ratingSummary(u.id) +
+      (list.length
+        ? '<div class="stack gap-4" style="margin-top:var(--s-6)">' +
+          list.map(C.reviewCard).join("") + "</div>"
+        : "");
   }
 
   function articlesPanel(u) {
@@ -8898,6 +9532,290 @@ Pages.define("signup", function (global) {
   });
 
   show();
+});
+
+/* ==========================================================================
+   The call room. Three states and nothing else: before you join, in the call,
+   and after it ended. Everything the browser can refuse — permission, a
+   missing device, an insecure origin — is caught and said in plain words,
+   because "nothing happened" is the worst possible answer to a click.
+   ========================================================================== */
+Pages.define("call", function (global) {
+  "use strict";
+
+  var I18N = global.I18N, Icons = global.Icons, M = global.Models,
+      App = global.App, Store = global.Store, Session = global.Session, C = global.C;
+  var $ = App.$, esc = App.esc, tx = App.tx;
+
+  var host = $("[data-call]");
+  if (!host) return;
+
+  var requestId = App.param("id");
+  var phase = "ready";        // ready | live | ended
+  var error = null;
+  var call = null;
+  var muted = false, camOff = false;
+  var timer = null, seconds = 0, endedBy = null;
+
+  function request() { return requestId ? M.request(requestId) : null; }
+
+  /** Voice or video, taken from the service the client actually bought. */
+  function wantsVideo() {
+    var r = request();
+    var t = r && M.serviceType(r.typeId);
+    return !t || t.id !== "call";
+  }
+
+  function other() {
+    var r = request();
+    if (!r) return null;
+    var me = Session.user();
+    if (!me) return null;
+    return M.user(me.id === r.clientId ? r.lawyerId : r.clientId);
+  }
+
+  function mayJoin() {
+    var r = request(), me = Session.user();
+    if (!r || !me) return false;
+    var st = M.requestState(r);
+    return me.id === r.clientId || me.id === r.lawyerId || st.assignedTo === me.id;
+  }
+
+  function clock() {
+    var m = Math.floor(seconds / 60), s = seconds % 60;
+    return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  /* ---------- the three screens ---------- */
+  function readyScreen() {
+    var r = request(), them = other();
+    return '<div class="call-card card card--pad">' +
+      '<span class="feature__icon" style="margin-inline:auto">' +
+        Icons.svg(wantsVideo() ? "video" : "phone", "icon-lg") + "</span>" +
+      '<h1 class="headline center" style="margin-top:var(--s-4)" data-i18n="' +
+        (wantsVideo() ? "call.video" : "call.audio") + '"></h1>' +
+      (them
+        ? '<p class="lead center">' + esc(I18N.t("call.with", { name: tx(them.name) })) + "</p>" +
+          '<div class="row center" style="margin-top:var(--s-5)">' + C.avatar(them, "lg") + "</div>"
+        : "") +
+      (r ? '<p class="small muted center" style="margin-top:var(--s-4)">' + esc(tx(r.title)) + "</p>" : "") +
+      (error ? '<p class="form-error center" style="margin-top:var(--s-5)">' +
+        esc(I18N.t("call." + error)) + "</p>" : "") +
+      '<div class="row center gap-3 wrap" style="margin-top:var(--s-8)">' +
+        '<button class="btn btn--accent btn--lg" type="button" data-join>' +
+          Icons.svg(wantsVideo() ? "video" : "phone", "icon-sm") +
+          "<span>" + esc(I18N.t(error ? "call.retry" : "call.join")) + "</span></button>" +
+        '<a class="btn btn--ghost" href="requests.html" data-i18n="call.back"></a>' +
+      "</div>" +
+      '<p class="tiny faint center" style="margin-top:var(--s-4)" data-i18n="call.joinHint"></p>' +
+      (global.Signal.isRemote() ? "" :
+        '<p class="note-inline" style="margin-top:var(--s-6)">' +
+          '<span><span data-i18n="call.localOnly"></span> ' +
+          '<span data-i18n="call.openSecond"></span></span></p>' +
+        '<div class="row center" style="margin-top:var(--s-3)">' +
+          '<button class="btn btn--outline btn--sm" type="button" data-copy-link>' +
+            Icons.svg("file-text", "icon-sm") +
+            '<span data-i18n="call.copyLink"></span></button></div>') +
+    "</div>";
+  }
+
+  function liveScreen() {
+    var them = other();
+    return '<div class="call-stage">' +
+      '<div class="call-stage__remote">' +
+        '<video data-remote autoplay playsinline></video>' +
+        '<div class="call-stage__placeholder" data-placeholder>' +
+          (them ? C.avatar(them, "lg") : "") +
+          '<p class="subtitle" style="margin-top:var(--s-4)">' +
+            esc(them ? tx(them.name) : "") + "</p>" +
+          '<p class="small" data-call-status>' + esc(I18N.t("call.waiting")) + "</p>" +
+        "</div>" +
+        '<div class="call-stage__badge"><span class="num" data-clock>00:00</span></div>' +
+        '<div class="call-stage__self' + (wantsVideo() ? "" : " is-audio") + '">' +
+          '<video data-local autoplay playsinline muted></video>' +
+          '<span class="tiny" data-i18n="call.you"></span>' +
+        "</div>" +
+      "</div>" +
+      '<div class="call-bar">' +
+        '<button class="call-btn" type="button" data-mute ' +
+          'data-i18n-attr="aria-label:call.mute">' + Icons.svg("mic") + "</button>" +
+        (wantsVideo()
+          ? '<button class="call-btn" type="button" data-cam ' +
+            'data-i18n-attr="aria-label:call.camOff">' + Icons.svg("video") + "</button>"
+          : "") +
+        '<button class="call-btn call-btn--end" type="button" data-hang ' +
+          'data-i18n-attr="aria-label:call.hangUp">' + Icons.svg("phone-off") + "</button>" +
+      "</div></div>";
+  }
+
+  function endedScreen() {
+    var r = request();
+    var me = Session.user();
+    var canDeliver = r && me && me.id === r.lawyerId &&
+      ["delivered", "completed"].indexOf(M.requestState(r).status) === -1;
+    return '<div class="call-card card card--pad center">' +
+      '<span class="feature__icon" style="margin-inline:auto">' + Icons.svg("check", "icon-lg") + "</span>" +
+      '<h1 class="headline" style="margin-top:var(--s-4)" data-i18n="call.ended"></h1>' +
+      (endedBy === "peer" ? '<p class="lead" data-i18n="call.endedByPeer"></p>' : "") +
+      '<p class="small muted" style="margin-top:var(--s-4)">' + esc(I18N.t("call.duration")) +
+        ': <strong class="num">' + esc(clock()) + "</strong></p>" +
+      '<div class="row center gap-3 wrap" style="margin-top:var(--s-8)">' +
+        (canDeliver
+          ? '<button class="btn btn--accent" type="button" data-deliver data-i18n="call.markDone"></button>'
+          : "") +
+        '<a class="btn btn--outline" href="requests.html" data-i18n="call.back"></a>' +
+      "</div></div>";
+  }
+
+  function gate(key) {
+    return '<div class="call-card card card--pad center">' +
+      C.empty("lock", key) +
+      '<p style="margin-top:var(--s-6)">' +
+        '<a class="btn btn--primary" href="requests.html" data-i18n="call.back"></a></p></div>';
+  }
+
+  /* ---------- draw ---------- */
+  App.onRender(function () {
+    if (Session.isGuest()) { host.innerHTML = gate("auth.guestHint"); I18N.apply(host); return; }
+    if (requestId && !mayJoin()) { host.innerHTML = gate("call.notYours"); I18N.apply(host); return; }
+
+    host.innerHTML = '<div class="container" style="padding-block:var(--s-8) var(--s-16)">' +
+      (phase === "live" ? liveScreen() : phase === "ended" ? endedScreen() : readyScreen()) +
+      "</div>";
+    I18N.apply(host);
+    if (phase === "live") attachStreams();
+    syncButtons();
+  });
+
+  /* The <video> elements are recreated by every redraw, so the streams have to
+     be re-attached rather than set once at join time. */
+  var localStream = null, remoteStream = null;
+  function attachStreams() {
+    var l = $("[data-local]", host), r = $("[data-remote]", host);
+    if (l && localStream) l.srcObject = localStream;
+    if (r && remoteStream) r.srcObject = remoteStream;
+    var ph = $("[data-placeholder]", host);
+    if (ph) ph.hidden = !!remoteStream;
+  }
+
+  function syncButtons() {
+    var mb = $("[data-mute]", host), cb = $("[data-cam]", host);
+    if (mb) {
+      mb.classList.toggle("is-off", muted);
+      mb.setAttribute("aria-label", I18N.t(muted ? "call.unmute" : "call.mute"));
+      mb.innerHTML = Icons.svg(muted ? "mic-off" : "mic");
+    }
+    if (cb) {
+      cb.classList.toggle("is-off", camOff);
+      cb.setAttribute("aria-label", I18N.t(camOff ? "call.camOn" : "call.camOff"));
+      cb.innerHTML = Icons.svg(camOff ? "video-off" : "video");
+    }
+  }
+
+  function status(key) {
+    var el = $("[data-call-status]", host);
+    if (el) el.textContent = I18N.t(key);
+  }
+
+  /* ---------- joining ---------- */
+  function join() {
+    error = null;
+
+    if (!global.RTC.supported()) { error = "unsupported"; App.rerender(); return; }
+    // getUserMedia is only handed out on a secure origin; localhost counts.
+    if (!global.isSecureContext) { error = "insecure"; App.rerender(); return; }
+
+    var them = other();
+    call = new global.RTC.Call({
+      room: requestId || "lobby",
+      video: wantsVideo(),
+      // Two offers can collide; the polite side yields. Comparing the two user
+      // ids gives each peer the opposite answer with nothing to exchange.
+      polite: !!(them && Session.user().id < them.id),
+      on: {
+        local: function (s) { localStream = s; },
+        remote: function (s) { remoteStream = s; attachStreams(); status("call.connected"); },
+        connected: function () { startTimer(); },
+        state: function (st) {
+          // Surfaced on the element so the state is inspectable, not only felt.
+          var stage = $(".call-stage", host);
+          if (stage) stage.setAttribute("data-conn", st);
+          if (st === "connecting") status("call.connecting");
+          if (st === "disconnected") status("call.reconnecting");
+        },
+        ended: function (who) { endedBy = who; finish(); }
+      }
+    });
+
+    call.getMedia().then(function () {
+      phase = "live";
+      App.rerender();
+      call.connect();
+      status("call.waiting");
+      startTimer();
+    }).catch(function (e) {
+      error = e.code || "failed";
+      App.rerender();
+    });
+  }
+
+  function startTimer() {
+    if (timer) return;
+    timer = setInterval(function () {
+      seconds++;
+      var el = $("[data-clock]", host);
+      if (el) el.textContent = clock();
+    }, 1000);
+  }
+
+  function finish() {
+    clearInterval(timer);
+    timer = null;
+    localStream = null;
+    remoteStream = null;
+    phase = "ended";
+    App.rerender();
+  }
+
+  /* ---------- events ---------- */
+  host.addEventListener("click", function (ev) {
+    if (ev.target.closest("[data-join]")) { join(); return; }
+
+    if (ev.target.closest("[data-copy-link]")) {
+      var url = global.location.href;
+      if (global.navigator.clipboard) global.navigator.clipboard.writeText(url);
+      App.toast(I18N.t("call.copied"), "check");
+      return;
+    }
+
+    if (ev.target.closest("[data-mute]")) {
+      muted = !muted;
+      if (call) call.setMuted(muted);
+      syncButtons();
+      return;
+    }
+
+    if (ev.target.closest("[data-cam]")) {
+      camOff = !camOff;
+      if (call) call.setCameraOff(camOff);
+      syncButtons();
+      return;
+    }
+
+    if (ev.target.closest("[data-hang]")) {
+      if (call) call.hangUp(); else finish();
+      return;
+    }
+
+    if (ev.target.closest("[data-deliver]")) {
+      Store.setRequest(requestId, { status: "delivered" });
+      App.toast(I18N.t("inbox.completed"), "check");
+      setTimeout(function () { App.go("requests.html"); }, 800);
+    }
+  });
+
+  // Leaving the page must release the camera; the light staying on is alarming.
+  global.addEventListener("pagehide", function () { if (call) call.hangUp(); });
 });
 </script>
 <script>/* ==========================================================================

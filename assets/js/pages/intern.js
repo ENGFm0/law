@@ -192,18 +192,12 @@ Pages.define("intern", function (global) {
   }
 
   function reviewsPanel(u) {
-    var list = M.reviewsFor(u.id);
-    if (!list.length) return '<p class="small muted" data-i18n="profile.noReviews"></p>';
-    return '<div class="stack gap-4">' + list.map(function (r) {
-      var author = M.user(r.authorId);
-      return '<article class="testimony">' +
-        '<div class="row between wrap gap-3">' +
-          '<span class="row gap-3">' + C.avatar(author, "sm") +
-            "<span><strong class=\"small\">" + esc(author ? tx(author.name) : "") + "</strong>" +
-            '<p class="tiny muted">' + esc(tx(r.date)) + "</p></span></span>" + C.stars(r.rating) +
-        "</div>" +
-        '<p class="small" style="margin-top:var(--s-3)">' + esc(tx(r.body)) + "</p></article>";
-    }).join("") + "</div>";
+    var list = M.reviewsFor(u.id).slice().reverse();
+    return C.ratingSummary(u.id) +
+      (list.length
+        ? '<div class="stack gap-4" style="margin-top:var(--s-6)">' +
+          list.map(C.reviewCard).join("") + "</div>"
+        : "");
   }
 
   function articlesPanel(u) {

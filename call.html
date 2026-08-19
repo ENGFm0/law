@@ -1,18 +1,11 @@
-# -*- coding: utf-8 -*-
-"""Emit a page shell with the one correct module order.
-
-Dependency order matters and is easy to get wrong by hand:
-  store -> seed -> models -> session -> icons -> app -> layout
-Layout mounts the header the moment it runs, so it sits right after the slot.
-"""
-HEAD = '''<!DOCTYPE html>
-<html lang="ar" dir="rtl" data-page="{page}" data-title-key="{title_key}">
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-page="requests" data-title-key="call.title">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f7f8fd">
-<title>{title}</title>
-<meta name="description" content="{desc}">
+<title>مكالمة | سند</title>
+<meta name="description" content="غرفة مكالمة فيديو أو صوت بين العميل والمحامي على منصة سند.">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,18 +28,12 @@ HEAD = '''<!DOCTYPE html>
 <script src="assets/js/ui/icons.js"></script>
 <script src="assets/js/core/app.js"></script>
 <script src="assets/js/ui/layout.js"></script>
-'''
 
-FOOT = '''
+<main id="main" data-call></main>
+
 <div data-slot="footer"></div>
 
 <script src="assets/js/ui/components.js"></script>
-<script src="assets/js/pages/{script}.js"></script>
+<script src="assets/js/pages/call.js"></script>
 </body>
 </html>
-'''
-
-def shell(page, title_key, title, desc, body, script=None):
-    return (HEAD.format(page=page, title_key=title_key, title=title, desc=desc)
-            + body
-            + FOOT.format(script=script or page))

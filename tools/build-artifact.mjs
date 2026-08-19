@@ -35,6 +35,7 @@ const ROUTES = [
   { name: 'about',     script: 'about',     page: 'about' },
   { name: 'login',     script: 'login',     page: 'login' },
   { name: 'signup',    script: 'signup',    page: 'signup' },
+  { name: 'call',      script: 'call',      page: 'requests' },
 ];
 
 /** Pull the view out of a page — everything between <main> and </main>. */
@@ -73,8 +74,9 @@ const css = read('assets/css/style.css');
 
 /* The same dependency order the page shells use, then every page module. */
 const core = [
-  'core/theme', 'core/i18n', 'core/store', 'data/seed', 'data/models',
-  'core/session', 'ui/icons', 'core/app', 'ui/layout', 'ui/components',
+  'config', 'core/theme', 'core/i18n', 'core/store', 'data/seed', 'data/models',
+  'core/session', 'core/signal', 'core/rtc', 'ui/icons', 'core/app',
+  'ui/layout', 'ui/components',
 ].map((n) => read(`assets/js/${n}.js`)).join('\n');
 
 const pageScripts = ROUTES

@@ -60,6 +60,27 @@
     return { avg: Math.round(((baseSum + sum) / count) * 10) / 10, count: count };
   }
 
+  /** How many of each star this person has. Seed history has no rows of its
+      own, so it is spread around the seeded average rather than invented. */
+  function ratingSpread(userId) {
+    var out = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    reviewsFor(userId).forEach(function (r) {
+      var k = Math.max(1, Math.min(5, Math.round(r.rating)));
+      out[k]++;
+    });
+    var u = user(userId);
+    var base = (u && u.seedReviews) || 0;
+    if (base) {
+      var avg = (u && u.seedRating) || 5;
+      var top = Math.min(5, Math.floor(avg));
+      var share = avg - top;                       // how far above `top` it sits
+      var upper = Math.round(base * share);
+      out[Math.min(5, top + 1)] += upper;
+      out[top] += base - upper;
+    }
+    return out;
+  }
+
   /* ---------- ranking ----------
      A blend, as decided: rating carries the most weight, then delivered work,
      then responsiveness. Exposed with its parts so the person ranked can see
@@ -196,7 +217,15 @@
      Two ways, and the standing one wins. Without an agreement each routed task
      carries its own percentage of what the client paid; with one, the pair have
      already settled the terms and the per-task share does not apply. */
+  // 30% is the floor the platform guarantees a trainee. A lawyer may pay more,
+  // never less, so the share is clamped on the way out as well as on the way in.
+  var MIN_SHARE = 30;
   var DEFAULT_SHARE = 30;
+
+  function clampShare(n) {
+    if (n == null || isNaN(n)) return DEFAULT_SHARE;
+    return Math.max(MIN_SHARE, Math.min(100, Math.round(n)));
+  }
 
   function agreementFor(lawyerId, internId) {
     var all = Store.agreements();
@@ -218,7 +247,7 @@
     if (deal) {
       return { kind: deal.kind, agreement: deal, amount: deal.kind === "cases" ? deal.amount : 0 };
     }
-    var pct = st.internShare != null ? st.internShare : DEFAULT_SHARE;
+    var pct = clampShare(st.internShare);
     return { kind: "share", pct: pct, amount: Math.round((r.price || 0) * pct / 100) };
   }
 
@@ -318,12 +347,13 @@
   global.Models = {
     byId: byId,
     users: users, user: user, lawyers: lawyers, interns: interns, listedLawyers: listedLawyers,
-    reviewsFor: reviewsFor, ratingOf: ratingOf,
+    reviewsFor: reviewsFor, ratingOf: ratingOf, ratingSpread: ratingSpread,
     scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard,
     serviceTypes: serviceTypes, serviceType: serviceType, servicesOf: servicesOf,
     priceBand: priceBand, checkPrice: checkPrice,
     serviceTitle: serviceTitle, serviceMeta: serviceMeta, serviceIcon: serviceIcon,
-    DEFAULT_SHARE: DEFAULT_SHARE, agreementFor: agreementFor,
+    MIN_SHARE: MIN_SHARE, DEFAULT_SHARE: DEFAULT_SHARE, clampShare: clampShare,
+    agreementFor: agreementFor,
     agreementsOfIntern: agreementsOfIntern, taskPay: taskPay,
     earnedBy: earnedBy, casesDone: casesDone,
     requests: requests, request: request, requestState: requestState,
