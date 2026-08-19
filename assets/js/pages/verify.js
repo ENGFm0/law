@@ -29,6 +29,7 @@ Pages.define("verify", function (global) {
     email: App.param("email") || "",
     password: "Verify!" + Math.random().toString(36).slice(2, 10),
   };
+  var googleState = { checked: false, signedIn: false, email: "", profile: null };
 
   function draw() {
     var cfg = global.SANAD_CONFIG || {};
@@ -61,6 +62,8 @@ Pages.define("verify", function (global) {
               esc(creds.password) + '"></label>' +
         "</div></div>" +
 
+      googleCard() +
+
       '<button class="btn btn--accent btn--lg" style="margin-top:var(--s-6)" type="button" ' +
         'data-run' + (running ? " disabled" : "") + ">" +
         (running ? "جارٍ الفحص…" : "ابدأ الفحص") + "</button>" +
@@ -83,6 +86,48 @@ Pages.define("verify", function (global) {
 
       (rows.length && !running ? summary() : "") +
     "</div>";
+  }
+
+  /* Google is checked separately: the browser leaves the page entirely and
+     comes back, so it cannot sit inside the sequential run above. What it
+     proves is the pair — that the OAuth round trip works, and that the
+     database made a profile for a user who never touched our sign-up code. */
+  function googleCard() {
+    var g = googleState;
+    return '<div class="card card--pad" style="margin-top:var(--s-6)">' +
+      '<h2 class="subtitle">الدخول عبر Google</h2>' +
+      (g.checked
+        ? '<div style="margin-top:var(--s-4)">' +
+            verdict("عاد من Google بجلسة", g.signedIn, g.email || "") +
+            verdict("أنشأت قاعدة البيانات ملفه تلقائياً", !!g.profile,
+              g.profile ? "" : "لم يُنشأ — شغّل الترحيل 002") +
+            (g.profile
+              ? verdict("بدأ عميلاً موثّقاً", g.profile.status === "verified" &&
+                  (g.profile.roles || []).indexOf("client") !== -1,
+                  "الحالة: " + g.profile.status + " · الأدوار: " + (g.profile.roles || []).join(","))
+              : "") +
+            (g.profile && g.profile.name
+              ? verdict("حمل اسمه من Google", !!App.tx(g.profile.name), App.tx(g.profile.name))
+              : "") +
+          "</div>"
+        : '<p class="small muted" style="margin-top:var(--s-2)">' +
+          'اضغط الزر، وستعود إلى هذه الصفحة بالنتيجة.</p>') +
+      '<div class="row gap-3 wrap" style="margin-top:var(--s-5)">' +
+        '<button class="btn btn--outline" type="button" data-try-google>' +
+          (g.checked ? "جرّب مرة أخرى" : "جرّب الدخول عبر Google") + "</button>" +
+        (g.signedIn
+          ? '<button class="btn btn--ghost" type="button" data-google-out>سجّل الخروج</button>'
+          : "") +
+      "</div></div>";
+  }
+
+  function verdict(label, ok, detail) {
+    var colour = ok ? "var(--success)" : "var(--danger)";
+    return '<div class="row gap-3" style="padding:var(--s-2) 0">' +
+      '<span style="color:' + colour + '">' + Icons.svg(ok ? "check" : "close", "icon-sm") + "</span>" +
+      '<span class="small grow">' + esc(label) +
+        (detail ? ' <span class="tiny muted">— ' + esc(detail) + "</span>" : "") + "</span>" +
+      '<strong class="small" style="color:' + colour + '">' + (ok ? "PASS" : "FAIL") + "</strong></div>";
   }
 
   function line(k, v) {
@@ -286,7 +331,40 @@ Pages.define("verify", function (global) {
 
   host.addEventListener("click", function (ev) {
     if (ev.target.closest("[data-run]") && !running) run();
+
+    if (ev.target.closest("[data-try-google]")) {
+      global.SB.signInWithGoogle(global.location.href)
+        .catch(function (e) { App.toast(String(e && e.message || e), "close"); });
+      return;
+    }
+
+    if (ev.target.closest("[data-google-out]")) {
+      global.SB.signOut().then(function () {
+        googleState = { checked: false, signedIn: false, email: "", profile: null };
+        draw();
+      });
+      return;
+    }
   });
+
+  /* On the way back from Google the client restores the session from the URL,
+     so the answer is simply: is anyone signed in, and did they get a profile? */
+  function checkGoogle() {
+    if (!global.SB.hasKeys()) return;
+    global.SB.load().then(function (sb) {
+      return sb.auth.getSession().then(function (res) {
+        var session = res.data && res.data.session;
+        if (!session) return;
+        googleState.checked = true;
+        googleState.signedIn = true;
+        googleState.email = session.user.email || "";
+        return global.SB.profile(session.user.id).then(function (p) {
+          googleState.profile = p;
+          draw();
+        });
+      });
+    }).catch(function () {});
+  }
 
   host.addEventListener("input", function (ev) {
     var f = ev.target.closest("[data-email]");
@@ -297,4 +375,5 @@ Pages.define("verify", function (global) {
   });
 
   App.onRender(draw);
+  checkGoogle();
 });
