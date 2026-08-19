@@ -88,9 +88,9 @@
 | شاشة العودة من Google | US-001 | login.html، signup.html |
 | شاشة الحساب | US-002 | account.html |
 | بطاقات الأدوار الثلاثة | US-002 | account.html |
-| طابور المراجعة | US-003 | (شاشة جديدة — غير موجودة في النموذج الحالي) |
-| تفاصيل الطلب مع صورة الرخصة | US-003 | (شاشة جديدة — غير موجودة في النموذج الحالي) |
-| نافذة الرفض بالسبب | US-003 | (شاشة جديدة — غير موجودة في النموذج الحالي) |
+| طابور المراجعة | US-003 | admin.html |
+| تفاصيل الطلب مع صورة الرخصة | US-003 | admin.html |
+| نافذة الرفض بالسبب | US-003 | admin.html |
 | دليل المحامين | US-004 | lawyers.html، lawyer.html، intern.html |
 | دليل المتدربين | US-004 | lawyers.html، lawyer.html، intern.html |
 | ملف المحامي | US-004 | lawyers.html، lawyer.html، intern.html |

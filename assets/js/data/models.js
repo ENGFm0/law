@@ -28,8 +28,20 @@
     return (global.SANAD_CONFIG || {}).backend === "supabase" ? [] : list;
   }
 
+  /** A seeded person plus whatever has since been changed about them. Staff
+      approving a licence writes to the overlay, not to the fixture. */
+  function overlay(u) {
+    var live = Store.profileState(u.id);
+    var keys = Object.keys(live);
+    if (!keys.length) return u;
+    var out = {};
+    Object.keys(u).forEach(function (k) { out[k] = u[k]; });
+    keys.forEach(function (k) { out[k] = live[k]; });
+    return out;
+  }
+
   function users() {
-    return seeded(SEED.users).concat(Store.signups());
+    return seeded(SEED.users).map(overlay).concat(Store.signups());
   }
 
   function lawyers() {
@@ -42,6 +54,16 @@
   /** Only verified lawyers are offered to clients; the rest are still setting up. */
   function listedLawyers() {
     return lawyers().filter(function (u) { return u.status === "verified"; });
+  }
+
+  /** Waiting on the platform to check them. A professional role is claimed at
+      sign-up and believed by nobody until somebody looks at the licence — so
+      this queue is the whole of what "verified" means. */
+  function pendingVerification() {
+    return users().filter(function (u) {
+      return u.status === "pending" &&
+        (u.roles.indexOf("lawyer") !== -1 || u.roles.indexOf("intern") !== -1);
+    });
   }
 
   /* ---------- reviews & rating ---------- */
@@ -102,9 +124,17 @@
     };
   }
 
+  /** The cohort a rank is measured against: people the platform has actually
+      approved. Someone still waiting on their licence has not earned a place
+      in the ranking, and counting them would move everyone else's. */
+  function ranked(role) {
+    return (role === "intern" ? interns() : lawyers())
+      .filter(function (u) { return u.status === "verified"; });
+  }
+
   /** Rank within one role's cohort. 1 is best. */
   function rankOf(userId, role) {
-    var cohort = (role === "intern" ? interns() : lawyers())
+    var cohort = ranked(role)
       .map(function (u) { return { id: u.id, score: scoreOf(u).total }; })
       .sort(function (a, b) { return b.score - a.score; });
     for (var i = 0; i < cohort.length; i++) {
@@ -114,7 +144,7 @@
   }
 
   function leaderboard(role) {
-    return (role === "intern" ? interns() : lawyers())
+    return ranked(role)
       .map(function (u) { return { user: u, score: scoreOf(u), rating: ratingOf(u.id) }; })
       .sort(function (a, b) { return b.score.total - a.score.total; });
   }
@@ -539,8 +569,9 @@
   global.Models = {
     byId: byId,
     users: users, user: user, lawyers: lawyers, interns: interns, listedLawyers: listedLawyers,
+    pendingVerification: pendingVerification,
     reviewsFor: reviewsFor, ratingOf: ratingOf, ratingSpread: ratingSpread,
-    scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard,
+    scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard, ranked: ranked,
     serviceTypes: serviceTypes, serviceType: serviceType, servicesOf: servicesOf,
     priceBand: priceBand, checkPrice: checkPrice,
     serviceTitle: serviceTitle, serviceMeta: serviceMeta, serviceIcon: serviceIcon,

@@ -36,6 +36,7 @@ const ROUTES = [
   { name: 'login',     script: 'login',     page: 'login' },
   { name: 'signup',    script: 'signup',    page: 'signup' },
   { name: 'call',      script: 'call',      page: 'requests' },
+  { name: 'admin',     script: 'admin',     page: 'admin' },
 ];
 
 /** Pull the view out of a page — everything between <main> and </main>. */

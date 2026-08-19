@@ -17,8 +17,11 @@ const M = window.Models, S = window.Session, St = window.Store;
 
 const ok = (n,c) => console.log((c?'  PASS ':'  FAIL ')+n);
 console.log('— RELATIONS —');
-ok('9 seeded professionals + 2 clients', M.users().length === 11);
-ok('6 lawyers', M.lawyers().length === 6);
+ok('10 seeded professionals + platform staff + 2 clients', M.users().length === 13);
+ok('7 lawyers, one of them still waiting on her licence', M.lawyers().length === 7);
+ok('only the six approved ones are offered to clients', M.listedLawyers().length === 6);
+ok('and the unapproved one is not ranked against them', M.ranked('lawyer').length === 6);
+ok('a pending lawyer has no rank at all', M.rankOf('u-rania','lawyer').rank === null);
 ok('3 trainees', M.interns().length === 3);
 const art = M.article('a-6');
 const author = M.user(art.authorId);

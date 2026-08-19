@@ -50,6 +50,12 @@
     if (role === "guest") {
       return [home, people, services, blog];
     }
+    // Staff have one job on this site and the navigation says so: the desk,
+    // and the public pages they moderate. No inbox, no services to sell.
+    if (role === "staff") {
+      return [{ key: "nav.admin", tab: "tab.admin", href: "admin.html", id: "admin", icon: "shield-check" },
+              people, blog, home];
+    }
     // The drafting workspace is a lawyer's daily tool, so it earns a slot of
     // its own rather than hiding behind a link on the dashboard.
     if (role === "lawyer") {

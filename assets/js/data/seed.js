@@ -209,6 +209,21 @@
       bio: { ar: "متدرب في بداية مساره، يعمل على مراجعة المستندات العقارية.",
              en: "A trainee early in his path, working on real-estate document review." } },
 
+    { id: "u-rania", roles: ["lawyer"], activeRole: "lawyer", status: "pending",
+      name: { ar: "رانية الحربي", en: "Rania Al-Harbi" },
+      title: { ar: "محامية", en: "Lawyer" },
+      email: "rania@sanad.sa", city: "jeddah", years: 4, completed: 0, responseHours: 12,
+      seedRating: 0, seedReviews: 0, specialties: ["family", "labour"],
+      licence: { number: "8842", authority: { ar: "وزارة العدل", en: "Ministry of Justice" }, expiry: "2029-09-01" },
+      bio: { ar: "محامية حديثة القيد، تنتظر اعتماد رخصتها للظهور في الدليل.",
+             en: "A newly admitted lawyer waiting for her licence to be checked before she is listed." } },
+
+    /* --- the platform's own side of the desk --- */
+    { id: "u-staff", roles: ["staff"], activeRole: "staff", status: "verified",
+      name: { ar: "إدارة المنصة", en: "Platform staff" },
+      title: { ar: "مراجعة واعتماد", en: "Review & approval" },
+      email: "staff@sanad.sa", city: "riyadh" },
+
     /* --- clients --- */
     { id: "u-fahad", roles: ["client"], activeRole: "client", status: "verified",
       name: { ar: "فهد العتيبي", en: "Fahad Al-Otaibi" },

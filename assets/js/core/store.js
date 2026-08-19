@@ -31,9 +31,12 @@
   [
     "requests", "requestStates", "services", "removedServices", "reviews",
     "articles", "articleStates", "comments", "endorsements", "applications",
-    "agreements", "disputes"
+    "agreements", "disputes", "audit", "profiles"
   ].forEach(function (k) {
-    if (!work[k]) work[k] = (k.indexOf("States") !== -1 || k === "applications" ? {} : []);
+    if (!work[k]) {
+      work[k] = (k.indexOf("States") !== -1 || k === "applications" || k === "profiles")
+        ? {} : [];
+    }
   });
 
   // Platform-wide settings sit beside the accounts rather than with the work:
@@ -125,10 +128,22 @@
       return { ok: true, user: u };
     },
 
+    /** Changes to a seeded person have no account row to land in, so they go
+        to an overlay the model reads on top of the seed — the same shape the
+        request states already use. Without it a staff member could not approve
+        anybody who came with the demo. */
+    profileState: function (id) { return work.profiles[id] || {}; },
+
     updateAccount: function (id, patch) {
       var u = null;
       for (var i = 0; i < accounts.length; i++) if (accounts[i].id === id) u = accounts[i];
-      if (!u) return null;
+      if (!u) {
+        var over = work.profiles[id] || {};
+        Object.keys(patch).forEach(function (k) { over[k] = patch[k]; });
+        work.profiles[id] = over;
+        notify();
+        return global.Models ? global.Models.user(id) : null;
+      }
       Object.keys(patch).forEach(function (k) { u[k] = patch[k]; });
       saveAccounts();
       notify();
@@ -137,6 +152,9 @@
 
     /** One account can carry several roles — the decision taken up front. */
     addRole: function (id, role, extra) {
+      // Staff is granted on the account, never taken. A path that let someone
+      // add it to themselves would hand them every approval on the platform.
+      if (role === "staff") return null;
       var u = Store.updateAccount(id, {});
       if (!u || u.roles.indexOf(role) !== -1) return u;
       u.roles.push(role);
@@ -244,6 +262,18 @@
       notify();
     },
 
+    /* ---------------- the audit trail ----------------
+       Approvals, rejections and decisions are written down because the point
+       of them is that somebody can be asked afterwards why. Append only. */
+    audit: function () { return work.audit; },
+    log: function (entry) {
+      entry.id = uid("log");
+      entry.at = Date.now();
+      work.audit.push(entry);
+      notify();
+      return entry;
+    },
+
     /* ---------------- disputes ----------------
        A delivery the client refuses. Opening one freezes the money; only a
        staff decision moves it after that. Nothing here is ever deleted — a
@@ -348,7 +378,8 @@
     resetWork: function () {
       work = { requests: [], requestStates: {}, services: [], removedServices: [],
                reviews: [], articles: [], articleStates: {}, comments: [],
-               endorsements: [], applications: {}, agreements: [], disputes: [] };
+               endorsements: [], applications: {}, agreements: [], disputes: [],
+               audit: [], profiles: {} };
       notify();
     },
     resetAll: function () {

@@ -29,6 +29,15 @@
       id: "intern", icon: "graduation", nameKey: "role.intern",
       home: "index.html",
       nav: { key: "nav.requests", tab: "tab.requests", href: "requests.html", id: "requests", icon: "inbox" }
+    },
+    // Staff is not a role anybody adds to themselves. It is granted on the
+    // account and it never appears in the "add a role" list, because the
+    // person who decides a dispute must not be a party who could grant
+    // themselves the power to decide it.
+    staff: {
+      id: "staff", icon: "shield-check", nameKey: "role.staff",
+      home: "admin.html",
+      nav: { key: "nav.admin", tab: "tab.admin", href: "admin.html", id: "admin", icon: "shield-check" }
     }
   };
 
@@ -67,13 +76,14 @@
     info: function () { return ROLES[Session.role()] || null; },
     is: function (r) { return Session.role() === r; },
     roleDef: function (r) { return ROLES[r] || null; },
+    /** The roles a person may take on. Staff is deliberately absent. */
     allRoles: function () { return [ROLES.client, ROLES.lawyer, ROLES.intern]; },
 
     /** Roles this account holds, in a stable order. */
     myRoles: function () {
       var u = Session.user();
       if (!u) return [];
-      return ["client", "lawyer", "intern"].filter(function (r) { return u.roles.indexOf(r) !== -1; });
+      return ["client", "lawyer", "intern", "staff"].filter(function (r) { return u.roles.indexOf(r) !== -1; });
     },
 
     switchRole: function (r) {
@@ -89,7 +99,7 @@
     isVerified: function () {
       var u = Session.user();
       if (!u) return false;
-      return Session.is("client") || u.status === "verified";
+      return Session.is("client") || Session.is("staff") || u.status === "verified";
     },
 
     /* Signing in is asynchronous now, because on Supabase it always was. Both

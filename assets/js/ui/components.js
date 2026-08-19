@@ -220,7 +220,8 @@
   var STATUS_STYLE = {
     new: "warn", quoting: "info", assigned: "info", scheduled: "info",
     drafted: "ok", open_to_interns: "warn", with_intern: "info", in_progress: "warn",
-    delivered: "ok", completed: "muted", cancelled: "muted"
+    delivered: "ok", completed: "muted", cancelled: "muted",
+    pending: "warn", verified: "ok", rejected: "muted"
   };
 
   function statusPill(status) {
