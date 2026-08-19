@@ -86,6 +86,8 @@ function boot(rows = {}) {
       profiles: rows.profiles || [], services: rows.services || [],
       requests: rows.requests || [], articles: rows.articles || [],
       reviews: [], comments: [], endorsements: [], agreements: rows.agreements || [],
+      disputes: rows.disputes || [], notices: rows.notices || [],
+      audit: rows.audit || [], settings: rows.settings || null,
     }),
   };
 
@@ -199,6 +201,66 @@ section('ACCOUNTS');
   ok('the cached profile changed', S.signups()[0].bio.ar === 'س');
   ok('and only real columns were sent', 'bio' in fake.lastTo('profiles').row);
   ok('status is never sent from here', !('status' in fake.lastTo('profiles').row));
+}
+
+section('THE DESK COMES FROM THE DATABASE, NOT FROM THIS BROWSER');
+{
+  const { S } = boot({
+    disputes: [{ id: 'd1', request_id: 'r1', by_id: 'c1', reason: 'ناقص',
+      status: 'resolved', outcome: 'split', lawyer_pct: 60,
+      resolution_reason: 'سُلّم أغلبه', resolved_by: 's1',
+      resolved_at: '2026-08-19T10:00:00Z', created_at: '2026-08-19T09:00:00Z' }],
+    notices: [{ id: 'n1', to_id: 'c1', type: 'delivered', ref: 'r1', read: false,
+                at: '2026-08-19T09:00:00Z' },
+              { id: 'n2', to_id: 'c1', type: 'resolved', ref: 'r1', read: true,
+                at: '2026-08-19T10:00:00Z' }],
+    audit: [{ id: 'a1', action: 'approve', by_id: 's1', target_id: 'l1',
+              subject: 'محامٍ', at: '2026-08-19T08:00:00Z' }],
+    settings: { id: 1, commission_pct: 7, vat_enabled: true, vat_pct: 15 },
+  });
+  await S.hydrate();
+
+  const d = S.disputes()[0];
+  ok('a dispute keeps the request it belongs to', d.requestId === 'r1' && d.byId === 'c1');
+  ok('a decided one carries its outcome and share',
+     d.resolution.outcome === 'split' && d.resolution.lawyerPct === 60);
+  ok('and the reason it was decided on', d.resolution.reason === 'سُلّم أغلبه');
+  ok('naming who decided', d.resolution.byId === 's1');
+  ok('timestamps become numbers the model can compare', typeof d.at === 'number' && d.at > 0);
+  ok('disputeFor finds it by request', S.disputeFor('r1') === d);
+  ok('and returns null where there is none', S.disputeFor('r-nope') === null);
+
+  ok('notices arrive with their owner', S.notices()[0].to === 'c1');
+  ok('and their read state', S.notices()[0].read === false && S.notices()[1].read === true);
+  ok('the record arrives as the desk shows it', S.audit()[0].action === 'approve');
+  ok('settings come from the one row', S.settings().commissionPct === 7);
+  ok('including whether tax is switched on', S.settings().vatEnabled === true);
+
+  S.setSettings({ commissionPct: 5 });
+  ok('changing a setting is visible immediately', S.settings().commissionPct === 5);
+
+  S.notify({ to: 'c1', type: 'rated', ref: 'r9' });
+  ok('a new notice lands in the list', S.notices().length === 3);
+  S.notify({ to: 'c1', type: 'rated', ref: 'r9' });
+  ok('and the same event twice stays one', S.notices().length === 3);
+
+  ok('a dispute cannot be opened twice on one request',
+     S.openDispute({ requestId: 'r1', byId: 'c1', reason: 'x' }) === null);
+  ok('nor decided twice',
+     S.resolveDispute('d1', { outcome: 'refund', byId: 's1', reason: 'y' }) === null);
+
+  S.log({ action: 'resolve', byId: 's1', subject: 'split' });
+  ok('the record is appended to at the top', S.audit()[0].action === 'resolve');
+  ok('and keeps what was already there', S.audit().length === 2);
+}
+
+section('AN ACCOUNT THAT MAY READ NOTHING STILL STARTS');
+{
+  const { S } = boot({});
+  await S.hydrate();
+  ok('a table that came back empty is empty, not a crash',
+     S.disputes().length === 0 && S.notices().length === 0 && S.audit().length === 0);
+  ok('and settings fall back rather than throwing', typeof S.settings() === 'object');
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

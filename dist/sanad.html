@@ -5774,6 +5774,12 @@ window.SANAD_CONFIG = {
           sb.from("comments").select("*"),
           sb.from("endorsements").select("*"),
           sb.from("agreements").select("*"),
+          sb.from("disputes").select("*"),
+          sb.from("notifications").select("*"),
+          sb.from("platform_settings").select("*").eq("id", 1).maybeSingle(),
+          // Only staff may read the record; for everyone else this comes back
+          // empty and the desk they cannot open stays empty with it.
+          sb.from("audit_log").select("*").order("at", { ascending: false }).limit(200),
         ]).then(function (r) {
           var pick = function (x) { return (x && !x.error && x.data) || []; };
           return {
@@ -5781,6 +5787,9 @@ window.SANAD_CONFIG = {
             services: pick(r[1]), requests: pick(r[2]), articles: pick(r[3]),
             reviews: pick(r[4]), comments: pick(r[5]),
             endorsements: pick(r[6]), agreements: pick(r[7]),
+            disputes: pick(r[8]), notices: pick(r[9]),
+            settings: (r[10] && !r[10].error && r[10].data) || null,
+            audit: pick(r[11]),
           };
         });
       });
@@ -5862,6 +5871,29 @@ window.SANAD_CONFIG = {
     return { id: e.id, internId: e.intern_id, lawyerId: e.lawyer_id,
              hours: e.hours, date: pair(""), note: e.note ? pair(e.note) : null };
   }
+  function inDispute(d) {
+    return {
+      id: d.id, requestId: d.request_id, byId: d.by_id, reason: d.reason,
+      at: new Date(d.created_at).getTime(), status: d.status,
+      resolution: d.status === "resolved" ? {
+        outcome: d.outcome, lawyerPct: d.lawyer_pct, reason: d.resolution_reason,
+        byId: d.resolved_by, at: new Date(d.resolved_at).getTime(),
+      } : null,
+    };
+  }
+  function inNotice(n) {
+    return { id: n.id, to: n.to_id, type: n.type, ref: n.ref, read: !!n.read,
+             at: new Date(n.at).getTime() };
+  }
+  function inAudit(a) {
+    return { id: a.id, action: a.action, byId: a.by_id, targetId: a.target_id,
+             subject: a.subject, reason: a.reason, at: new Date(a.at).getTime() };
+  }
+  function inSettings(s) {
+    return s ? { commissionPct: s.commission_pct, vatEnabled: !!s.vat_enabled,
+                 vatPct: s.vat_pct } : {};
+  }
+
   function inAgreement(a) {
     return { id: a.id, lawyerId: a.lawyer_id, internId: a.intern_id, kind: a.kind,
              amount: Number(a.amount), cases: a.cases, startedAt: a.started_at };
@@ -5871,6 +5903,7 @@ window.SANAD_CONFIG = {
   var cache = {
     profiles: [], requests: [], services: [], articles: [],
     reviews: [], comments: [], endorsements: [], agreements: [], applications: {},
+    disputes: [], notices: [], audit: [], settings: {},
   };
   var ready = false;
 
@@ -6094,6 +6127,111 @@ window.SANAD_CONFIG = {
     return me;
   };
 
+  /* ---------- the desk, the notices and the record ----------
+     All four were the last things still living only in this browser: the desk
+     worked, and worked differently on every device you opened it from. They
+     write through like everything else — the cache moves first so the screen
+     answers, the row follows, and a refusal is reported rather than left to
+     look like it succeeded. */
+  Store.settings = function () { return cache.settings; };
+  Store.setSettings = function (p) {
+    Object.keys(p || {}).forEach(function (k) { cache.settings[k] = p[k]; });
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("platform_settings").update({
+        commission_pct: cache.settings.commissionPct,
+        vat_enabled: !!cache.settings.vatEnabled,
+        vat_pct: cache.settings.vatPct,
+        updated_at: new Date().toISOString(),
+      }).eq("id", 1);
+    }).then(report);
+    return cache.settings;
+  };
+
+  Store.disputes = function () { return cache.disputes; };
+  Store.disputeFor = function (requestId) {
+    for (var i = 0; i < cache.disputes.length; i++) {
+      if (cache.disputes[i].requestId === requestId) return cache.disputes[i];
+    }
+    return null;
+  };
+  Store.openDispute = function (d) {
+    if (Store.disputeFor(d.requestId)) return null;
+    var row = { id: null, requestId: d.requestId, byId: d.byId, reason: d.reason,
+                at: Date.now(), status: "open", resolution: null };
+    cache.disputes.push(row);
+    Store.notifyAll();
+    push("disputes", { request_id: d.requestId, by_id: d.byId, reason: d.reason })
+      .then(report)
+      .then(function (res) { if (res && res.data) { row.id = res.data.id; Store.notifyAll(); } });
+    return row;
+  };
+  Store.resolveDispute = function (id, decision) {
+    var d = null;
+    for (var i = 0; i < cache.disputes.length; i++) if (cache.disputes[i].id === id) d = cache.disputes[i];
+    if (!d || d.status === "resolved") return null;
+    d.status = "resolved";
+    d.resolution = {
+      outcome: decision.outcome,
+      lawyerPct: decision.outcome === "split" ? decision.lawyerPct : null,
+      reason: decision.reason || "", byId: decision.byId || null, at: Date.now(),
+    };
+    Store.notifyAll();
+    patch("disputes", id, {
+      status: "resolved", outcome: d.resolution.outcome, lawyer_pct: d.resolution.lawyerPct,
+      resolution_reason: d.resolution.reason, resolved_by: d.resolution.byId,
+      resolved_at: new Date().toISOString(),
+    }).then(report);
+    return d;
+  };
+
+  Store.audit = function () { return cache.audit; };
+  Store.log = function (entry) {
+    entry.at = Date.now();
+    cache.audit.unshift(entry);
+    Store.notifyAll();
+    push("audit_log", { action: entry.action, by_id: entry.byId,
+                        target_id: entry.targetId || null,
+                        subject: entry.subject || null, reason: entry.reason || null })
+      .then(report)
+      .then(function (res) { if (res && res.data) entry.id = res.data.id; });
+    return entry;
+  };
+
+  Store.notices = function () { return cache.notices; };
+  Store.notify = function (n) {
+    if (!n.to) return null;
+    var dup = cache.notices.some(function (x) {
+      return x.to === n.to && x.type === n.type && x.ref === n.ref;
+    });
+    if (dup) return null;
+    n.at = Date.now();
+    n.read = false;
+    cache.notices.push(n);
+    Store.notifyAll();
+    // A notice raised for somebody else cannot be read back by the sender, so
+    // no row is selected here — and the unique key means a duplicate is a
+    // refusal to record, not an error worth showing anyone.
+    SB.load().then(function (sb) {
+      return sb.from("notifications").insert({ to_id: n.to, type: n.type, ref: n.ref || null });
+    }).then(function (res) {
+      if (res && res.error && res.error.code !== "23505") report(res);
+    });
+    return n;
+  };
+  Store.readNotice = function (id) {
+    cache.notices.forEach(function (n) { if (n.id === id) n.read = true; });
+    Store.notifyAll();
+    patch("notifications", id, { read: true }).then(report);
+  };
+  Store.readAllNotices = function (to) {
+    cache.notices.forEach(function (n) { if (n.to === to) n.read = true; });
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("notifications").update({ read: true }).eq("to_id", to).eq("read", false);
+    }).then(report);
+  };
+
   /* ---------- filling the cache ---------- */
   Store.hydrate = function () {
     return SB.hydrate().then(function (d) {
@@ -6105,6 +6243,13 @@ window.SANAD_CONFIG = {
       cache.comments = d.comments.map(inComment);
       cache.endorsements = d.endorsements.map(inEndorsement);
       cache.agreements = d.agreements.map(inAgreement);
+      // Defensive: a table the account may not read comes back empty, and a
+      // database that predates a migration returns nothing at all. Neither is
+      // a reason for the whole site to fail to start.
+      cache.disputes = (d.disputes || []).map(inDispute);
+      cache.notices = (d.notices || []).map(inNotice);
+      cache.audit = (d.audit || []).map(inAudit);
+      cache.settings = inSettings(d.settings);
       ready = true;
       Store.notifyAll();
       return cache;

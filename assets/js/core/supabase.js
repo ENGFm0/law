@@ -213,6 +213,12 @@
           sb.from("comments").select("*"),
           sb.from("endorsements").select("*"),
           sb.from("agreements").select("*"),
+          sb.from("disputes").select("*"),
+          sb.from("notifications").select("*"),
+          sb.from("platform_settings").select("*").eq("id", 1).maybeSingle(),
+          // Only staff may read the record; for everyone else this comes back
+          // empty and the desk they cannot open stays empty with it.
+          sb.from("audit_log").select("*").order("at", { ascending: false }).limit(200),
         ]).then(function (r) {
           var pick = function (x) { return (x && !x.error && x.data) || []; };
           return {
@@ -220,6 +226,9 @@
             services: pick(r[1]), requests: pick(r[2]), articles: pick(r[3]),
             reviews: pick(r[4]), comments: pick(r[5]),
             endorsements: pick(r[6]), agreements: pick(r[7]),
+            disputes: pick(r[8]), notices: pick(r[9]),
+            settings: (r[10] && !r[10].error && r[10].data) || null,
+            audit: pick(r[11]),
           };
         });
       });
