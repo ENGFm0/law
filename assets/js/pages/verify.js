@@ -22,7 +22,12 @@ Pages.define("verify", function (global) {
   // Supabase refuses reserved domains such as example.com outright, and with
   // "Confirm email" on it withholds the session until a link is clicked. So the
   // account checks use an address the tester actually controls.
-  var creds = { email: "", password: "Verify!" + Math.random().toString(36).slice(2, 10) };
+  // Prefilled from ?email= so the address can travel in the link rather than
+  // being typed again — and so it never has to be committed to a public repo.
+  var creds = {
+    email: App.param("email") || "",
+    password: "Verify!" + Math.random().toString(36).slice(2, 10),
+  };
 
   function draw() {
     var cfg = global.SANAD_CONFIG || {};
