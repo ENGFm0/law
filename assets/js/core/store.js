@@ -12,6 +12,7 @@
   "use strict";
 
   var ACCOUNTS_KEY = "sanad.accounts";
+  var SETTINGS_KEY = "sanad.settings";
   var SESSION_KEY  = "sanad.session.user";
   var WORK_KEY     = "sanad.work";
 
@@ -30,10 +31,16 @@
   [
     "requests", "requestStates", "services", "removedServices", "reviews",
     "articles", "articleStates", "comments", "endorsements", "applications",
-    "agreements"
+    "agreements", "disputes"
   ].forEach(function (k) {
     if (!work[k]) work[k] = (k.indexOf("States") !== -1 || k === "applications" ? {} : []);
   });
+
+  // Platform-wide settings sit beside the accounts rather than with the work:
+  // a demo reset wipes what a visitor made, not how the platform is configured.
+  // Tax ships switched off — a platform below the registration threshold
+  // charges none, and turning it on later is a setting, not a rebuild.
+  var settings = read(localStorage, SETTINGS_KEY, {});
 
   var listeners = [];
   function notify() {
@@ -42,6 +49,7 @@
     document.dispatchEvent(new CustomEvent("storechange"));
   }
   function saveAccounts() { write(localStorage, ACCOUNTS_KEY, accounts); }
+  function saveSettings() { write(localStorage, SETTINGS_KEY, settings); }
 
   function uid(prefix) {
     return prefix + "-" + Math.random().toString(36).slice(2, 8);
@@ -139,6 +147,15 @@
       return u;
     },
 
+    /* ---------------- platform settings ---------------- */
+    settings: function () { return settings; },
+    setSettings: function (patch) {
+      Object.keys(patch || {}).forEach(function (k) { settings[k] = patch[k]; });
+      saveSettings();
+      notify();
+      return settings;
+    },
+
     /* ---------------- session ---------------- */
     currentId: function () {
       try { return localStorage.getItem(SESSION_KEY); } catch (e) { return null; }
@@ -165,6 +182,10 @@
     setRequest: function (id, patch) {
       var cur = work.requestStates[id] || {};
       Object.keys(patch).forEach(function (k) { cur[k] = patch[k]; });
+      // Delivery starts the acceptance window, so the moment is stamped where
+      // delivery happens rather than at each of the several callers that
+      // cause it — one of them would eventually be written without it.
+      if (patch.status === "delivered" && !cur.deliveredAt) cur.deliveredAt = Date.now();
       work.requestStates[id] = cur;
       notify();
     },
@@ -221,6 +242,45 @@
         return !(x.lawyerId === lawyerId && x.internId === internId);
       });
       notify();
+    },
+
+    /* ---------------- disputes ----------------
+       A delivery the client refuses. Opening one freezes the money; only a
+       staff decision moves it after that. Nothing here is ever deleted — a
+       dispute closes by changing state, because the record of what was
+       claimed and what was decided is the whole point of having one. */
+    disputes: function () { return work.disputes; },
+    disputeFor: function (requestId) {
+      var all = work.disputes;
+      for (var i = 0; i < all.length; i++) {
+        if (all[i].requestId === requestId) return all[i];
+      }
+      return null;
+    },
+    openDispute: function (d) {
+      if (Store.disputeFor(d.requestId)) return null;   // one per request
+      d.id = uid("d");
+      d.at = Date.now();
+      d.status = "open";
+      d.resolution = null;
+      work.disputes.push(d);
+      notify();
+      return d;
+    },
+    resolveDispute: function (id, decision) {
+      var d = null, all = work.disputes;
+      for (var i = 0; i < all.length; i++) if (all[i].id === id) d = all[i];
+      if (!d || d.status === "resolved") return null;
+      d.status = "resolved";
+      d.resolution = {
+        outcome: decision.outcome,                 // release | refund | split
+        lawyerPct: decision.outcome === "split" ? decision.lawyerPct : null,
+        reason: decision.reason || "",             // never a code — a written reason
+        byId: decision.byId || null,
+        at: Date.now()
+      };
+      notify();
+      return d;
     },
 
     reviews: function () { return work.reviews; },
@@ -288,7 +348,7 @@
     resetWork: function () {
       work = { requests: [], requestStates: {}, services: [], removedServices: [],
                reviews: [], articles: [], articleStates: {}, comments: [],
-               endorsements: [], applications: {}, agreements: [] };
+               endorsements: [], applications: {}, agreements: [], disputes: [] };
       notify();
     },
     resetAll: function () {

@@ -276,6 +276,192 @@
     }).length;
   }
 
+  /* ---------- money ----------
+     Everything here is in halalas. A percentage of a riyal is rarely a whole
+     riyal, and three shares taken out of one price have to add back up to it
+     exactly — so the arithmetic is done in the smallest unit and the lawyer
+     takes the remainder rather than a rounded figure of their own. Nobody
+     loses a halala to rounding, and nobody invents one.
+
+     The client pays the advertised price. The platform's commission comes out
+     of the lawyer's side, not on top of what the client was quoted, and the
+     trainee's share is measured against the value of the task itself. */
+  var COMMISSION_MAX_PCT = 10;
+  var DEFAULT_COMMISSION_PCT = 10;
+  var DEFAULT_VAT_PCT = 15;
+
+  function clampCommission(n) {
+    if (n == null || isNaN(n)) return DEFAULT_COMMISSION_PCT;
+    return Math.max(0, Math.min(COMMISSION_MAX_PCT, Math.round(n)));
+  }
+
+  /** How the platform is configured to charge. Tax is off until the platform
+      is actually registered for it — below the threshold there is none to
+      charge, and switching it on later is this setting, not a rebuild. */
+  function platformSettings() {
+    var s = Store.settings() || {};
+    return {
+      commissionPct: clampCommission(s.commissionPct),
+      vatEnabled: !!s.vatEnabled,
+      vatPct: s.vatPct == null ? DEFAULT_VAT_PCT : Math.max(0, Math.min(100, s.vatPct))
+    };
+  }
+
+  /** Returns null when the two shares can live together, or why they cannot.
+      A commission and a trainee share that add past the whole would leave the
+      lawyer working for nothing — or for less than nothing. */
+  function checkSplit(commissionPct, internPct) {
+    var c = clampCommission(commissionPct), i = clampShare(internPct);
+    if (c + i > 100) return "over";
+    return null;
+  }
+
+  function pct(halalas, p) { return Math.round(halalas * p / 100); }
+
+  /** Who gets what out of one request, to the halala.
+
+      `client` is what the client is charged; `lawyer` is whatever is left
+      after every other share, so the parts always reconstitute the whole. */
+  function distribute(r) {
+    var cfg = platformSettings();
+    var st = requestState(r);
+    var gross = Math.round((r.price || 0) * 100);
+
+    // The legal service is the lawyer's supply, so it carries tax only if the
+    // lawyer is registered for it. The platform's own supply is the
+    // commission, and that carries tax whenever the platform is registered.
+    var lawyer = user(r.lawyerId);
+    var serviceVat = cfg.vatEnabled && lawyer && lawyer.vatRegistered
+      ? pct(gross, cfg.vatPct) : 0;
+
+    var commission = pct(gross, cfg.commissionPct);
+    var commissionVat = cfg.vatEnabled ? pct(commission, cfg.vatPct) : 0;
+
+    // A standing agreement is paid by the lawyer on its own terms — by the
+    // case, monthly or yearly — so it takes nothing out of this one request.
+    var pay = taskPay(r);
+    var viaAgreement = !!(pay && pay.kind !== "share");
+    var internPct = pay && pay.kind === "share" ? pay.pct : null;
+    var intern = internPct == null ? 0 : pct(gross, internPct);
+
+    return {
+      gross: gross,
+      serviceVat: serviceVat,
+      client: gross + serviceVat,
+      commission: commission,
+      commissionVat: commissionVat,
+      commissionPct: cfg.commissionPct,
+      intern: intern,
+      internPct: internPct,
+      internId: st.assignedTo || null,
+      viaAgreement: viaAgreement,
+      lawyer: gross - commission - commissionVat - intern,
+      vatEnabled: cfg.vatEnabled,
+      vatPct: cfg.vatPct
+    };
+  }
+
+  /* ---------- accepting a delivery, and refusing one ----------
+     A delivery cannot hang unanswered forever: the lawyer would never be paid
+     by a client who simply stopped replying. So acceptance has a deadline, and
+     silence past it counts as acceptance. The client is not cornered by that —
+     inside the window they may ask for the work to be redone once, and if that
+     does not settle it they may refuse and have someone else decide.
+
+     Three working days, and the Saudi weekend is Friday and Saturday: a
+     delivery on Thursday evening must not eat its whole window before the
+     client has had a working day to look at it. */
+  var ACCEPT_DAYS = 3;
+  var MAX_REVISIONS = 1;
+
+  function addWorkingDays(ts, n) {
+    var d = new Date(ts), left = n;
+    while (left > 0) {
+      d.setDate(d.getDate() + 1);
+      var w = d.getDay();
+      if (w !== 5 && w !== 6) left--;          // 5 = Friday, 6 = Saturday
+    }
+    return d.getTime();
+  }
+
+  function disputeFor(requestId) { return Store.disputeFor(requestId); }
+
+  function openDisputes() {
+    return Store.disputes().filter(function (d) { return d.status === "open"; });
+  }
+
+  /** The acceptance state of a delivery, derived rather than stored — a
+      deadline that has to be written down to be true is a deadline that drifts
+      the moment nobody is looking. */
+  function acceptance(r, now) {
+    var st = requestState(r);
+    var t = now || Date.now();
+    var delivered = st.status === "delivered" || st.status === "completed";
+    if (!delivered) return { delivered: false };
+
+    var at = st.deliveredAt || r.deliveredAt || null;
+    var deadline = at ? addWorkingDays(at, ACCEPT_DAYS) : null;
+    var d = disputeFor(r.id);
+    var revisions = st.revisions || 0;
+    var accepted = st.status === "completed" || !!st.acceptedAt;
+    // A dispute stops the clock. Money does not move on a deadline while
+    // somebody is still saying the work was not what they paid for.
+    var expired = !!(deadline && t >= deadline) && !d;
+
+    return {
+      delivered: true,
+      deliveredAt: at,
+      deadline: deadline,
+      msLeft: deadline ? Math.max(0, deadline - t) : null,
+      expired: expired,
+      accepted: accepted,
+      autoAccepted: !accepted && expired,
+      settled: accepted || expired,
+      revisions: revisions,
+      canRevise: !accepted && !d && !expired && revisions < MAX_REVISIONS,
+      canDispute: !accepted && !d && !expired,
+      dispute: d
+    };
+  }
+
+  /** What the money does once a dispute has been decided.
+
+      The trainee is the reason this is not simply "split the price". They
+      delivered work to the lawyer, not to the client, and a client who wins a
+      refund has not been let down by them. So their claim survives the refund
+      and the lawyer carries it — otherwise the one party with no say in the
+      dispute would be the only one who could lose everything by it. */
+  function settlement(r) {
+    var base = distribute(r);
+    var d = disputeFor(r.id);
+    if (!d || d.status !== "resolved") return null;
+
+    var out = d.resolution.outcome;
+    var lawyerPct = out === "release" ? 100 : out === "refund" ? 0 : d.resolution.lawyerPct;
+    var kept = pct(base.gross, lawyerPct);            // of the price, before shares
+    var refund = base.client - kept;
+
+    var commission = pct(kept, base.commissionPct);
+    var commissionVat = base.vatEnabled ? pct(commission, base.vatPct) : 0;
+
+    return {
+      outcome: out,
+      lawyerPct: lawyerPct,
+      refund: refund,
+      kept: kept,
+      commission: commission,
+      commissionVat: commissionVat,
+      intern: base.intern,
+      internPct: base.internPct,
+      internId: base.internId,
+      // Owed by the lawyer whatever the client got back — never netted off.
+      internBorneByLawyer: base.intern > 0 && kept - commission - commissionVat < base.intern,
+      lawyer: kept - commission - commissionVat - base.intern,
+      reason: d.resolution.reason,
+      at: d.resolution.at
+    };
+  }
+
   /* ---------- training hours & endorsements ----------
      Hours accumulate from work a lawyer routed to the trainee and that the
      trainee delivered. Past the threshold the supervising lawyer may issue a
@@ -361,6 +547,12 @@
     MIN_SHARE: MIN_SHARE, DEFAULT_SHARE: DEFAULT_SHARE, clampShare: clampShare,
     agreementFor: agreementFor,
     agreementsOfIntern: agreementsOfIntern, taskPay: taskPay,
+    COMMISSION_MAX_PCT: COMMISSION_MAX_PCT, DEFAULT_VAT_PCT: DEFAULT_VAT_PCT,
+    clampCommission: clampCommission, platformSettings: platformSettings,
+    checkSplit: checkSplit, distribute: distribute,
+    ACCEPT_DAYS: ACCEPT_DAYS, MAX_REVISIONS: MAX_REVISIONS,
+    addWorkingDays: addWorkingDays, acceptance: acceptance, settlement: settlement,
+    disputeFor: disputeFor, openDisputes: openDisputes,
     earnedBy: earnedBy, casesDone: casesDone,
     requests: requests, request: request, requestState: requestState,
     requestsForClient: requestsForClient, requestsForLawyer: requestsForLawyer,

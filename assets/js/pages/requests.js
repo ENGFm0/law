@@ -19,6 +19,8 @@ Pages.define("requests", function (global) {
 
   var open = null;      // request id whose editor/detail panel is expanded
   var rating = {};      // requestId -> stars picked but not yet sent
+  var arguing = null;   // requestId whose refusal form is open
+  var revising = null;  // requestId whose revision form is open
 
   function guest() {
     return '<div class="container" style="padding-block:var(--s-16)">' +
@@ -101,8 +103,110 @@ Pages.define("requests", function (global) {
       (st.body
         ? '<pre class="draft-text" style="min-height:auto" readonly>' + esc(st.body) + "</pre>"
         : '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="req.noDeliverable"></p>') +
+      acceptPanel(r) +
       (rating[r.id] !== undefined ? rateForm(r) : "") +
     "</div>";
+  }
+
+
+  /* ---- accepting a delivery, and refusing one -------------------------
+     The client is not asked to trust that somebody will eventually settle
+     this. The window is on screen with its deadline, the one revision is
+     offered before the right to refuse rather than instead of it, and a
+     refusal says plainly that the money stops moving until it is decided. */
+  function timeLeft(ms) {
+    var h = Math.floor(ms / 3600e3), d = Math.floor(h / 24);
+    if (d > 0) return I18N.t("accept.leftDays", { d: d, h: h - d * 24 });
+    if (h > 0) return I18N.t("accept.leftHours", { h: h });
+    return I18N.t("accept.leftSoon");
+  }
+
+  function outcomeLine(res) {
+    if (res.outcome === "release") return I18N.t("accept.outRelease");
+    if (res.outcome === "refund") return I18N.t("accept.outRefund");
+    return I18N.t("accept.outSplit", { p: res.lawyerPct });
+  }
+
+  function acceptPanel(r) {
+    var a = M.acceptance(r);
+    if (!a.delivered) return "";
+    var d = a.dispute;
+
+    // Decided: the outcome and the reason behind it, in the same words the
+    // lawyer sees — there is no version of this the other party cannot read.
+    if (d && d.status === "resolved") {
+      var s = M.settlement(r);
+      return card("gold",
+        '<h3 class="subtitle">' + esc(I18N.t("accept.decided")) + "</h3>" +
+        '<p style="margin-top:var(--s-2)">' + esc(outcomeLine(d.resolution)) + "</p>" +
+        (s && s.refund > 0
+          ? '<p class="small" style="margin-top:var(--s-2)">' +
+            esc(I18N.t("accept.refunded")) + ": " + C.num(Math.round(s.refund / 100)) + " " + C.sar() + "</p>"
+          : "") +
+        '<p class="tiny muted" style="margin-top:var(--s-3)">' +
+          esc(I18N.t("accept.decisionReason")) + "</p>" +
+        '<p class="small">' + esc(d.resolution.reason) + "</p>");
+    }
+
+    if (d) {
+      return card("gold",
+        '<h3 class="subtitle">' + esc(I18N.t("accept.disputeOpen")) + "</h3>" +
+        '<p class="small" style="margin-top:var(--s-2)">' + esc(I18N.t("accept.frozen")) + "</p>" +
+        '<p class="tiny muted" style="margin-top:var(--s-3)">' + esc(I18N.t("accept.yourReason")) + "</p>" +
+        '<p class="small">' + esc(d.reason) + "</p>");
+    }
+
+    if (a.settled) {
+      return card("", '<p class="small">' + Icons.svg("check", "icon-sm") + " " +
+        esc(I18N.t(a.autoAccepted ? "accept.auto" : "accept.accepted")) + "</p>");
+    }
+
+    if (revising === r.id) return card("gold", form("revise", r));
+    if (arguing === r.id) return card("gold", form("dispute", r));
+
+    return card("gold",
+      '<h3 class="subtitle">' + esc(I18N.t("accept.heading")) + "</h3>" +
+      '<p class="small" style="margin-top:var(--s-2)">' + esc(I18N.t("accept.lead")) + "</p>" +
+      (a.msLeft != null
+        ? '<p class="small" style="margin-top:var(--s-3)"><strong>' + esc(timeLeft(a.msLeft)) +
+          "</strong></p>" +
+          '<p class="tiny muted">' + esc(I18N.t("accept.autoNote")) + "</p>"
+        : "") +
+      '<p class="tiny muted" style="margin-top:var(--s-2)">' +
+        esc(I18N.t(a.canRevise ? "accept.reviseOnce" : "accept.reviseUsed")) + "</p>" +
+      '<div class="row gap-3 wrap" style="margin-top:var(--s-4)">' +
+        '<button class="btn btn--primary btn--sm" type="button" data-accept="' + esc(r.id) + '">' +
+          Icons.svg("check", "icon-sm") + esc(I18N.t("accept.cta")) + "</button>" +
+        (a.canRevise
+          ? '<button class="btn btn--outline btn--sm" type="button" data-revise="' + esc(r.id) + '">' +
+            esc(I18N.t("accept.revise")) + "</button>"
+          : "") +
+        // Refusing is deliberately the quiet option: it is a right, not the
+        // expected next step.
+        '<button class="btn btn--ghost btn--sm" type="button" data-argue="' + esc(r.id) + '">' +
+          esc(I18N.t("accept.dispute")) + "</button>" +
+      "</div>");
+  }
+
+  function card(rule, inner) {
+    return '<div class="card card--pad' + (rule ? " card--rule-" + rule : "") +
+      '" style="margin-top:var(--s-6)">' + inner + "</div>";
+  }
+
+  function form(kind, r) {
+    var revise = kind === "revise";
+    return '<h3 class="subtitle">' +
+        esc(I18N.t(revise ? "accept.revise" : "accept.dispute")) + "</h3>" +
+      '<p class="small" style="margin-top:var(--s-2)">' +
+        esc(I18N.t(revise ? "accept.reviseWhat" : "accept.disputeWhy")) + "</p>" +
+      '<textarea class="input" rows="4" style="margin-top:var(--s-3)" data-argue-body></textarea>' +
+      '<div class="row gap-3" style="margin-top:var(--s-4)">' +
+        '<button class="btn btn--primary btn--sm" type="button" data-' +
+          (revise ? "revise-send" : "argue-send") + '="' + esc(r.id) + '">' +
+          esc(I18N.t(revise ? "accept.reviseSend" : "accept.disputeSend")) + "</button>" +
+        '<button class="btn btn--ghost btn--sm" type="button" data-argue-cancel>' +
+          esc(I18N.t("accept.cancel")) + "</button>" +
+      "</div>";
   }
 
   function rateForm(r) {
@@ -515,6 +619,50 @@ Pages.define("requests", function (global) {
       delete rating[send];
       open = null;
       App.toast(I18N.t("rate.done"), "check");
+      return;
+    }
+
+    /* --- accepting, revising, refusing --- */
+    var acc = hit("data-accept");
+    if (acc) {
+      Store.setRequest(acc, { status: "completed", acceptedAt: Date.now() });
+      App.toast(I18N.t("accept.done"), "check");
+      return;
+    }
+
+    var rev = hit("data-revise");
+    if (rev) { revising = rev; arguing = null; App.rerender(); return; }
+
+    var arg = hit("data-argue");
+    if (arg) { arguing = arg; revising = null; App.rerender(); return; }
+
+    if (t.closest("[data-argue-cancel]")) { arguing = revising = null; App.rerender(); return; }
+
+    var rs = hit("data-revise-send");
+    if (rs) {
+      var rbody = $("[data-argue-body]", host);
+      var rwhat = rbody ? rbody.value.trim() : "";
+      if (!rwhat) { App.toast(I18N.t("accept.reviseNeed"), "alert"); return; }
+      // Back into the lawyer's hands, and the window starts again from the
+      // next delivery — not from the first one.
+      Store.setRequest(rs, {
+        status: "in_progress", deliveredAt: null,
+        revisions: (M.requestState(M.request(rs)).revisions || 0) + 1,
+        revisionNote: rwhat
+      });
+      revising = null;
+      App.toast(I18N.t("accept.reviseDone"), "check");
+      return;
+    }
+
+    var as2 = hit("data-argue-send");
+    if (as2) {
+      var abody = $("[data-argue-body]", host);
+      var why = abody ? abody.value.trim() : "";
+      if (!why) { App.toast(I18N.t("accept.disputeNeed"), "alert"); return; }
+      Store.openDispute({ requestId: as2, byId: Session.user().id, reason: why });
+      arguing = null;
+      App.toast(I18N.t("accept.disputeSent"), "alert");
       return;
     }
 
