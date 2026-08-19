@@ -21,9 +21,15 @@
   /* ---------- users & profiles ---------- */
   function user(id) { return byId(users(), id); }
 
+  /** Demo people exist only in demo mode. On a real project the accounts that
+      signed up are the only accounts there are — inventing six lawyers on a
+      live platform would be a lie told to its first visitor. */
+  function seeded(list) {
+    return (global.SANAD_CONFIG || {}).backend === "supabase" ? [] : list;
+  }
+
   function users() {
-    // Seed people plus anyone who signed up in this browser.
-    return SEED.users.concat(Store.signups());
+    return seeded(SEED.users).concat(Store.signups());
   }
 
   function lawyers() {
@@ -40,7 +46,7 @@
 
   /* ---------- reviews & rating ---------- */
   function reviewsFor(userId) {
-    return SEED.reviews.concat(Store.reviews()).filter(function (r) {
+    return seeded(SEED.reviews).concat(Store.reviews()).filter(function (r) {
       return r.targetId === userId;
     });
   }
@@ -120,10 +126,10 @@
   function serviceType(id) { return byId(SEED.serviceTypes, id); }
 
   function servicesOf(lawyerId) {
-    var seeded = SEED.services.filter(function (s) { return s.ownerId === lawyerId; });
+    var own = seeded(SEED.services).filter(function (s) { return s.ownerId === lawyerId; });
     var added = Store.services().filter(function (s) { return s.ownerId === lawyerId; });
     var removed = Store.removedServices();
-    return seeded.concat(added).filter(function (s) { return removed.indexOf(s.id) === -1; });
+    return own.concat(added).filter(function (s) { return removed.indexOf(s.id) === -1; });
   }
 
   /* A lawyer names their own service; the category behind it only fixes the
@@ -159,7 +165,7 @@
 
   /* ---------- requests ---------- */
   function requests() {
-    return SEED.requests.concat(Store.requests());
+    return seeded(SEED.requests).concat(Store.requests());
   }
   function request(id) { return byId(requests(), id); }
 
@@ -292,20 +298,20 @@
   }
 
   function endorsementsFor(internId) {
-    return SEED.endorsements.concat(Store.endorsements())
+    return seeded(SEED.endorsements).concat(Store.endorsements())
       .filter(function (e) { return e.internId === internId; });
   }
 
   /* ---------- articles, likes, comments ---------- */
   function articles() {
-    return SEED.articles.concat(Store.articles()).filter(function (a) {
+    return seeded(SEED.articles).concat(Store.articles()).filter(function (a) {
       // A trainee's article waits for a lawyer's signature before it is public.
       var st = Store.articleState(a.id);
       var status = st.status || a.status || "published";
       return status === "published";
     });
   }
-  function allArticles() { return SEED.articles.concat(Store.articles()); }
+  function allArticles() { return seeded(SEED.articles).concat(Store.articles()); }
   function article(id) { return byId(allArticles(), id); }
 
   function articlesBy(authorId) {
@@ -328,7 +334,7 @@
   }
 
   function commentsOn(articleId) {
-    return SEED.comments.concat(Store.comments())
+    return seeded(SEED.comments).concat(Store.comments())
       .filter(function (c) { return c.articleId === articleId; })
       .sort(function (x, y) { return (x.at || 0) - (y.at || 0); });
   }

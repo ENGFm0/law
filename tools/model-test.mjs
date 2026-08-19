@@ -67,20 +67,23 @@ ok(`delivering an 8h task lifts him to ${p3.hours}h`, p3.hours === 39);
 
 console.log('— ACCOUNTS & SESSION —');
 ok('starts as a guest', S.isGuest());
-const reg = St.register({ role:'lawyer', name:{ar:'تجربة',en:'Test'}, email:'t@t.sa', password:'x',
+// Registering and signing in are promises now — the same shape on both
+// backends, so the pages need no branch for which one answered.
+const reg = await St.register({ role:'lawyer', name:{ar:'تجربة',en:'Test'}, email:'t@t.sa', password:'x',
                           licenceNumber:'9999', licenceAuthority:'MoJ', licenceExpiry:'2030-01-01' });
 ok('registering signs you in', reg.ok && !S.isGuest());
 ok('a new lawyer starts pending', S.user().status === 'pending' && !S.isVerified());
-ok('duplicate email is refused', St.register({ role:'client', name:{}, email:'T@T.sa' }).error === 'emailTaken');
+ok('duplicate email is refused',
+   (await St.register({ role:'client', name:{}, email:'T@T.sa' })).error === 'emailTaken');
 St.addRole(S.user().id, 'client');
 ok('one account can hold two roles: ' + S.myRoles().join('+'), S.myRoles().length === 2);
 S.switchRole('client');
 ok('switching role changes the active view', S.role() === 'client');
 ok('as a client the same account is verified', S.isVerified());
-S.signOut();
+await S.signOut();
 ok('signing out returns to guest', S.isGuest());
-ok('signing back in works', S.signIn('t@t.sa','x').ok);
-ok('wrong password is refused', S.signIn('t@t.sa','nope').error === 'badPassword');
+ok('signing back in works', (await S.signIn('t@t.sa','x')).ok);
+ok('wrong password is refused', (await S.signIn('t@t.sa','nope')).error === 'badPassword');
 
 console.log('— ROUTING WORK TO TRAINEES —');
 // A lawyer may name one trainee, or open the task and let them compete.

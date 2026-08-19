@@ -297,7 +297,11 @@
       Store.resetWork();
     },
 
-    onChange: function (fn) { listeners.push(fn); }
+    onChange: function (fn) { listeners.push(fn); },
+
+    /** Lets a replacement backend reuse the same notification path, so the
+        pages redraw identically however the data arrived. */
+    notifyAll: notify
   };
 
   global.Store = Store;

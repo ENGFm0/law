@@ -1,0 +1,205 @@
+/* ==========================================================================
+   The Supabase backend, driven against a stand-in for supabase-js.
+
+   The real project is unreachable from this environment, but almost none of
+   what can go wrong here is network-shaped. It is column names, the direction
+   of a mapping, and whether a write reaches the cache before the round trip
+   returns. All of that is testable without leaving the machine, and this is
+   where the row/object translation is pinned down.
+
+       node tools/remote-store-test.mjs
+   ========================================================================== */
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const read = (p) => readFileSync(join(root, p), 'utf8');
+
+let pass = 0, fail = 0;
+const ok = (l, c, x) => {
+  if (c) { pass++; console.log('  PASS ' + l); }
+  else { fail++; console.log('  FAIL ' + l + (x !== undefined ? `  <${JSON.stringify(x)}>` : '')); }
+};
+const section = (s) => console.log('— ' + s + ' —');
+/* A write updates the cache at once and reaches the database a few microtasks
+   later. Let those run before asking what was sent. */
+const flush = () => new Promise((r) => setTimeout(r, 0));
+
+/* A fake postgrest: records every call, answers like the real one. */
+function makeFake() {
+  const sent = [];
+  const tables = {
+    profiles: [], requests: [], services: [], articles: [],
+    reviews: [], comments: [], endorsements: [], agreements: [], applications: [],
+  };
+  const client = {
+    from(table) {
+      const q = { table, filters: [] };
+      const result = (data) => ({ data, error: null });
+      const api = {
+        select() { return api; },
+        eq(col, val) { q.filters.push([col, val]); return api; },
+        single() { return Promise.resolve(result(q.row || { id: 'srv-' + (sent.length) })); },
+        insert(row) { q.op = 'insert'; q.row = { id: 'srv-' + sent.length, ...row };
+                      sent.push({ ...q }); tables[table].push(q.row); return api; },
+        update(row) { q.op = 'update'; q.row = row; sent.push({ ...q }); return api; },
+        upsert(row) { q.op = 'upsert'; q.row = { id: 'srv-' + sent.length, ...row };
+                      sent.push({ ...q }); return api; },
+        delete() { q.op = 'delete'; sent.push({ ...q }); return api; },
+        then(res) { return Promise.resolve(result(null)).then(res); },
+      };
+      return api;
+    },
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null } }),
+      signOut: () => Promise.resolve({}),
+    },
+  };
+  return { client, sent, tables, lastTo: (t) => [...sent].reverse().find((s) => s.table === t) };
+}
+
+/* Load config → store → the fake SB → the remote backend, in that order. */
+function boot(rows = {}) {
+  const w = {};
+  const mem = () => { const m = new Map(); return {
+    getItem: (k) => (m.has(k) ? m.get(k) : null),
+    setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }; };
+  w.localStorage = mem(); w.sessionStorage = mem();
+  w.document = { dispatchEvent() {}, addEventListener() {} };
+  w.CustomEvent = class { constructor(t) { this.type = t; } };
+  w.console = console;
+
+  new Function('window', 'document', 'localStorage', 'sessionStorage', 'CustomEvent',
+    read('assets/js/core/store.js'))(w, w.document, w.localStorage, w.sessionStorage, w.CustomEvent);
+
+  const fake = makeFake();
+  w.SB = {
+    configured: () => true,
+    load: () => Promise.resolve(fake.client),
+    currentId: () => Promise.resolve(null),
+    fromProfile: (d) => {
+      const f = (v) => (v && typeof v === 'object' ? (v.ar || v.en || null) : (v ?? null));
+      return { full_name: f(d.name), phone: d.phone || null, bio: f(d.bio) };
+    },
+    hydrate: () => Promise.resolve({
+      profiles: rows.profiles || [], services: rows.services || [],
+      requests: rows.requests || [], articles: rows.articles || [],
+      reviews: [], comments: [], endorsements: [], agreements: rows.agreements || [],
+    }),
+  };
+
+  new Function('window', 'document', 'localStorage', 'sessionStorage', 'console',
+    read('assets/js/core/store.remote.js'))(w, w.document, w.localStorage, w.sessionStorage, console);
+  return { S: w.Store, fake };
+}
+
+section('HYDRATION MAPS COLUMNS TO THE SHAPES PAGES EXPECT');
+{
+  const { S } = boot({
+    requests: [{ id: 'r1', client_id: 'c1', lawyer_id: 'l1', assigned_to: 'i1',
+      type_id: 'written', title: 'عنوان', brief: 'نبذة', price: '100.00',
+      status: 'with_intern', ai_assisted: true, hours: 5, intern_share: 40 }],
+    services: [{ id: 's1', owner_id: 'l1', type_id: 'call', price: '150.00',
+      title: 'اسمي', meta: 'مدتي', active: true }],
+    agreements: [{ id: 'a1', lawyer_id: 'l1', intern_id: 'i1', kind: 'cases',
+      amount: '800.00', cases: 5 }],
+  });
+  await S.hydrate();
+  const r = S.requests()[0];
+  ok('snake_case becomes camelCase', r.clientId === 'c1' && r.lawyerId === 'l1');
+  ok('the trainee assignment survives', r.assignedTo === 'i1');
+  ok('a numeric string becomes a number', r.price === 100 && typeof r.price === 'number');
+  ok('bilingual text is wrapped as a pair', r.title.ar === 'عنوان' && r.title.en === 'عنوان');
+  ok('the share is carried', r.internShare === 40);
+  ok('ai_assisted becomes ai', r.ai === true);
+  const s = S.services()[0];
+  ok('a service keeps the lawyer’s own wording', s.title.ar === 'اسمي' && s.meta.ar === 'مدتي');
+  ok('and its price is a number', s.price === 150);
+  const g = S.agreements()[0];
+  ok('an agreement maps both parties', g.lawyerId === 'l1' && g.internId === 'i1');
+  ok('and its amount', g.amount === 800 && g.cases === 5);
+}
+
+section('THE ROW IS THE STATE — NO OVERLAY');
+{
+  const { S } = boot({ requests: [{ id: 'r1', client_id: 'c1', type_id: 'written',
+    title: 't', price: '10', status: 'drafted', body: 'نص', intern_share: 55 }] });
+  await S.hydrate();
+  const st = S.requestState('r1');
+  ok('state reads straight off the row', st.status === 'drafted' && st.body === 'نص');
+  ok('including the share', st.internShare === 55);
+  ok('an unknown id gives an empty state', Object.keys(S.requestState('nope')).length === 0);
+  ok('nothing is shadow-deleted any more', S.removedServices().length === 0);
+}
+
+section('WRITES REACH THE CACHE AT ONCE, AND THE DATABASE BEHIND');
+{
+  const { S, fake } = boot();
+  await S.hydrate();
+
+  S.addRequest({ clientId: 'c1', lawyerId: 'l1', typeId: 'written',
+    title: { ar: 'ط', en: 'R' }, brief: { ar: 'ب', en: 'B' }, price: 100, ai: true });
+  ok('the cache has it before any round trip', S.requests().length === 1);
+  await flush();
+  const ins = fake.lastTo('requests');
+  ok('it was sent as an insert', ins.op === 'insert');
+  ok('with snake_case columns', 'client_id' in ins.row && 'type_id' in ins.row, Object.keys(ins.row));
+  ok('and the pair flattened to one string', ins.row.title === 'ط');
+  ok('ai maps back to ai_assisted', ins.row.ai_assisted === true);
+
+  S.setRequest(S.requests()[0].id, { status: 'delivered', internShare: 45 });
+  ok('the cached row updates', S.requestState(S.requests()[0].id).status === 'delivered');
+  await flush();
+  const upd = fake.lastTo('requests');
+  ok('an update was sent', upd.op === 'update');
+  ok('with only the columns that changed',
+     Object.keys(upd.row).sort().join() === 'intern_share,status', Object.keys(upd.row));
+
+  S.addService({ ownerId: 'l1', typeId: 'call', price: 150, title: { ar: 'خ', en: 'S' } });
+  await flush();
+  ok('a service insert carries owner_id', fake.lastTo('services').row.owner_id === 'l1');
+  S.removeService(S.services()[0].id);
+  await flush();
+  ok('removing really deletes rather than shadows',
+     fake.lastTo('services').op === 'delete' && S.services().length === 0);
+}
+
+section('AGREEMENTS AND APPLICATIONS');
+{
+  const { S, fake } = boot();
+  await S.hydrate();
+  S.addAgreement({ lawyerId: 'l1', internId: 'i1', kind: 'cases', amount: 800, cases: 5 });
+  S.addAgreement({ lawyerId: 'l1', internId: 'i1', kind: 'monthly', amount: 4500 });
+  ok('a second agreement replaces the first for that pair', S.agreements().length === 1);
+  await flush();
+  ok('and it upserts rather than inserting twice', fake.lastTo('agreements').op === 'upsert');
+  S.endAgreement('l1', 'i1');
+  await flush();
+  ok('ending it clears the cache and deletes',
+     S.agreements().length === 0 && fake.lastTo('agreements').op === 'delete');
+
+  ok('a trainee can apply once', S.apply('r1', 'i1') === true);
+  ok('and not twice', S.apply('r1', 'i1') === false);
+  await flush();
+  ok('the application was sent', fake.lastTo('applications').row.intern_id === 'i1');
+  S.clearApplicants('r1');
+  ok('closing the pool empties it', S.applicants('r1').length === 0);
+}
+
+section('ACCOUNTS');
+{
+  const { S, fake } = boot({ profiles: [
+    { id: 'p1', email: 'A@Test.SA', name: { ar: 'أ', en: 'A' }, roles: ['client'] }] });
+  await S.hydrate();
+  ok('profiles fill the account list', S.signups().length === 1);
+  ok('lookup by email ignores case', S.findAccount('a@test.sa') !== null);
+  S.updateAccount('p1', { bio: { ar: 'س', en: 'B' } });
+  await flush();
+  ok('the cached profile changed', S.signups()[0].bio.ar === 'س');
+  ok('and only real columns were sent', 'bio' in fake.lastTo('profiles').row);
+  ok('status is never sent from here', !('status' in fake.lastTo('profiles').row));
+}
+
+console.log(`\n${pass} passed, ${fail} failed`);
+process.exit(fail ? 1 : 0);

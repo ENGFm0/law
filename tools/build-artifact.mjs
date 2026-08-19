@@ -75,7 +75,7 @@ const css = read('assets/css/style.css');
 /* The same dependency order the page shells use, then every page module. */
 const core = [
   'config', 'core/theme', 'core/i18n', 'core/store', 'data/seed', 'data/models',
-  'core/session', 'core/supabase', 'core/signal', 'core/rtc', 'ui/icons',
+  'core/session', 'core/supabase', 'core/store.remote', 'core/signal', 'core/rtc', 'ui/icons',
   'core/app', 'ui/layout', 'ui/components',
 ].map((n) => read(`assets/js/${n}.js`)).join('\n');
 
