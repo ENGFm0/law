@@ -16,6 +16,14 @@
                 infrastructure that costs money.
    ========================================================================== */
 window.SANAD_CONFIG = {
-  // supabase: { url: "https://xxxx.supabase.co", anonKey: "…" },
+  supabase: {
+    url: "https://otpjcopyfjodeiufeixx.supabase.co",
+    // The PUBLISHABLE key, and only ever this one. It is meant to sit in the
+    // page where anyone can read it; the row-level security in
+    // supabase/schema.sql is what protects the data. A secret key
+    // (sb_secret_…) bypasses every one of those policies and must never
+    // appear in this file, in this repository, or in a chat.
+    anonKey: "sb_publishable_K3cRgR9SuS5wYKTc-HMZlg_dfHEKhD2",
+  },
   // turn: { urls: "turn:turn.example.com:3478", username: "…", credential: "…" },
 };
