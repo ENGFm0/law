@@ -66,6 +66,9 @@
       roles: row.roles || ["client"],
       activeRole: row.active_role || (row.roles || ["client"])[0],
       status: row.status || "pending",
+      // Whether they have ever told us who they are. False for an account
+      // Google created on their behalf.
+      onboarded: !!row.onboarded,
       bio: pair(row.bio),
       title: pair(row.title),
       licence: row.licence_no ? {
@@ -88,6 +91,8 @@
       full_name: flat(data.name), phone: data.phone || null, city: data.city || null,
       avatar_url: data.avatar || null, bio: flat(data.bio),
     };
+    // Anyone arriving through the wizard has answered everything it asks.
+    if (data.onboarded !== undefined) row.onboarded = !!data.onboarded;
     if (data.role === "lawyer" || (data.roles || []).indexOf("lawyer") !== -1) {
       row.licence_no = data.licenceNumber || null;
       row.licence_authority = flat(data.licenceAuthority);
@@ -142,12 +147,30 @@
             var row = fromProfile(data);
             row.roles = [data.role];
             row.active_role = data.role;
+            row.onboarded = true;      // the wizard asked everything
 
             return sb.from("profiles").update(row).eq("id", user.id).select().single()
               .then(function (out) {
                 if (out.error) return { ok: false, error: "profileFailed", message: out.error.message };
                 return { ok: true, user: toProfile(out.data) };
               });
+          });
+      });
+    },
+
+    /** Finish an account Google created on somebody's behalf: the role they
+        actually want, and the details that go with it. Not a registration —
+        the account already exists and is already signed in. */
+    complete: function (id, data) {
+      return load().then(function (sb) {
+        var row = fromProfile(data);
+        row.roles = [data.role];
+        row.active_role = data.role;
+        row.onboarded = true;
+        return sb.from("profiles").update(row).eq("id", id).select().single()
+          .then(function (out) {
+            if (out.error) return { ok: false, error: "profileFailed", message: out.error.message };
+            return { ok: true, user: toProfile(out.data) };
           });
       });
     },

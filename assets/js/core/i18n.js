@@ -1058,6 +1058,9 @@
       "notice.rejected": "لم يُعتمد حسابك — راجع السبب",
       "notice.signed": "وُقّع مقالك ونُشر",
       "a11y.notices": "التنبيهات",
+
+      /* --- finishing an account Google created --- */
+      "signup.completeLead": "دخلت بحساب قوقل — بقي أن تخبرنا بدورك وبياناتك.",
     },
 
     en: {
@@ -2078,6 +2081,9 @@
       "notice.rejected": "Your account was not approved — see the reason",
       "notice.signed": "Your article was signed and published",
       "a11y.notices": "Notifications",
+
+      /* --- finishing an account Google created --- */
+      "signup.completeLead": "You are signed in with Google — all that is left is your role and your details.",
     }
   };
 

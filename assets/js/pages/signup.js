@@ -14,6 +14,12 @@ Pages.define("signup", function (global) {
   if (!form) return;
 
   var state = { step: 1, role: null, avatar: null, skills: [], specialties: [] };
+
+  /* Finishing an account rather than opening one. Google gave us a name and a
+     picture; everything the wizard asks after that is still unanswered, so the
+     same wizard runs — minus the two questions that no longer apply, because
+     the account exists and is already signed in. */
+  var completing = App.param("complete") === "1" && !Session.isGuest();
   var LAST = 4;
 
   /* A client needs no proof of standing, so their wizard is a step shorter. */
@@ -189,7 +195,7 @@ Pages.define("signup", function (global) {
     $("[data-next]").hidden = i >= seq.length - 1;
     $("[data-finish]").hidden = i < seq.length - 1;
     var gslot = $("[data-google-slot]");
-    if (gslot) gslot.innerHTML = state.step === 1 ? global.C.googleButton() : "";
+    if (gslot) gslot.innerHTML = (!completing && state.step === 1) ? global.C.googleButton() : "";
     if (state.step === 3) drawProof();
     if (state.step === 4) drawReview();
     drawStepper();
@@ -208,9 +214,11 @@ Pages.define("signup", function (global) {
     if (state.step === 1 && !state.role) return "signup.needRole";
     if (state.step === 2) {
       if (!d.name) return "signup.needName";
-      if (!/^\S+@\S+\.\S+$/.test(d.email || "")) return "signup.needEmail";
-      if (!d.password || d.password.length < 4) return "signup.needPassword";
-      if (Store.findAccount(d.email)) return "signup.emailTaken";
+      if (!completing) {
+        if (!/^\S+@\S+\.\S+$/.test(d.email || "")) return "signup.needEmail";
+        if (!d.password || d.password.length < 4) return "signup.needPassword";
+        if (Store.findAccount(d.email)) return "signup.emailTaken";
+      }
     }
     if (state.step === 3 && state.role === "lawyer" && !d.licenceNumber) return "signup.needLicence";
     if (state.step === 3 && state.role === "intern" && !d.university) return "signup.needUniversity";
@@ -220,8 +228,25 @@ Pages.define("signup", function (global) {
   App.onRender(function () {
     // Google returns a client, so the door only belongs on the first step —
     // a lawyer still has a licence to give us before anything else happens.
+    // And there is no door to offer somebody already through it.
     var slot = $("[data-google-slot]");
-    if (slot) slot.innerHTML = state.step === 1 ? global.C.googleButton() : "";
+    if (slot) slot.innerHTML = (!completing && state.step === 1) ? global.C.googleButton() : "";
+
+    if (completing) {
+      var me = Session.user();
+      // The two questions that no longer apply, and the answer Google gave us.
+      $$("[data-signed-in-hide]", form).forEach(function (el) { el.hidden = true; });
+      var nameField = form.querySelector('[name="name"]');
+      if (nameField && !nameField.value && me) nameField.value = App.tx(me.name);
+      // Swap the key, not the text: a translation pass runs after this and
+      // would put the original line straight back, and this way the sentence
+      // still follows a language change.
+      var head = $("[data-signup-head]");
+      if (head) {
+        head.setAttribute("data-i18n", "signup.completeLead");
+        head.textContent = I18N.t("signup.completeLead");
+      }
+    }
 
     drawRoles(); drawCities(); drawStepper();
     if (state.step === 3) drawProof();
@@ -304,7 +329,7 @@ Pages.define("signup", function (global) {
     var button = $("[data-finish]");
     if (button) { button.disabled = true; button.textContent = I18N.t("auth.working"); }
 
-    Store.register({
+    var payload = {
       role: state.role, name: name, email: d.email, phone: d.phone,
       city: d.city, password: d.password, avatar: state.avatar,
       licenceNumber: d.licenceNumber, licenceAuthority: d.licenceAuthority,
@@ -313,7 +338,18 @@ Pages.define("signup", function (global) {
       university: { ar: d.university, en: d.university }, level: { ar: d.level, en: d.level },
       skills: state.skills.map(function (s) { return { ar: s, en: s }; }),
       cvFile: fileOf("cvFile")
-    }).then(function (res) {
+    };
+
+    // The account already exists when we are finishing one; registering again
+    // would fail on the address it already has.
+    var done = completing
+      ? global.SB.complete(Session.user().id, payload).then(function (res) {
+          if (res.ok) Store.notifyAll();
+          return res;
+        })
+      : Store.register(payload);
+
+    done.then(function (res) {
       if (button) { button.disabled = false; I18N.apply(button.parentNode); }
       if (!res.ok) {
         // A backend can fail in ways the demo never could — a refused address,

@@ -1,5 +1,5 @@
 -- ===========================================================================
---  004 — notifications (US-021)
+--  004 — notifications (US-021) and finishing an account
 --
 --  A bid that closes unseen, or an acceptance window that runs out while the
 --  client is looking elsewhere, spoils the best flow anyone could design. This
@@ -11,6 +11,19 @@
 --  person, who is the only one who can read it — the row policy says so rather
 --  than the query being careful.
 -- ===========================================================================
+
+-- --------------------------------------------------- finishing an account
+-- Signing in with Google gives us a name and a picture and nothing else: no
+-- role, no phone, no licence. The trigger has to create the profile anyway, so
+-- it creates the smallest honest one — a client who has told us nothing — and
+-- this column is how the site knows to ask. Without it the only signal was an
+-- empty phone number, which is a guess, and a guess here means either
+-- pestering someone who is already finished or never asking someone who is
+-- not.
+alter table public.profiles add column if not exists onboarded boolean not null default false;
+
+-- Everyone who registered through the wizard has already answered all of it.
+update public.profiles set onboarded = true where phone is not null and phone <> '';
 
 create table if not exists public.notifications (
   id       uuid primary key default gen_random_uuid(),

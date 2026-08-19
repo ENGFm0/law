@@ -33,11 +33,11 @@
 
 <main id="main">
   <div class="container" style="max-width:820px;padding-bottom:var(--s-20)">
-    <p class="demo-banner" data-i18n="auth.demoBanner"></p>
+    <p class="demo-banner" data-demo-banner hidden></p>
 
     <header style="margin:var(--s-8) 0">
       <h1 class="headline" data-i18n="signup.heading"></h1>
-      <p class="lead" data-i18n="signup.lead"></p>
+      <p class="lead" data-i18n="signup.lead" data-signup-head></p>
     </header>
 
     <ol class="stepper" data-stepper></ol>
@@ -57,13 +57,13 @@
         <div class="grid grid-2" style="gap:var(--s-4);margin-top:var(--s-5)">
           <label class="field"><span class="label" data-i18n="auth.fullName"></span>
             <input class="input" name="name" autocomplete="name"></label>
-          <label class="field"><span class="label" data-i18n="auth.email"></span>
+          <label class="field" data-signed-in-hide><span class="label" data-i18n="auth.email"></span>
             <input class="input" name="email" type="email" autocomplete="email" dir="ltr"></label>
           <label class="field"><span class="label" data-i18n="signup.phone"></span>
             <input class="input num" name="phone" type="tel" inputmode="tel" dir="ltr" placeholder="05XXXXXXXX"></label>
           <label class="field"><span class="label" data-i18n="home.city"></span>
             <select class="select" name="city" data-city-options></select></label>
-          <label class="field"><span class="label" data-i18n="auth.password"></span>
+          <label class="field" data-signed-in-hide><span class="label" data-i18n="auth.password"></span>
             <input class="input" name="password" type="password" autocomplete="new-password"></label>
           <label class="field"><span class="label" data-i18n="signup.avatar"></span>
             <input class="input" name="avatar" type="file" accept="image/*"></label>

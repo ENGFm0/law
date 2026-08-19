@@ -459,8 +459,38 @@
 
   // Restore the signed-in user before anything draws, so a returning visitor
   // is not shown the guest view for a moment first.
+  /** An account Google made on somebody's behalf knows their name and nothing
+      else — not their role, not a phone, not a licence. Rather than let them
+      wander a site that has quietly decided they are a client, send them once
+      to the step that asks. `onboarded` is set the moment they answer, so this
+      cannot become a loop, and anyone who registered through the wizard was
+      never in it. */
+  function needsOnboarding(id) {
+    if (!id) return;
+    var me = null;
+    for (var i = 0; i < cache.profiles.length; i++) {
+      if (cache.profiles[i].id === id) me = cache.profiles[i];
+    }
+    if (!me || me.onboarded) return;
+    var here = (global.location.pathname.split("/").pop() || "index.html");
+    if (here === "signup.html") return;              // already there
+    global.location.replace("signup.html?complete=1");
+  }
+
   SB.currentId().then(function (id) {
-    if (id) Store.signIn(id);
-    return Store.hydrate();
+    if (id) {
+      Store.signIn(id);
+      // Store.signIn announces a store change, which redraws pages but not the
+      // header — that listens for a session change. Coming back from Google
+      // this left the site rendering the guest view for somebody who was in
+      // fact signed in, which read as the sign-in having failed.
+      document.dispatchEvent(new CustomEvent("sessionchange"));
+    }
+    return Store.hydrate().then(function () {
+      // Roles and status arrive with the profiles, so the navigation is only
+      // right once they have.
+      document.dispatchEvent(new CustomEvent("sessionchange"));
+      return needsOnboarding(id);
+    });
   }).catch(function (e) { console.error(e); });
 })(window);

@@ -176,6 +176,19 @@
 
   document.addEventListener("themechange", syncThemeButtons);
 
+  /** "Accounts are stored in this browser only" is true of the demo and false
+      of the real thing, so it is shown by the backend rather than written into
+      the page. Saying it on a live site would be a lie about where somebody's
+      details are going. */
+  function syncDemoBanner() {
+    $$("[data-demo-banner]").forEach(function (el) {
+      var demo = !(global.SB && global.SB.configured());
+      el.hidden = !demo;
+      if (demo) el.textContent = global.I18N.t("auth.demoBanner");
+    });
+  }
+  document.addEventListener("langchange", syncDemoBanner);
+
   /* ---------- boot ---------- */
   function boot() {
     // Dashboard pages carry no header/footer slot, so layout.js never triggers
@@ -183,6 +196,7 @@
     I18N.apply(document);
     syncLangButtons();
     syncThemeButtons();
+    syncDemoBanner();
     observeReveals();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
