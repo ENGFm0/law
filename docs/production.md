@@ -30,6 +30,23 @@
 # 2) انسخ Project URL و anon key من Settings ← API
 ```
 
+> **لا تُشغّل `supabase/local-prelude.sql` على Supabase** — هو بدائل لما توفّره
+> المنصة أصلاً، ووجوده لتشغيل المخطط على PostgreSQL عادي أثناء التطوير.
+
+### اختبار قواعد الحماية
+
+قواعد الحماية ليست شكلية: هي الشيء الوحيد بين مفتاح علني وبين ملفات العملاء
+كلها. لذلك لها اختبار يُشغَّل مثل أي كود:
+
+```bash
+psql -f supabase/local-prelude.sql   # بدائل auth على PostgreSQL محلي
+psql -f supabase/schema.sql
+psql -f supabase/rls-test.sql        # ١٣ فحصاً، كلها تطبع PASS أو FAIL
+```
+
+الأخطاء التي تظهر أثناء التشغيل **متوقّعة** — هي القواعد وهي ترفض ما يجب
+رفضه. المهم هو أحكام PASS/FAIL في آخر كل قسم.
+
 ثم في `assets/js/config.js`:
 
 ```js

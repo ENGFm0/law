@@ -178,14 +178,21 @@ create table public.articles (
   created_at timestamptz not null default now()
 );
 alter table public.articles enable row level security;
+-- A lawyer is anyone whose profile carries that role. Written as EXISTS on
+-- purpose: `= any((select ...))` is parsed as the subquery form, which compares
+-- the string against whole text[] rows and fails to cast it to an array.
+create function public.is_lawyer() returns boolean language sql stable as $$
+  select exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and 'lawyer' = any(p.roles))
+$$;
+
 create policy "published articles are public" on public.articles for select
-  using (status = 'published' or auth.uid() = author_id
-         or 'lawyer' = any((select roles from public.profiles where id = auth.uid())));
+  using (status = 'published' or auth.uid() = author_id or public.is_lawyer());
 create policy "authors write their own" on public.articles for insert
   with check (auth.uid() = author_id);
 create policy "authors edit, lawyers sign" on public.articles for update
-  using (auth.uid() = author_id
-         or 'lawyer' = any((select roles from public.profiles where id = auth.uid())));
+  using (auth.uid() = author_id or public.is_lawyer());
 
 create table public.comments (
   id         uuid primary key default gen_random_uuid(),
