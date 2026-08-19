@@ -26,6 +26,27 @@ Pages.define("account", function (global) {
         '<a class="btn btn--outline" href="signup.html" data-i18n="auth.createAccount"></a></div></div>';
   }
 
+  /* Switching between capacities the account ALREADY holds. This is not the
+     role picker that used to live here: there is no card that adds one, and
+     nothing on this page can. A staff member who is also a client should be
+     able to look at the site the way a client sees it without signing out. */
+  function viewAs() {
+    var mine = Session.myRoles();
+    if (mine.length < 2) return "";
+    var active = Session.role();
+    return '<section class="card card--pad" style="margin-bottom:var(--s-6)">' +
+      '<h2 class="subtitle" data-i18n="account.viewAs"></h2>' +
+      '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="account.viewAsHint"></p>' +
+      '<div class="row gap-3 wrap" style="margin-top:var(--s-5)">' +
+        mine.map(function (id) {
+          var def = Session.roleDef(id);
+          return '<button type="button" class="btn btn--sm ' +
+            (active === id ? "btn--primary" : "btn--outline") + '" data-view-as="' + id + '">' +
+            Icons.svg(def.icon, "icon-sm") + esc(I18N.t(def.nameKey)) + "</button>";
+        }).join("") +
+      "</div></section>";
+  }
+
   function details(u) {
     function row(labelKey, value) {
       return "<div><span class=\"tiny muted\">" + esc(I18N.t(labelKey)) + "</span>" +
@@ -69,6 +90,8 @@ Pages.define("account", function (global) {
           "</div>" +
         "</div></section>" +
 
+      viewAs() +
+
       details(u) +
 
       // Wiping the visit is a thing you do to a demo. On a real database it
@@ -86,6 +109,17 @@ Pages.define("account", function (global) {
   });
 
   host.addEventListener("click", function (ev) {
+    var v = ev.target.closest("[data-view-as]");
+    if (v) {
+      var id = v.getAttribute("data-view-as");
+      // switchRole refuses anything the account does not hold, so this cannot
+      // become a way to acquire one.
+      if (Session.switchRole(id)) {
+        App.toast(I18N.t("role.changed", { role: I18N.t(Session.roleDef(id).nameKey) }), "check");
+      }
+      return;
+    }
+
     if (ev.target.closest("[data-signout]")) {
       Session.signOut().then(function () { App.go("index.html"); });
       return;

@@ -472,6 +472,11 @@
       if (cache.profiles[i].id === id) me = cache.profiles[i];
     }
     if (!me || me.onboarded) return;
+    // Staff are not one of the three answers the wizard offers, so asking them
+    // the question has no right answer — and the account was granted by
+    // somebody with the database in front of them, which is a better
+    // introduction than a form.
+    if ((me.roles || []).indexOf("staff") !== -1) return;
     var here = (global.location.pathname.split("/").pop() || "index.html");
     if (here === "signup.html") return;              // already there
     global.location.replace("signup.html?complete=1");

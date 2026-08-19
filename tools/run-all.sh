@@ -12,7 +12,7 @@ for t in model-test money-test store-contract remote-store-test; do
   printf '  %-26s ' "$t"; node "tools/$t.mjs" | tail -1
 done
 echo '— in a browser —'
-for t in account staff-role auth-ui onboarding onboarding-late-session \
+for t in account view-as staff-role auth-ui onboarding onboarding-late-session \
          offline header signal accept admin notices flows pay mobile wide sweep; do
   printf '  %-26s ' "$t"; node "tools/$t-e2e.mjs" | tail -1
 done

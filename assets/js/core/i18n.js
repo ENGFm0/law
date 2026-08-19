@@ -1074,6 +1074,10 @@
       "sys.offlineTitle": "تعذّر الوصول إلى الخادم",
       "sys.offlineBody": "الموقع مفتوح لكن بياناتك لم تُحمَّل. تحقّق من اتصالك ثم أعد المحاولة.",
       "sys.retry": "إعادة المحاولة",
+
+      /* --- switching between capacities an account already holds --- */
+      "account.viewAs": "العرض بصفة",
+      "account.viewAsHint": "حسابك يحمل أكثر من صفة. اختر التي تريد تصفّح الموقع بها — هذا تبديل عرض، ولا يمنح صلاحية.",
     },
 
     en: {
@@ -2110,6 +2114,10 @@
       "sys.offlineTitle": "Cannot reach the server",
       "sys.offlineBody": "The site is open but your data has not loaded. Check your connection and try again.",
       "sys.retry": "Try again",
+
+      /* --- switching between capacities an account already holds --- */
+      "account.viewAs": "Viewing as",
+      "account.viewAsHint": "Your account holds more than one capacity. Pick the one you want to browse in — this changes the view, it grants nothing.",
     }
   };
 

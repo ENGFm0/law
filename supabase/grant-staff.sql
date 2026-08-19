@@ -23,7 +23,11 @@ with promoted as (
                             then p.roles
                             else array_append(p.roles, 'staff') end,
          active_role = 'staff',
-         status      = 'verified'
+         status      = 'verified',
+         -- Being granted the desk is an answer to "who are you", and a better
+         -- one than the wizard has on offer. Without this the account is sent
+         -- to pick between client, lawyer and trainee — none of which it is.
+         onboarded   = true
     from auth.users u
    where u.id = p.id
      and lower(u.email) = lower('you@example.com')   -- ← your email, here only

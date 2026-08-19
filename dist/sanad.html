@@ -2617,6 +2617,10 @@ window.SANAD_CONFIG = {
       "sys.offlineTitle": "تعذّر الوصول إلى الخادم",
       "sys.offlineBody": "الموقع مفتوح لكن بياناتك لم تُحمَّل. تحقّق من اتصالك ثم أعد المحاولة.",
       "sys.retry": "إعادة المحاولة",
+
+      /* --- switching between capacities an account already holds --- */
+      "account.viewAs": "العرض بصفة",
+      "account.viewAsHint": "حسابك يحمل أكثر من صفة. اختر التي تريد تصفّح الموقع بها — هذا تبديل عرض، ولا يمنح صلاحية.",
     },
 
     en: {
@@ -3653,6 +3657,10 @@ window.SANAD_CONFIG = {
       "sys.offlineTitle": "Cannot reach the server",
       "sys.offlineBody": "The site is open but your data has not loaded. Check your connection and try again.",
       "sys.retry": "Try again",
+
+      /* --- switching between capacities an account already holds --- */
+      "account.viewAs": "Viewing as",
+      "account.viewAsHint": "Your account holds more than one capacity. Pick the one you want to browse in — this changes the view, it grants nothing.",
     }
   };
 
@@ -5722,6 +5730,9 @@ window.SANAD_CONFIG = {
     };
     // Anyone arriving through the wizard has answered everything it asks.
     if (data.onboarded !== undefined) row.onboarded = !!data.onboarded;
+    // Which of the roles they hold they are currently looking through. Never
+    // the roles themselves — those are not changed by a profile edit.
+    if (data.activeRole !== undefined) row.active_role = data.activeRole;
     if (data.role === "lawyer" || (data.roles || []).indexOf("lawyer") !== -1) {
       row.licence_no = data.licenceNumber || null;
       row.licence_authority = flat(data.licenceAuthority);
@@ -6376,6 +6387,11 @@ window.SANAD_CONFIG = {
       if (cache.profiles[i].id === id) me = cache.profiles[i];
     }
     if (!me || me.onboarded) return;
+    // Staff are not one of the three answers the wizard offers, so asking them
+    // the question has no right answer — and the account was granted by
+    // somebody with the database in front of them, which is a better
+    // introduction than a form.
+    if ((me.roles || []).indexOf("staff") !== -1) return;
     var here = (global.location.pathname.split("/").pop() || "index.html");
     if (here === "signup.html") return;              // already there
     global.location.replace("signup.html?complete=1");
@@ -11007,6 +11023,27 @@ Pages.define("account", function (global) {
         '<a class="btn btn--outline" href="signup.html" data-i18n="auth.createAccount"></a></div></div>';
   }
 
+  /* Switching between capacities the account ALREADY holds. This is not the
+     role picker that used to live here: there is no card that adds one, and
+     nothing on this page can. A staff member who is also a client should be
+     able to look at the site the way a client sees it without signing out. */
+  function viewAs() {
+    var mine = Session.myRoles();
+    if (mine.length < 2) return "";
+    var active = Session.role();
+    return '<section class="card card--pad" style="margin-bottom:var(--s-6)">' +
+      '<h2 class="subtitle" data-i18n="account.viewAs"></h2>' +
+      '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="account.viewAsHint"></p>' +
+      '<div class="row gap-3 wrap" style="margin-top:var(--s-5)">' +
+        mine.map(function (id) {
+          var def = Session.roleDef(id);
+          return '<button type="button" class="btn btn--sm ' +
+            (active === id ? "btn--primary" : "btn--outline") + '" data-view-as="' + id + '">' +
+            Icons.svg(def.icon, "icon-sm") + esc(I18N.t(def.nameKey)) + "</button>";
+        }).join("") +
+      "</div></section>";
+  }
+
   function details(u) {
     function row(labelKey, value) {
       return "<div><span class=\"tiny muted\">" + esc(I18N.t(labelKey)) + "</span>" +
@@ -11050,6 +11087,8 @@ Pages.define("account", function (global) {
           "</div>" +
         "</div></section>" +
 
+      viewAs() +
+
       details(u) +
 
       // Wiping the visit is a thing you do to a demo. On a real database it
@@ -11067,6 +11106,17 @@ Pages.define("account", function (global) {
   });
 
   host.addEventListener("click", function (ev) {
+    var v = ev.target.closest("[data-view-as]");
+    if (v) {
+      var id = v.getAttribute("data-view-as");
+      // switchRole refuses anything the account does not hold, so this cannot
+      // become a way to acquire one.
+      if (Session.switchRole(id)) {
+        App.toast(I18N.t("role.changed", { role: I18N.t(Session.roleDef(id).nameKey) }), "check");
+      }
+      return;
+    }
+
     if (ev.target.closest("[data-signout]")) {
       Session.signOut().then(function () { App.go("index.html"); });
       return;

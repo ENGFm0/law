@@ -93,6 +93,9 @@
     };
     // Anyone arriving through the wizard has answered everything it asks.
     if (data.onboarded !== undefined) row.onboarded = !!data.onboarded;
+    // Which of the roles they hold they are currently looking through. Never
+    // the roles themselves — those are not changed by a profile edit.
+    if (data.activeRole !== undefined) row.active_role = data.activeRole;
     if (data.role === "lawyer" || (data.roles || []).indexOf("lawyer") !== -1) {
       row.licence_no = data.licenceNumber || null;
       row.licence_authority = flat(data.licenceAuthority);
