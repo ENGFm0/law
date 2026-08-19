@@ -482,7 +482,15 @@
     global.location.replace("signup.html?complete=1");
   }
 
+  // Said at once, not after asking whether we are signed in. That question
+  // needs the library, and the library may be the very thing that failed —
+  // in which case the answer arrives as an error about the network and the
+  // real reason, sitting in plain sight in the URL, is never read at all.
+  var authFail = SB.authError && SB.authError();
+  if (authFail) authProblem(authFail.message);
+
   SB.currentId().then(function (id) {
+    if (id) SB.cleanUrl && SB.cleanUrl();
     if (id) {
       Store.signIn(id);
       // Store.signIn announces a store change, which redraws pages but not the
@@ -499,12 +507,37 @@
     });
   }).catch(function (e) {
     console.error(e);
-    offline();
+    // One explanation is enough. If the provider already told us why, a second
+    // bar about the network is noise on top of the answer.
+    if (!authFail) offline();
   });
 
   /** The library is fetched at runtime, so a blocked or failing network leaves
       a site that looks perfectly normal and holds nothing — every list empty
       for reasons the person reading it cannot see. Better to say so. */
+  /** The provider refused, and said why. Shown rather than logged, because
+      the person is looking at a home page wondering what happened. */
+  function authProblem(message) {
+    if (document.querySelector("[data-authfail]")) return;
+    var t = function (k) { return global.I18N ? global.I18N.t(k) : ""; };
+    var bar = document.createElement("div");
+    bar.setAttribute("data-authfail", "");
+    bar.className = "offline-bar";
+
+    var title = document.createElement("strong");
+    title.textContent = t("sys.authFailed");
+    var body = document.createElement("span");
+    body.textContent = message || "";
+    var retry = document.createElement("a");
+    retry.className = "btn btn--sm";
+    retry.href = "login.html";
+    retry.textContent = t("sys.authRetry");
+
+    bar.appendChild(title); bar.appendChild(body); bar.appendChild(retry);
+    (document.body || document.documentElement).appendChild(bar);
+    SB.cleanUrl && SB.cleanUrl();
+  }
+
   function offline() {
     if (document.querySelector("[data-offline]")) return;
     // This runs on a failure that can beat app.js to the ready line, so it

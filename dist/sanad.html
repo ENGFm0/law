@@ -2621,6 +2621,10 @@ window.SANAD_CONFIG = {
       /* --- switching between capacities an account already holds --- */
       "account.viewAs": "العرض بصفة",
       "account.viewAsHint": "حسابك يحمل أكثر من صفة. اختر التي تريد تصفّح الموقع بها — هذا تبديل عرض، ولا يمنح صلاحية.",
+
+      /* --- when the provider sends back an error --- */
+      "sys.authFailed": "لم يكتمل تسجيل الدخول",
+      "sys.authRetry": "حاول مرة أخرى",
     },
 
     en: {
@@ -3661,6 +3665,10 @@ window.SANAD_CONFIG = {
       /* --- switching between capacities an account already holds --- */
       "account.viewAs": "Viewing as",
       "account.viewAsHint": "Your account holds more than one capacity. Pick the one you want to browse in — this changes the view, it grants nothing.",
+
+      /* --- when the provider sends back an error --- */
+      "sys.authFailed": "Sign-in did not complete",
+      "sys.authRetry": "Try again",
     }
   };
 
@@ -5679,7 +5687,14 @@ window.SANAD_CONFIG = {
     loading = import(/* webpackIgnore: true */ LIB)
       .then(function (mod) {
         client = mod.createClient(cfg.supabase.url, cfg.supabase.anonKey, {
-          auth: { persistSession: true, autoRefreshToken: true },
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            // Read the code the provider put in the URL and turn it into a
+            // session. It is the default, and it is written down because the
+            // whole return-from-Google path depends on it.
+            detectSessionInUrl: true,
+          },
         });
         global.supabase = mod;          // Signal checks for this to go remote
         return client;
@@ -5748,7 +5763,44 @@ window.SANAD_CONFIG = {
     return row;
   }
 
+  /** What the provider said on the way back, if anything went wrong.
+
+      An identity provider reports failure by sending you home with an
+      explanation in the URL — a redirect the project has not been told to
+      allow, a consent that was declined. Nothing read it, so the page simply
+      rendered as a guest and the sign-in looked as though it had been
+      ignored. This reads it. */
+  function authError() {
+    var out = null;
+    [global.location.search, global.location.hash].forEach(function (part) {
+      if (!part) return;
+      var q = new URLSearchParams(part.replace(/^[?#]/, ""));
+      var code = q.get("error") || q.get("error_code");
+      if (code && !out) {
+        out = { code: code, message: q.get("error_description") || code };
+      }
+    });
+    return out;
+  }
+
+  /** Take the provider's leftovers out of the address bar once they are spent,
+      so a refresh does not try to redeem a code that is already used. */
+  function cleanUrl() {
+    if (!global.history || !global.history.replaceState) return;
+    var here = new URL(global.location.href);
+    ["code", "error", "error_code", "error_description", "state"].forEach(function (k) {
+      here.searchParams.delete(k);
+    });
+    if (/access_token|error/.test(here.hash)) here.hash = "";
+    var next = here.pathname + (here.searchParams.toString() ? "?" + here.searchParams : "") + here.hash;
+    if (next !== global.location.pathname + global.location.search + global.location.hash) {
+      global.history.replaceState({}, "", next);
+    }
+  }
+
   var SB = {
+    authError: authError,
+    cleanUrl: cleanUrl,
     configured: configured,
     hasKeys: hasKeys,
     client: function () { return client; },
@@ -6397,7 +6449,15 @@ window.SANAD_CONFIG = {
     global.location.replace("signup.html?complete=1");
   }
 
+  // Said at once, not after asking whether we are signed in. That question
+  // needs the library, and the library may be the very thing that failed —
+  // in which case the answer arrives as an error about the network and the
+  // real reason, sitting in plain sight in the URL, is never read at all.
+  var authFail = SB.authError && SB.authError();
+  if (authFail) authProblem(authFail.message);
+
   SB.currentId().then(function (id) {
+    if (id) SB.cleanUrl && SB.cleanUrl();
     if (id) {
       Store.signIn(id);
       // Store.signIn announces a store change, which redraws pages but not the
@@ -6414,12 +6474,37 @@ window.SANAD_CONFIG = {
     });
   }).catch(function (e) {
     console.error(e);
-    offline();
+    // One explanation is enough. If the provider already told us why, a second
+    // bar about the network is noise on top of the answer.
+    if (!authFail) offline();
   });
 
   /** The library is fetched at runtime, so a blocked or failing network leaves
       a site that looks perfectly normal and holds nothing — every list empty
       for reasons the person reading it cannot see. Better to say so. */
+  /** The provider refused, and said why. Shown rather than logged, because
+      the person is looking at a home page wondering what happened. */
+  function authProblem(message) {
+    if (document.querySelector("[data-authfail]")) return;
+    var t = function (k) { return global.I18N ? global.I18N.t(k) : ""; };
+    var bar = document.createElement("div");
+    bar.setAttribute("data-authfail", "");
+    bar.className = "offline-bar";
+
+    var title = document.createElement("strong");
+    title.textContent = t("sys.authFailed");
+    var body = document.createElement("span");
+    body.textContent = message || "";
+    var retry = document.createElement("a");
+    retry.className = "btn btn--sm";
+    retry.href = "login.html";
+    retry.textContent = t("sys.authRetry");
+
+    bar.appendChild(title); bar.appendChild(body); bar.appendChild(retry);
+    (document.body || document.documentElement).appendChild(bar);
+    SB.cleanUrl && SB.cleanUrl();
+  }
+
   function offline() {
     if (document.querySelector("[data-offline]")) return;
     // This runs on a failure that can beat app.js to the ready line, so it

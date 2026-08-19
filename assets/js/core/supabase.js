@@ -42,7 +42,14 @@
     loading = import(/* webpackIgnore: true */ LIB)
       .then(function (mod) {
         client = mod.createClient(cfg.supabase.url, cfg.supabase.anonKey, {
-          auth: { persistSession: true, autoRefreshToken: true },
+          auth: {
+            persistSession: true,
+            autoRefreshToken: true,
+            // Read the code the provider put in the URL and turn it into a
+            // session. It is the default, and it is written down because the
+            // whole return-from-Google path depends on it.
+            detectSessionInUrl: true,
+          },
         });
         global.supabase = mod;          // Signal checks for this to go remote
         return client;
@@ -111,7 +118,44 @@
     return row;
   }
 
+  /** What the provider said on the way back, if anything went wrong.
+
+      An identity provider reports failure by sending you home with an
+      explanation in the URL — a redirect the project has not been told to
+      allow, a consent that was declined. Nothing read it, so the page simply
+      rendered as a guest and the sign-in looked as though it had been
+      ignored. This reads it. */
+  function authError() {
+    var out = null;
+    [global.location.search, global.location.hash].forEach(function (part) {
+      if (!part) return;
+      var q = new URLSearchParams(part.replace(/^[?#]/, ""));
+      var code = q.get("error") || q.get("error_code");
+      if (code && !out) {
+        out = { code: code, message: q.get("error_description") || code };
+      }
+    });
+    return out;
+  }
+
+  /** Take the provider's leftovers out of the address bar once they are spent,
+      so a refresh does not try to redeem a code that is already used. */
+  function cleanUrl() {
+    if (!global.history || !global.history.replaceState) return;
+    var here = new URL(global.location.href);
+    ["code", "error", "error_code", "error_description", "state"].forEach(function (k) {
+      here.searchParams.delete(k);
+    });
+    if (/access_token|error/.test(here.hash)) here.hash = "";
+    var next = here.pathname + (here.searchParams.toString() ? "?" + here.searchParams : "") + here.hash;
+    if (next !== global.location.pathname + global.location.search + global.location.hash) {
+      global.history.replaceState({}, "", next);
+    }
+  }
+
   var SB = {
+    authError: authError,
+    cleanUrl: cleanUrl,
     configured: configured,
     hasKeys: hasKeys,
     client: function () { return client; },

@@ -1078,6 +1078,10 @@
       /* --- switching between capacities an account already holds --- */
       "account.viewAs": "العرض بصفة",
       "account.viewAsHint": "حسابك يحمل أكثر من صفة. اختر التي تريد تصفّح الموقع بها — هذا تبديل عرض، ولا يمنح صلاحية.",
+
+      /* --- when the provider sends back an error --- */
+      "sys.authFailed": "لم يكتمل تسجيل الدخول",
+      "sys.authRetry": "حاول مرة أخرى",
     },
 
     en: {
@@ -2118,6 +2122,10 @@
       /* --- switching between capacities an account already holds --- */
       "account.viewAs": "Viewing as",
       "account.viewAsHint": "Your account holds more than one capacity. Pick the one you want to browse in — this changes the view, it grants nothing.",
+
+      /* --- when the provider sends back an error --- */
+      "sys.authFailed": "Sign-in did not complete",
+      "sys.authRetry": "Try again",
     }
   };
 
