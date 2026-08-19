@@ -12,6 +12,7 @@
 Pages.define("verify", function (global) {
   "use strict";
 
+  var BUILD = "62d0af0";
   var App = global.App, Icons = global.Icons, esc = App.esc;
   var $ = App.$;
   var host = $("[data-verify]");
@@ -40,6 +41,8 @@ Pages.define("verify", function (global) {
         line("الوضع الحالي", cfg.backend || "browser") +
         line("عنوان المشروع", sb.url || "—") +
         line("نوع المفتاح", keyKind(sb.anonKey)) +
+        line("البريد المستخدم", creds.email || "— فارغ، فحوص الحساب ستُتخطّى") +
+        line("إصدار الصفحة", BUILD) +
       "</div>" +
 
       '<div class="card card--pad" style="margin-top:var(--s-6)">' +
@@ -81,9 +84,11 @@ Pages.define("verify", function (global) {
   }
 
   function line(k, v) {
+    var mark = k === "البريد المستخدم" ? " data-email-echo" : "";
     return '<div class="row between gap-3" style="padding:var(--s-2) 0">' +
       '<span class="small muted">' + esc(k) + "</span>" +
-      '<strong class="small" style="word-break:break-all">' + esc(v) + "</strong></div>";
+      '<strong class="small" style="word-break:break-all"' + mark + ">" +
+      esc(v) + "</strong></div>";
   }
 
   function keyKind(key) {
@@ -227,6 +232,14 @@ Pages.define("verify", function (global) {
 
   host.addEventListener("click", function (ev) {
     if (ev.target.closest("[data-run]") && !running) run();
+  });
+
+  host.addEventListener("input", function (ev) {
+    var f = ev.target.closest("[data-email]");
+    if (!f) return;
+    creds.email = f.value.trim();
+    var cell = $("[data-email-echo]", host);
+    if (cell) cell.textContent = creds.email || "— فارغ، فحوص الحساب ستُتخطّى";
   });
 
   App.onRender(draw);
