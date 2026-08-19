@@ -1069,6 +1069,11 @@
       "auth.switchAccount": "تسجيل الخروج والدخول بحساب آخر",
       "signup.howToSignUp": "كيف تريد إنشاء الحساب؟",
       "signup.orByEmail": "أو أكمل بالبريد وكلمة المرور",
+
+      /* --- when the backend cannot be reached --- */
+      "sys.offlineTitle": "تعذّر الوصول إلى الخادم",
+      "sys.offlineBody": "الموقع مفتوح لكن بياناتك لم تُحمَّل. تحقّق من اتصالك ثم أعد المحاولة.",
+      "sys.retry": "إعادة المحاولة",
     },
 
     en: {
@@ -2100,6 +2105,11 @@
       "auth.switchAccount": "Sign out and use another account",
       "signup.howToSignUp": "How would you like to sign up?",
       "signup.orByEmail": "or continue with an email and password",
+
+      /* --- when the backend cannot be reached --- */
+      "sys.offlineTitle": "Cannot reach the server",
+      "sys.offlineBody": "The site is open but your data has not loaded. Check your connection and try again.",
+      "sys.retry": "Try again",
     }
   };
 

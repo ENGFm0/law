@@ -257,3 +257,20 @@ node tools/remote-store-test.mjs   # ٣٦ فحصاً على بديل لـsupabas
    حقيقيين.
 4. **لا شروط ولا سياسة خصوصية حقيقية** — الروابط الحالية تشير إلى صفحة
    الأسئلة الشائعة، وهذا لا يكفي لمنصة تتعامل مع بيانات قانونية.
+
+## A third-party CDN sits on the critical path
+
+`assets/js/core/supabase.js` fetches `@supabase/supabase-js` from `esm.sh` at
+runtime. If that host is blocked or down — a corporate network, an ISP filter,
+a CDN outage — the site loads and holds nothing, and every list is empty for
+reasons the person reading it cannot see.
+
+Two things follow:
+
+- The failure is now visible rather than a console line: a bar across the top
+  saying the data did not load, with a retry. `tools/offline-e2e.mjs` holds it
+  open by blocking the host and checking the page still renders underneath.
+- **The library should be vendored before real traffic.** Download it once,
+  commit it beside the other assets, and import from there. It removes the last
+  runtime dependency on a host nobody here controls, and it is the difference
+  between a bad afternoon for esm.sh and a bad afternoon for the platform.

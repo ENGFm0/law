@@ -431,6 +431,17 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .nav { display: none; }
 }
 
+/* ---------- 11a1. When the backend cannot be reached ---------- */
+.offline-bar {
+  position: fixed; inset-inline: 0; inset-block-start: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--s-3) var(--s-4); flex-wrap: wrap;
+  padding: var(--s-3) var(--s-4);
+  background: var(--danger); color: #fff; text-align: center;
+  font-size: .875rem;
+}
+.offline-bar .btn { background: #fff; color: var(--danger); border-color: #fff; font-weight: 700; }
+
 /* ---------- 11a2. Notices ---------- */
 .notice-wrap { position: relative; display: inline-flex; }
 .notice-bell { position: relative; }

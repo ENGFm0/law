@@ -492,5 +492,27 @@
       document.dispatchEvent(new CustomEvent("sessionchange"));
       return needsOnboarding(id);
     });
-  }).catch(function (e) { console.error(e); });
+  }).catch(function (e) {
+    console.error(e);
+    offline();
+  });
+
+  /** The library is fetched at runtime, so a blocked or failing network leaves
+      a site that looks perfectly normal and holds nothing — every list empty
+      for reasons the person reading it cannot see. Better to say so. */
+  function offline() {
+    if (document.querySelector("[data-offline]")) return;
+    var bar = document.createElement("div");
+    bar.setAttribute("data-offline", "");
+    bar.className = "offline-bar";
+    bar.innerHTML =
+      "<strong>" + global.App.esc(global.I18N.t("sys.offlineTitle")) + "</strong>" +
+      "<span>" + global.App.esc(global.I18N.t("sys.offlineBody")) + "</span>" +
+      '<button class="btn btn--sm" type="button" data-offline-retry>' +
+        global.App.esc(global.I18N.t("sys.retry")) + "</button>";
+    document.body.appendChild(bar);
+    bar.querySelector("[data-offline-retry]").addEventListener("click", function () {
+      global.location.reload();
+    });
+  }
 })(window);

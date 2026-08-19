@@ -19,7 +19,15 @@ Pages.define("signup", function (global) {
      picture; everything the wizard asks after that is still unanswered, so the
      same wizard runs — minus the two questions that no longer apply, because
      the account exists and is already signed in. */
-  var completing = App.param("complete") === "1" && !Session.isGuest();
+  /* Asked, never captured. The session from Google is restored a moment after
+     this module runs, so a value read once at load is read while nobody is
+     signed in yet — which left the wizard asking a signed-in person for an
+     email and a password it had no use for, and offering them a link to sign
+     in. It is a question now, and everything that depends on it is answered
+     again when the session arrives. */
+  function completing() {
+    return App.param("complete") === "1" && !Session.isGuest();
+  }
   var LAST = 4;
 
   /* A client needs no proof of standing, so their wizard is a step shorter. */
@@ -213,7 +221,7 @@ Pages.define("signup", function (global) {
     if (state.step === 1 && !state.role) return "signup.needRole";
     if (state.step === 2) {
       if (!d.name) return "signup.needName";
-      if (!completing) {
+      if (!completing()) {
         if (!/^\S+@\S+\.\S+$/.test(d.email || "")) return "signup.needEmail";
         if (!d.password || d.password.length < 4) return "signup.needPassword";
         if (Store.findAccount(d.email)) return "signup.emailTaken";
@@ -236,7 +244,7 @@ Pages.define("signup", function (global) {
   function drawGoogle() {
     var slot = $("[data-google-slot]");
     if (!slot) return;
-    var show = !completing && state.step === 2;
+    var show = !completing() && state.step === 2;
     slot.innerHTML = show ? global.C.googleButton() : "";
     if (show) I18N.apply(slot);
   }
@@ -244,7 +252,12 @@ Pages.define("signup", function (global) {
   App.onRender(function () {
     drawGoogle();
 
-    if (completing) {
+    var done = completing();
+    // Both directions: the fields go when the session arrives, and come back
+    // if it turns out there is none.
+    $$("[data-signed-in-hide]", document).forEach(function (el) { el.hidden = done; });
+
+    if (done) {
       var me = Session.user();
       // What they picked before being sent to Google.
       if (!state.role) {
@@ -253,7 +266,6 @@ Pages.define("signup", function (global) {
         if (kept) { state.role = kept; drawRoles(); }
       }
       // The two questions that no longer apply, and the answer Google gave us.
-      $$("[data-signed-in-hide]", form).forEach(function (el) { el.hidden = true; });
       var nameField = form.querySelector('[name="name"]');
       if (nameField && !nameField.value && me) nameField.value = App.tx(me.name);
       // Swap the key, not the text: a translation pass runs after this and
@@ -364,7 +376,7 @@ Pages.define("signup", function (global) {
 
     // The account already exists when we are finishing one; registering again
     // would fail on the address it already has.
-    var done = completing
+    var sent = completing()
       ? global.SB.complete(Session.user().id, payload).then(function (res) {
           if (res.ok) {
             try { localStorage.removeItem("sanad.pendingRole"); } catch (e) {}
@@ -374,7 +386,7 @@ Pages.define("signup", function (global) {
         })
       : Store.register(payload);
 
-    done.then(function (res) {
+    sent.then(function (res) {
       if (button) { button.disabled = false; I18N.apply(button.parentNode); }
       if (!res.ok) {
         // A backend can fail in ways the demo never could — a refused address,
