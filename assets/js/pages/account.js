@@ -1,7 +1,10 @@
 /* ==========================================================================
-   Account — who you are, which of your roles you are currently looking
-   through, and the switch between them. One account, several roles: that
-   decision lives here.
+   Account — who you are, and the way out.
+
+   The role switcher that used to live here was a demo affordance: it invited
+   you to add a role and "try its interface", which on a real platform means
+   tapping a card to become a lawyer. Roles are decided at sign-up and changed
+   by staff; nothing on this page grants one.
    ========================================================================== */
 Pages.define("account", function (global) {
   "use strict";
@@ -13,27 +16,14 @@ Pages.define("account", function (global) {
   var host = $("[data-account]");
   if (!host) return;
 
+  function demo() { return !(global.SB && global.SB.configured()); }
+
   function guest() {
     return '<div class="container" style="padding-block:var(--s-16)">' +
       C.empty("user", "account.guest") +
       '<div class="row center gap-3" style="margin-top:var(--s-6)">' +
         '<a class="btn btn--primary" href="login.html" data-i18n="auth.signIn"></a>' +
         '<a class="btn btn--outline" href="signup.html" data-i18n="auth.createAccount"></a></div></div>';
-  }
-
-  function roleCards(u) {
-    var have = Session.myRoles();
-    var active = Session.role();
-    return Session.allRoles().map(function (r) {
-      var owned = have.indexOf(r.id) !== -1;
-      return '<button type="button" class="role-card' + (active === r.id ? " is-active" : "") +
-        '" data-role="' + r.id + '"' + (owned ? "" : ' data-add="1"') + ">" +
-        '<span class="role-card__icon">' + Icons.svg(r.icon, "icon-lg") + "</span>" +
-        "<strong>" + esc(I18N.t(r.nameKey)) + "</strong>" +
-        '<span class="tiny muted">' + esc(I18N.t(owned ? "role.current" : "account.addRole")) + "</span>" +
-        (active === r.id ? '<span class="role-card__check">' + Icons.svg("check", "icon-sm") + "</span>" : "") +
-      "</button>";
-    }).join("");
   }
 
   function details(u) {
@@ -79,39 +69,23 @@ Pages.define("account", function (global) {
           "</div>" +
         "</div></section>" +
 
-      '<section class="card card--pad" style="margin-bottom:var(--s-6)">' +
-        '<h2 class="subtitle" data-i18n="account.myRoles"></h2>' +
-        '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="account.addRoleHint"></p>' +
-        '<div class="grid grid-3" style="margin-top:var(--s-5)">' + roleCards(u) + "</div></section>" +
-
       details(u) +
 
-      '<section class="card card--pad" style="margin-top:var(--s-6)">' +
-        '<h2 class="subtitle" data-i18n="account.reset"></h2>' +
-        '<p class="small muted" style="margin:var(--s-2) 0 var(--s-4)" data-i18n="account.resetHint"></p>' +
-        '<button class="btn btn--outline btn--sm" type="button" data-reset>' +
-          Icons.svg("trash", "icon-sm") + '<span data-i18n="account.reset"></span></button></section>' +
+      // Wiping the visit is a thing you do to a demo. On a real database it
+      // would be either meaningless or alarming, so it is not offered there.
+      (demo()
+        ? '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+            '<h2 class="subtitle" data-i18n="account.reset"></h2>' +
+            '<p class="small muted" style="margin:var(--s-2) 0 var(--s-4)" data-i18n="account.resetHint"></p>' +
+            '<button class="btn btn--outline btn--sm" type="button" data-reset>' +
+              Icons.svg("trash", "icon-sm") + '<span data-i18n="account.reset"></span></button></section>'
+        : "") +
     "</div>";
 
     I18N.apply(host);
   });
 
   host.addEventListener("click", function (ev) {
-    var r = ev.target.closest("[data-role]");
-    if (r) {
-      var id = r.getAttribute("data-role");
-      if (r.hasAttribute("data-add")) {
-        // A second role starts unverified for anyone but a client — the licence
-        // still has to be checked before work can reach them.
-        Store.addRole(Session.user().id, id, {});
-        Session.switchRole(id);
-        App.toast(I18N.t("account.roleAdded", { role: I18N.t(Session.roleDef(id).nameKey) }), "check");
-      } else if (Session.switchRole(id)) {
-        App.toast(I18N.t("role.changed", { role: I18N.t(Session.roleDef(id).nameKey) }), "check");
-      }
-      return;
-    }
-
     if (ev.target.closest("[data-signout]")) {
       Session.signOut().then(function () { App.go("index.html"); });
       return;

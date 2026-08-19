@@ -502,17 +502,26 @@
       for reasons the person reading it cannot see. Better to say so. */
   function offline() {
     if (document.querySelector("[data-offline]")) return;
+    // This runs on a failure that can beat app.js to the ready line, so it
+    // builds its own nodes and asks nothing of anything that may not exist
+    // yet. Text, not markup: there is no escaping to get wrong.
+    var t = function (k) { return global.I18N ? global.I18N.t(k) : ""; };
     var bar = document.createElement("div");
     bar.setAttribute("data-offline", "");
     bar.className = "offline-bar";
-    bar.innerHTML =
-      "<strong>" + global.App.esc(global.I18N.t("sys.offlineTitle")) + "</strong>" +
-      "<span>" + global.App.esc(global.I18N.t("sys.offlineBody")) + "</span>" +
-      '<button class="btn btn--sm" type="button" data-offline-retry>' +
-        global.App.esc(global.I18N.t("sys.retry")) + "</button>";
-    document.body.appendChild(bar);
-    bar.querySelector("[data-offline-retry]").addEventListener("click", function () {
-      global.location.reload();
-    });
+
+    var title = document.createElement("strong");
+    title.textContent = t("sys.offlineTitle");
+    var body = document.createElement("span");
+    body.textContent = t("sys.offlineBody");
+    var retry = document.createElement("button");
+    retry.type = "button";
+    retry.className = "btn btn--sm";
+    retry.setAttribute("data-offline-retry", "");
+    retry.textContent = t("sys.retry");
+    retry.addEventListener("click", function () { global.location.reload(); });
+
+    bar.appendChild(title); bar.appendChild(body); bar.appendChild(retry);
+    (document.body || document.documentElement).appendChild(bar);
   }
 })(window);
