@@ -1311,7 +1311,27 @@ window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.tit
                 infrastructure that costs money.
    ========================================================================== */
 window.SANAD_CONFIG = {
-  // supabase: { url: "https://xxxx.supabase.co", anonKey: "…" },
+  /* Which data source the site runs on.
+
+       "browser"  — everything in this browser, seeded with demo people. What
+                    the published demo runs on, and what works offline.
+       "supabase" — the real project below. Starts empty, because real accounts
+                    are the only accounts: there are no seeded lawyers in
+                    production and there should not be.
+
+     Kept explicit so filling in the keys does not silently change what the
+     live site does. Flip it once verify.html reports green. */
+  backend: "browser",
+
+  supabase: {
+    url: "https://otpjcopyfjodeiufeixx.supabase.co",
+    // The PUBLISHABLE key, and only ever this one. It is meant to sit in the
+    // page where anyone can read it; the row-level security in
+    // supabase/schema.sql is what protects the data. A secret key
+    // (sb_secret_…) bypasses every one of those policies and must never
+    // appear in this file, in this repository, or in a chat.
+    anonKey: "sb_publishable_K3cRgR9SuS5wYKTc-HMZlg_dfHEKhD2",
+  },
   // turn: { urls: "turn:turn.example.com:3478", username: "…", credential: "…" },
 };
 
@@ -2328,6 +2348,7 @@ window.SANAD_CONFIG = {
       "call.copyLink": "انسخ رابط الغرفة",
       "call.copied": "نُسخ الرابط.",
       "call.markDone": "أنهِ المكالمة وسلّم الطلب",
+      "verify.title": "فحص الاتصال | سند",
     },
 
     en: {
@@ -3221,6 +3242,7 @@ window.SANAD_CONFIG = {
       "call.copyLink": "Copy the room link",
       "call.copied": "Link copied.",
       "call.markDone": "End and deliver the request",
+      "verify.title": "Connection check | Sanad",
     }
   };
 
@@ -4761,6 +4783,214 @@ window.SANAD_CONFIG = {
   document.addEventListener("storechange", function () { /* keep views in step */ });
 
   global.Session = Session;
+})(window);
+
+/* ==========================================================================
+   Supabase — the client, and the auth that replaces demo accounts.
+
+   Loaded on demand and only when SANAD_CONFIG.backend is "supabase", so the
+   demo keeps its promise: no build step, no dependency, works from a file on
+   disk with no network at all.
+
+   The important change here is not the database, it is the passwords. In demo
+   mode an account is a plain object in localStorage with the password sitting
+   next to it in clear text. Here the password never reaches our code at all —
+   it goes to Supabase's own auth service, which stores a bcrypt hash and hands
+   back a session token. `profiles` holds everything else.
+   ========================================================================== */
+(function (global) {
+  "use strict";
+
+  var cfg = global.SANAD_CONFIG || {};
+  var LIB = "https://esm.sh/@supabase/supabase-js@2";
+
+  var client = null;
+  var loading = null;
+
+  /** Are the keys present? Enough to talk to the project. */
+  function hasKeys() {
+    return !!(cfg.supabase && cfg.supabase.url && cfg.supabase.anonKey);
+  }
+
+  /** Is the site actually running on it? A separate question on purpose —
+      verify.html has to reach the project while the site is still on the demo
+      backend, which is the whole point of checking before you switch over. */
+  function configured() {
+    return cfg.backend === "supabase" && hasKeys();
+  }
+
+  /** Fetch the library once, on first use. Rejects loudly: a data layer that
+      silently falls back to demo data in production is worse than an error. */
+  function load() {
+    if (client) return Promise.resolve(client);
+    if (loading) return loading;
+    if (!hasKeys()) return Promise.reject(new Error("no Supabase url or key in config.js"));
+
+    loading = import(/* webpackIgnore: true */ LIB)
+      .then(function (mod) {
+        client = mod.createClient(cfg.supabase.url, cfg.supabase.anonKey, {
+          auth: { persistSession: true, autoRefreshToken: true },
+        });
+        global.supabase = mod;          // Signal checks for this to go remote
+        return client;
+      });
+    return loading;
+  }
+
+  /* ---------- rows in, objects out ----------
+     The database is snake_case and flat; the rest of the site speaks the shape
+     models.js already uses. One translation, in one place. */
+  function toProfile(row) {
+    if (!row) return null;
+    var pair = function (v) { return v == null ? "" : { ar: v, en: v }; };
+    return {
+      id: row.id,
+      name: pair(row.full_name),
+      email: row.email || "",
+      phone: row.phone || "",
+      city: row.city || "",
+      avatar: row.avatar_url || null,
+      roles: row.roles || ["client"],
+      activeRole: row.active_role || (row.roles || ["client"])[0],
+      status: row.status || "pending",
+      bio: pair(row.bio),
+      title: pair(row.title),
+      licence: row.licence_no ? {
+        number: row.licence_no, authority: pair(row.licence_authority),
+        expiry: row.licence_expiry,
+      } : null,
+      specialties: row.specialties || [],
+      years: row.years || 0,
+      university: pair(row.university),
+      level: pair(row.level),
+      skills: (row.skills || []).map(pair),
+      completed: 0, responseHours: 12, seedRating: 0, seedReviews: 0, seedHours: 0,
+    };
+  }
+
+  /** The reverse, for the columns a person may set about themselves. */
+  function fromProfile(data) {
+    var flat = function (v) { return v && typeof v === "object" ? (v.ar || v.en || "") : (v || null); };
+    var row = {
+      full_name: flat(data.name), phone: data.phone || null, city: data.city || null,
+      avatar_url: data.avatar || null, bio: flat(data.bio),
+    };
+    if (data.role === "lawyer" || (data.roles || []).indexOf("lawyer") !== -1) {
+      row.licence_no = data.licenceNumber || null;
+      row.licence_authority = flat(data.licenceAuthority);
+      row.licence_expiry = data.licenceExpiry || null;
+      row.specialties = data.specialties || [];
+      row.years = data.years || 0;
+    }
+    if (data.role === "intern" || (data.roles || []).indexOf("intern") !== -1) {
+      row.university = flat(data.university);
+      row.level = flat(data.level);
+      row.skills = (data.skills || []).map(flat);
+    }
+    return row;
+  }
+
+  var SB = {
+    configured: configured,
+    hasKeys: hasKeys,
+    client: function () { return client; },
+    load: load,
+    toProfile: toProfile,
+    fromProfile: fromProfile,
+
+    /* ---------- accounts ----------
+       Returns the same { ok, error, user } the demo backend returns, so the
+       sign-up wizard does not care which one it is talking to. */
+    register: function (data) {
+      return load().then(function (sb) {
+        return sb.auth.signUp({ email: data.email, password: data.password })
+          .then(function (res) {
+            if (res.error) {
+              return { ok: false,
+                error: /registered|exists/i.test(res.error.message) ? "emailTaken" : "signUpFailed",
+                message: res.error.message };
+            }
+            var user = res.data.user;
+            if (!user) return { ok: false, error: "confirmEmail" };
+
+            // A client is live at once; a lawyer or trainee waits for a licence
+            // check, and cannot set that field themselves — the database
+            // trigger keeps it whatever staff last set.
+            var row = fromProfile(data);
+            row.id = user.id;
+            row.roles = [data.role];
+            row.active_role = data.role;
+            row.status = data.role === "client" ? "verified" : "pending";
+
+            return sb.from("profiles").insert(row).select().single()
+              .then(function (out) {
+                if (out.error) return { ok: false, error: "profileFailed", message: out.error.message };
+                return { ok: true, user: toProfile(out.data) };
+              });
+          });
+      });
+    },
+
+    signIn: function (email, password) {
+      return load().then(function (sb) {
+        return sb.auth.signInWithPassword({ email: email, password: password })
+          .then(function (res) {
+            if (res.error) {
+              return { ok: false,
+                error: /invalid/i.test(res.error.message) ? "badPassword" : "noAccount" };
+            }
+            return { ok: true, id: res.data.user.id };
+          });
+      });
+    },
+
+    signOut: function () {
+      return load().then(function (sb) { return sb.auth.signOut(); });
+    },
+
+    /** The signed-in user id, restored from the stored session. */
+    currentId: function () {
+      return load().then(function (sb) {
+        return sb.auth.getSession().then(function (res) {
+          var s = res.data && res.data.session;
+          return s ? s.user.id : null;
+        });
+      });
+    },
+
+    profile: function (id) {
+      return load().then(function (sb) {
+        return sb.from("profiles").select("*").eq("id", id).maybeSingle()
+          .then(function (res) { return res.error ? null : toProfile(res.data); });
+      });
+    },
+
+    /** Everything the site reads at once, for the cache that keeps reads sync. */
+    hydrate: function () {
+      return load().then(function (sb) {
+        return Promise.all([
+          sb.from("profiles").select("*"),
+          sb.from("services").select("*"),
+          sb.from("requests").select("*"),
+          sb.from("articles").select("*"),
+          sb.from("reviews").select("*"),
+          sb.from("comments").select("*"),
+          sb.from("endorsements").select("*"),
+          sb.from("agreements").select("*"),
+        ]).then(function (r) {
+          var pick = function (x) { return (x && !x.error && x.data) || []; };
+          return {
+            profiles: pick(r[0]).map(toProfile),
+            services: pick(r[1]), requests: pick(r[2]), articles: pick(r[3]),
+            reviews: pick(r[4]), comments: pick(r[5]),
+            endorsements: pick(r[6]), agreements: pick(r[7]),
+          };
+        });
+      });
+    },
+  };
+
+  global.SB = SB;
 })(window);
 
 /* ==========================================================================

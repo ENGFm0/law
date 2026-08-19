@@ -30,6 +30,7 @@ HEAD = '''<!DOCTYPE html>
 <script src="assets/js/data/seed.js"></script>
 <script src="assets/js/data/models.js"></script>
 <script src="assets/js/core/session.js"></script>
+<script src="assets/js/core/supabase.js"></script>
 <script src="assets/js/core/signal.js"></script>
 <script src="assets/js/core/rtc.js"></script>
 <script src="assets/js/ui/icons.js"></script>

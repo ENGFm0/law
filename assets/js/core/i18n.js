@@ -931,6 +931,7 @@
       "call.copyLink": "انسخ رابط الغرفة",
       "call.copied": "نُسخ الرابط.",
       "call.markDone": "أنهِ المكالمة وسلّم الطلب",
+      "verify.title": "فحص الاتصال | سند",
     },
 
     en: {
@@ -1824,6 +1825,7 @@
       "call.copyLink": "Copy the room link",
       "call.copied": "Link copied.",
       "call.markDone": "End and deliver the request",
+      "verify.title": "Connection check | Sanad",
     }
   };
 

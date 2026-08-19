@@ -16,6 +16,18 @@
                 infrastructure that costs money.
    ========================================================================== */
 window.SANAD_CONFIG = {
+  /* Which data source the site runs on.
+
+       "browser"  — everything in this browser, seeded with demo people. What
+                    the published demo runs on, and what works offline.
+       "supabase" — the real project below. Starts empty, because real accounts
+                    are the only accounts: there are no seeded lawyers in
+                    production and there should not be.
+
+     Kept explicit so filling in the keys does not silently change what the
+     live site does. Flip it once verify.html reports green. */
+  backend: "browser",
+
   supabase: {
     url: "https://otpjcopyfjodeiufeixx.supabase.co",
     // The PUBLISHABLE key, and only ever this one. It is meant to sit in the
