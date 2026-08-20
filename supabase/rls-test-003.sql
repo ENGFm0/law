@@ -24,8 +24,12 @@ do $$ begin
     create role authenticated nologin;
   end if;
 end $$;
+-- Table privileges come from local-prelude.sql now, which mirrors what
+-- Supabase grants on its own. Granting everything again here was left over
+-- from before that, and it quietly handed back the SELECT that migration 011
+-- takes away from `profiles` — so the test that checks a phone number is
+-- unreadable passed or failed depending on which file ran first.
 grant usage on schema public to authenticated;
-grant all on all tables in schema public to authenticated;
 
 truncate auth.users cascade;
 

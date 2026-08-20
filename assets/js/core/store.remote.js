@@ -192,6 +192,52 @@
      server applies to a request carrying a real token, so a stale copy that
      claims more than it should still cannot read or write a thing. */
   var ME_KEY = "sanad.me";
+  var WARM_KEY = "sanad.warm.v1";
+  var WARM_MAX = 1500000;                 // bytes; past this it is not a win
+  var WARM_LIFE = 7 * 24 * 60 * 60 * 1000;
+
+  /* The public half of the last visit, kept on disk.
+
+     Every page here is drawn from data, so a cold cache means a directory
+     with nobody in it, a catalogue with nothing in it and a price band of
+     zero — for as long as the network takes. Which is what people saw: an
+     empty page that filled itself in a few seconds later.
+
+     Only what is public goes in: who the lawyers are, what they sell, what
+     the platform charges. Nobody's requests, nobody's notifications, no
+     ledger. It is replaced by the real answer as soon as one arrives, and
+     ignored entirely once it is a week old. */
+  function saveWarm() {
+    try {
+      // The desk's copy of the contact book must not be what ends up on disk:
+      // it is read into the same objects the directory uses, so it is taken
+      // back out here rather than trusted not to have arrived yet.
+      var people = cache.profiles.map(function (p) {
+        if (!p.email && !p.phone) return p;
+        var copy = {};
+        Object.keys(p).forEach(function (k) { copy[k] = p[k]; });
+        copy.email = ""; copy.phone = "";
+        return copy;
+      });
+      var text = JSON.stringify({
+        at: Date.now(),
+        profiles: people, services: cache.services, types: cache.types,
+        reviews: cache.reviews, announcements: cache.announcements,
+        bands: cache.bands, settings: cache.settings,
+      });
+      if (text.length > WARM_MAX) return;
+      localStorage.setItem(WARM_KEY, text);
+    } catch (e) { /* private mode, or the quota */ }
+  }
+  function readWarm() {
+    try {
+      var raw = localStorage.getItem(WARM_KEY);
+      if (!raw) return null;
+      var d = JSON.parse(raw);
+      if (!d || !d.at || Date.now() - d.at > WARM_LIFE) return null;
+      return d;
+    } catch (e) { return null; }
+  }
 
   function remember(profile) {
     try {
@@ -216,11 +262,30 @@
   };
   var ready = false;
 
-  // Synchronously, before anything draws: if the browser still holds a session
-  // and we remember whose it is, start with that person in the cache.
+  // Synchronously, before anything draws: last visit's public data, and the
+  // person this browser was signed in as. Neither is a permission — every
+  // rule that matters is a row policy the server applies to a request
+  // carrying a real token — but both are what the first paint is made of.
+  var warm = readWarm();
+  if (warm) {
+    cache.profiles = warm.profiles || [];
+    cache.services = warm.services || [];
+    cache.types = warm.types || [];
+    cache.reviews = warm.reviews || [];
+    cache.announcements = warm.announcements || [];
+    cache.bands = warm.bands || {};
+    cache.settings = warm.settings || {};
+  }
+
   var remembered = recall();
   if (remembered && remembered.id && remembered.id === Store.currentId()) {
-    cache.profiles = [remembered];
+    var seen = false;
+    cache.profiles = cache.profiles.map(function (p) {
+      if (p.id !== remembered.id) return p;
+      seen = true;
+      return remembered;
+    });
+    if (!seen) cache.profiles.push(remembered);
   } else if (remembered) {
     remember(null);                    // signed out elsewhere; forget them
   }
@@ -857,50 +922,78 @@
   };
 
   /* ---------- filling the cache ---------- */
+  /* ---------- filling the cache ----------
+     Two waves. The first is what every screen needs to draw at all — who
+     people are, what they sell, what it may cost — and the page redraws the
+     moment it lands rather than waiting on the blog, the ledgers and one
+     account's own requests. */
+  function absorb(payload) {
+    var rows = payload.rows;
+    var had = function (name) { return Object.prototype.hasOwnProperty.call(rows, name); };
+    // A read that failed comes back as null, not as an empty list, and a list
+    // we do not have is not a list with nothing in it. Keeping what the cache
+    // already holds is the difference between a page missing one section and
+    // a page that has decided nobody is signed in.
+    var take = function (name, map, current) {
+      if (!had(name)) return current;
+      return rows[name] ? rows[name].map(map) : current;
+    };
+
+    if (had("profiles") && rows.profiles) cache.profiles = rows.profiles.map(SB.toProfile);
+    // The desk's book. Empty for everyone who is not staff, by the function's
+    // own rule rather than by this file being careful.
+    if (had("contacts") && rows.contacts) {
+      var book = {};
+      rows.contacts.forEach(function (c) { book[c.id] = c; });
+      cache.profiles.forEach(function (p) {
+        if (!book[p.id]) return;
+        p.email = book[p.id].email || "";
+        p.phone = book[p.id].phone || "";
+      });
+    }
+    cache.services = take("services", inService, cache.services);
+    cache.types = take("service_types", inType, cache.types);
+    cache.reviews = take("reviews", inReview, cache.reviews);
+    cache.announcements = take("announcements", inAnnouncement, cache.announcements);
+    cache.requests = take("requests", inRequest, cache.requests);
+    cache.articles = take("articles", inArticle, cache.articles);
+    cache.comments = take("comments", inComment, cache.comments);
+    cache.endorsements = take("endorsements", inEndorsement, cache.endorsements);
+    cache.agreements = take("agreements", inAgreement, cache.agreements);
+    cache.disputes = take("disputes", inDispute, cache.disputes);
+    cache.notices = take("notifications", inNotice, cache.notices);
+    cache.audit = take("audit_log", inAudit, cache.audit);
+    cache.subscriptions = take("subscriptions", inSubscription, cache.subscriptions);
+    cache.costs = take("operating_costs", inCost, cache.costs);
+    cache.partners = take("partners", inPartner, cache.partners);
+    cache.quotes = take("quotes", inQuote, cache.quotes);
+    cache.offers = take("offers", inOffer, cache.offers);
+
+    if (had("platform_settings")) cache.settings = inSettings(rows.platform_settings);
+    if (had("price_bands") && rows.price_bands) {
+      cache.bands = {};
+      rows.price_bands.forEach(function (b) {
+        cache.bands[b.type_id] = { min: Number(b.min_price), max: Number(b.max_price) };
+      });
+    }
+
+    keepMe();
+    Store.notifyAll();
+    if (payload.errors && payload.errors.length) dataProblem(payload.errors);
+  }
+
   Store.hydrate = function () {
-    return SB.hydrate().then(function (d) {
-      // A read that failed comes back as null, not as an empty list, and a
-      // list we do not have is not a list with nothing in it. Keeping what
-      // the cache already holds is the difference between a page that is
-      // missing one section and a page that has decided nobody is signed in:
-      // when `profiles` failed, the signed-in person disappeared, every
-      // permission with them, and the only trace was a 500 in a panel nobody
-      // had open.
-      var take = function (rows, map, current) {
-        return rows ? rows.map(map) : current;
-      };
-      cache.profiles = d.profiles || cache.profiles;
-      cache.requests = take(d.requests, inRequest, cache.requests);
-      cache.services = take(d.services, inService, cache.services);
-      cache.articles = take(d.articles, inArticle, cache.articles);
-      cache.reviews = take(d.reviews, inReview, cache.reviews);
-      cache.comments = take(d.comments, inComment, cache.comments);
-      cache.endorsements = take(d.endorsements, inEndorsement, cache.endorsements);
-      cache.agreements = take(d.agreements, inAgreement, cache.agreements);
-      // A table the account may not read comes back empty, and a database
-      // that predates a migration does not have it at all. Neither is a
-      // reason for the site to fail to start.
-      cache.disputes = take(d.disputes, inDispute, cache.disputes);
-      cache.notices = take(d.notices, inNotice, cache.notices);
-      cache.audit = take(d.audit, inAudit, cache.audit);
-      cache.settings = inSettings(d.settings);
-      cache.announcements = take(d.announcements, inAnnouncement, cache.announcements);
-      cache.subscriptions = take(d.subscriptions, inSubscription, cache.subscriptions);
-      cache.costs = take(d.costs, inCost, cache.costs);
-      cache.partners = take(d.partners, inPartner, cache.partners);
-      cache.types = take(d.types, inType, cache.types);
-      cache.quotes = take(d.quotes, inQuote, cache.quotes);
-      cache.offers = take(d.offers, inOffer, cache.offers);
-      if (d.bands) {
-        cache.bands = {};
-        d.bands.forEach(function (b) {
-          cache.bands[b.type_id] = { min: Number(b.min_price), max: Number(b.max_price) };
-        });
-      }
+    // Both waves leave together — they are separate requests either way — and
+    // each is taken in as it lands.
+    var core = SB.hydrate(SB.CORE).then(function (d) {
+      absorb(d);
+      saveWarm();                         // a warm start for the next visit
       ready = true;
-      keepMe();
-      Store.notifyAll();
-      if (d.errors && d.errors.length) dataProblem(d.errors);
+      return d;
+    });
+    var rest = SB.hydrate(SB.REST).then(absorb);
+    return Promise.all([core, rest]).then(function () {
+      ready = true;
       return cache;
     });
   };
@@ -910,6 +1003,10 @@
       fine, holds half of what it should, and explains nothing. */
   function dataProblem(errors) {
     console.error("Supabase read failed", errors);
+    // Nothing answered at all: that is not twenty table-shaped problems, it is
+    // one network-shaped one, and it has its own bar with a retry on it.
+    var allNetwork = errors.every(function (e) { return e.code === "network"; });
+    if (allNetwork) return offline();
     var line = errors.map(function (e) {
       return e.table + ": " + e.message + (e.code ? " (" + e.code + ")" : "");
     }).join(" · ");
@@ -926,8 +1023,23 @@
       bar.appendChild(title); bar.appendChild(body);
       (document.body || document.documentElement).appendChild(bar);
     }
-    bar.querySelector("[data-datafail-detail]").textContent = line;
+    var detail = bar.querySelector("[data-datafail-detail]");
+    if (detail) detail.textContent = line;
   }
+
+  /** Put one freshly-read profile into the cache, replacing what was there. */
+  function mergeProfile(me) {
+    if (!me) return;
+    var seen = false;
+    cache.profiles = cache.profiles.map(function (p) {
+      if (p.id !== me.id) return p;
+      seen = true;
+      return me;
+    });
+    if (!seen) cache.profiles.push(me);
+    remember(me);
+  }
+
   /** Keep the remembered copy in step with the real one. */
   function keepMe() {
     var id = Store.currentId();
@@ -1037,14 +1149,7 @@
       // that is failing.
       SB.profile(id).then(function (me) {
         if (!me) return;
-        var known = false;
-        cache.profiles = cache.profiles.map(function (p) {
-          if (p.id !== me.id) return p;
-          known = true;
-          return me;
-        });
-        if (!known) cache.profiles.push(me);
-        remember(me);
+        mergeProfile(me);
         Store.notifyAll();
         document.dispatchEvent(new CustomEvent("sessionchange"));
       }).catch(function (e) { console.error(e); });

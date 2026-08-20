@@ -96,7 +96,10 @@
     ready: function () {
       if (Signal.kind() !== "supabase") return Promise.resolve();
       if (global.supabase) return Promise.resolve();
-      return (global.SB && global.SB.load) ? global.SB.load() : Promise.resolve();
+      // Realtime is one of the three things that genuinely need the library —
+      // reads and writes went to plain fetch precisely so this stays the only
+      // reason a page ever waits for it.
+      return (global.SB && global.SB.lib) ? global.SB.lib() : Promise.resolve();
     },
 
     /** True when a call can reach a different device. */

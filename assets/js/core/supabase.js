@@ -17,7 +17,22 @@
   var cfg = global.SANAD_CONFIG || {};
   var LIB = "https://esm.sh/@supabase/supabase-js@2";
 
-  var client = null;
+  /* The columns of `profiles` anybody may read.
+
+     Not `*`. Migration 011 took the phone number, the email, the licence
+     document and the CV out of reach of an ordinary read — they were public
+     for no better reason than that `select *` on a public table returns
+     everything — so the site has to name what it wants. Your own row comes
+     back whole through my_profile(); one counterparty's details through
+     contact_of(); the desk's book through contact_book(). */
+  var PUBLIC_PROFILE = [
+    "id", "full_name", "avatar_url", "roles", "active_role", "status", "bio",
+    "title", "licence_no", "licence_authority", "licence_expiry", "specialties",
+    "years", "university", "level", "skills", "city", "created_at", "onboarded",
+    "featured_rank", "featured_until", "auto_bid", "vat_registered",
+  ].join(",");
+
+  var client = null;          // the real supabase-js client, once anything needs it
   var loading = null;
 
   /** Are the keys present? Enough to talk to the project. */
@@ -32,14 +47,27 @@
     return cfg.backend === "supabase" && hasKeys();
   }
 
-  /** Fetch the library once, on first use. Rejects loudly: a data layer that
-      silently falls back to demo data in production is worse than an error. */
+  /** The data client: PostgREST over fetch, ready in this tick.
+
+      This used to be the library, and the library had to be fetched from a
+      CDN before a single row could be asked for — which is why a page could
+      draw itself completely, twice, before its data arrived. Reads and writes
+      do not need it; only auth, Realtime and uploads do, and those now say so
+      by calling lib(). */
   function load() {
+    if (!hasKeys()) return Promise.reject(new Error("no Supabase url or key in config.js"));
+    return Promise.resolve(global.REST.client());
+  }
+
+  /** Fetch the library, once, for the things that genuinely need it. Rejects
+      loudly: a data layer that silently falls back to demo data in production
+      is worse than an error. */
+  function lib() {
     if (client) return Promise.resolve(client);
     if (loading) return loading;
     if (!hasKeys()) return Promise.reject(new Error("no Supabase url or key in config.js"));
 
-    loading = import(/* webpackIgnore: true */ LIB)
+    loading = import(/* webpackIgnore: true */ (cfg.lib || LIB))
       .then(function (mod) {
         client = mod.createClient(cfg.supabase.url, cfg.supabase.anonKey, {
           auth: {
@@ -102,6 +130,10 @@
       full_name: flat(data.name), phone: data.phone || null, city: data.city || null,
       avatar_url: data.avatar || null, bio: flat(data.bio),
     };
+    // Read on every card and every profile, and until migration 011 there was
+    // no column to put it in — so it was blank for everybody who was not part
+    // of the demo seed.
+    if (data.title !== undefined) row.title = flat(data.title);
     // Anyone arriving through the wizard has answered everything it asks.
     if (data.onboarded !== undefined) row.onboarded = !!data.onboarded;
     // Which of the roles they hold they are currently looking through. Never
@@ -167,6 +199,7 @@
 
   var SB = {
     authError: authError,
+    lib: lib,
     cleanUrl: cleanUrl,
     configured: configured,
     hasKeys: hasKeys,
@@ -179,7 +212,7 @@
        Returns the same { ok, error, user } the demo backend returns, so the
        sign-up wizard does not care which one it is talking to. */
     register: function (data) {
-      return load().then(function (sb) {
+      return lib().then(function (sb) {
         return sb.auth.signUp({ email: data.email, password: data.password })
           .then(function (res) {
             if (res.error) {
@@ -208,7 +241,7 @@
             row.active_role = data.role;
             row.onboarded = true;      // the wizard asked everything
 
-            return sb.from("profiles").update(row).eq("id", user.id).select().single()
+            return sb.from("profiles").update(row).eq("id", user.id).select(PUBLIC_PROFILE).single()
               .then(function (out) {
                 if (out.error) return { ok: false, error: "profileFailed", message: out.error.message };
                 return { ok: true, user: toProfile(out.data) };
@@ -237,7 +270,7 @@
             row.roles = roles;
             row.active_role = data.role;
             row.onboarded = true;
-            return sb.from("profiles").update(row).eq("id", id).select().single()
+            return sb.from("profiles").update(row).eq("id", id).select(PUBLIC_PROFILE).single()
               .then(function (out) {
                 if (out.error) return { ok: false, error: "profileFailed", message: out.error.message };
                 return { ok: true, user: toProfile(out.data) };
@@ -247,7 +280,7 @@
     },
 
     signIn: function (email, password) {
-      return load().then(function (sb) {
+      return lib().then(function (sb) {
         return sb.auth.signInWithPassword({ email: email, password: password })
           .then(function (res) {
             if (res.error) {
@@ -266,7 +299,7 @@
         URL by the client. The profile row is waiting either way, made by the
         database trigger the moment the auth user appeared. */
     signInWithGoogle: function (redirect) {
-      return load().then(function (sb) {
+      return lib().then(function (sb) {
         return sb.auth.signInWithOAuth({
           provider: "google",
           options: { redirectTo: redirect || global.location.origin + global.location.pathname },
@@ -275,22 +308,53 @@
     },
 
     signOut: function () {
-      return load().then(function (sb) { return sb.auth.signOut(); });
+      // The stored token goes first, so a network that never answers cannot
+      // leave this browser holding a session it has been told to drop.
+      global.REST.forget();
+      return lib().then(function (sb) { return sb.auth.signOut(); });
     },
 
-    /** The signed-in user id, restored from the stored session. */
+    /** The signed-in user id.
+
+        Read out of the token this browser is already holding, which takes no
+        network at all — the id is the `sub` claim, and the token is what the
+        server will be handed anyway. Coming back from a provider is the one
+        case that still needs the library: the session is not in storage yet,
+        it is in the URL, and only the library can trade it in. */
     currentId: function () {
-      return load().then(function (sb) {
+      var returning = /[?&#](code|access_token)=/.test(
+        global.location.search + global.location.hash);
+      if (!returning) {
+        var s = global.REST.session();
+        if (s && s.expired) {
+          // Held a token, but not one worth sending. Renew it before the page
+          // decides who anybody is.
+          return global.REST.refresh().then(function (fresh) {
+            return (fresh && fresh.sub) || (s && s.sub) || null;
+          });
+        }
+        return Promise.resolve(s ? s.sub : null);
+      }
+      return lib().then(function (sb) {
         return sb.auth.getSession().then(function (res) {
-          var s = res.data && res.data.session;
-          return s ? s.user.id : null;
+          var live = res.data && res.data.session;
+          return live ? live.user.id : null;
         });
       });
     },
 
     profile: function (id) {
       return load().then(function (sb) {
-        return sb.from("profiles").select("*").eq("id", id).maybeSingle()
+        var me = global.REST.session();
+        // Your own row comes back whole — the site needs the email and the
+        // phone on the account page, and they are yours to see.
+        if (me && me.sub === id) {
+          return sb.rpc("my_profile").maybeSingle().then(function (res) {
+            if (res.error) { console.error("profile read failed", res.error); return null; }
+            return toProfile(res.data);
+          });
+        }
+        return sb.from("profiles").select(PUBLIC_PROFILE).eq("id", id).maybeSingle()
           .then(function (res) {
             // Named, not swallowed. This read is the one the whole session
             // depends on, and a silent null here is indistinguishable from
@@ -301,75 +365,75 @@
       });
     },
 
-    /** Everything the site reads at once, for the cache that keeps reads sync.
+    /** What the site reads, in two waves, keyed by table.
 
-        Every table is named, because the answer has to say which one failed.
-        A read that comes back with an error used to be turned into an empty
-        array here, so a database refusing to hand over `profiles` looked
-        exactly like a database with nobody in it: the signed-in person
-        vanished, every page drew as a guest, and the only clue was a 500 in a
-        panel nobody had open. Now the failures come back with the data and the
-        caller decides — which, for a table it already holds a copy of, is to
-        keep the copy and say so out loud. */
-    hydrate: function () {
+        It used to be one Promise.all over twenty tables, and the page drew
+        nothing until the slowest of the twenty came back. Now the seven that
+        almost every screen needs are their own wave: the directory, the
+        catalogue and the prices land, the page draws, and the rest — a
+        client's own requests, the blog, the desk's ledgers — arrive behind
+        them and redraw what they touch.
+
+        Keyed by name rather than by position. The previous version read its
+        results out of an array by index, which is a quiet way to hand the
+        blog the reviews the first time somebody inserts a table in the
+        middle. */
+    CORE: ["profiles", "services", "service_types", "price_bands",
+           "platform_settings", "reviews", "announcements"],
+    REST: ["requests", "articles", "comments", "endorsements", "agreements",
+           "disputes", "notifications", "audit_log", "subscriptions",
+           "operating_costs", "partners", "quotes", "offers", "contacts"],
+
+    hydrate: function (names) {
       return load().then(function (sb) {
-        var names = ["profiles", "services", "requests", "articles", "reviews",
-                     "comments", "endorsements", "agreements", "disputes",
-                     "notifications", "platform_settings", "audit_log",
-                     "price_bands", "announcements", "subscriptions",
-                     "operating_costs", "partners", "service_types", "quotes",
-                     "offers"];
-        return Promise.all([
-          sb.from("profiles").select("*"),
-          sb.from("services").select("*"),
-          sb.from("requests").select("*"),
-          sb.from("articles").select("*"),
-          sb.from("reviews").select("*"),
-          sb.from("comments").select("*"),
-          sb.from("endorsements").select("*"),
-          sb.from("agreements").select("*"),
-          sb.from("disputes").select("*"),
-          sb.from("notifications").select("*"),
-          sb.from("platform_settings").select("*").eq("id", 1).maybeSingle(),
-          // Only staff may read the record; for everyone else this comes back
-          // empty and the desk they cannot open stays empty with it.
-          sb.from("audit_log").select("*").order("at", { ascending: false }).limit(200),
-          sb.from("price_bands").select("*"),
-          sb.from("announcements").select("*").order("created_at", { ascending: false }),
-          sb.from("subscriptions").select("*"),
-          // Costs and partners are staff-only; for everyone else these come
-          // back empty, which is exactly what an ordinary account should see.
-          sb.from("operating_costs").select("*").order("created_at", { ascending: false }),
-          sb.from("partners").select("*").order("created_at"),
-          sb.from("service_types").select("*").order("sort"),
-          sb.from("quotes").select("*").order("created_at", { ascending: false }),
-          sb.from("offers").select("*"),
-        ]).then(function (r) {
-          var failed = [];
-          var pick = function (i) {
-            var x = r[i];
-            if (x && x.error) {
-              failed.push({ table: names[i], code: x.error.code || "",
-                            message: x.error.message || String(x.error) });
-              return null;                 // not [] — "we do not know" is not "none"
-            }
-            return (x && x.data) || [];
-          };
-          var people = pick(0);
-          return {
-            profiles: people && people.map(toProfile),
-            services: pick(1), requests: pick(2), articles: pick(3),
-            reviews: pick(4), comments: pick(5),
-            endorsements: pick(6), agreements: pick(7),
-            disputes: pick(8), notices: pick(9),
-            settings: (r[10] && !r[10].error && r[10].data) || null,
-            audit: pick(11),
-            bands: pick(12), announcements: pick(13), subscriptions: pick(14),
-            costs: pick(15), partners: pick(16),
-            types: pick(17), quotes: pick(18), offers: pick(19),
-            errors: failed,
-          };
-        });
+        var want = names || SB.CORE.concat(SB.REST);
+        var query = {
+          profiles:         function () { return sb.from("profiles").select(PUBLIC_PROFILE); },
+          services:         function () { return sb.from("services").select("*"); },
+          service_types:    function () { return sb.from("service_types").select("*").order("sort"); },
+          price_bands:      function () { return sb.from("price_bands").select("*"); },
+          platform_settings:function () { return sb.from("platform_settings").select("*").eq("id", 1).maybeSingle(); },
+          reviews:          function () { return sb.from("reviews").select("*").limit(500); },
+          announcements:    function () { return sb.from("announcements").select("*").order("created_at", { ascending: false }).limit(50); },
+          requests:         function () { return sb.from("requests").select("*").order("created_at", { ascending: false }).limit(500); },
+          articles:         function () { return sb.from("articles").select("*").limit(200); },
+          comments:         function () { return sb.from("comments").select("*").limit(500); },
+          endorsements:     function () { return sb.from("endorsements").select("*").limit(500); },
+          agreements:       function () { return sb.from("agreements").select("*"); },
+          disputes:         function () { return sb.from("disputes").select("*"); },
+          // Only staff may read the record; for everyone else these come back
+          // empty, which is exactly what an ordinary account should see.
+          notifications:    function () { return sb.from("notifications").select("*").order("at", { ascending: false }).limit(100); },
+          audit_log:        function () { return sb.from("audit_log").select("*").order("at", { ascending: false }).limit(200); },
+          subscriptions:    function () { return sb.from("subscriptions").select("*"); },
+          operating_costs:  function () { return sb.from("operating_costs").select("*").order("created_at", { ascending: false }); },
+          partners:         function () { return sb.from("partners").select("*").order("created_at"); },
+          quotes:           function () { return sb.from("quotes").select("*").order("created_at", { ascending: false }).limit(200); },
+          offers:           function () { return sb.from("offers").select("*").limit(1000); },
+          // Staff-only, and it says so inside the function rather than
+          // trusting the caller. Everyone else gets an empty list.
+          contacts:         function () { return sb.rpc("contact_book"); },
+        };
+
+        return Promise.all(want.map(function (name) { return query[name](); }))
+          .then(function (results) {
+            var rows = {}, errors = [];
+            want.forEach(function (name, i) {
+              var res = results[i];
+              if (res && res.error) {
+                errors.push({ table: name, code: res.error.code || "",
+                              message: res.error.message || String(res.error) });
+                rows[name] = null;        // not [] — "we do not know" is not "none"
+                return;
+              }
+              // One row, not a list — and a project without it should read
+              // as "no settings", not as an empty list of them.
+              rows[name] = name === "platform_settings"
+                ? ((res && res.data) || null)
+                : ((res && res.data) || []);
+            });
+            return { rows: rows, errors: errors, wave: want };
+          });
       });
     },
   };

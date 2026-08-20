@@ -204,7 +204,7 @@ Pages.define("verify", function (global) {
       /^sb_secret_/.test(cfg.anonKey || "") ? "المفتاح السري في الصفحة — أبطله الآن" : "");
 
     r = add("تحميل مكتبة supabase-js");
-    try { sb = await global.SB.load(); settle(r, true); }
+    try { sb = await global.SB.lib(); settle(r, true); }
     catch (e) { settle(r, false, String(e && e.message || e)); running = false; draw(); return; }
 
     r = add("الوصول إلى المشروع (قراءة نطاقات الأسعار)");
@@ -366,7 +366,7 @@ Pages.define("verify", function (global) {
      counted. */
   function checkGoogle() {
     if (!global.SB.hasKeys()) return;
-    global.SB.load().then(function (sb) {
+    global.SB.lib().then(function (sb) {
       return sb.auth.getSession().then(function (res) {
         var session = res.data && res.data.session;
         if (!session) return;

@@ -99,30 +99,53 @@ function boot(rows = {}) {
       const f = (v) => (v && typeof v === 'object' ? (v.ar || v.en || null) : (v ?? null));
       return { full_name: f(d.name), phone: d.phone || null, bio: f(d.bio) };
     },
-    hydrate: () => {
+    CORE: ['profiles', 'services', 'service_types', 'price_bands',
+           'platform_settings', 'reviews', 'announcements'],
+    REST: ['requests', 'articles', 'comments', 'endorsements', 'agreements',
+           'disputes', 'notifications', 'audit_log', 'subscriptions',
+           'operating_costs', 'partners', 'quotes', 'offers'],
+    hydrate: (names) => {
       hydrated++;
+      const all = {
+        profiles: rows.profiles || [], services: rows.services || [],
+        service_types: rows.types || [], price_bands: rows.bands || [],
+        platform_settings: rows.settings || null,
+        reviews: [], announcements: [],
+        requests: rows.requests || [], articles: rows.articles || [],
+        comments: [], endorsements: [], agreements: rows.agreements || [],
+        disputes: rows.disputes || [], notifications: rows.notices || [],
+        audit_log: rows.audit || [], subscriptions: [],
+        operating_costs: [], partners: [],
+        quotes: rows.quotes || [], offers: rows.offers || [],
+      };
+      const want = names || Object.keys(all);
+      const out = {};
       // What the 500 looked like from in here: the read did not come back
       // empty, it did not come back at all.
-      if (rows.failFrom && hydrated >= rows.failFrom) {
-        return Promise.resolve({
-          profiles: null, services: null, requests: null, articles: null,
-          reviews: null, comments: null, endorsements: null, agreements: null,
-          disputes: null, notices: null, audit: null, settings: null,
-          types: null, quotes: null, offers: null, bands: null,
-          errors: [{ table: 'profiles', code: '42P17',
-                     message: 'infinite recursion detected in policy for relation "profiles"' }],
-        });
-      }
+      const broken = rows.failFrom && hydrated >= rows.failFrom;
+      want.forEach((n) => { out[n] = broken ? null : all[n]; });
       return Promise.resolve({
-        profiles: rows.profiles || [], services: rows.services || [],
-        requests: rows.requests || [], articles: rows.articles || [],
-        reviews: [], comments: [], endorsements: [], agreements: rows.agreements || [],
-        disputes: rows.disputes || [], notices: rows.notices || [],
-        audit: rows.audit || [], settings: rows.settings || null,
-        types: rows.types || [], quotes: rows.quotes || [], offers: rows.offers || [],
-        errors: rows.errors || [],
+        rows: out,
+        wave: want,
+        errors: broken && want.includes('profiles')
+          ? [{ table: 'profiles', code: '42P17',
+               message: 'infinite recursion detected in policy for relation "profiles"' }]
+          : (rows.errors || []),
       });
     },
+    toProfile: (row) => ({
+      id: row.id, name: { ar: row.full_name || '', en: row.full_name || '' },
+      email: row.email || '', roles: row.roles || ['client'],
+      activeRole: row.active_role || (row.roles || ['client'])[0],
+      status: row.status || 'pending', onboarded: !!row.onboarded,
+      autoBid: !!row.auto_bid, phone: row.phone || '', city: row.city || '',
+      specialties: row.specialties || [], years: row.years || 0,
+      bio: { ar: '', en: '' }, title: { ar: '', en: '' }, avatar: null,
+      licence: null, university: { ar: '', en: '' }, level: { ar: '', en: '' },
+      skills: [], completed: 0, responseHours: 12,
+      seedRating: 0, seedReviews: 0, seedHours: 0,
+      featuredRank: row.featured_rank == null ? null : row.featured_rank,
+    }),
   };
 
   new Function('window', 'document', 'localStorage', 'sessionStorage', 'console',
@@ -162,7 +185,8 @@ section('A READ THAT FAILED IS NOT A READ THAT CAME BACK EMPTY');
   const { S } = boot({
     profiles: [{ id: 'p1', full_name: 'اسم', roles: ['client'] }],
     requests: [{ id: 'r1', client_id: 'p1', type_id: 'consult', title: 't', price: '10' }],
-    failFrom: 2,
+    // Each Store.hydrate() is two waves, so the second call is the third read.
+    failFrom: 3,
   });
   await S.hydrate();
   ok('a good read fills the cache', S.signups().length === 1 && S.requests().length === 1);

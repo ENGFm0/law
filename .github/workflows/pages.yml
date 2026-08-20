@@ -49,6 +49,21 @@ jobs:
           cp dist/sanad.html _site/dist/
           touch _site/.nojekyll   # keep Jekyll from filtering files
 
+      - name: Stamp the asset URLs with this commit
+        run: |
+          # GitHub Pages serves everything with a ten-minute cache and no way
+          # to set headers, so a browser that has the new HTML can still be
+          # running the previous release's JavaScript. That mix is worse than
+          # either version on its own: it looks like data failing to arrive,
+          # and it goes away when you open the inspector, because the
+          # inspector disables the cache. A version on every URL makes the two
+          # halves of a release arrive together.
+          V="${GITHUB_SHA::7}"
+          find _site -maxdepth 1 -name '*.html' -print0 | xargs -0 sed -i \
+            -e "s|\(src=\"assets/[^\"?]*\.js\)\"|\1?v=$V\"|g" \
+            -e "s|\(href=\"assets/[^\"?]*\.css\)\"|\1?v=$V\"|g"
+          grep -c "?v=$V" _site/index.html
+
       - name: Push to gh-pages
         run: |
           cd _site
