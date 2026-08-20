@@ -465,6 +465,63 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .header-actions { margin-inline-start: auto; }
 }
 
+/* ---------- 11a0. The staff console ---------- */
+.adm-tabs {
+  display: flex; gap: var(--s-1); margin-bottom: var(--s-6);
+  overflow-x: auto; scrollbar-width: none;
+  border-bottom: 1px solid var(--border);
+}
+.adm-tabs::-webkit-scrollbar { display: none; }
+.adm-tab {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  padding: var(--s-3) var(--s-4); white-space: nowrap;
+  font-size: .9375rem; font-weight: 600; color: var(--text-muted);
+  border-block-end: 2px solid transparent; margin-block-end: -1px;
+  transition: color .18s, border-color .18s;
+}
+.adm-tab:hover { color: var(--text); }
+.adm-tab.is-active { color: var(--text); border-block-end-color: var(--accent); }
+
+.kpi-grid {
+  display: grid; gap: var(--s-4);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.kpi {
+  display: flex; flex-direction: column; gap: var(--s-2);
+  padding: var(--s-5); border-radius: var(--r-lg);
+  background: var(--surface); border: 1px solid var(--border);
+}
+.kpi__label { font-size: .75rem; color: var(--text-faint); font-weight: 600; }
+.kpi__value { font-size: 1.375rem; letter-spacing: -.02em; }
+/* Tone is carried by a rule down one edge rather than by tinting the whole
+   card: a wall of coloured blocks tells you nothing about which one matters. */
+.kpi--good { border-inline-start: 3px solid var(--success); }
+.kpi--bad  { border-inline-start: 3px solid var(--danger); }
+.kpi--warn { border-inline-start: 3px solid var(--warning); }
+
+.admin-card { margin-bottom: var(--s-3); }
+.admin-line {
+  padding-block: var(--s-3);
+  border-block-end: 1px solid var(--border);
+}
+.admin-line:last-child { border-block-end: 0; }
+
+@media (max-width: 640px) {
+  .kpi { padding: var(--s-4); }
+  .kpi__value { font-size: 1.125rem; }
+  .adm-tab { padding: var(--s-3) var(--s-3); font-size: .875rem; }
+}
+
+/* ---------- 11a0b. What the platform is saying ---------- */
+.announce {
+  display: flex; align-items: flex-start; gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  background: var(--accent-soft); color: var(--accent-soft-text);
+  border-block-end: 1px solid var(--border);
+}
+.announce__body { font-size: .875rem; }
+.announce a { font-weight: 700; text-decoration: underline; }
+
 /* ---------- 11a1. When the backend cannot be reached ---------- */
 .offline-bar {
   position: fixed; inset-inline: 0; inset-block-start: 0; z-index: 200;
@@ -2625,6 +2682,111 @@ window.SANAD_CONFIG = {
       /* --- when the provider sends back an error --- */
       "sys.authFailed": "لم يكتمل تسجيل الدخول",
       "sys.authRetry": "حاول مرة أخرى",
+
+      /* --- the staff console --- */
+      "adm.tabOverview": "نظرة عامة",
+      "adm.tabPeople": "الأشخاص",
+      "adm.tabRequests": "الطلبات",
+      "adm.tabMoney": "المالية",
+      "adm.tabAds": "الإعلانات",
+      "adm.tabSettings": "الإعدادات",
+      "adm.kpiOrders": "طلبات محتسبة",
+      "adm.kpiVolume": "ما دفعه العملاء",
+      "adm.kpiRevenue": "إيراد المنصة",
+      "adm.kpiProfit": "الصافي بعد كل شيء",
+      "adm.kpiPending": "بانتظار الاعتماد",
+      "adm.kpiDisputes": "نزاعات مفتوحة",
+      "adm.needsYou": "يحتاج قرارك",
+      "adm.allClear": "لا شيء ينتظر قرارك.",
+      "adm.window": "المدة",
+      "adm.month1": "شهر",
+      "adm.month3": "٣ أشهر",
+      "adm.month12": "سنة",
+      "adm.people": "الأشخاص",
+      "adm.peopleLead": "كل من سجّل في المنصة. الاعتماد من هنا، والترتيب في الدليل كذلك.",
+      "adm.filterAll": "الكل",
+      "adm.filterLawyers": "المحامون",
+      "adm.filterInterns": "المتدربون",
+      "adm.filterClients": "العملاء",
+      "adm.filterPending": "بانتظار الاعتماد",
+      "adm.noPeople": "لا أحد هنا.",
+      "adm.search": "بحث بالاسم أو البريد",
+      "adm.feature": "تمييز",
+      "adm.unfeature": "إلغاء التمييز",
+      "adm.featured": "مميّز",
+      "adm.featuredAt": "مميّز — المركز {n}",
+      "adm.aiOn": "الصياغة مفعّلة",
+      "adm.aiOff": "تفعيل الصياغة",
+      "adm.aiGranted": "فُعّلت الصياغة لهذا المحامي.",
+      "adm.aiRevoked": "أُوقفت الصياغة.",
+      "adm.requests": "الطلبات",
+      "adm.requestsLead": "كل طلب على المنصة وحالته وقيمته.",
+      "adm.noRequests": "لا طلبات بعد.",
+      "adm.client": "العميل",
+      "adm.lawyer": "المحامي",
+      "adm.value": "القيمة",
+      "adm.money": "المالية",
+      "adm.moneyLead": "من أين جاء المال، وإلى أين ذهب، وما بقي.",
+      "adm.inflow": "الداخل",
+      "adm.outflow": "الخارج",
+      "adm.toLawyers": "إلى المحامين",
+      "adm.toTrainees": "إلى المتدربين",
+      "adm.commission": "عمولتنا",
+      "adm.subs": "اشتراكات الصياغة",
+      "adm.gateway": "رسوم البوّابة",
+      "adm.gatewayNote": "تُحسب على كامل ما دفعه العميل لا على عمولتنا — ولهذا العمولة لا تصل إلينا كاملة.",
+      "adm.costs": "التكاليف التشغيلية",
+      "adm.profit": "الصافي",
+      "adm.costName": "البند",
+      "adm.costAmount": "المبلغ",
+      "adm.costPeriod": "التكرار",
+      "adm.perOnce": "مرة واحدة",
+      "adm.perMonthly": "شهري",
+      "adm.perQuarterly": "ربع سنوي",
+      "adm.perYearly": "سنوي",
+      "adm.addCost": "إضافة بند",
+      "adm.noCosts": "لا تكاليف مسجّلة.",
+      "adm.perMonth": "يعادل شهرياً",
+      "adm.partners": "الشركاء",
+      "adm.partnersLead": "الصافي يُقسَّم بهذه النسب. ما لا تغطّيه النسب يبقى للمنصة ويظهر أدناه.",
+      "adm.partnerName": "الاسم",
+      "adm.share": "النسبة %",
+      "adm.addPartner": "إضافة شريك",
+      "adm.noPartners": "لا شركاء مسجّلون.",
+      "adm.unassigned": "غير موزّع",
+      "adm.sharesOver": "مجموع النسب يتجاوز ١٠٠٪.",
+      "adm.ads": "الإعلانات",
+      "adm.adsLead": "يظهر أعلى الموقع لمن تختاره.",
+      "adm.adTitle": "العنوان",
+      "adm.adBody": "النص",
+      "adm.adLink": "رابط (اختياري)",
+      "adm.adAudience": "لمن يظهر",
+      "adm.audAll": "الجميع",
+      "adm.addAd": "نشر",
+      "adm.noAds": "لا إعلانات.",
+      "adm.adLive": "ظاهر",
+      "adm.adHidden": "مخفي",
+      "adm.hide": "إخفاء",
+      "adm.show": "إظهار",
+      "adm.remove": "حذف",
+      "adm.needTitle": "اكتب عنوان الإعلان.",
+      "adm.bands": "نطاقات الأسعار",
+      "adm.bandsLead": "المحامي يسعّر داخل هذه الحدود ولا يخرج عنها.",
+      "adm.min": "الأدنى",
+      "adm.max": "الأعلى",
+      "adm.rates": "رسوم البوّابة",
+      "adm.ratesLead": "ما تخصمه البوّابة. الصافي أعلاه محسوب منها، فبقاؤها قديمة يجعل الأرقام كاذبة.",
+      "adm.madaPct": "مدى %",
+      "adm.madaFixed": "مدى — ثابت",
+      "adm.cardPct": "بطاقة ائتمانية %",
+      "adm.cardFixed": "ائتمانية — ثابت",
+      "adm.madaShare": "نسبة الدفع عبر مدى %",
+      "adm.madaShareNote": "تقدير للمزيج، يُستعمل في حساب الرسوم.",
+      "adm.aiPrice": "سعر اشتراك الصياغة",
+      "adm.saved": "حُفظ.",
+
+      /* --- the drafting workspace is sold, not given --- */
+      "ai.needsSub": "مساحة الصياغة اشتراك للمحامين. تواصل مع إدارة المنصة لتفعيلها لحسابك.",
     },
 
     en: {
@@ -3669,6 +3831,111 @@ window.SANAD_CONFIG = {
       /* --- when the provider sends back an error --- */
       "sys.authFailed": "Sign-in did not complete",
       "sys.authRetry": "Try again",
+
+      /* --- the staff console --- */
+      "adm.tabOverview": "Overview",
+      "adm.tabPeople": "People",
+      "adm.tabRequests": "Requests",
+      "adm.tabMoney": "Money",
+      "adm.tabAds": "Announcements",
+      "adm.tabSettings": "Settings",
+      "adm.kpiOrders": "Orders counted",
+      "adm.kpiVolume": "Paid by clients",
+      "adm.kpiRevenue": "Platform revenue",
+      "adm.kpiProfit": "Net, after everything",
+      "adm.kpiPending": "Waiting on you",
+      "adm.kpiDisputes": "Open disputes",
+      "adm.needsYou": "Waiting on you",
+      "adm.allClear": "Nothing is waiting on you.",
+      "adm.window": "Period",
+      "adm.month1": "1 month",
+      "adm.month3": "3 months",
+      "adm.month12": "12 months",
+      "adm.people": "People",
+      "adm.peopleLead": "Everyone who has registered. Approving happens here, and so does placement.",
+      "adm.filterAll": "All",
+      "adm.filterLawyers": "Lawyers",
+      "adm.filterInterns": "Trainees",
+      "adm.filterClients": "Clients",
+      "adm.filterPending": "Pending",
+      "adm.noPeople": "Nobody here.",
+      "adm.search": "Search by name or email",
+      "adm.feature": "Feature",
+      "adm.unfeature": "Unfeature",
+      "adm.featured": "Featured",
+      "adm.featuredAt": "Featured — position {n}",
+      "adm.aiOn": "Drafting on",
+      "adm.aiOff": "Enable drafting",
+      "adm.aiGranted": "Drafting enabled for this lawyer.",
+      "adm.aiRevoked": "Drafting switched off.",
+      "adm.requests": "Requests",
+      "adm.requestsLead": "Every request, its state and what it is worth.",
+      "adm.noRequests": "No requests yet.",
+      "adm.client": "Client",
+      "adm.lawyer": "Lawyer",
+      "adm.value": "Value",
+      "adm.money": "Money",
+      "adm.moneyLead": "Where the money came from, where it went, what is left.",
+      "adm.inflow": "In",
+      "adm.outflow": "Out",
+      "adm.toLawyers": "To lawyers",
+      "adm.toTrainees": "To trainees",
+      "adm.commission": "Our commission",
+      "adm.subs": "Drafting subscriptions",
+      "adm.gateway": "Gateway fees",
+      "adm.gatewayNote": "Charged on everything the client paid, not on our share — which is why the commission does not arrive whole.",
+      "adm.costs": "Operating costs",
+      "adm.profit": "Net",
+      "adm.costName": "Item",
+      "adm.costAmount": "Amount",
+      "adm.costPeriod": "Recurs",
+      "adm.perOnce": "Once",
+      "adm.perMonthly": "Monthly",
+      "adm.perQuarterly": "Quarterly",
+      "adm.perYearly": "Yearly",
+      "adm.addCost": "Add item",
+      "adm.noCosts": "No costs recorded.",
+      "adm.perMonth": "Per month",
+      "adm.partners": "Partners",
+      "adm.partnersLead": "The net is divided by these shares. Whatever they do not cover stays with the platform and is shown below.",
+      "adm.partnerName": "Name",
+      "adm.share": "Share %",
+      "adm.addPartner": "Add partner",
+      "adm.noPartners": "No partners recorded.",
+      "adm.unassigned": "Unassigned",
+      "adm.sharesOver": "The shares add up to more than 100%.",
+      "adm.ads": "Announcements",
+      "adm.adsLead": "Shown at the top of the site to whoever you choose.",
+      "adm.adTitle": "Title",
+      "adm.adBody": "Body",
+      "adm.adLink": "Link (optional)",
+      "adm.adAudience": "Shown to",
+      "adm.audAll": "Everyone",
+      "adm.addAd": "Publish",
+      "adm.noAds": "No announcements.",
+      "adm.adLive": "Live",
+      "adm.adHidden": "Hidden",
+      "adm.hide": "Hide",
+      "adm.show": "Show",
+      "adm.remove": "Remove",
+      "adm.needTitle": "Give the announcement a title.",
+      "adm.bands": "Price bands",
+      "adm.bandsLead": "A lawyer prices inside these limits and cannot leave them.",
+      "adm.min": "Lowest",
+      "adm.max": "Highest",
+      "adm.rates": "Gateway rates",
+      "adm.ratesLead": "What the gateway deducts. The net above is computed from these, so leaving them stale makes the figures lie.",
+      "adm.madaPct": "mada %",
+      "adm.madaFixed": "mada fixed",
+      "adm.cardPct": "Credit card %",
+      "adm.cardFixed": "Card fixed",
+      "adm.madaShare": "Share paid via mada %",
+      "adm.madaShareNote": "An estimate of the mix, used to work the fees out.",
+      "adm.aiPrice": "Drafting subscription price",
+      "adm.saved": "Saved.",
+
+      /* --- the drafting workspace is sold, not given --- */
+      "ai.needsSub": "The drafting workspace is a subscription for lawyers. Ask the platform to enable it on your account.",
     }
   };
 
@@ -3823,10 +4090,12 @@ window.SANAD_CONFIG = {
   [
     "requests", "requestStates", "services", "removedServices", "reviews",
     "articles", "articleStates", "comments", "endorsements", "applications",
-    "agreements", "disputes", "audit", "profiles", "notices"
+    "agreements", "disputes", "audit", "profiles", "notices",
+    "announcements", "subscriptions", "costs", "partners", "bands"
   ].forEach(function (k) {
     if (!work[k]) {
-      work[k] = (k.indexOf("States") !== -1 || k === "applications" || k === "profiles")
+      work[k] = (k.indexOf("States") !== -1 || k === "applications" ||
+                 k === "profiles" || k === "bands")
         ? {} : [];
     }
   });
@@ -4088,6 +4357,75 @@ window.SANAD_CONFIG = {
       notify();
     },
 
+    /* ---------------- what the platform runs on ----------------
+       Announcements, the drafting subscription, the running costs and who
+       shares what is left. All four are the platform talking about itself, so
+       all four are written from one place and read from wherever they belong. */
+    announcements: function () { return work.announcements; },
+    addAnnouncement: function (a) {
+      a.id = uid("an");
+      a.at = Date.now();
+      if (a.active === undefined) a.active = true;
+      work.announcements.unshift(a);
+      notify();
+      return a;
+    },
+    setAnnouncement: function (id, patch) {
+      work.announcements.forEach(function (a) {
+        if (a.id === id) Object.keys(patch).forEach(function (k) { a[k] = patch[k]; });
+      });
+      notify();
+    },
+    removeAnnouncement: function (id) {
+      work.announcements = work.announcements.filter(function (a) { return a.id !== id; });
+      notify();
+    },
+
+    subscriptions: function () { return work.subscriptions; },
+    setSubscription: function (lawyerId, sub) {
+      var found = null;
+      work.subscriptions.forEach(function (s) { if (s.lawyerId === lawyerId) found = s; });
+      if (!found) {
+        found = { id: uid("sub"), lawyerId: lawyerId, plan: "ai", startedAt: Date.now() };
+        work.subscriptions.push(found);
+      }
+      Object.keys(sub || {}).forEach(function (k) { found[k] = sub[k]; });
+      notify();
+      return found;
+    },
+
+    costs: function () { return work.costs; },
+    addCost: function (c) {
+      c.id = uid("cost");
+      c.at = Date.now();
+      work.costs.unshift(c);
+      notify();
+      return c;
+    },
+    removeCost: function (id) {
+      work.costs = work.costs.filter(function (c) { return c.id !== id; });
+      notify();
+    },
+
+    partners: function () { return work.partners; },
+    addPartner: function (p) {
+      p.id = uid("prt");
+      work.partners.push(p);
+      notify();
+      return p;
+    },
+    removePartner: function (id) {
+      work.partners = work.partners.filter(function (p) { return p.id !== id; });
+      notify();
+    },
+
+    /** Price bands the platform publishes, overriding the seeded defaults. */
+    bands: function () { return work.bands; },
+    setBand: function (typeId, band) {
+      work.bands[typeId] = { min: band.min, max: band.max };
+      notify();
+    },
+
     /* ---------------- the audit trail ----------------
        Approvals, rejections and decisions are written down because the point
        of them is that somebody can be asked afterwards why. Append only. */
@@ -4205,7 +4543,8 @@ window.SANAD_CONFIG = {
       work = { requests: [], requestStates: {}, services: [], removedServices: [],
                reviews: [], articles: [], articleStates: {}, comments: [],
                endorsements: [], applications: {}, agreements: [], disputes: [],
-               audit: [], profiles: {}, notices: [] };
+               audit: [], profiles: {}, notices: [],
+               announcements: [], subscriptions: [], costs: [], partners: [], bands: {} };
       notify();
     },
     resetAll: function () {
@@ -5076,7 +5415,11 @@ window.SANAD_CONFIG = {
     return (t && t.icon) || "tag";
   }
 
+  /** The band a service must be priced inside. The seed carries a default and
+      staff may move it; whatever the platform last published wins. */
   function priceBand(typeId) {
+    var set = (Store.bands && Store.bands()) || {};
+    if (set[typeId]) return { min: set[typeId].min, max: set[typeId].max };
     var t = serviceType(typeId);
     return t ? { min: t.minPrice, max: t.maxPrice } : { min: 0, max: 0 };
   }
@@ -5227,10 +5570,18 @@ window.SANAD_CONFIG = {
       charge, and switching it on later is this setting, not a rebuild. */
   function platformSettings() {
     var s = Store.settings() || {};
+    var n = function (v, d) { return v == null || isNaN(v) ? d : Number(v); };
     return {
       commissionPct: clampCommission(s.commissionPct),
       vatEnabled: !!s.vatEnabled,
-      vatPct: s.vatPct == null ? DEFAULT_VAT_PCT : Math.max(0, Math.min(100, s.vatPct))
+      vatPct: s.vatPct == null ? DEFAULT_VAT_PCT : Math.max(0, Math.min(100, s.vatPct)),
+      // What the gateway takes, per scheme. Settings rather than constants:
+      // they are negotiated, they differ by card, and profit reported from a
+      // stale figure is worse than profit not reported at all.
+      madaPct: n(s.madaPct, 1.5), madaFixed: n(s.madaFixed, 1),
+      cardPct: n(s.cardPct, 2.2), cardFixed: n(s.cardFixed, 1),
+      madaSharePct: Math.max(0, Math.min(100, n(s.madaSharePct, 70))),
+      aiPrice: n(s.aiPrice, 199)
     };
   }
 
@@ -5389,6 +5740,145 @@ window.SANAD_CONFIG = {
     };
   }
 
+  /* ---------- placement, subscriptions and announcements ---------- */
+
+  /** Lawyers the platform is putting in front of people, in the order it
+      chose. A rank rather than a flag, because "first" is an ordering. */
+  function featured() {
+    var now = Date.now();
+    return listedLawyers().filter(function (u) {
+      if (u.featuredRank == null) return false;
+      return !u.featuredUntil || new Date(u.featuredUntil).getTime() > now;
+    }).sort(function (a, b) { return a.featuredRank - b.featuredRank; });
+  }
+
+  /** The directory order: placed lawyers first, then everyone else as before. */
+  function byPlacement(list) {
+    var rank = {};
+    featured().forEach(function (u, i) { rank[u.id] = i; });
+    return list.slice().sort(function (a, b) {
+      var ra = rank[a.id], rb = rank[b.id];
+      if (ra != null && rb != null) return ra - rb;
+      if (ra != null) return -1;
+      if (rb != null) return 1;
+      return 0;
+    });
+  }
+
+  function subscriptionOf(lawyerId) {
+    var all = (Store.subscriptions && Store.subscriptions()) || [];
+    var now = Date.now();
+    for (var i = 0; i < all.length; i++) {
+      var s = all[i];
+      if (s.lawyerId !== lawyerId || s.plan !== "ai") continue;
+      var live = s.active !== false && (!s.endsAt || new Date(s.endsAt).getTime() > now);
+      return { sub: s, active: live };
+    }
+    return { sub: null, active: false };
+  }
+
+  /** The drafting workspace is sold, not given. Staff never need it and are
+      not sold it; a lawyer needs a live subscription. */
+  function canDraft(userId) {
+    var u = user(userId);
+    if (!u) return false;
+    if ((u.roles || []).indexOf("lawyer") === -1) return false;
+    return subscriptionOf(userId).active;
+  }
+
+  function announcementsFor(role) {
+    var now = Date.now();
+    return ((Store.announcements && Store.announcements()) || []).filter(function (a) {
+      if (!a.active) return false;
+      if (a.audience && a.audience !== "all" && a.audience !== role) return false;
+      if (a.startsAt && new Date(a.startsAt).getTime() > now) return false;
+      if (a.endsAt && new Date(a.endsAt).getTime() < now) return false;
+      return true;
+    });
+  }
+
+  /* ---------- the books ----------
+     Everything in halalas, and every figure derived from the requests that
+     actually completed rather than from a running total somebody has to
+     remember to update. */
+
+  /** A cost expressed as what it comes to over one month, so a yearly licence
+      and a monthly server can be added together and mean something. */
+  var PER_MONTH = { once: 0, monthly: 1, quarterly: 1 / 3, yearly: 1 / 12 };
+
+  function monthlyCost(c) {
+    var amount = Math.round((c.amount || 0) * 100);
+    return Math.round(amount * (PER_MONTH[c.period] == null ? 1 : PER_MONTH[c.period]));
+  }
+
+  /** One-off costs belong to the month they fall in, not to every month. */
+  function costsInWindow(months) {
+    var list = (Store.costs && Store.costs()) || [];
+    return list.reduce(function (total, c) {
+      if (c.period === "once") return total + Math.round((c.amount || 0) * 100);
+      return total + monthlyCost(c) * months;
+    }, 0);
+  }
+
+  /** What the payment gateway takes out of a transaction. It is charged on the
+      whole amount the client paid, not on the platform's share of it — which
+      is why a 10% commission does not leave 10%. */
+  function gatewayFee(clientHalalas, cfg) {
+    var mada = Math.round(clientHalalas * cfg.madaPct / 100) + Math.round(cfg.madaFixed * 100);
+    var card = Math.round(clientHalalas * cfg.cardPct / 100) + Math.round(cfg.cardFixed * 100);
+    var share = cfg.madaSharePct / 100;
+    return Math.round(mada * share + card * (1 - share));
+  }
+
+  /** Every request whose money is real: delivered, accepted or settled. */
+  function earnedRequests() {
+    return requests().filter(function (r) {
+      var st = requestState(r).status;
+      return st === "delivered" || st === "completed";
+    });
+  }
+
+  /** The whole picture, over a window of `months`. */
+  function books(months) {
+    var cfg = platformSettings();
+    var m = months || 1;
+    var out = {
+      months: m, orders: 0,
+      clientPaid: 0, gross: 0, toLawyers: 0, toTrainees: 0,
+      commission: 0, commissionVat: 0, gateway: 0,
+      subscriptions: 0, costs: costsInWindow(m), settings: cfg
+    };
+
+    earnedRequests().forEach(function (r) {
+      var d = distribute(r);
+      out.orders += 1;
+      out.clientPaid += d.client;
+      out.gross += d.gross;
+      out.toLawyers += d.lawyer;
+      out.toTrainees += d.intern;
+      out.commission += d.commission;
+      out.commissionVat += d.commissionVat;
+      out.gateway += gatewayFee(d.client, cfg);
+    });
+
+    // What lawyers pay for the drafting workspace, over the same window.
+    ((Store.subscriptions && Store.subscriptions()) || []).forEach(function (s) {
+      if (s.active === false) return;
+      out.subscriptions += Math.round((s.price || 0) * 100) * m;
+    });
+
+    out.revenue = out.commission + out.subscriptions;
+    out.profit = out.revenue - out.gateway - out.costs;
+    out.partners = ((Store.partners && Store.partners()) || []).map(function (p) {
+      return { id: p.id, name: p.name, sharePct: p.sharePct,
+               amount: Math.round(out.profit * (p.sharePct || 0) / 100) };
+    });
+    out.assigned = out.partners.reduce(function (t, p) { return t + p.amount; }, 0);
+    // Whatever the partners' shares do not add up to stays with the platform.
+    out.unassigned = out.profit - out.assigned;
+    return out;
+  }
+
   /* ---------- training hours & endorsements ----------
      Hours accumulate from work a lawyer routed to the trainee and that the
      trainee delivered. Past the threshold the supervising lawyer may issue a
@@ -5479,6 +5969,11 @@ window.SANAD_CONFIG = {
     COMMISSION_MAX_PCT: COMMISSION_MAX_PCT, DEFAULT_VAT_PCT: DEFAULT_VAT_PCT,
     clampCommission: clampCommission, platformSettings: platformSettings,
     checkSplit: checkSplit, distribute: distribute,
+    featured: featured, byPlacement: byPlacement,
+    subscriptionOf: subscriptionOf, canDraft: canDraft,
+    announcementsFor: announcementsFor,
+    monthlyCost: monthlyCost, costsInWindow: costsInWindow,
+    gatewayFee: gatewayFee, earnedRequests: earnedRequests, books: books,
     ACCEPT_DAYS: ACCEPT_DAYS, MAX_REVISIONS: MAX_REVISIONS,
     addWorkingDays: addWorkingDays, acceptance: acceptance, settlement: settlement,
     disputeFor: disputeFor, openDisputes: openDisputes,
@@ -5733,6 +6228,8 @@ window.SANAD_CONFIG = {
       roles: row.roles || ["client"],
       activeRole: row.active_role || (row.roles || ["client"])[0],
       status: row.status || "pending",
+      // Where the platform is choosing to place them, if anywhere.
+      featuredRank: row.featured_rank == null ? null : row.featured_rank,
       // Whether they have ever told us who they are. False for an account
       // Google created on their behalf.
       onboarded: !!row.onboarded,
@@ -5763,6 +6260,13 @@ window.SANAD_CONFIG = {
     // Which of the roles they hold they are currently looking through. Never
     // the roles themselves — those are not changed by a profile edit.
     if (data.activeRole !== undefined) row.active_role = data.activeRole;
+    // Approving somebody was the one thing the desk existed to do, and this
+    // column was missing from the list — so it moved the screen and the
+    // database never heard about it, and a refresh put them back in the queue.
+    // Sending it is safe from anywhere: a trigger pins it on your own row and
+    // only a staff policy lets it through on anybody else's.
+    if (data.status !== undefined) row.status = data.status;
+    if (data.featuredRank !== undefined) row.featured_rank = data.featuredRank;
     if (data.role === "lawyer" || (data.roles || []).indexOf("lawyer") !== -1) {
       row.licence_no = data.licenceNumber || null;
       row.licence_authority = flat(data.licenceAuthority);
@@ -5961,6 +6465,13 @@ window.SANAD_CONFIG = {
           // Only staff may read the record; for everyone else this comes back
           // empty and the desk they cannot open stays empty with it.
           sb.from("audit_log").select("*").order("at", { ascending: false }).limit(200),
+          sb.from("price_bands").select("*"),
+          sb.from("announcements").select("*").order("created_at", { ascending: false }),
+          sb.from("subscriptions").select("*"),
+          // Costs and partners are staff-only; for everyone else these come
+          // back empty, which is exactly what an ordinary account should see.
+          sb.from("operating_costs").select("*").order("created_at", { ascending: false }),
+          sb.from("partners").select("*").order("created_at"),
         ]).then(function (r) {
           var pick = function (x) { return (x && !x.error && x.data) || []; };
           return {
@@ -5971,6 +6482,8 @@ window.SANAD_CONFIG = {
             disputes: pick(r[8]), notices: pick(r[9]),
             settings: (r[10] && !r[10].error && r[10].data) || null,
             audit: pick(r[11]),
+            bands: pick(r[12]), announcements: pick(r[13]), subscriptions: pick(r[14]),
+            costs: pick(r[15]), partners: pick(r[16]),
           };
         });
       });
@@ -6071,8 +6584,30 @@ window.SANAD_CONFIG = {
              subject: a.subject, reason: a.reason, at: new Date(a.at).getTime() };
   }
   function inSettings(s) {
-    return s ? { commissionPct: s.commission_pct, vatEnabled: !!s.vat_enabled,
-                 vatPct: s.vat_pct } : {};
+    return s ? {
+      commissionPct: s.commission_pct, vatEnabled: !!s.vat_enabled, vatPct: s.vat_pct,
+      madaPct: Number(s.mada_pct), madaFixed: Number(s.mada_fixed),
+      cardPct: Number(s.card_pct), cardFixed: Number(s.card_fixed),
+      madaSharePct: s.mada_share_pct, aiPrice: Number(s.ai_price)
+    } : {};
+  }
+  function inAnnouncement(a) {
+    return { id: a.id, title: a.title, body: a.body, link: a.link,
+             audience: a.audience, active: !!a.active,
+             startsAt: a.starts_at, endsAt: a.ends_at,
+             at: new Date(a.created_at).getTime() };
+  }
+  function inSubscription(s) {
+    return { id: s.id, lawyerId: s.lawyer_id, plan: s.plan, price: Number(s.price),
+             startedAt: s.started_at, endsAt: s.ends_at, active: !!s.active };
+  }
+  function inCost(c) {
+    return { id: c.id, name: c.name, amount: Number(c.amount), period: c.period,
+             startsAt: c.starts_at, endsAt: c.ends_at, note: c.note,
+             at: new Date(c.created_at).getTime() };
+  }
+  function inPartner(p) {
+    return { id: p.id, name: p.name, sharePct: Number(p.share_pct), note: p.note };
   }
 
   function inAgreement(a) {
@@ -6115,6 +6650,7 @@ window.SANAD_CONFIG = {
     profiles: [], requests: [], services: [], articles: [],
     reviews: [], comments: [], endorsements: [], agreements: [], applications: {},
     disputes: [], notices: [], audit: [], settings: {},
+    announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
   };
   var ready = false;
 
@@ -6354,15 +6890,127 @@ window.SANAD_CONFIG = {
      write through like everything else — the cache moves first so the screen
      answers, the row follows, and a refusal is reported rather than left to
      look like it succeeded. */
+  /* ---------- what the platform runs on ---------- */
+  Store.announcements = function () { return cache.announcements; };
+  Store.addAnnouncement = function (a) {
+    a.at = Date.now();
+    if (a.active === undefined) a.active = true;
+    cache.announcements.unshift(a);
+    Store.notifyAll();
+    push("announcements", { title: a.title, body: a.body || null, link: a.link || null,
+                            audience: a.audience || "all", active: !!a.active,
+                            starts_at: a.startsAt || null, ends_at: a.endsAt || null,
+                            created_by: Store.currentId() })
+      .then(report)
+      .then(function (res) { if (res && res.data) { a.id = res.data.id; Store.notifyAll(); } });
+    return a;
+  };
+  Store.setAnnouncement = function (id, p) {
+    cache.announcements.forEach(function (a) {
+      if (a.id === id) Object.keys(p).forEach(function (k) { a[k] = p[k]; });
+    });
+    Store.notifyAll();
+    var row = {};
+    if ("active" in p) row.active = !!p.active;
+    if ("title" in p) row.title = p.title;
+    if ("body" in p) row.body = p.body;
+    if ("link" in p) row.link = p.link;
+    if ("audience" in p) row.audience = p.audience;
+    if (Object.keys(row).length) patch("announcements", id, row).then(report);
+  };
+  Store.removeAnnouncement = function (id) {
+    cache.announcements = cache.announcements.filter(function (a) { return a.id !== id; });
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("announcements").delete().eq("id", id);
+    }).then(report);
+  };
+
+  Store.subscriptions = function () { return cache.subscriptions; };
+  Store.setSubscription = function (lawyerId, sub) {
+    var found = null;
+    cache.subscriptions.forEach(function (s) { if (s.lawyerId === lawyerId) found = s; });
+    if (!found) {
+      found = { lawyerId: lawyerId, plan: "ai", startedAt: new Date().toISOString() };
+      cache.subscriptions.push(found);
+    }
+    Object.keys(sub || {}).forEach(function (k) { found[k] = sub[k]; });
+    Store.notifyAll();
+    // One per lawyer per plan, so this is an upsert on that pair rather than
+    // a new row each time somebody toggles it.
+    SB.load().then(function (sb) {
+      return sb.from("subscriptions").upsert({
+        lawyer_id: lawyerId, plan: "ai",
+        price: found.price || 0, active: found.active !== false,
+        ends_at: found.endsAt || null, created_by: Store.currentId()
+      }, { onConflict: "lawyer_id,plan" }).select().single();
+    }).then(report).then(function (res) {
+      if (res && res.data) { found.id = res.data.id; Store.notifyAll(); }
+    });
+    return found;
+  };
+
+  Store.costs = function () { return cache.costs; };
+  Store.addCost = function (c) {
+    c.at = Date.now();
+    cache.costs.unshift(c);
+    Store.notifyAll();
+    push("operating_costs", { name: c.name, amount: c.amount, period: c.period,
+                              starts_at: c.startsAt || null, ends_at: c.endsAt || null,
+                              note: c.note || null })
+      .then(report)
+      .then(function (res) { if (res && res.data) { c.id = res.data.id; Store.notifyAll(); } });
+    return c;
+  };
+  Store.removeCost = function (id) {
+    cache.costs = cache.costs.filter(function (c) { return c.id !== id; });
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("operating_costs").delete().eq("id", id);
+    }).then(report);
+  };
+
+  Store.partners = function () { return cache.partners; };
+  Store.addPartner = function (p) {
+    cache.partners.push(p);
+    Store.notifyAll();
+    push("partners", { name: p.name, share_pct: p.sharePct, note: p.note || null })
+      .then(report)
+      .then(function (res) { if (res && res.data) { p.id = res.data.id; Store.notifyAll(); } });
+    return p;
+  };
+  Store.removePartner = function (id) {
+    cache.partners = cache.partners.filter(function (p) { return p.id !== id; });
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("partners").delete().eq("id", id);
+    }).then(report);
+  };
+
+  Store.bands = function () { return cache.bands; };
+  Store.setBand = function (typeId, band) {
+    cache.bands[typeId] = { min: band.min, max: band.max };
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("price_bands").upsert(
+        { type_id: typeId, min_price: band.min, max_price: band.max },
+        { onConflict: "type_id" });
+    }).then(report);
+  };
+
   Store.settings = function () { return cache.settings; };
   Store.setSettings = function (p) {
     Object.keys(p || {}).forEach(function (k) { cache.settings[k] = p[k]; });
     Store.notifyAll();
     SB.load().then(function (sb) {
+      var c = cache.settings;
       return sb.from("platform_settings").update({
-        commission_pct: cache.settings.commissionPct,
-        vat_enabled: !!cache.settings.vatEnabled,
-        vat_pct: cache.settings.vatPct,
+        commission_pct: c.commissionPct,
+        vat_enabled: !!c.vatEnabled,
+        vat_pct: c.vatPct,
+        mada_pct: c.madaPct, mada_fixed: c.madaFixed,
+        card_pct: c.cardPct, card_fixed: c.cardFixed,
+        mada_share_pct: c.madaSharePct, ai_price: c.aiPrice,
         updated_at: new Date().toISOString(),
       }).eq("id", 1);
     }).then(report);
@@ -6471,6 +7119,14 @@ window.SANAD_CONFIG = {
       cache.notices = (d.notices || []).map(inNotice);
       cache.audit = (d.audit || []).map(inAudit);
       cache.settings = inSettings(d.settings);
+      cache.announcements = (d.announcements || []).map(inAnnouncement);
+      cache.subscriptions = (d.subscriptions || []).map(inSubscription);
+      cache.costs = (d.costs || []).map(inCost);
+      cache.partners = (d.partners || []).map(inPartner);
+      cache.bands = {};
+      (d.bands || []).forEach(function (b) {
+        cache.bands[b.type_id] = { min: Number(b.min_price), max: Number(b.max_price) };
+      });
       ready = true;
       keepMe();
       Store.notifyAll();
@@ -7485,13 +8141,33 @@ window.SANAD_CONFIG = {
       "</a>";
   }
 
+  /** What the platform is saying to whoever is reading. Rendered above the
+      header rather than inside a page, because it belongs to the site and not
+      to any one screen. */
+  function announcements() {
+    if (!global.Models || !global.Models.announcementsFor) return "";
+    var list = global.Models.announcementsFor(Session.role());
+    if (!list.length) return "";
+    return list.map(function (a) {
+      var text = global.App.esc(a.title) +
+        (a.body ? ' <span class="muted">' + global.App.esc(a.body) + "</span>" : "");
+      return '<div class="announce" data-announce>' +
+        Icons.svg("bell", "icon-sm") +
+        '<span class="announce__body">' + text +
+          (a.link ? ' <a href="' + global.App.esc(a.link) + '" rel="noopener">' +
+            global.App.esc(I18N.t("notice.open")) + "</a>" : "") +
+        "</span></div>";
+    }).join("");
+  }
+
   function header(active) {
     var links = navItems().map(function (item) {
       return '<a class="nav__link' + (item.id === active ? " is-active" : "") + '" href="' + item.href +
         '" data-i18n="' + item.key + '"' + (item.id === active ? ' aria-current="page"' : "") + "></a>";
     }).join("");
 
-    return '<header class="site-header"><div class="container site-header__inner">' +
+    return announcements() +
+      '<header class="site-header"><div class="container site-header__inner">' +
       brand() +
       '<nav class="nav" data-i18n-attr="aria-label:a11y.menu">' + links + "</nav>" +
       '<div class="header-actions">' + themeButton() + langButton() +
@@ -7573,10 +8249,17 @@ window.SANAD_CONFIG = {
     var oldHeader = document.querySelector(".site-header");
     var oldTab = document.querySelector("[data-tabbar]");
     if (!oldHeader) return;
+    // The announcements sit above the header, so anything left from the last
+    // draw has to go before this one replaces it.
+    document.querySelectorAll("[data-announce]").forEach(function (el) { el.remove(); });
     var holder = document.createElement("div");
     holder.innerHTML = header(page) + tabbar(page);
-    var newHeader = holder.firstChild, newTab = holder.lastChild;
+    var newTab = holder.lastChild;
+    var nodes = [];
+    while (holder.firstChild !== newTab) nodes.push(holder.removeChild(holder.firstChild));
+    var newHeader = nodes[nodes.length - 1];
     oldHeader.replaceWith(newHeader);
+    nodes.slice(0, -1).forEach(function (n) { newHeader.parentNode.insertBefore(n, newHeader); });
     if (oldTab) oldTab.replaceWith(newTab); else document.body.appendChild(newTab);
     if (I18N) { I18N.apply(newHeader); I18N.apply(newTab); }
   }
@@ -9470,7 +10153,7 @@ Pages.define("lawyers", function (global) {
   /* ---------- filtering ---------- */
   function lawyerList() {
     var text = state.q.trim().toLowerCase();
-    return M.listedLawyers().filter(function (u) {
+    var sorted = M.listedLawyers().filter(function (u) {
       if (state.specialty && (u.specialties || []).indexOf(state.specialty) === -1) return false;
       if (state.city && u.city !== state.city) return false;
       if (M.ratingOf(u.id).avg < state.minRating) return false;
@@ -9485,6 +10168,10 @@ Pages.define("lawyers", function (global) {
       if (state.sort === "priceDesc") return cheapest(b) - cheapest(a);
       return M.ratingOf(b.id).avg - M.ratingOf(a.id).avg;
     });
+    // Placement is applied last, over whatever order was asked for: a lawyer
+    // the platform is putting forward stays in front of the list, and the rest
+    // keep the sort the reader chose.
+    return M.byPlacement(sorted);
   }
 
   function cheapest(u) {
@@ -10953,9 +11640,9 @@ Pages.define("assistant", function (global) {
     });
   }
 
-  function gate() {
+  function gate(key) {
     return '<div class="container" style="padding-block:var(--s-16)">' +
-      C.empty("lock", "ai.forLawyers") +
+      C.empty("lock", key || "ai.forLawyers") +
       '<p class="center" style="margin-top:var(--s-6)">' +
         '<a class="btn btn--primary" href="index.html" data-i18n="art.back"></a></p></div>';
   }
@@ -11077,6 +11764,11 @@ Pages.define("assistant", function (global) {
 
   App.onRender(function () {
     if (!Session.is("lawyer")) { host.innerHTML = gate(); I18N.apply(host); return; }
+    // Sold, not given. A lawyer without a live subscription is told what it is
+    // rather than shown an empty workspace they cannot use.
+    if (!M.canDraft(Session.user().id)) {
+      host.innerHTML = gate("ai.needsSub"); I18N.apply(host); return;
+    }
     ensure();
 
     host.innerHTML = '<div class="container" style="padding-block:var(--s-10) var(--s-12)">' +
@@ -12166,32 +12858,54 @@ Pages.define("call", function (global) {
 });
 
 /* ==========================================================================
-   The staff desk.
+   The staff console.
 
-   Three jobs that all come down to the same thing — somebody neutral has to
-   decide, and has to be answerable for it afterwards:
+   Six sections behind one page, because running a platform is not one job:
+   who is allowed in, what is being asked for, where the money went, what the
+   platform is saying to people, and what it charges.
 
-     • who is allowed to work here at all (the licence queue)
-     • what happens to money the client has refused to release (disputes)
-     • what the platform takes, and whether tax is being charged
-
-   Every action here is written to a record that is appended to and never
-   edited, because a decision nobody can be asked about later is not a
-   decision — it is just something that happened.
+   Two rules shape all of it. Every action is written to a record that is
+   appended to and never edited — a decision nobody can be asked about later
+   is not a decision. And every figure is derived from the requests that
+   actually happened rather than from a running total somebody has to remember
+   to update, so the books cannot quietly drift from the work.
    ========================================================================== */
 Pages.define("admin", function (global) {
   "use strict";
 
   var I18N = global.I18N, Icons = global.Icons, M = global.Models,
       App = global.App, Store = global.Store, Session = global.Session, C = global.C;
-  var $ = App.$, esc = App.esc, tx = App.tx;
+  var $ = App.$, $$ = App.$$, esc = App.esc, tx = App.tx;
 
   var host = $("[data-admin]");
   if (!host) return;
 
-  var rejecting = null;    // account id whose rejection reason is being written
-  var deciding = null;     // dispute id being decided
-  var outcome = {};        // disputeId -> release | refund | split
+  var TABS = [
+    { id: "overview", key: "adm.tabOverview", icon: "grid" },
+    { id: "people",   key: "adm.tabPeople",   icon: "user" },
+    { id: "requests", key: "adm.tabRequests", icon: "inbox" },
+    { id: "money",    key: "adm.tabMoney",    icon: "wallet" },
+    { id: "ads",      key: "adm.tabAds",      icon: "bell" },
+    { id: "settings", key: "adm.tabSettings", icon: "settings" }
+  ];
+
+  var tab = App.param("tab") || "overview";
+  var months = 1;
+  var filter = "all";
+  var query = "";
+  var rejecting = null;
+  var outcome = {};
+
+  var sar = function (halalas) {
+    return C.num(Math.round(halalas / 100)) + " " + C.sar();
+  };
+
+  function head(titleKey, leadKey) {
+    return '<header style="margin-bottom:var(--s-6)">' +
+      '<h2 class="subtitle" data-i18n="' + titleKey + '"></h2>' +
+      (leadKey ? '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="' +
+        leadKey + '"></p>' : "") + "</header>";
+  }
 
   function denied() {
     return '<div class="container" style="padding-block:var(--s-16)">' +
@@ -12200,50 +12914,121 @@ Pages.define("admin", function (global) {
         '<a class="btn btn--ghost" href="index.html" data-i18n="nav.home"></a></p></div>';
   }
 
-  /* ------------------------------------------------ the licence queue ---- */
-  function queue() {
+  /* ================================================================ overview */
+  function stat(labelKey, value, tone) {
+    return '<div class="kpi' + (tone ? " kpi--" + tone : "") + '">' +
+      '<span class="kpi__label" data-i18n="' + labelKey + '"></span>' +
+      '<strong class="kpi__value">' + value + "</strong></div>";
+  }
+
+  function windowPicker() {
+    return '<div class="row gap-2 wrap" style="margin-bottom:var(--s-5)">' +
+      '<span class="tiny muted" style="align-self:center" data-i18n="adm.window"></span>' +
+      [[1, "adm.month1"], [3, "adm.month3"], [12, "adm.month12"]].map(function (m) {
+        return '<button class="btn btn--sm ' + (months === m[0] ? "btn--primary" : "btn--outline") +
+          '" type="button" data-months="' + m[0] + '">' + esc(I18N.t(m[1])) + "</button>";
+      }).join("") + "</div>";
+  }
+
+  function overview() {
+    var b = M.books(months);
     var waiting = M.pendingVerification();
-    return '<section class="card card--pad" style="margin-bottom:var(--s-6)">' +
-      '<h2 class="subtitle" data-i18n="admin.queue"></h2>' +
-      '<p class="small muted" style="margin:var(--s-2) 0 var(--s-5)" data-i18n="admin.queueLead"></p>' +
-      (waiting.length
-        ? waiting.map(waitingRow).join("")
-        : '<p class="small muted" data-i18n="admin.queueEmpty"></p>') +
+    var open = M.openDisputes();
+
+    return windowPicker() +
+      '<div class="kpi-grid">' +
+        stat("adm.kpiOrders", C.num(b.orders)) +
+        stat("adm.kpiVolume", sar(b.clientPaid)) +
+        stat("adm.kpiRevenue", sar(b.revenue)) +
+        stat("adm.kpiProfit", sar(b.profit), b.profit < 0 ? "bad" : "good") +
+        stat("adm.kpiPending", C.num(waiting.length), waiting.length ? "warn" : "") +
+        stat("adm.kpiDisputes", C.num(open.length), open.length ? "warn" : "") +
+      "</div>" +
+
+      '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+        head("adm.needsYou") +
+        (waiting.length || open.length
+          ? '<div class="stack gap-3">' +
+              waiting.map(function (u) {
+                return '<div class="row between wrap gap-3 admin-line">' +
+                  '<span class="row gap-3">' + C.avatar(u, "sm") +
+                    "<span><strong>" + esc(tx(u.name)) + "</strong>" +
+                    '<span class="tiny muted" style="display:block">' +
+                      esc(I18N.t(u.roles.indexOf("lawyer") !== -1 ? "role.lawyer" : "role.intern")) +
+                    "</span></span></span>" +
+                  '<a class="btn btn--outline btn--sm" href="admin.html?tab=people">' +
+                    esc(I18N.t("admin.queue")) + "</a></div>";
+              }).join("") +
+              open.map(function (d) {
+                var r = M.request(d.requestId);
+                return '<div class="row between wrap gap-3 admin-line">' +
+                  "<span><strong>" + esc(r ? tx(r.title) : d.requestId) + "</strong>" +
+                  '<span class="tiny muted" style="display:block">' + esc(d.reason) + "</span></span>" +
+                  '<a class="btn btn--outline btn--sm" href="admin.html?tab=requests">' +
+                    esc(I18N.t("admin.decide")) + "</a></div>";
+              }).join("") +
+            "</div>"
+          : '<p class="small muted" data-i18n="adm.allClear"></p>') +
       "</section>";
   }
 
-  function expired(licence) {
-    if (!licence || !licence.expiry) return false;
-    return new Date(licence.expiry).getTime() < Date.now();
+  /* ================================================================== people */
+  function matches(u) {
+    if (filter === "lawyers" && u.roles.indexOf("lawyer") === -1) return false;
+    if (filter === "interns" && u.roles.indexOf("intern") === -1) return false;
+    if (filter === "clients" && u.roles.indexOf("client") === -1) return false;
+    if (filter === "pending" && u.status !== "pending") return false;
+    if (!query) return true;
+    var q = query.toLowerCase();
+    return (tx(u.name) || "").toLowerCase().indexOf(q) !== -1 ||
+           (u.email || "").toLowerCase().indexOf(q) !== -1;
   }
 
-  function waitingRow(u) {
-    var lic = u.licence, lawyer = u.roles.indexOf("lawyer") !== -1;
-    return '<div class="card card--pad" style="margin-bottom:var(--s-3)">' +
+  function people() {
+    var all = M.users().filter(function (u) {
+      return u.roles.indexOf("staff") === -1;
+    }).filter(matches);
+
+    return head("adm.people", "adm.peopleLead") +
+      '<div class="row gap-2 wrap" style="margin-bottom:var(--s-4)">' +
+        [["all","adm.filterAll"],["pending","adm.filterPending"],["lawyers","adm.filterLawyers"],
+         ["interns","adm.filterInterns"],["clients","adm.filterClients"]].map(function (f) {
+          return '<button class="btn btn--sm ' + (filter === f[0] ? "btn--primary" : "btn--outline") +
+            '" type="button" data-filter="' + f[0] + '">' + esc(I18N.t(f[1])) + "</button>";
+        }).join("") +
+      "</div>" +
+      '<input class="input" style="margin-bottom:var(--s-5)" data-search value="' + esc(query) +
+        '" data-i18n-attr="placeholder:adm.search">' +
+      (all.length ? all.map(personRow).join("") : '<p class="small muted" data-i18n="adm.noPeople"></p>');
+  }
+
+  function personRow(u) {
+    var lawyer = u.roles.indexOf("lawyer") !== -1;
+    var intern = u.roles.indexOf("intern") !== -1;
+    var pro = lawyer || intern;
+    var lic = u.licence;
+    var ai = lawyer ? M.subscriptionOf(u.id) : null;
+    var placed = u.featuredRank != null;
+
+    return '<div class="card card--pad admin-card">' +
       '<div class="row between wrap gap-3">' +
         '<div class="row gap-3">' + C.avatar(u, "sm") +
           "<div><strong>" + esc(tx(u.name)) + "</strong>" +
-          '<div class="tiny muted">' + esc(tx(u.title || {})) + "</div></div></div>" +
-        C.statusPill("pending") +
+            '<div class="tiny muted num" dir="ltr">' + esc(u.email || "") + "</div></div></div>" +
+        '<div class="row gap-2 wrap">' +
+          (placed ? '<span class="status status--ok">' +
+            esc(I18N.t("adm.featuredAt", { n: I18N.num(u.featuredRank) })) + "</span>" : "") +
+          C.statusPill(u.status) +
+        "</div>" +
       "</div>" +
 
-      '<div class="row gap-6 wrap small" style="margin-top:var(--s-4)">' +
-        (lawyer && lic
-          ? '<span><span class="tiny muted" data-i18n="admin.licence"></span> ' +
-              '<span class="num">' + esc(lic.number) + "</span></span>" +
-            '<span><span class="tiny muted" data-i18n="admin.authority"></span> ' +
-              esc(tx(lic.authority || {})) + "</span>" +
+      (pro && lic
+        ? '<div class="row gap-6 wrap small" style="margin-top:var(--s-4)">' +
+            '<span><span class="tiny muted" data-i18n="admin.licence"></span> ' +
+              '<span class="num">' + esc(lic.number || "") + "</span></span>" +
             '<span><span class="tiny muted" data-i18n="admin.expiry"></span> ' +
-              esc(lic.expiry || "") + "</span>"
-          : '<span><span class="tiny muted" data-i18n="admin.university"></span> ' +
-              esc(tx(u.university || {})) + "</span>") +
-      "</div>" +
-
-      // An expired licence is the one thing that must never be missed, so it
-      // is said out loud rather than left for the reviewer to notice.
-      (expired(lic)
-        ? '<p class="small" style="margin-top:var(--s-3);color:var(--danger)">' +
-          Icons.svg("clock", "icon-sm") + " " + esc(I18N.t("admin.expired")) + "</p>"
+              esc(lic.expiry || "") + "</span>" +
+          "</div>"
         : "") +
 
       (rejecting === u.id
@@ -12254,86 +13039,56 @@ Pages.define("admin", function (global) {
               '<button class="btn btn--primary btn--sm" type="button" data-reject-send="' + esc(u.id) + '">' +
                 esc(I18N.t("admin.reject")) + "</button>" +
               '<button class="btn btn--ghost btn--sm" type="button" data-cancel>' +
-                esc(I18N.t("accept.cancel")) + "</button>" +
-            "</div></div>"
-        : '<div class="row gap-3" style="margin-top:var(--s-4)">' +
-            '<button class="btn btn--primary btn--sm" type="button" data-approve="' + esc(u.id) + '">' +
-              Icons.svg("check", "icon-sm") + esc(I18N.t("admin.approve")) + "</button>" +
-            '<button class="btn btn--ghost btn--sm" type="button" data-reject="' + esc(u.id) + '">' +
-              esc(I18N.t("admin.reject")) + "</button>" +
+                esc(I18N.t("accept.cancel")) + "</button></div></div>"
+        : '<div class="row gap-2 wrap" style="margin-top:var(--s-4)">' +
+            (u.status !== "verified"
+              ? '<button class="btn btn--primary btn--sm" type="button" data-approve="' + esc(u.id) + '">' +
+                  Icons.svg("check", "icon-sm") + esc(I18N.t("admin.approve")) + "</button>"
+              : "") +
+            (pro && u.status !== "rejected"
+              ? '<button class="btn btn--ghost btn--sm" type="button" data-reject="' + esc(u.id) + '">' +
+                  esc(I18N.t("admin.reject")) + "</button>"
+              : "") +
+            (lawyer && u.status === "verified"
+              ? '<button class="btn btn--outline btn--sm" type="button" data-feature="' + esc(u.id) + '">' +
+                  Icons.svg("star", "icon-sm") +
+                  esc(I18N.t(placed ? "adm.unfeature" : "adm.feature")) + "</button>"
+              : "") +
+            (lawyer
+              ? '<button class="btn btn--outline btn--sm" type="button" data-ai="' + esc(u.id) + '">' +
+                  Icons.svg("sparkle", "icon-sm") +
+                  esc(I18N.t(ai && ai.active ? "adm.aiOn" : "adm.aiOff")) + "</button>"
+              : "") +
           "</div>") +
     "</div>";
   }
 
-  /* ---------------------------------------------------- open disputes ---- */
-  function disputes() {
-    var open = M.openDisputes();
-    return '<section class="card card--pad" style="margin-bottom:var(--s-6)">' +
-      '<h2 class="subtitle" data-i18n="admin.disputes"></h2>' +
-      '<p class="small muted" style="margin:var(--s-2) 0 var(--s-5)" data-i18n="admin.disputesLead"></p>' +
-      (open.length
-        ? open.map(disputeRow).join("")
-        : '<p class="small muted" data-i18n="admin.disputesEmpty"></p>') +
-      "</section>";
-  }
+  /* ================================================================ requests */
+  function requests() {
+    var all = M.requests().slice().reverse();
+    if (!all.length) return head("adm.requests", "adm.requestsLead") +
+      '<p class="small muted" data-i18n="adm.noRequests"></p>';
 
-  function disputeRow(d) {
-    var r = M.request(d.requestId);
-    if (!r) return "";
-    var st = M.requestState(r), split = M.distribute(r);
-    var who = M.user(d.byId), pick = outcome[d.id] || "";
-
-    return '<div class="card card--pad card--rule-gold" style="margin-bottom:var(--s-4)">' +
-      '<div class="row between wrap gap-3">' +
-        "<strong>" + esc(tx(r.title || {})) + "</strong>" +
-        "<span>" + C.num(r.price) + " " + C.sar() + "</span>" +
-      "</div>" +
-      '<p class="tiny muted" style="margin-top:var(--s-2)">' +
-        esc(I18N.t("admin.raisedBy")) + ": " + esc(who ? tx(who.name) : d.byId) + "</p>" +
-
-      '<p class="tiny muted" style="margin-top:var(--s-4)" data-i18n="admin.claim"></p>' +
-      '<p class="small">' + esc(d.reason) + "</p>" +
-
-      '<p class="tiny muted" style="margin-top:var(--s-4)" data-i18n="admin.delivered"></p>' +
-      (st.body
-        ? '<pre class="draft-text" style="min-height:auto" readonly>' + esc(st.body) + "</pre>"
-        : '<p class="small muted" data-i18n="admin.nothingDelivered"></p>') +
-
-      // The trainee is not in this argument and cannot speak in it, so their
-      // position is put in front of whoever decides rather than left to be
-      // remembered.
-      (split.intern > 0
-        ? '<div class="card card--pad" style="margin-top:var(--s-4);background:var(--surface-2)">' +
-            '<p class="small">' + esc(I18N.t("admin.internNote")) + "</p>" +
-            '<p class="small" style="margin-top:var(--s-2)"><strong>' +
-              esc(I18N.t("admin.internOwed")) + ": " +
-              C.num(Math.round(split.intern / 100)) + " " + C.sar() + "</strong></p>" +
-          "</div>"
-        : "") +
-
-      '<h4 class="subtitle" style="margin-top:var(--s-5)" data-i18n="admin.decide"></h4>' +
-      '<div class="row gap-3 wrap" style="margin-top:var(--s-3)">' +
-        choice(d.id, "release", "admin.forLawyer", pick) +
-        choice(d.id, "refund", "admin.forClient", pick) +
-        choice(d.id, "split", "admin.split", pick) +
-      "</div>" +
-
-      (pick === "split"
-        ? '<div style="margin-top:var(--s-3)">' +
-            '<label class="tiny muted" data-i18n="admin.lawyerPct"></label>' +
-            '<input class="input" type="number" min="0" max="100" value="60" data-pct>' +
-          "</div>"
-        : "") +
-
-      (pick
-        ? '<div style="margin-top:var(--s-4)">' +
-            '<p class="small" data-i18n="admin.reasonLabel"></p>' +
-            '<textarea class="input" rows="3" style="margin-top:var(--s-2)" data-why></textarea>' +
-            '<button class="btn btn--primary btn--sm" style="margin-top:var(--s-3)" type="button" ' +
-              'data-resolve="' + esc(d.id) + '">' + esc(I18N.t("admin.decide")) + "</button>" +
-          "</div>"
-        : "") +
-    "</div>";
+    return head("adm.requests", "adm.requestsLead") +
+      all.map(function (r) {
+        var st = M.requestState(r);
+        var d = M.distribute(r);
+        var client = M.user(r.clientId), lawyer = M.user(r.lawyerId);
+        var dis = M.disputeFor(r.id);
+        return '<div class="card card--pad admin-card' +
+          (dis && dis.status === "open" ? " card--rule-gold" : "") + '">' +
+          '<div class="row between wrap gap-3">' +
+            "<strong>" + esc(tx(r.title || {})) + "</strong>" +
+            '<span class="row gap-2">' + C.statusPill(st.status) +
+              "<strong>" + sar(d.client) + "</strong></span>" +
+          "</div>" +
+          '<div class="row gap-6 wrap tiny muted" style="margin-top:var(--s-3)">' +
+            '<span><span data-i18n="adm.client"></span>: ' + esc(client ? tx(client.name) : "—") + "</span>" +
+            '<span><span data-i18n="adm.lawyer"></span>: ' + esc(lawyer ? tx(lawyer.name) : "—") + "</span>" +
+          "</div>" +
+          (dis && dis.status === "open" ? disputePanel(dis, r, d) : "") +
+        "</div>";
+      }).join("");
   }
 
   function choice(id, value, key, pick) {
@@ -12342,49 +13097,281 @@ Pages.define("admin", function (global) {
       esc(I18N.t(key)) + "</button>";
   }
 
-  /* -------------------------------------------------------- settings ----- */
-  function settings() {
-    var s = M.platformSettings();
-    return '<section class="card card--pad" style="margin-bottom:var(--s-6)">' +
-      '<h2 class="subtitle" data-i18n="admin.settings"></h2>' +
-
-      '<div style="margin-top:var(--s-5)">' +
-        '<label class="tiny muted" data-i18n="admin.commission"></label>' +
-        '<input class="input" type="number" min="0" max="' + M.COMMISSION_MAX_PCT +
-          '" value="' + s.commissionPct + '" data-commission>' +
-        '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="admin.commissionNote"></p>' +
+  function disputePanel(d, r, split) {
+    var st = M.requestState(r);
+    var who = M.user(d.byId), pick = outcome[d.id] || "";
+    return '<div style="margin-top:var(--s-5);border-top:1px solid var(--border);padding-top:var(--s-5)">' +
+      '<p class="tiny muted">' + esc(I18N.t("admin.raisedBy")) + ": " +
+        esc(who ? tx(who.name) : d.byId) + "</p>" +
+      '<p class="tiny muted" style="margin-top:var(--s-3)" data-i18n="admin.claim"></p>' +
+      '<p class="small">' + esc(d.reason) + "</p>" +
+      '<p class="tiny muted" style="margin-top:var(--s-4)" data-i18n="admin.delivered"></p>' +
+      (st.body
+        ? '<pre class="draft-text" style="min-height:auto" readonly>' + esc(st.body) + "</pre>"
+        : '<p class="small muted" data-i18n="admin.nothingDelivered"></p>') +
+      (split.intern > 0
+        ? '<div class="card card--pad" style="margin-top:var(--s-4);background:var(--surface-2)">' +
+            '<p class="small">' + esc(I18N.t("admin.internNote")) + "</p>" +
+            '<p class="small" style="margin-top:var(--s-2)"><strong>' +
+              esc(I18N.t("admin.internOwed")) + ": " + sar(split.intern) + "</strong></p></div>"
+        : "") +
+      '<h4 class="subtitle" style="margin-top:var(--s-5)" data-i18n="admin.decide"></h4>' +
+      '<div class="row gap-3 wrap" style="margin-top:var(--s-3)">' +
+        choice(d.id, "release", "admin.forLawyer", pick) +
+        choice(d.id, "refund", "admin.forClient", pick) +
+        choice(d.id, "split", "admin.split", pick) +
       "</div>" +
-
-      '<div style="margin-top:var(--s-5)">' +
-        '<label class="row gap-3"><input type="checkbox" data-vat' + (s.vatEnabled ? " checked" : "") +
-          '><span data-i18n="admin.vat"></span></label>' +
-        '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="admin.vatNote"></p>' +
-      "</div>" +
-
-      '<div style="margin-top:var(--s-5)">' +
-        '<label class="tiny muted" data-i18n="admin.vatPct"></label>' +
-        '<input class="input" type="number" min="0" max="100" value="' + s.vatPct + '" data-vatpct>' +
-      "</div>" +
-
-      '<button class="btn btn--primary btn--sm" style="margin-top:var(--s-5)" type="button" ' +
-        'data-save-settings>' + esc(I18N.t("admin.save")) + "</button>" +
-    "</section>";
+      (pick === "split"
+        ? '<div style="margin-top:var(--s-3)"><label class="tiny muted" data-i18n="admin.lawyerPct"></label>' +
+          '<input class="input" type="number" min="0" max="100" value="60" data-pct></div>'
+        : "") +
+      (pick
+        ? '<div style="margin-top:var(--s-4)">' +
+            '<p class="small" data-i18n="admin.reasonLabel"></p>' +
+            '<textarea class="input" rows="3" style="margin-top:var(--s-2)" data-why></textarea>' +
+            '<button class="btn btn--primary btn--sm" style="margin-top:var(--s-3)" type="button" ' +
+              'data-resolve="' + esc(d.id) + '">' + esc(I18N.t("admin.decide")) + "</button></div>"
+        : "") +
+    "</div>";
   }
 
-  /* ----------------------------------------------------------- record ---- */
+  /* =================================================================== money */
+  function line(labelKey, value, strong) {
+    return '<div class="row between gap-3 admin-line">' +
+      '<span class="' + (strong ? "" : "small muted") + '" data-i18n="' + labelKey + '"></span>' +
+      "<" + (strong ? "strong" : "span") + ">" + value + "</" + (strong ? "strong" : "span") + "></div>";
+  }
+
+  function money() {
+    var b = M.books(months);
+    var over = b.partners.reduce(function (t, p) { return t + (p.sharePct || 0); }, 0) > 100;
+
+    return head("adm.money", "adm.moneyLead") + windowPicker() +
+
+      '<div class="grid grid-2" style="gap:var(--s-6)">' +
+        '<section class="card card--pad">' +
+          '<h3 class="subtitle" data-i18n="adm.inflow"></h3>' +
+          '<div style="margin-top:var(--s-4)">' +
+            line("adm.kpiVolume", sar(b.clientPaid), true) +
+            line("adm.commission", sar(b.commission)) +
+            line("adm.subs", sar(b.subscriptions)) +
+            line("adm.kpiRevenue", sar(b.revenue), true) +
+          "</div></section>" +
+
+        '<section class="card card--pad">' +
+          '<h3 class="subtitle" data-i18n="adm.outflow"></h3>' +
+          '<div style="margin-top:var(--s-4)">' +
+            line("adm.toLawyers", sar(b.toLawyers)) +
+            line("adm.toTrainees", sar(b.toTrainees)) +
+            line("adm.gateway", sar(b.gateway)) +
+            line("adm.costs", sar(b.costs)) +
+          "</div>" +
+          '<p class="tiny muted" style="margin-top:var(--s-3)" data-i18n="adm.gatewayNote"></p>' +
+        "</section>" +
+      "</div>" +
+
+      '<section class="card card--pad" style="margin-top:var(--s-6);' +
+        'border-top:4px solid var(--' + (b.profit < 0 ? "danger" : "accent") + ')">' +
+        '<div class="row between wrap gap-3">' +
+          '<h3 class="subtitle" data-i18n="adm.profit"></h3>' +
+          '<strong class="display">' + sar(b.profit) + "</strong>" +
+        "</div></section>" +
+
+      costsSection(b) + partnersSection(b, over);
+  }
+
+  function costsSection(b) {
+    var list = Store.costs();
+    return '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+      '<h3 class="subtitle" data-i18n="adm.costs"></h3>' +
+      '<div class="grid grid-3" style="gap:var(--s-3);margin-top:var(--s-4)">' +
+        '<label class="field"><span class="label" data-i18n="adm.costName"></span>' +
+          '<input class="input" data-cost-name></label>' +
+        '<label class="field"><span class="label" data-i18n="adm.costAmount"></span>' +
+          '<input class="input" type="number" min="0" data-cost-amount></label>' +
+        '<label class="field"><span class="label" data-i18n="adm.costPeriod"></span>' +
+          '<select class="select" data-cost-period>' +
+            ["once","monthly","quarterly","yearly"].map(function (p) {
+              return '<option value="' + p + '"' + (p === "monthly" ? " selected" : "") + ">" +
+                esc(I18N.t("adm.per" + p.charAt(0).toUpperCase() + p.slice(1))) + "</option>";
+            }).join("") +
+          "</select></label>" +
+      "</div>" +
+      '<button class="btn btn--outline btn--sm" style="margin-top:var(--s-3)" type="button" ' +
+        'data-add-cost>' + Icons.svg("plus", "icon-sm") + esc(I18N.t("adm.addCost")) + "</button>" +
+
+      '<div style="margin-top:var(--s-5)">' +
+        (list.length
+          ? list.map(function (c) {
+              return '<div class="row between wrap gap-3 admin-line">' +
+                "<span><strong>" + esc(c.name) + "</strong>" +
+                  '<span class="tiny muted" style="display:block">' +
+                    esc(I18N.t("adm.per" + (c.period||"monthly").charAt(0).toUpperCase() +
+                        (c.period||"monthly").slice(1))) + " · " +
+                    esc(I18N.t("adm.perMonth")) + " " + sar(M.monthlyCost(c)) + "</span></span>" +
+                '<span class="row gap-3">' + sar(Math.round((c.amount||0)*100)) +
+                  '<button class="icon-btn" type="button" data-del-cost="' + esc(c.id) + '">' +
+                    Icons.svg("trash", "icon-sm") + "</button></span></div>";
+            }).join("")
+          : '<p class="small muted" data-i18n="adm.noCosts"></p>') +
+      "</div></section>";
+  }
+
+  function partnersSection(b, over) {
+    return '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+      '<h3 class="subtitle" data-i18n="adm.partners"></h3>' +
+      '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="adm.partnersLead"></p>' +
+      (over ? '<p class="note-inline" style="margin-top:var(--s-3)">' +
+        esc(I18N.t("adm.sharesOver")) + "</p>" : "") +
+      '<div class="grid grid-2" style="gap:var(--s-3);margin-top:var(--s-4)">' +
+        '<label class="field"><span class="label" data-i18n="adm.partnerName"></span>' +
+          '<input class="input" data-partner-name></label>' +
+        '<label class="field"><span class="label" data-i18n="adm.share"></span>' +
+          '<input class="input" type="number" min="0" max="100" data-partner-share></label>' +
+      "</div>" +
+      '<button class="btn btn--outline btn--sm" style="margin-top:var(--s-3)" type="button" ' +
+        'data-add-partner>' + Icons.svg("plus", "icon-sm") + esc(I18N.t("adm.addPartner")) + "</button>" +
+
+      '<div style="margin-top:var(--s-5)">' +
+        (b.partners.length
+          ? b.partners.map(function (p) {
+              return '<div class="row between wrap gap-3 admin-line">' +
+                "<span><strong>" + esc(p.name) + "</strong>" +
+                  '<span class="tiny muted" style="display:block">' +
+                    C.num(p.sharePct) + "%</span></span>" +
+                '<span class="row gap-3"><strong>' + sar(p.amount) + "</strong>" +
+                  '<button class="icon-btn" type="button" data-del-partner="' + esc(p.id) + '">' +
+                    Icons.svg("trash", "icon-sm") + "</button></span></div>";
+            }).join("") +
+            line("adm.unassigned", sar(b.unassigned), true)
+          : '<p class="small muted" data-i18n="adm.noPartners"></p>') +
+      "</div></section>";
+  }
+
+  /* =================================================================== ads */
+  function ads() {
+    var list = Store.announcements();
+    return head("adm.ads", "adm.adsLead") +
+      '<section class="card card--pad">' +
+        '<label class="field"><span class="label" data-i18n="adm.adTitle"></span>' +
+          '<input class="input" data-ad-title></label>' +
+        '<label class="field" style="margin-top:var(--s-3)"><span class="label" data-i18n="adm.adBody"></span>' +
+          '<textarea class="input" rows="2" data-ad-body></textarea></label>' +
+        '<div class="grid grid-2" style="gap:var(--s-3);margin-top:var(--s-3)">' +
+          '<label class="field"><span class="label" data-i18n="adm.adLink"></span>' +
+            '<input class="input" dir="ltr" data-ad-link></label>' +
+          '<label class="field"><span class="label" data-i18n="adm.adAudience"></span>' +
+            '<select class="select" data-ad-audience">' +
+              '<option value="all">' + esc(I18N.t("adm.audAll")) + "</option>" +
+              '<option value="client">' + esc(I18N.t("role.client")) + "</option>" +
+              '<option value="lawyer">' + esc(I18N.t("role.lawyer")) + "</option>" +
+              '<option value="intern">' + esc(I18N.t("role.intern")) + "</option>" +
+            "</select></label>" +
+        "</div>" +
+        '<button class="btn btn--primary btn--sm" style="margin-top:var(--s-4)" type="button" data-add-ad>' +
+          Icons.svg("send", "icon-sm") + esc(I18N.t("adm.addAd")) + "</button>" +
+      "</section>" +
+
+      '<div style="margin-top:var(--s-6)">' +
+        (list.length
+          ? list.map(function (a) {
+              return '<div class="card card--pad admin-card">' +
+                '<div class="row between wrap gap-3">' +
+                  "<strong>" + esc(a.title) + "</strong>" +
+                  '<span class="status status--' + (a.active ? "ok" : "muted") + '">' +
+                    esc(I18N.t(a.active ? "adm.adLive" : "adm.adHidden")) + "</span>" +
+                "</div>" +
+                (a.body ? '<p class="small muted" style="margin-top:var(--s-2)">' +
+                  esc(a.body) + "</p>" : "") +
+                '<div class="row gap-2 wrap" style="margin-top:var(--s-4)">' +
+                  '<button class="btn btn--outline btn--sm" type="button" data-toggle-ad="' + esc(a.id) + '">' +
+                    esc(I18N.t(a.active ? "adm.hide" : "adm.show")) + "</button>" +
+                  '<button class="btn btn--ghost btn--sm" type="button" data-del-ad="' + esc(a.id) + '">' +
+                    esc(I18N.t("adm.remove")) + "</button>" +
+                "</div></div>";
+            }).join("")
+          : '<p class="small muted" data-i18n="adm.noAds"></p>') +
+      "</div>";
+  }
+
+  /* ============================================================== settings */
+  function num(labelKey, attr, value, min, max, step) {
+    return '<label class="field"><span class="label" data-i18n="' + labelKey + '"></span>' +
+      '<input class="input" type="number"' +
+      (min != null ? ' min="' + min + '"' : "") + (max != null ? ' max="' + max + '"' : "") +
+      (step ? ' step="' + step + '"' : "") + ' value="' + value + '" ' + attr + "></label>";
+  }
+
+  function settings() {
+    var s = M.platformSettings();
+    return head("adm.tabSettings") +
+
+      '<section class="card card--pad">' +
+        '<h3 class="subtitle" data-i18n="admin.settings"></h3>' +
+        '<div class="grid grid-2" style="gap:var(--s-4);margin-top:var(--s-4)">' +
+          num("admin.commission", "data-commission", s.commissionPct, 0, M.COMMISSION_MAX_PCT) +
+          num("adm.aiPrice", "data-ai-price", s.aiPrice, 0) +
+        "</div>" +
+        '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="admin.commissionNote"></p>' +
+        '<label class="row gap-3" style="margin-top:var(--s-5)">' +
+          '<input type="checkbox" data-vat' + (s.vatEnabled ? " checked" : "") + ">" +
+          '<span data-i18n="admin.vat"></span></label>' +
+        '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="admin.vatNote"></p>' +
+        '<div style="margin-top:var(--s-4);max-width:220px">' +
+          num("admin.vatPct", "data-vatpct", s.vatPct, 0, 100) + "</div>" +
+      "</section>" +
+
+      '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+        '<h3 class="subtitle" data-i18n="adm.rates"></h3>' +
+        '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="adm.ratesLead"></p>' +
+        '<div class="grid grid-2" style="gap:var(--s-4);margin-top:var(--s-4)">' +
+          num("adm.madaPct", "data-mada-pct", s.madaPct, 0, 100, "0.01") +
+          num("adm.madaFixed", "data-mada-fixed", s.madaFixed, 0, null, "0.01") +
+          num("adm.cardPct", "data-card-pct", s.cardPct, 0, 100, "0.01") +
+          num("adm.cardFixed", "data-card-fixed", s.cardFixed, 0, null, "0.01") +
+        "</div>" +
+        '<div style="margin-top:var(--s-4);max-width:260px">' +
+          num("adm.madaShare", "data-mada-share", s.madaSharePct, 0, 100) + "</div>" +
+        '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="adm.madaShareNote"></p>' +
+      "</section>" +
+
+      '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+        '<h3 class="subtitle" data-i18n="adm.bands"></h3>' +
+        '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="adm.bandsLead"></p>' +
+        '<div style="margin-top:var(--s-4)">' +
+          M.serviceTypes().map(function (t) {
+            var band = M.priceBand(t.id);
+            return '<div class="row between wrap gap-3 admin-line">' +
+              "<strong>" + esc(tx(t.title)) + "</strong>" +
+              '<span class="row gap-3">' +
+                '<input class="input" style="width:110px" type="number" min="0" value="' +
+                  band.min + '" data-band-min="' + esc(t.id) + '">' +
+                '<input class="input" style="width:110px" type="number" min="0" value="' +
+                  band.max + '" data-band-max="' + esc(t.id) + '">' +
+              "</span></div>";
+          }).join("") +
+        "</div>" +
+      "</section>" +
+
+      '<button class="btn btn--primary" style="margin-top:var(--s-6)" type="button" data-save-settings>' +
+        esc(I18N.t("admin.save")) + "</button>";
+  }
+
+  /* =============================================================== record */
   var ACT = { approve: "admin.actApprove", reject: "admin.actReject",
-              resolve: "admin.actResolve", settings: "admin.actSettings" };
+              resolve: "admin.actResolve", settings: "admin.actSettings",
+              feature: "adm.feature", ai: "adm.aiOff", ad: "adm.ads",
+              cost: "adm.costs", partner: "adm.partners", band: "adm.bands" };
 
   function record() {
-    var log = Store.audit().slice().reverse();
-    return '<section class="card card--pad">' +
-      '<h2 class="subtitle" data-i18n="admin.audit"></h2>' +
-      '<p class="small muted" style="margin:var(--s-2) 0 var(--s-5)" data-i18n="admin.auditLead"></p>' +
+    var log = Store.audit().slice(0, 40);
+    return '<section class="card card--pad" style="margin-top:var(--s-8)">' +
+      '<h3 class="subtitle" data-i18n="admin.audit"></h3>' +
+      '<p class="small muted" style="margin:var(--s-2) 0 var(--s-4)" data-i18n="admin.auditLead"></p>' +
       (log.length
         ? log.map(function (e) {
             var by = M.user(e.byId);
-            return '<div class="row between wrap gap-3 small" style="padding-block:var(--s-3);' +
-              'border-block-end:1px solid var(--border)">' +
+            return '<div class="row between wrap gap-3 small admin-line">' +
               "<span>" + esc(I18N.t(ACT[e.action] || e.action)) +
                 (e.subject ? " — " + esc(e.subject) : "") + "</span>" +
               '<span class="tiny muted">' + esc(by ? tx(by.name) : "") + "</span></div>";
@@ -12393,24 +13380,57 @@ Pages.define("admin", function (global) {
     "</section>";
   }
 
-  /* ------------------------------------------------------------ render --- */
+  /* =============================================================== render */
+  var VIEWS = { overview: overview, people: people, requests: requests,
+                money: money, ads: ads, settings: settings };
+
   App.onRender(function () {
     if (!Session.is("staff")) { host.innerHTML = denied(); I18N.apply(host); return; }
-    host.innerHTML = '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
-      '<header style="margin-bottom:var(--s-8)">' +
+    var view = VIEWS[tab] || overview;
+
+    host.innerHTML = '<div class="container" style="padding-block:var(--s-8) var(--s-20)">' +
+      '<header style="margin-bottom:var(--s-6)">' +
         '<h1 class="headline" data-i18n="admin.heading"></h1>' +
         '<p class="lead" data-i18n="admin.lead"></p></header>' +
-      queue() + disputes() + settings() + record() + "</div>";
+
+      '<nav class="adm-tabs">' + TABS.map(function (t) {
+        return '<button type="button" class="adm-tab' + (tab === t.id ? " is-active" : "") +
+          '" data-tab="' + t.id + '">' + Icons.svg(t.icon, "icon-sm") +
+          '<span data-i18n="' + t.key + '"></span></button>';
+      }).join("") + "</nav>" +
+
+      '<div class="adm-view">' + view() + "</div>" +
+      (tab === "overview" ? record() : "") +
+    "</div>";
+
     I18N.apply(host);
+    var s = $("[data-search]", host);
+    if (s) { s.value = query; if (query) { s.focus(); s.setSelectionRange(query.length, query.length); } }
   });
 
-  /* ------------------------------------------------------------ events --- */
+  /* =============================================================== events */
+  function val(sel) { var el = $(sel, host); return el ? el.value.trim() : ""; }
+
+  host.addEventListener("input", function (ev) {
+    if (ev.target.matches("[data-search]")) { query = ev.target.value.trim(); App.rerender(); }
+  });
+
   host.addEventListener("click", function (ev) {
     var t = ev.target;
     var hit = function (a) { var el = t.closest("[" + a + "]"); return el ? el.getAttribute(a) : null; };
     var me = Session.user();
     if (!me || !Session.is("staff")) return;
 
+    var tb = hit("data-tab");
+    if (tb) { tab = tb; rejecting = null; App.rerender(); return; }
+
+    var mo = hit("data-months");
+    if (mo) { months = +mo; App.rerender(); return; }
+
+    var f = hit("data-filter");
+    if (f) { filter = f; App.rerender(); return; }
+
+    /* --- people --- */
     var ap = hit("data-approve");
     if (ap) {
       Store.updateAccount(ap, { status: "verified" });
@@ -12427,8 +13447,7 @@ Pages.define("admin", function (global) {
 
     var rs = hit("data-reject-send");
     if (rs) {
-      var box = $("[data-why]", host);
-      var why = box ? box.value.trim() : "";
+      var why = val("[data-why]");
       if (!why) { App.toast(I18N.t("admin.rejectNeed"), "alert"); return; }
       Store.updateAccount(rs, { status: "rejected", rejectedReason: why });
       Store.log({ action: "reject", byId: me.id, targetId: rs, reason: why,
@@ -12439,14 +13458,38 @@ Pages.define("admin", function (global) {
       return;
     }
 
+    var fe = hit("data-feature");
+    if (fe) {
+      var u = M.user(fe);
+      var placed = u && u.featuredRank != null;
+      // Appended to the end rather than dropped on top of somebody: placement
+      // is an ordering, and two lawyers both put first is not an answer.
+      var next = placed ? null : M.featured().length + 1;
+      Store.updateAccount(fe, { featuredRank: next });
+      Store.log({ action: "feature", byId: me.id, targetId: fe,
+                  subject: tx((u || {}).name || {}) });
+      return;
+    }
+
+    var aiId = hit("data-ai");
+    if (aiId) {
+      var cur = M.subscriptionOf(aiId);
+      Store.setSubscription(aiId, {
+        price: M.platformSettings().aiPrice, active: !cur.active
+      });
+      Store.log({ action: "ai", byId: me.id, targetId: aiId,
+                  subject: tx((M.user(aiId) || {}).name || {}) });
+      App.toast(I18N.t(cur.active ? "adm.aiRevoked" : "adm.aiGranted"), "sparkle");
+      return;
+    }
+
+    /* --- disputes --- */
     var oc = hit("data-outcome");
     if (oc) { outcome[t.closest("[data-for]").getAttribute("data-for")] = oc; App.rerender(); return; }
 
     var rv = hit("data-resolve");
     if (rv) {
-      var why2 = $("[data-why]", host), pctEl = $("[data-pct]", host);
-      var reason = why2 ? why2.value.trim() : "";
-      // A ruling with no reason is not reviewable, so it is not accepted.
+      var reason = val("[data-why]"), pctEl = $("[data-pct]", host);
       if (!reason) { App.toast(I18N.t("admin.reasonNeed"), "alert"); return; }
       var pick = outcome[rv];
       Store.resolveDispute(rv, {
@@ -12454,9 +13497,7 @@ Pages.define("admin", function (global) {
         lawyerPct: pctEl ? Math.max(0, Math.min(100, +pctEl.value || 0)) : null,
         reason: reason, byId: me.id
       });
-      Store.log({ action: "resolve", byId: me.id, targetId: rv, reason: reason,
-                  subject: pick });
-      // Both sides are told, and they are told the same thing.
+      Store.log({ action: "resolve", byId: me.id, targetId: rv, reason: reason, subject: pick });
       var dq = Store.disputes().filter(function (x) { return x.id === rv; })[0];
       if (dq) {
         M.partiesOf(M.request(dq.requestId), null).forEach(function (id) {
@@ -12464,24 +13505,80 @@ Pages.define("admin", function (global) {
         });
       }
       delete outcome[rv];
-      deciding = null;
       App.toast(I18N.t("admin.decided"), "check");
       return;
     }
 
-    if (t.closest("[data-save-settings]")) {
-      var cm = $("[data-commission]", host), vt = $("[data-vat]", host),
-          vp = $("[data-vatpct]", host);
-      var pct = cm ? +cm.value : 10;
-      if (pct > M.COMMISSION_MAX_PCT) { App.toast(I18N.t("admin.overCap"), "alert"); return; }
-      Store.setSettings({
-        commissionPct: M.clampCommission(pct),
-        vatEnabled: vt ? vt.checked : false,
-        vatPct: vp ? Math.max(0, Math.min(100, +vp.value || 0)) : M.DEFAULT_VAT_PCT
+    /* --- money --- */
+    if (t.closest("[data-add-cost]")) {
+      var cn = val("[data-cost-name]"), ca = +val("[data-cost-amount]");
+      if (!cn || !(ca >= 0)) { App.toast(I18N.t("adm.costName"), "alert"); return; }
+      Store.addCost({ name: cn, amount: ca, period: val("[data-cost-period]") || "monthly" });
+      Store.log({ action: "cost", byId: me.id, subject: cn });
+      return;
+    }
+    var dc = hit("data-del-cost");
+    if (dc) { Store.removeCost(dc); return; }
+
+    if (t.closest("[data-add-partner]")) {
+      var pn = val("[data-partner-name]"), ps = +val("[data-partner-share]");
+      if (!pn || !(ps >= 0 && ps <= 100)) { App.toast(I18N.t("adm.share"), "alert"); return; }
+      Store.addPartner({ name: pn, sharePct: ps });
+      Store.log({ action: "partner", byId: me.id, subject: pn });
+      return;
+    }
+    var dp = hit("data-del-partner");
+    if (dp) { Store.removePartner(dp); return; }
+
+    /* --- announcements --- */
+    if (t.closest("[data-add-ad]")) {
+      var at = val("[data-ad-title]");
+      if (!at) { App.toast(I18N.t("adm.needTitle"), "alert"); return; }
+      Store.addAnnouncement({
+        title: at, body: val("[data-ad-body]"), link: val("[data-ad-link]"),
+        audience: val("[data-ad-audience]") || "all", active: true
       });
-      Store.log({ action: "settings", byId: me.id,
-                  subject: M.clampCommission(pct) + "%" });
-      App.toast(I18N.t("admin.saved"), "check");
+      Store.log({ action: "ad", byId: me.id, subject: at });
+      App.toast(I18N.t("adm.saved"), "check");
+      return;
+    }
+    var ta = hit("data-toggle-ad");
+    if (ta) {
+      var found = Store.announcements().filter(function (a) { return a.id === ta; })[0];
+      Store.setAnnouncement(ta, { active: !(found && found.active) });
+      return;
+    }
+    var da = hit("data-del-ad");
+    if (da) { Store.removeAnnouncement(da); return; }
+
+    /* --- settings --- */
+    if (t.closest("[data-save-settings]")) {
+      var pct = +val("[data-commission]");
+      if (pct > M.COMMISSION_MAX_PCT) { App.toast(I18N.t("admin.overCap"), "alert"); return; }
+
+      // Read the whole form before writing any of it. The first write announces
+      // a change, the page redraws on the spot, and every input still waiting
+      // to be read is replaced by a fresh one carrying the old value — so the
+      // bands were saved back exactly as they had been.
+      var next = {
+        commissionPct: M.clampCommission(pct),
+        vatEnabled: !!$("[data-vat]", host).checked,
+        vatPct: Math.max(0, Math.min(100, +val("[data-vatpct]") || 0)),
+        madaPct: +val("[data-mada-pct]") || 0, madaFixed: +val("[data-mada-fixed]") || 0,
+        cardPct: +val("[data-card-pct]") || 0, cardFixed: +val("[data-card-fixed]") || 0,
+        madaSharePct: Math.max(0, Math.min(100, +val("[data-mada-share]") || 0)),
+        aiPrice: +val("[data-ai-price]") || 0
+      };
+      var bands = $$("[data-band-min]", host).map(function (el) {
+        var id = el.getAttribute("data-band-min");
+        var max = $('[data-band-max="' + id + '"]', host);
+        return { id: id, min: +el.value || 0, max: max ? +max.value || 0 : 0 };
+      });
+
+      Store.setSettings(next);
+      bands.forEach(function (band) { Store.setBand(band.id, band); });
+      Store.log({ action: "settings", byId: me.id, subject: M.clampCommission(pct) + "%" });
+      App.toast(I18N.t("adm.saved"), "check");
       return;
     }
   });

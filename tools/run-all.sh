@@ -8,11 +8,11 @@
 # The database policies are separate and need Postgres; see supabase/rls-test*.sql.
 set -e
 echo '— headless —'
-for t in model-test money-test store-contract remote-store-test; do
+for t in model-test money-test books-test store-contract remote-store-test; do
   printf '  %-26s ' "$t"; node "tools/$t.mjs" | tail -1
 done
 echo '— in a browser —'
-for t in first-paint account view-as staff-role auth-ui onboarding onboarding-late-session \
+for t in console first-paint account view-as staff-role auth-ui onboarding onboarding-late-session \
          offline auth-failure header signal accept admin notices flows pay mobile wide sweep; do
   printf '  %-26s ' "$t"; node "tools/$t-e2e.mjs" | tail -1
 done

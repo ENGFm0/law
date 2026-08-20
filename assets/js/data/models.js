@@ -195,7 +195,11 @@
     return (t && t.icon) || "tag";
   }
 
+  /** The band a service must be priced inside. The seed carries a default and
+      staff may move it; whatever the platform last published wins. */
   function priceBand(typeId) {
+    var set = (Store.bands && Store.bands()) || {};
+    if (set[typeId]) return { min: set[typeId].min, max: set[typeId].max };
     var t = serviceType(typeId);
     return t ? { min: t.minPrice, max: t.maxPrice } : { min: 0, max: 0 };
   }
@@ -346,10 +350,18 @@
       charge, and switching it on later is this setting, not a rebuild. */
   function platformSettings() {
     var s = Store.settings() || {};
+    var n = function (v, d) { return v == null || isNaN(v) ? d : Number(v); };
     return {
       commissionPct: clampCommission(s.commissionPct),
       vatEnabled: !!s.vatEnabled,
-      vatPct: s.vatPct == null ? DEFAULT_VAT_PCT : Math.max(0, Math.min(100, s.vatPct))
+      vatPct: s.vatPct == null ? DEFAULT_VAT_PCT : Math.max(0, Math.min(100, s.vatPct)),
+      // What the gateway takes, per scheme. Settings rather than constants:
+      // they are negotiated, they differ by card, and profit reported from a
+      // stale figure is worse than profit not reported at all.
+      madaPct: n(s.madaPct, 1.5), madaFixed: n(s.madaFixed, 1),
+      cardPct: n(s.cardPct, 2.2), cardFixed: n(s.cardFixed, 1),
+      madaSharePct: Math.max(0, Math.min(100, n(s.madaSharePct, 70))),
+      aiPrice: n(s.aiPrice, 199)
     };
   }
 
@@ -508,6 +520,145 @@
     };
   }
 
+  /* ---------- placement, subscriptions and announcements ---------- */
+
+  /** Lawyers the platform is putting in front of people, in the order it
+      chose. A rank rather than a flag, because "first" is an ordering. */
+  function featured() {
+    var now = Date.now();
+    return listedLawyers().filter(function (u) {
+      if (u.featuredRank == null) return false;
+      return !u.featuredUntil || new Date(u.featuredUntil).getTime() > now;
+    }).sort(function (a, b) { return a.featuredRank - b.featuredRank; });
+  }
+
+  /** The directory order: placed lawyers first, then everyone else as before. */
+  function byPlacement(list) {
+    var rank = {};
+    featured().forEach(function (u, i) { rank[u.id] = i; });
+    return list.slice().sort(function (a, b) {
+      var ra = rank[a.id], rb = rank[b.id];
+      if (ra != null && rb != null) return ra - rb;
+      if (ra != null) return -1;
+      if (rb != null) return 1;
+      return 0;
+    });
+  }
+
+  function subscriptionOf(lawyerId) {
+    var all = (Store.subscriptions && Store.subscriptions()) || [];
+    var now = Date.now();
+    for (var i = 0; i < all.length; i++) {
+      var s = all[i];
+      if (s.lawyerId !== lawyerId || s.plan !== "ai") continue;
+      var live = s.active !== false && (!s.endsAt || new Date(s.endsAt).getTime() > now);
+      return { sub: s, active: live };
+    }
+    return { sub: null, active: false };
+  }
+
+  /** The drafting workspace is sold, not given. Staff never need it and are
+      not sold it; a lawyer needs a live subscription. */
+  function canDraft(userId) {
+    var u = user(userId);
+    if (!u) return false;
+    if ((u.roles || []).indexOf("lawyer") === -1) return false;
+    return subscriptionOf(userId).active;
+  }
+
+  function announcementsFor(role) {
+    var now = Date.now();
+    return ((Store.announcements && Store.announcements()) || []).filter(function (a) {
+      if (!a.active) return false;
+      if (a.audience && a.audience !== "all" && a.audience !== role) return false;
+      if (a.startsAt && new Date(a.startsAt).getTime() > now) return false;
+      if (a.endsAt && new Date(a.endsAt).getTime() < now) return false;
+      return true;
+    });
+  }
+
+  /* ---------- the books ----------
+     Everything in halalas, and every figure derived from the requests that
+     actually completed rather than from a running total somebody has to
+     remember to update. */
+
+  /** A cost expressed as what it comes to over one month, so a yearly licence
+      and a monthly server can be added together and mean something. */
+  var PER_MONTH = { once: 0, monthly: 1, quarterly: 1 / 3, yearly: 1 / 12 };
+
+  function monthlyCost(c) {
+    var amount = Math.round((c.amount || 0) * 100);
+    return Math.round(amount * (PER_MONTH[c.period] == null ? 1 : PER_MONTH[c.period]));
+  }
+
+  /** One-off costs belong to the month they fall in, not to every month. */
+  function costsInWindow(months) {
+    var list = (Store.costs && Store.costs()) || [];
+    return list.reduce(function (total, c) {
+      if (c.period === "once") return total + Math.round((c.amount || 0) * 100);
+      return total + monthlyCost(c) * months;
+    }, 0);
+  }
+
+  /** What the payment gateway takes out of a transaction. It is charged on the
+      whole amount the client paid, not on the platform's share of it — which
+      is why a 10% commission does not leave 10%. */
+  function gatewayFee(clientHalalas, cfg) {
+    var mada = Math.round(clientHalalas * cfg.madaPct / 100) + Math.round(cfg.madaFixed * 100);
+    var card = Math.round(clientHalalas * cfg.cardPct / 100) + Math.round(cfg.cardFixed * 100);
+    var share = cfg.madaSharePct / 100;
+    return Math.round(mada * share + card * (1 - share));
+  }
+
+  /** Every request whose money is real: delivered, accepted or settled. */
+  function earnedRequests() {
+    return requests().filter(function (r) {
+      var st = requestState(r).status;
+      return st === "delivered" || st === "completed";
+    });
+  }
+
+  /** The whole picture, over a window of `months`. */
+  function books(months) {
+    var cfg = platformSettings();
+    var m = months || 1;
+    var out = {
+      months: m, orders: 0,
+      clientPaid: 0, gross: 0, toLawyers: 0, toTrainees: 0,
+      commission: 0, commissionVat: 0, gateway: 0,
+      subscriptions: 0, costs: costsInWindow(m), settings: cfg
+    };
+
+    earnedRequests().forEach(function (r) {
+      var d = distribute(r);
+      out.orders += 1;
+      out.clientPaid += d.client;
+      out.gross += d.gross;
+      out.toLawyers += d.lawyer;
+      out.toTrainees += d.intern;
+      out.commission += d.commission;
+      out.commissionVat += d.commissionVat;
+      out.gateway += gatewayFee(d.client, cfg);
+    });
+
+    // What lawyers pay for the drafting workspace, over the same window.
+    ((Store.subscriptions && Store.subscriptions()) || []).forEach(function (s) {
+      if (s.active === false) return;
+      out.subscriptions += Math.round((s.price || 0) * 100) * m;
+    });
+
+    out.revenue = out.commission + out.subscriptions;
+    out.profit = out.revenue - out.gateway - out.costs;
+    out.partners = ((Store.partners && Store.partners()) || []).map(function (p) {
+      return { id: p.id, name: p.name, sharePct: p.sharePct,
+               amount: Math.round(out.profit * (p.sharePct || 0) / 100) };
+    });
+    out.assigned = out.partners.reduce(function (t, p) { return t + p.amount; }, 0);
+    // Whatever the partners' shares do not add up to stays with the platform.
+    out.unassigned = out.profit - out.assigned;
+    return out;
+  }
+
   /* ---------- training hours & endorsements ----------
      Hours accumulate from work a lawyer routed to the trainee and that the
      trainee delivered. Past the threshold the supervising lawyer may issue a
@@ -598,6 +749,11 @@
     COMMISSION_MAX_PCT: COMMISSION_MAX_PCT, DEFAULT_VAT_PCT: DEFAULT_VAT_PCT,
     clampCommission: clampCommission, platformSettings: platformSettings,
     checkSplit: checkSplit, distribute: distribute,
+    featured: featured, byPlacement: byPlacement,
+    subscriptionOf: subscriptionOf, canDraft: canDraft,
+    announcementsFor: announcementsFor,
+    monthlyCost: monthlyCost, costsInWindow: costsInWindow,
+    gatewayFee: gatewayFee, earnedRequests: earnedRequests, books: books,
     ACCEPT_DAYS: ACCEPT_DAYS, MAX_REVISIONS: MAX_REVISIONS,
     addWorkingDays: addWorkingDays, acceptance: acceptance, settlement: settlement,
     disputeFor: disputeFor, openDisputes: openDisputes,

@@ -27,7 +27,7 @@ Pages.define("lawyers", function (global) {
   /* ---------- filtering ---------- */
   function lawyerList() {
     var text = state.q.trim().toLowerCase();
-    return M.listedLawyers().filter(function (u) {
+    var sorted = M.listedLawyers().filter(function (u) {
       if (state.specialty && (u.specialties || []).indexOf(state.specialty) === -1) return false;
       if (state.city && u.city !== state.city) return false;
       if (M.ratingOf(u.id).avg < state.minRating) return false;
@@ -42,6 +42,10 @@ Pages.define("lawyers", function (global) {
       if (state.sort === "priceDesc") return cheapest(b) - cheapest(a);
       return M.ratingOf(b.id).avg - M.ratingOf(a.id).avg;
     });
+    // Placement is applied last, over whatever order was asked for: a lawyer
+    // the platform is putting forward stays in front of the list, and the rest
+    // keep the sort the reader chose.
+    return M.byPlacement(sorted);
   }
 
   function cheapest(u) {

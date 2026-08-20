@@ -89,8 +89,30 @@
              subject: a.subject, reason: a.reason, at: new Date(a.at).getTime() };
   }
   function inSettings(s) {
-    return s ? { commissionPct: s.commission_pct, vatEnabled: !!s.vat_enabled,
-                 vatPct: s.vat_pct } : {};
+    return s ? {
+      commissionPct: s.commission_pct, vatEnabled: !!s.vat_enabled, vatPct: s.vat_pct,
+      madaPct: Number(s.mada_pct), madaFixed: Number(s.mada_fixed),
+      cardPct: Number(s.card_pct), cardFixed: Number(s.card_fixed),
+      madaSharePct: s.mada_share_pct, aiPrice: Number(s.ai_price)
+    } : {};
+  }
+  function inAnnouncement(a) {
+    return { id: a.id, title: a.title, body: a.body, link: a.link,
+             audience: a.audience, active: !!a.active,
+             startsAt: a.starts_at, endsAt: a.ends_at,
+             at: new Date(a.created_at).getTime() };
+  }
+  function inSubscription(s) {
+    return { id: s.id, lawyerId: s.lawyer_id, plan: s.plan, price: Number(s.price),
+             startedAt: s.started_at, endsAt: s.ends_at, active: !!s.active };
+  }
+  function inCost(c) {
+    return { id: c.id, name: c.name, amount: Number(c.amount), period: c.period,
+             startsAt: c.starts_at, endsAt: c.ends_at, note: c.note,
+             at: new Date(c.created_at).getTime() };
+  }
+  function inPartner(p) {
+    return { id: p.id, name: p.name, sharePct: Number(p.share_pct), note: p.note };
   }
 
   function inAgreement(a) {
@@ -133,6 +155,7 @@
     profiles: [], requests: [], services: [], articles: [],
     reviews: [], comments: [], endorsements: [], agreements: [], applications: {},
     disputes: [], notices: [], audit: [], settings: {},
+    announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
   };
   var ready = false;
 
@@ -372,15 +395,127 @@
      write through like everything else — the cache moves first so the screen
      answers, the row follows, and a refusal is reported rather than left to
      look like it succeeded. */
+  /* ---------- what the platform runs on ---------- */
+  Store.announcements = function () { return cache.announcements; };
+  Store.addAnnouncement = function (a) {
+    a.at = Date.now();
+    if (a.active === undefined) a.active = true;
+    cache.announcements.unshift(a);
+    Store.notifyAll();
+    push("announcements", { title: a.title, body: a.body || null, link: a.link || null,
+                            audience: a.audience || "all", active: !!a.active,
+                            starts_at: a.startsAt || null, ends_at: a.endsAt || null,
+                            created_by: Store.currentId() })
+      .then(report)
+      .then(function (res) { if (res && res.data) { a.id = res.data.id; Store.notifyAll(); } });
+    return a;
+  };
+  Store.setAnnouncement = function (id, p) {
+    cache.announcements.forEach(function (a) {
+      if (a.id === id) Object.keys(p).forEach(function (k) { a[k] = p[k]; });
+    });
+    Store.notifyAll();
+    var row = {};
+    if ("active" in p) row.active = !!p.active;
+    if ("title" in p) row.title = p.title;
+    if ("body" in p) row.body = p.body;
+    if ("link" in p) row.link = p.link;
+    if ("audience" in p) row.audience = p.audience;
+    if (Object.keys(row).length) patch("announcements", id, row).then(report);
+  };
+  Store.removeAnnouncement = function (id) {
+    cache.announcements = cache.announcements.filter(function (a) { return a.id !== id; });
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("announcements").delete().eq("id", id);
+    }).then(report);
+  };
+
+  Store.subscriptions = function () { return cache.subscriptions; };
+  Store.setSubscription = function (lawyerId, sub) {
+    var found = null;
+    cache.subscriptions.forEach(function (s) { if (s.lawyerId === lawyerId) found = s; });
+    if (!found) {
+      found = { lawyerId: lawyerId, plan: "ai", startedAt: new Date().toISOString() };
+      cache.subscriptions.push(found);
+    }
+    Object.keys(sub || {}).forEach(function (k) { found[k] = sub[k]; });
+    Store.notifyAll();
+    // One per lawyer per plan, so this is an upsert on that pair rather than
+    // a new row each time somebody toggles it.
+    SB.load().then(function (sb) {
+      return sb.from("subscriptions").upsert({
+        lawyer_id: lawyerId, plan: "ai",
+        price: found.price || 0, active: found.active !== false,
+        ends_at: found.endsAt || null, created_by: Store.currentId()
+      }, { onConflict: "lawyer_id,plan" }).select().single();
+    }).then(report).then(function (res) {
+      if (res && res.data) { found.id = res.data.id; Store.notifyAll(); }
+    });
+    return found;
+  };
+
+  Store.costs = function () { return cache.costs; };
+  Store.addCost = function (c) {
+    c.at = Date.now();
+    cache.costs.unshift(c);
+    Store.notifyAll();
+    push("operating_costs", { name: c.name, amount: c.amount, period: c.period,
+                              starts_at: c.startsAt || null, ends_at: c.endsAt || null,
+                              note: c.note || null })
+      .then(report)
+      .then(function (res) { if (res && res.data) { c.id = res.data.id; Store.notifyAll(); } });
+    return c;
+  };
+  Store.removeCost = function (id) {
+    cache.costs = cache.costs.filter(function (c) { return c.id !== id; });
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("operating_costs").delete().eq("id", id);
+    }).then(report);
+  };
+
+  Store.partners = function () { return cache.partners; };
+  Store.addPartner = function (p) {
+    cache.partners.push(p);
+    Store.notifyAll();
+    push("partners", { name: p.name, share_pct: p.sharePct, note: p.note || null })
+      .then(report)
+      .then(function (res) { if (res && res.data) { p.id = res.data.id; Store.notifyAll(); } });
+    return p;
+  };
+  Store.removePartner = function (id) {
+    cache.partners = cache.partners.filter(function (p) { return p.id !== id; });
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("partners").delete().eq("id", id);
+    }).then(report);
+  };
+
+  Store.bands = function () { return cache.bands; };
+  Store.setBand = function (typeId, band) {
+    cache.bands[typeId] = { min: band.min, max: band.max };
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("price_bands").upsert(
+        { type_id: typeId, min_price: band.min, max_price: band.max },
+        { onConflict: "type_id" });
+    }).then(report);
+  };
+
   Store.settings = function () { return cache.settings; };
   Store.setSettings = function (p) {
     Object.keys(p || {}).forEach(function (k) { cache.settings[k] = p[k]; });
     Store.notifyAll();
     SB.load().then(function (sb) {
+      var c = cache.settings;
       return sb.from("platform_settings").update({
-        commission_pct: cache.settings.commissionPct,
-        vat_enabled: !!cache.settings.vatEnabled,
-        vat_pct: cache.settings.vatPct,
+        commission_pct: c.commissionPct,
+        vat_enabled: !!c.vatEnabled,
+        vat_pct: c.vatPct,
+        mada_pct: c.madaPct, mada_fixed: c.madaFixed,
+        card_pct: c.cardPct, card_fixed: c.cardFixed,
+        mada_share_pct: c.madaSharePct, ai_price: c.aiPrice,
         updated_at: new Date().toISOString(),
       }).eq("id", 1);
     }).then(report);
@@ -489,6 +624,14 @@
       cache.notices = (d.notices || []).map(inNotice);
       cache.audit = (d.audit || []).map(inAudit);
       cache.settings = inSettings(d.settings);
+      cache.announcements = (d.announcements || []).map(inAnnouncement);
+      cache.subscriptions = (d.subscriptions || []).map(inSubscription);
+      cache.costs = (d.costs || []).map(inCost);
+      cache.partners = (d.partners || []).map(inPartner);
+      cache.bands = {};
+      (d.bands || []).forEach(function (b) {
+        cache.bands[b.type_id] = { min: Number(b.min_price), max: Number(b.max_price) };
+      });
       ready = true;
       keepMe();
       Store.notifyAll();

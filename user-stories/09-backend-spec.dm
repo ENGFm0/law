@@ -22,9 +22,14 @@
 | comments | التعليقات | US-014 |
 | reviews | التقييمات | US-013 |
 | endorsements | شهادات الإشراف | US-012 |
-| (مطلوب) payments، payouts، invoices | الحركات المالية والتوزيع والفواتير | US-020 |
-| (مطلوب) disputes، resolutions | النزاعات وقراراتها | US-022 |
-| (مطلوب) notifications | التنبيهات وحالة قراءتها | US-021 |
+| disputes | النزاعات وقراراتها | US-022 |
+| notifications | التنبيهات وحالة قراءتها | US-021 |
+| platform_settings | العمولة والضريبة ورسوم البوّابة | US-020 |
+| audit_log | سجل القرارات — يُضاف إليه ولا يُعدَّل | US-003، US-022 |
+| announcements | ما تقوله المنصة للناس | — |
+| subscriptions | اشتراك مساحة الصياغة للمحامي | US-009 |
+| operating_costs، partners | ما تنفقه المنصة ومن يقتسم الباقي | — |
+| (مطلوب) payments، payouts، invoices | الحركات المالية والفواتير — تنتظر البوّابة | US-020 |
 
 ## ٣. الصلاحية على مستوى الصف
 

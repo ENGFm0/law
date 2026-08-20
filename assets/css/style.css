@@ -456,6 +456,63 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .header-actions { margin-inline-start: auto; }
 }
 
+/* ---------- 11a0. The staff console ---------- */
+.adm-tabs {
+  display: flex; gap: var(--s-1); margin-bottom: var(--s-6);
+  overflow-x: auto; scrollbar-width: none;
+  border-bottom: 1px solid var(--border);
+}
+.adm-tabs::-webkit-scrollbar { display: none; }
+.adm-tab {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  padding: var(--s-3) var(--s-4); white-space: nowrap;
+  font-size: .9375rem; font-weight: 600; color: var(--text-muted);
+  border-block-end: 2px solid transparent; margin-block-end: -1px;
+  transition: color .18s, border-color .18s;
+}
+.adm-tab:hover { color: var(--text); }
+.adm-tab.is-active { color: var(--text); border-block-end-color: var(--accent); }
+
+.kpi-grid {
+  display: grid; gap: var(--s-4);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.kpi {
+  display: flex; flex-direction: column; gap: var(--s-2);
+  padding: var(--s-5); border-radius: var(--r-lg);
+  background: var(--surface); border: 1px solid var(--border);
+}
+.kpi__label { font-size: .75rem; color: var(--text-faint); font-weight: 600; }
+.kpi__value { font-size: 1.375rem; letter-spacing: -.02em; }
+/* Tone is carried by a rule down one edge rather than by tinting the whole
+   card: a wall of coloured blocks tells you nothing about which one matters. */
+.kpi--good { border-inline-start: 3px solid var(--success); }
+.kpi--bad  { border-inline-start: 3px solid var(--danger); }
+.kpi--warn { border-inline-start: 3px solid var(--warning); }
+
+.admin-card { margin-bottom: var(--s-3); }
+.admin-line {
+  padding-block: var(--s-3);
+  border-block-end: 1px solid var(--border);
+}
+.admin-line:last-child { border-block-end: 0; }
+
+@media (max-width: 640px) {
+  .kpi { padding: var(--s-4); }
+  .kpi__value { font-size: 1.125rem; }
+  .adm-tab { padding: var(--s-3) var(--s-3); font-size: .875rem; }
+}
+
+/* ---------- 11a0b. What the platform is saying ---------- */
+.announce {
+  display: flex; align-items: flex-start; gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  background: var(--accent-soft); color: var(--accent-soft-text);
+  border-block-end: 1px solid var(--border);
+}
+.announce__body { font-size: .875rem; }
+.announce a { font-weight: 700; text-decoration: underline; }
+
 /* ---------- 11a1. When the backend cannot be reached ---------- */
 .offline-bar {
   position: fixed; inset-inline: 0; inset-block-start: 0; z-index: 200;

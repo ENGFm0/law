@@ -75,7 +75,8 @@ ok('the client who raised it is not told about their own act',
    await tab.evaluate(() => window.Models.noticesFor('u-fahad').some(n => n.type === 'disputed')) === false);
 
 console.log('— AND THE DECISION REACHES BOTH SIDES, THE SAME WAY —');
-await open('admin.html', 'u-staff');
+// Disputes are decided under the Requests section of the console now.
+await open('admin.html?tab=requests', 'u-staff');
 await tab.click('[data-outcome="release"]'); await tab.waitForTimeout(250);
 await tab.fill('[data-why]', 'سُلّم في موعده');
 await tab.click('[data-resolve]'); await tab.waitForTimeout(400);
@@ -83,6 +84,7 @@ ok('the client hears', await tab.evaluate(() => window.Models.noticesFor('u-faha
 ok('the lawyer hears', await tab.evaluate(() => window.Models.noticesFor('u-ahmed').some(n => n.type === 'resolved')));
 
 console.log('— APPROVAL REACHES THE PERSON WAITING —');
+await tab.goto(U + 'admin.html?tab=people'); await tab.waitForTimeout(400);
 await tab.click('[data-approve="u-rania"]'); await tab.waitForTimeout(400);
 ok('she is told her account is live',
    await tab.evaluate(() => window.Models.noticesFor('u-rania').some(n => n.type === 'approved')));

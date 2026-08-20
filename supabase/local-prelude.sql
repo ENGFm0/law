@@ -14,3 +14,18 @@ create or replace function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 grant usage on schema auth to public;
 grant execute on function auth.uid() to public;
+
+-- Supabase ships these two roles; a plain PostgreSQL does not, and a migration
+-- that grants to them fails at the first GRANT rather than at the policy it was
+-- really about. They existed here by accident before — created by hand in an
+-- earlier session — which is a poor foundation for a test that is supposed to
+-- prove a migration applies cleanly.
+do $$ begin
+  if not exists (select 1 from pg_roles where rolname = 'anon') then
+    create role anon nologin;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then
+    create role authenticated nologin;
+  end if;
+end $$;
+grant usage on schema public to anon, authenticated;

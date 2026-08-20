@@ -73,6 +73,8 @@
       roles: row.roles || ["client"],
       activeRole: row.active_role || (row.roles || ["client"])[0],
       status: row.status || "pending",
+      // Where the platform is choosing to place them, if anywhere.
+      featuredRank: row.featured_rank == null ? null : row.featured_rank,
       // Whether they have ever told us who they are. False for an account
       // Google created on their behalf.
       onboarded: !!row.onboarded,
@@ -103,6 +105,13 @@
     // Which of the roles they hold they are currently looking through. Never
     // the roles themselves — those are not changed by a profile edit.
     if (data.activeRole !== undefined) row.active_role = data.activeRole;
+    // Approving somebody was the one thing the desk existed to do, and this
+    // column was missing from the list — so it moved the screen and the
+    // database never heard about it, and a refresh put them back in the queue.
+    // Sending it is safe from anywhere: a trigger pins it on your own row and
+    // only a staff policy lets it through on anybody else's.
+    if (data.status !== undefined) row.status = data.status;
+    if (data.featuredRank !== undefined) row.featured_rank = data.featuredRank;
     if (data.role === "lawyer" || (data.roles || []).indexOf("lawyer") !== -1) {
       row.licence_no = data.licenceNumber || null;
       row.licence_authority = flat(data.licenceAuthority);
@@ -301,6 +310,13 @@
           // Only staff may read the record; for everyone else this comes back
           // empty and the desk they cannot open stays empty with it.
           sb.from("audit_log").select("*").order("at", { ascending: false }).limit(200),
+          sb.from("price_bands").select("*"),
+          sb.from("announcements").select("*").order("created_at", { ascending: false }),
+          sb.from("subscriptions").select("*"),
+          // Costs and partners are staff-only; for everyone else these come
+          // back empty, which is exactly what an ordinary account should see.
+          sb.from("operating_costs").select("*").order("created_at", { ascending: false }),
+          sb.from("partners").select("*").order("created_at"),
         ]).then(function (r) {
           var pick = function (x) { return (x && !x.error && x.data) || []; };
           return {
@@ -311,6 +327,8 @@
             disputes: pick(r[8]), notices: pick(r[9]),
             settings: (r[10] && !r[10].error && r[10].data) || null,
             audit: pick(r[11]),
+            bands: pick(r[12]), announcements: pick(r[13]), subscriptions: pick(r[14]),
+            costs: pick(r[15]), partners: pick(r[16]),
           };
         });
       });

@@ -148,13 +148,33 @@
       "</a>";
   }
 
+  /** What the platform is saying to whoever is reading. Rendered above the
+      header rather than inside a page, because it belongs to the site and not
+      to any one screen. */
+  function announcements() {
+    if (!global.Models || !global.Models.announcementsFor) return "";
+    var list = global.Models.announcementsFor(Session.role());
+    if (!list.length) return "";
+    return list.map(function (a) {
+      var text = global.App.esc(a.title) +
+        (a.body ? ' <span class="muted">' + global.App.esc(a.body) + "</span>" : "");
+      return '<div class="announce" data-announce>' +
+        Icons.svg("bell", "icon-sm") +
+        '<span class="announce__body">' + text +
+          (a.link ? ' <a href="' + global.App.esc(a.link) + '" rel="noopener">' +
+            global.App.esc(I18N.t("notice.open")) + "</a>" : "") +
+        "</span></div>";
+    }).join("");
+  }
+
   function header(active) {
     var links = navItems().map(function (item) {
       return '<a class="nav__link' + (item.id === active ? " is-active" : "") + '" href="' + item.href +
         '" data-i18n="' + item.key + '"' + (item.id === active ? ' aria-current="page"' : "") + "></a>";
     }).join("");
 
-    return '<header class="site-header"><div class="container site-header__inner">' +
+    return announcements() +
+      '<header class="site-header"><div class="container site-header__inner">' +
       brand() +
       '<nav class="nav" data-i18n-attr="aria-label:a11y.menu">' + links + "</nav>" +
       '<div class="header-actions">' + themeButton() + langButton() +
@@ -236,10 +256,17 @@
     var oldHeader = document.querySelector(".site-header");
     var oldTab = document.querySelector("[data-tabbar]");
     if (!oldHeader) return;
+    // The announcements sit above the header, so anything left from the last
+    // draw has to go before this one replaces it.
+    document.querySelectorAll("[data-announce]").forEach(function (el) { el.remove(); });
     var holder = document.createElement("div");
     holder.innerHTML = header(page) + tabbar(page);
-    var newHeader = holder.firstChild, newTab = holder.lastChild;
+    var newTab = holder.lastChild;
+    var nodes = [];
+    while (holder.firstChild !== newTab) nodes.push(holder.removeChild(holder.firstChild));
+    var newHeader = nodes[nodes.length - 1];
     oldHeader.replaceWith(newHeader);
+    nodes.slice(0, -1).forEach(function (n) { newHeader.parentNode.insertBefore(n, newHeader); });
     if (oldTab) oldTab.replaceWith(newTab); else document.body.appendChild(newTab);
     if (I18N) { I18N.apply(newHeader); I18N.apply(newTab); }
   }

@@ -31,9 +31,9 @@ Pages.define("assistant", function (global) {
     });
   }
 
-  function gate() {
+  function gate(key) {
     return '<div class="container" style="padding-block:var(--s-16)">' +
-      C.empty("lock", "ai.forLawyers") +
+      C.empty("lock", key || "ai.forLawyers") +
       '<p class="center" style="margin-top:var(--s-6)">' +
         '<a class="btn btn--primary" href="index.html" data-i18n="art.back"></a></p></div>';
   }
@@ -155,6 +155,11 @@ Pages.define("assistant", function (global) {
 
   App.onRender(function () {
     if (!Session.is("lawyer")) { host.innerHTML = gate(); I18N.apply(host); return; }
+    // Sold, not given. A lawyer without a live subscription is told what it is
+    // rather than shown an empty workspace they cannot use.
+    if (!M.canDraft(Session.user().id)) {
+      host.innerHTML = gate("ai.needsSub"); I18N.apply(host); return;
+    }
     ensure();
 
     host.innerHTML = '<div class="container" style="padding-block:var(--s-10) var(--s-12)">' +

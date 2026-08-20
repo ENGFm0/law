@@ -31,10 +31,12 @@
   [
     "requests", "requestStates", "services", "removedServices", "reviews",
     "articles", "articleStates", "comments", "endorsements", "applications",
-    "agreements", "disputes", "audit", "profiles", "notices"
+    "agreements", "disputes", "audit", "profiles", "notices",
+    "announcements", "subscriptions", "costs", "partners", "bands"
   ].forEach(function (k) {
     if (!work[k]) {
-      work[k] = (k.indexOf("States") !== -1 || k === "applications" || k === "profiles")
+      work[k] = (k.indexOf("States") !== -1 || k === "applications" ||
+                 k === "profiles" || k === "bands")
         ? {} : [];
     }
   });
@@ -296,6 +298,75 @@
       notify();
     },
 
+    /* ---------------- what the platform runs on ----------------
+       Announcements, the drafting subscription, the running costs and who
+       shares what is left. All four are the platform talking about itself, so
+       all four are written from one place and read from wherever they belong. */
+    announcements: function () { return work.announcements; },
+    addAnnouncement: function (a) {
+      a.id = uid("an");
+      a.at = Date.now();
+      if (a.active === undefined) a.active = true;
+      work.announcements.unshift(a);
+      notify();
+      return a;
+    },
+    setAnnouncement: function (id, patch) {
+      work.announcements.forEach(function (a) {
+        if (a.id === id) Object.keys(patch).forEach(function (k) { a[k] = patch[k]; });
+      });
+      notify();
+    },
+    removeAnnouncement: function (id) {
+      work.announcements = work.announcements.filter(function (a) { return a.id !== id; });
+      notify();
+    },
+
+    subscriptions: function () { return work.subscriptions; },
+    setSubscription: function (lawyerId, sub) {
+      var found = null;
+      work.subscriptions.forEach(function (s) { if (s.lawyerId === lawyerId) found = s; });
+      if (!found) {
+        found = { id: uid("sub"), lawyerId: lawyerId, plan: "ai", startedAt: Date.now() };
+        work.subscriptions.push(found);
+      }
+      Object.keys(sub || {}).forEach(function (k) { found[k] = sub[k]; });
+      notify();
+      return found;
+    },
+
+    costs: function () { return work.costs; },
+    addCost: function (c) {
+      c.id = uid("cost");
+      c.at = Date.now();
+      work.costs.unshift(c);
+      notify();
+      return c;
+    },
+    removeCost: function (id) {
+      work.costs = work.costs.filter(function (c) { return c.id !== id; });
+      notify();
+    },
+
+    partners: function () { return work.partners; },
+    addPartner: function (p) {
+      p.id = uid("prt");
+      work.partners.push(p);
+      notify();
+      return p;
+    },
+    removePartner: function (id) {
+      work.partners = work.partners.filter(function (p) { return p.id !== id; });
+      notify();
+    },
+
+    /** Price bands the platform publishes, overriding the seeded defaults. */
+    bands: function () { return work.bands; },
+    setBand: function (typeId, band) {
+      work.bands[typeId] = { min: band.min, max: band.max };
+      notify();
+    },
+
     /* ---------------- the audit trail ----------------
        Approvals, rejections and decisions are written down because the point
        of them is that somebody can be asked afterwards why. Append only. */
@@ -413,7 +484,8 @@
       work = { requests: [], requestStates: {}, services: [], removedServices: [],
                reviews: [], articles: [], articleStates: {}, comments: [],
                endorsements: [], applications: {}, agreements: [], disputes: [],
-               audit: [], profiles: {}, notices: [] };
+               audit: [], profiles: {}, notices: [],
+               announcements: [], subscriptions: [], costs: [], partners: [], bands: {} };
       notify();
     },
     resetAll: function () {

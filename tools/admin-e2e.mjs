@@ -38,11 +38,17 @@ ok('and the account still has no such role',
    !(await tab.evaluate(() => (window.Session.user().roles || []).includes('staff'))));
 
 console.log('— THE QUEUE —');
-await open('admin.html', 'u-staff');
+// The console is six sections now; the queue lives under People.
+await open('admin.html?tab=people', 'u-staff');
 ok('staff reach the desk', /مكتب الإدارة/.test(await body()));
 ok('the pending lawyer is waiting there', (await body()).includes('رانية الحربي'));
 ok('so is the pending trainee', (await body()).includes('تركي السبيعي'));
-ok('nobody already approved is in the queue', !(await body()).includes('أحمد عبدالله المحمدي'));
+// People lists everyone now, which is the point of it; the queue is a filter.
+ok('everyone is listed, approved or not', (await body()).includes('أحمد عبدالله المحمدي'));
+await tab.click('[data-filter="pending"]'); await tab.waitForTimeout(300);
+ok('and filtering to pending leaves only those waiting',
+   !(await body()).includes('أحمد عبدالله المحمدي') && (await body()).includes('رانية الحربي'));
+await tab.click('[data-filter="all"]'); await tab.waitForTimeout(300);
 ok('her licence number is on screen to be checked', /8842|٨٨٤٢/.test(await body()));
 
 console.log('— APPROVING PUTS HER IN THE DIRECTORY —');
@@ -71,7 +77,7 @@ await tab.evaluate(() => {
   window.Store.setRequest('r-1', { status: 'delivered', body: 'النص المسلَّم', assignedTo: 'u-jaid', internShare: 30 });
   window.Store.openDispute({ requestId: 'r-1', byId: 'u-fahad', reason: 'ناقص بند الإنهاء' });
 });
-await tab.goto(U + 'admin.html'); await tab.waitForTimeout(350);
+await tab.goto(U + 'admin.html?tab=requests'); await tab.waitForTimeout(400);
 let txt = await body();
 ok('the dispute reaches the desk', txt.includes('ناقص بند الإنهاء'));
 ok('with what was actually delivered beside it', txt.includes('النص المسلَّم'));
@@ -92,9 +98,10 @@ ok('with one it is decided', d.status === 'resolved');
 ok('at the share the staff chose', d.resolution.lawyerPct === 70);
 ok('carrying the written reason', d.resolution.reason === 'سُلّم أغلب العمل');
 ok('and naming who decided', d.resolution.byId === 'u-staff');
-ok('the queue empties', /لا نزاعات مفتوحة/.test(await body()));
+ok('the dispute is no longer open', await tab.evaluate(()=>window.Models.openDisputes().length) === 0);
 
 console.log('— SETTINGS —');
+await tab.goto(U + 'admin.html?tab=settings'); await tab.waitForTimeout(400);
 ok('tax is off to begin with', await tab.evaluate(() => window.Models.platformSettings().vatEnabled) === false);
 await tab.fill('[data-commission]', '15');
 await tab.click('[data-save-settings]'); await tab.waitForTimeout(300);
@@ -108,6 +115,7 @@ ok('a lawful one is kept', s.commissionPct === 7);
 ok('and tax can be switched on without touching code', s.vatEnabled === true);
 
 console.log('— THE RECORD —');
+await tab.goto(U + 'admin.html?tab=overview'); await tab.waitForTimeout(400);
 txt = await body();
 ok('every decision is listed', /اعتماد/.test(txt) && /رفض/.test(txt) && /فصل في نزاع/.test(txt));
 const n = await tab.evaluate(() => window.Store.audit().length);
