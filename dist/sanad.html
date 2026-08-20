@@ -7113,6 +7113,31 @@ window.SANAD_CONFIG = {
     "featured_rank", "featured_until", "auto_bid", "vat_registered",
   ].join(",");
 
+  /* The same list minus what migration 011 adds. A site deploys in one push
+     and a migration is run by hand afterwards, so there is a window where the
+     code asks for a column the database does not have yet — and PostgREST
+     refuses the whole read for one unknown name. Rather than leave the
+     directory empty until somebody opens the SQL editor, the read falls back
+     to what every version of this schema has. */
+  var OLDER_PROFILE = [
+    "id", "full_name", "avatar_url", "roles", "active_role", "status", "bio",
+    "licence_no", "licence_authority", "licence_expiry", "specialties",
+    "years", "university", "level", "skills", "city", "created_at", "onboarded",
+    "featured_rank", "featured_until", "auto_bid",
+  ].join(",");
+
+  function unknownColumn(err) {
+    return !!err && (err.code === "42703" || /does not exist|schema cache/i.test(err.message || ""));
+  }
+
+  function people(sb) {
+    return sb.from("profiles").select(PUBLIC_PROFILE).then(function (res) {
+      if (!unknownColumn(res.error)) return res;
+      console.warn("profiles: falling back to the pre-011 columns —", res.error.message);
+      return sb.from("profiles").select(OLDER_PROFILE);
+    });
+  }
+
   var client = null;          // the real supabase-js client, once anything needs it
   var loading = null;
 
@@ -7438,7 +7463,14 @@ window.SANAD_CONFIG = {
         // phone on the account page, and they are yours to see.
         if (me && me.sub === id) {
           return sb.rpc("my_profile").maybeSingle().then(function (res) {
-            if (res.error) { console.error("profile read failed", res.error); return null; }
+            // Same window: the function arrives with migration 011. Falling
+            // back means an account page without its own email for a few
+            // minutes rather than a site that cannot say who is signed in.
+            if (res.error) {
+              console.warn("my_profile unavailable —", res.error.message);
+              return sb.from("profiles").select(OLDER_PROFILE).eq("id", id).maybeSingle()
+                .then(function (out) { return out.error ? null : toProfile(out.data); });
+            }
             return toProfile(res.data);
           });
         }
@@ -7477,7 +7509,7 @@ window.SANAD_CONFIG = {
       return load().then(function (sb) {
         var want = names || SB.CORE.concat(SB.REST);
         var query = {
-          profiles:         function () { return sb.from("profiles").select(PUBLIC_PROFILE); },
+          profiles:         function () { return people(sb); },
           services:         function () { return sb.from("services").select("*"); },
           service_types:    function () { return sb.from("service_types").select("*").order("sort"); },
           price_bands:      function () { return sb.from("price_bands").select("*"); },

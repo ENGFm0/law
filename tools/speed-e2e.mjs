@@ -90,6 +90,38 @@ ok('with everyone on it', /ماجد/.test(warm));
 const band = await p.evaluate(() => window.Models.priceBand('consult'));
 ok('and the prices it was told last time', band.max === 500, JSON.stringify(band));
 
+console.log('— A DATABASE THAT HAS NOT HAD THE MIGRATION RUN YET —');
+{
+  // PostgREST refuses a whole read for one unknown column name, so the window
+  // between a deploy and running the migration by hand would otherwise be a
+  // window with an empty directory in it.
+  blockRest = false;
+  let refusedOnce = false;
+  await ctx.unroute('**/rest/v1/**');
+  await ctx.route('**/rest/v1/**', async (r) => {
+    const url = new URL(r.request().url());
+    const name = url.pathname.split('/').pop();
+    if (name === 'profiles' && /title/.test(url.search) && !refusedOnce) {
+      refusedOnce = true;
+      return r.fulfill({ status: 400, contentType: 'application/json',
+        body: JSON.stringify({ code: '42703', message: 'column profiles.title does not exist' }) });
+    }
+    const body = Object.prototype.hasOwnProperty.call(TABLES, name) ? TABLES[name] : [];
+    r.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
+  });
+  const fresh = await ctx.newPage();
+  await fresh.evaluate(() => {}).catch(() => {});
+  await fresh.goto(U + 'lawyers.html');
+  await fresh.waitForTimeout(900);
+  await fresh.evaluate(() => localStorage.removeItem('sanad.warm.v1'));
+  await fresh.reload();
+  await fresh.waitForTimeout(900);
+  const t = await fresh.$eval('#main', (e) => e.innerText);
+  ok('the directory still fills in', /سلمى/.test(t), t.slice(0, 80));
+  ok('after asking again for what the schema does have', refusedOnce);
+  await fresh.close();
+}
+
 console.log('— NOTHING PRIVATE IS KEPT ON DISK —');
 const kept = await p.evaluate(() => JSON.parse(localStorage.getItem('sanad.warm.v1') || '{}'));
 ok('the warm copy holds the public lists', Array.isArray(kept.profiles));
