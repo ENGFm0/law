@@ -69,6 +69,8 @@ function boot(rows = {}) {
     getItem: (k) => (m.has(k) ? m.get(k) : null),
     setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }; };
   w.localStorage = mem(); w.sessionStorage = mem();
+  // A session this browser already believed in when the page loaded.
+  if (rows.session) w.localStorage.setItem('sanad.session.user', rows.session);
   // Enough of a DOM for the one thing the store draws itself: the bar that
   // names a table the database refused to hand over.
   const node = () => ({
@@ -92,7 +94,7 @@ function boot(rows = {}) {
   w.SB = {
     configured: () => true,
     load: () => Promise.resolve(fake.client),
-    currentId: () => Promise.resolve(null),
+    currentId: () => Promise.resolve(rows.authId || null),
     fromProfile: (d) => {
       const f = (v) => (v && typeof v === 'object' ? (v.ar || v.en || null) : (v ?? null));
       return { full_name: f(d.name), phone: d.phone || null, bio: f(d.bio) };
@@ -167,6 +169,37 @@ section('A READ THAT FAILED IS NOT A READ THAT CAME BACK EMPTY');
   await S.hydrate();
   ok('a failing read does not empty it', S.signups().length === 1, S.signups());
   ok('nor anything else on the page', S.requests().length === 1);
+}
+
+section('A SESSION THE SERVER NO LONGER HOLDS');
+{
+  // The browser remembers somebody; the provider does not. This is the state
+  // that produced "new row violates row-level security policy" — every read
+  // went through because most of them are public, and the first write went
+  // out with no token on it.
+  const { S } = boot({ session: 'someone' });
+  ok('the browser starts out believing it', S.currentId() === 'someone');
+  await flush(); await flush();
+  ok('and the store gives that up when the provider says no', S.currentId() === null);
+  ok('nobody is left in the cache to draw as signed in', S.signups().length === 0);
+}
+{
+  const { S } = boot({ authId: 'auth-1' });
+  await flush(); await flush();
+  ok('a live session is kept', S.authId() === 'auth-1');
+}
+
+section('A WRITE IS ADDRESSED WITH THE ID THE SERVER WILL CHECK');
+{
+  const { S, fake } = boot({ authId: 'auth-1' });
+  await S.hydrate();
+  await flush();
+  S.openQuote({ clientId: 'stale-id', typeId: 'consult', channel: 'text',
+                brief: 'x', expiresAt: Date.now() + 60000 });
+  await flush();
+  const wrote = fake.lastTo('quotes');
+  ok('the brief is posted as the signed-in account, not the remembered one',
+     wrote.row.client_id === 'auth-1', wrote.row);
 }
 
 section('THE CATALOGUE AND THE AUCTION COME BACK AS OBJECTS');

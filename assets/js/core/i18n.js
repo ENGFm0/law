@@ -1254,6 +1254,8 @@
       "admin.catBand": "نطاق السعر",
       "notice.quote": "طلب جديد مفتوح للمزايدة",
       "notice.won": "قُبل عرضك — بدأ العمل",
+      "sys.sessionGone": "انتهت جلستك",
+      "sys.sessionGoneBody": "المتصفح ما زال يذكرك، لكن الخادم لم يعد يعرف الجلسة — فأي حفظ سيُرفض. سجّل الدخول من جديد.",
     },
 
     en: {
@@ -2470,6 +2472,8 @@
       "admin.catBand": "Price band",
       "notice.quote": "A new brief is open for bids",
       "notice.won": "Your offer was accepted — the work has started",
+      "sys.sessionGone": "Your session has ended",
+      "sys.sessionGoneBody": "This browser still remembers you, but the server no longer holds the session, so nothing can be saved. Sign in again.",
     }
   };
 

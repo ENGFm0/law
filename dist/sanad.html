@@ -2932,6 +2932,8 @@ window.SANAD_CONFIG = {
       "admin.catBand": "نطاق السعر",
       "notice.quote": "طلب جديد مفتوح للمزايدة",
       "notice.won": "قُبل عرضك — بدأ العمل",
+      "sys.sessionGone": "انتهت جلستك",
+      "sys.sessionGoneBody": "المتصفح ما زال يذكرك، لكن الخادم لم يعد يعرف الجلسة — فأي حفظ سيُرفض. سجّل الدخول من جديد.",
     },
 
     en: {
@@ -4148,6 +4150,8 @@ window.SANAD_CONFIG = {
       "admin.catBand": "Price band",
       "notice.quote": "A new brief is open for bids",
       "notice.won": "Your offer was accepted — the work has started",
+      "sys.sessionGone": "Your session has ended",
+      "sys.sessionGoneBody": "This browser still remembers you, but the server no longer holds the session, so nothing can be saved. Sign in again.",
     }
   };
 
@@ -7208,11 +7212,39 @@ window.SANAD_CONFIG = {
   /** A write that fails leaves the cache ahead of the database, so say so
       rather than letting the screen quietly disagree with the server. */
   function report(res) {
-    if (res && res.error && global.App) {
+    if (res && res.error) {
       console.error(res.error);
-      global.App.toast(res.error.message, "close");
+      // 42501 on a write, from a page that believes somebody is signed in,
+      // has one meaning worth showing: the request carried no session. The
+      // Postgres wording is true and useless to the person reading it.
+      var lost = res.error.code === "42501" ||
+                 /row-level security/i.test(res.error.message || "");
+      if (lost && Store.currentId() && !authId) {
+        sessionGone();
+      } else if (global.App) {
+        global.App.toast(res.error.message, "close");
+      }
     }
     return res;
+  }
+
+  /** Said once, on screen, with the way out of it. */
+  function sessionGone() {
+    if (document.querySelector("[data-sessiongone]")) return;
+    var t = function (k) { return global.I18N ? global.I18N.t(k) : ""; };
+    var bar = document.createElement("div");
+    bar.setAttribute("data-sessiongone", "");
+    bar.className = "offline-bar";
+    var title = document.createElement("strong");
+    title.textContent = t("sys.sessionGone");
+    var body = document.createElement("span");
+    body.textContent = t("sys.sessionGoneBody");
+    var again = document.createElement("a");
+    again.className = "btn btn--sm";
+    again.href = "login.html";
+    again.textContent = t("sys.authRetry");
+    bar.appendChild(title); bar.appendChild(body); bar.appendChild(again);
+    (document.body || document.documentElement).appendChild(bar);
   }
 
   /* ---------- reads, all from the cache ---------- */
@@ -7584,6 +7616,10 @@ window.SANAD_CONFIG = {
   };
 
   Store.openQuote = function (q) {
+    // Addressed with the id the server will check it against, not the one
+    // this browser remembers. They are the same id in every ordinary case —
+    // and when they are not, the row is refused and nothing explains why.
+    if (authId) q.clientId = authId;
     var row = outQuote(q);
     push("quotes", row).then(function (res) {
       report(res);
@@ -7627,6 +7663,7 @@ window.SANAD_CONFIG = {
   };
 
   Store.addOffer = function (offer) {
+    if (authId) offer.lawyer = authId;
     var q = Store.quote(offer.quoteId);
     if (!q || q.status !== "open") return false;
     var already = cache.offers.some(function (o) {
@@ -7886,11 +7923,36 @@ window.SANAD_CONFIG = {
   // needs the library, and the library may be the very thing that failed —
   // in which case the answer arrives as an error about the network and the
   // real reason, sitting in plain sight in the URL, is never read at all.
+  /* Who the database will think we are, as opposed to who this browser has
+     remembered. Every ownership rule on the server is written against the
+     first one, so every write is addressed with it. */
+  var authId = null;
+  Store.authId = function () { return authId; };
+  // Whose session this browser claimed at the moment the page loaded. The
+  // check below compares against it rather than against "whoever is signed in
+  // now", so somebody who signs in while the first answer is still in flight
+  // is not signed straight back out by it.
+  var bootSession = Store.currentId();
+
   var authFail = SB.authError && SB.authError();
   if (authFail) authProblem(authFail.message);
 
   SB.currentId().then(function (id) {
+    authId = id;
     if (id) SB.cleanUrl && SB.cleanUrl();
+    // The browser says one thing and the provider says another. This is the
+    // state that produced "new row violates row-level security policy": the
+    // local session key survived, the site drew as signed in, every read went
+    // through because most of them are public — and then the first write
+    // reached the database carrying no token at all, so `auth.uid()` was null
+    // and the row was refused by a rule that was doing its job. Better to say
+    // the session ended than to leave a site that looks signed in and cannot
+    // write a thing.
+    if (!id && bootSession && Store.currentId() === bootSession) {
+      Store.signOut();
+      document.dispatchEvent(new CustomEvent("sessionchange"));
+      sessionGone();
+    }
     if (id) {
       Store.signIn(id);
       // Store.signIn announces a store change, which redraws pages but not the
