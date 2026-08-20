@@ -143,13 +143,24 @@ Pages.define("call", function (global) {
     if (Session.isGuest()) { host.innerHTML = gate("auth.guestHint"); I18N.apply(host); return; }
     if (requestId && !mayJoin()) { host.innerHTML = gate("call.notYours"); I18N.apply(host); return; }
 
+    var r = request();
     host.innerHTML = '<div class="container" style="padding-block:var(--s-8) var(--s-16)">' +
       (phase === "live" ? liveScreen() : phase === "ended" ? endedScreen() : readyScreen()) +
+      // A call is not the whole of a consultation. Whatever has to be sent —
+      // the contract being argued about, a photo of the notice, the note
+      // written while talking — belongs to the same case, in the same thread
+      // the two of them already have, before the call, during it and after.
+      (r ? '<div class="call-card card card--pad" style="margin-top:var(--s-6)">' +
+             C.thread(r, "parties", { closed: M.requestState(r).status === "completed" }) +
+           "</div>"
+         : "") +
       "</div>";
     I18N.apply(host);
     if (phase === "live") attachStreams();
     syncButtons();
+    C.threadDraw(host);
   });
+  C.wireThread(host);
 
   /* The <video> elements are recreated by every redraw, so the streams have to
      be re-attached rather than set once at join time. */

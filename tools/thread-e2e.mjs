@@ -95,6 +95,24 @@ ok('their own message is there', /البند الخامس/.test(t4));
 ok('the internal note is not', !/راجع الاختصاص/.test(t4));
 ok('and no tab offers it', !/مع المتدرب/.test(t4));
 
+console.log('— A CALL IS NOT THE WHOLE OF A CONSULTATION —');
+await p.evaluate(() => {
+  const rid = localStorage.getItem('rid');
+  Store.setRequest(rid, { assignedTo: null, status: 'in_progress' });
+  const r = Models.request(rid);
+  r.channel = 'voice';
+});
+await open('requests.html', 'u-fahad');
+await p.goto(U + 'call.html?id=' + rid); await p.waitForTimeout(600);
+const t5 = await body();
+ok('the thread is beside the call', (await p.$('[data-thread]')) !== null, t5.slice(0, 90));
+ok('with what was already said in it', /البند الخامس/.test(t5));
+await p.fill('[data-thread-body]', 'أرسلت لك صورة الإشعار');
+await p.click('[data-thread-form] button[type=submit]'); await p.waitForTimeout(400);
+ok('and something can be sent during it', /صورة الإشعار/.test(await body()));
+ok('into the same thread as the case',
+   (await p.evaluate(() => Store.messages(localStorage.getItem('rid'), 'parties').length)) === 2);
+
 console.log('\nerrors: ' + (errs.length ? errs.join(' | ') : 'none'));
 console.log(`${pass} passed, ${fail} failed`);
 await b.close();

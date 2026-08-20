@@ -244,7 +244,12 @@
             return sb.from("profiles").update(row).eq("id", user.id).select(PUBLIC_PROFILE).single()
               .then(function (out) {
                 if (out.error) return { ok: false, error: "profileFailed", message: out.error.message };
-                return { ok: true, user: toProfile(out.data) };
+                // Read it back whole rather than from the public columns the
+                // update returned: this is the account's own row, and the
+                // account page shows the address it just signed up with.
+                return sb.rpc("my_profile").maybeSingle().then(function (mine) {
+                  return { ok: true, user: toProfile((mine && mine.data) || out.data) };
+                });
               });
           });
       });
@@ -273,7 +278,9 @@
             return sb.from("profiles").update(row).eq("id", id).select(PUBLIC_PROFILE).single()
               .then(function (out) {
                 if (out.error) return { ok: false, error: "profileFailed", message: out.error.message };
-                return { ok: true, user: toProfile(out.data) };
+                return sb.rpc("my_profile").maybeSingle().then(function (mine) {
+                  return { ok: true, user: toProfile((mine && mine.data) || out.data) };
+                });
               });
           });
       });

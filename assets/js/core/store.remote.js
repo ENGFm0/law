@@ -1027,23 +1027,30 @@
   Store.notices = function () { return cache.notices; };
   Store.notify = function (n) {
     if (!n.to) return null;
-    var dup = cache.notices.some(function (x) {
-      return x.to === n.to && x.type === n.type && x.ref === n.ref;
+    // One row per person, kind and subject — and it comes back unread when
+    // something happens again. The plain insert this replaced was refused by
+    // the unique key the second time, which was right for "your account was
+    // approved" and quite wrong for "a new message on your request": the bell
+    // rang once per case and then never again.
+    var held = null;
+    cache.notices.forEach(function (x) {
+      if (x.to === n.to && x.type === n.type && x.ref === n.ref) held = x;
     });
-    if (dup) return null;
-    n.at = Date.now();
-    n.read = false;
-    cache.notices.push(n);
+    if (held) { held.read = false; held.at = Date.now(); }
+    else { n.at = Date.now(); n.read = false; cache.notices.push(n); }
     Store.notifyAll();
+
     // A notice raised for somebody else cannot be read back by the sender, so
-    // no row is selected here — and the unique key means a duplicate is a
-    // refusal to record, not an error worth showing anyone.
+    // nothing is selected here.
     SB.load().then(function (sb) {
-      return sb.from("notifications").insert({ to_id: n.to, type: n.type, ref: n.ref || null });
+      return sb.from("notifications").upsert({
+        to_id: n.to, type: n.type, ref: n.ref || null,
+        read: false, at: new Date().toISOString(),
+      }, { onConflict: "to_id,type,ref" });
     }).then(function (res) {
       if (res && res.error && res.error.code !== "23505") report(res);
     });
-    return n;
+    return held || n;
   };
   Store.readNotice = function (id) {
     cache.notices.forEach(function (n) { if (n.id === id) n.read = true; });

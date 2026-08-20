@@ -422,7 +422,7 @@ section('ACCOUNTS');
 
 section('THE DESK COMES FROM THE DATABASE, NOT FROM THIS BROWSER');
 {
-  const { S } = boot({
+  const { S, fake } = boot({
     disputes: [{ id: 'd1', request_id: 'r1', by_id: 'c1', reason: 'ناقص',
       status: 'resolved', outcome: 'split', lawyer_pct: 60,
       resolution_reason: 'سُلّم أغلبه', resolved_by: 's1',
@@ -457,9 +457,26 @@ section('THE DESK COMES FROM THE DATABASE, NOT FROM THIS BROWSER');
   ok('changing a setting is visible immediately', S.settings().commissionPct === 5);
 
   S.notify({ to: 'c1', type: 'rated', ref: 'r9' });
-  ok('a new notice lands in the list', S.notices().length === 3);
+  {
+    // The same event twice used to be refused outright by the unique key,
+    // which is right for "your account was approved" and wrong for "a new
+    // message": the bell rang once per case and then never again.
+    const before = S.notices().length;
+    S.notify({ to: 'p1', type: 'message', ref: 'r-1' });
+    S.readNotice(S.notices()[S.notices().length - 1].id);
+    S.notify({ to: 'p1', type: 'message', ref: 'r-1' });
+    const again = S.notices().filter((n) => n.type === 'message' && n.ref === 'r-1');
+    ok('a second message reopens the same notice', again.length === 1 && again[0].read === false);
+    ok('rather than adding another', S.notices().length === before + 1);
+    await flush();
+    const sent = fake.lastTo('notifications');
+    ok('and it is an upsert, not an insert that will be refused',
+       sent.op === 'upsert' && sent.row.read === false, sent && sent.op);
+  }
+
+  ok('a new notice lands in the list', S.notices().length === 4, S.notices().length);
   S.notify({ to: 'c1', type: 'rated', ref: 'r9' });
-  ok('and the same event twice stays one', S.notices().length === 3);
+  ok('and the same event twice stays one row', S.notices().length === 4);
 
   ok('a dispute cannot be opened twice on one request',
      S.openDispute({ requestId: 'r1', byId: 'c1', reason: 'x' }) === null);

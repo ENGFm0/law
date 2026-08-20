@@ -7325,7 +7325,12 @@ window.SANAD_CONFIG = {
             return sb.from("profiles").update(row).eq("id", user.id).select(PUBLIC_PROFILE).single()
               .then(function (out) {
                 if (out.error) return { ok: false, error: "profileFailed", message: out.error.message };
-                return { ok: true, user: toProfile(out.data) };
+                // Read it back whole rather than from the public columns the
+                // update returned: this is the account's own row, and the
+                // account page shows the address it just signed up with.
+                return sb.rpc("my_profile").maybeSingle().then(function (mine) {
+                  return { ok: true, user: toProfile((mine && mine.data) || out.data) };
+                });
               });
           });
       });
@@ -7354,7 +7359,9 @@ window.SANAD_CONFIG = {
             return sb.from("profiles").update(row).eq("id", id).select(PUBLIC_PROFILE).single()
               .then(function (out) {
                 if (out.error) return { ok: false, error: "profileFailed", message: out.error.message };
-                return { ok: true, user: toProfile(out.data) };
+                return sb.rpc("my_profile").maybeSingle().then(function (mine) {
+                  return { ok: true, user: toProfile((mine && mine.data) || out.data) };
+                });
               });
           });
       });
@@ -8556,23 +8563,30 @@ window.SANAD_CONFIG = {
   Store.notices = function () { return cache.notices; };
   Store.notify = function (n) {
     if (!n.to) return null;
-    var dup = cache.notices.some(function (x) {
-      return x.to === n.to && x.type === n.type && x.ref === n.ref;
+    // One row per person, kind and subject — and it comes back unread when
+    // something happens again. The plain insert this replaced was refused by
+    // the unique key the second time, which was right for "your account was
+    // approved" and quite wrong for "a new message on your request": the bell
+    // rang once per case and then never again.
+    var held = null;
+    cache.notices.forEach(function (x) {
+      if (x.to === n.to && x.type === n.type && x.ref === n.ref) held = x;
     });
-    if (dup) return null;
-    n.at = Date.now();
-    n.read = false;
-    cache.notices.push(n);
+    if (held) { held.read = false; held.at = Date.now(); }
+    else { n.at = Date.now(); n.read = false; cache.notices.push(n); }
     Store.notifyAll();
+
     // A notice raised for somebody else cannot be read back by the sender, so
-    // no row is selected here — and the unique key means a duplicate is a
-    // refusal to record, not an error worth showing anyone.
+    // nothing is selected here.
     SB.load().then(function (sb) {
-      return sb.from("notifications").insert({ to_id: n.to, type: n.type, ref: n.ref || null });
+      return sb.from("notifications").upsert({
+        to_id: n.to, type: n.type, ref: n.ref || null,
+        read: false, at: new Date().toISOString(),
+      }, { onConflict: "to_id,type,ref" });
     }).then(function (res) {
       if (res && res.error && res.error.code !== "23505") report(res);
     });
-    return n;
+    return held || n;
   };
   Store.readNotice = function (id) {
     cache.notices.forEach(function (n) { if (n.id === id) n.read = true; });
@@ -10399,6 +10413,131 @@ window.SANAD_CONFIG = {
     });
   }
 
+  /* ---------- making the thread work ----------
+     Two pages carry one: the request list and the call. Rather than two
+     copies of the same handlers — which is how the two drift apart — the
+     wiring lives here and each page says where its own thread is.
+
+     Files chosen do not send themselves. They wait for the message, so a line
+     of text and three attachments arrive as one thing rather than four. */
+  var MAX_FILE = 25 * 1024 * 1024;
+  var pending = {};                 // files queued, keyed by thread and audience
+  var watching = null;              // the thread currently being asked again
+
+  function threadEl(host) { return App.$("[data-thread]", host); }
+  function threadKey(host) {
+    var el = threadEl(host);
+    return el ? el.getAttribute("data-thread") + ":" + el.getAttribute("data-audience") : "";
+  }
+
+  function drawPending(host) {
+    var box = App.$("[data-thread-pending]", host);
+    if (!box) return;
+    var list = pending[threadKey(host)] || [];
+    box.hidden = !list.length;
+    box.innerHTML = list.map(function (f, i) {
+      return '<span class="file-chip">' + Icons.svg("file-text", "icon-sm") +
+        '<span class="file-chip__name">' + App.esc(f.name) + "</span>" +
+        '<span class="tiny faint">' + App.esc(bytes(f.size)) + "</span>" +
+        '<button class="icon-btn" type="button" data-drop-file="' + i + '">' +
+          Icons.svg("close", "icon-sm") + "</button></span>";
+    }).join("");
+  }
+
+  /** A thread is two people waiting on each other, so it is asked again while
+      it is open — and only while it is open. */
+  function watchThread(host) {
+    var el = threadEl(host);
+    var id = el ? el.getAttribute("data-thread") : null;
+    if (watching && watching.id === id) return;
+    if (watching) { clearInterval(watching.timer); watching = null; }
+    if (!id || !Store.refreshThread) return;
+    watching = { id: id, timer: setInterval(function () {
+      if (!threadEl(host)) { clearInterval(watching.timer); watching = null; return; }
+      Store.refreshThread(id);
+    }, 6000) };
+  }
+
+  /** Called after every draw: private files get their links, queued files get
+      their chips, and the open thread gets watched. */
+  function threadDraw(host) {
+    linkFiles(host);
+    drawPending(host);
+    watchThread(host);
+  }
+
+  function wireThread(host) {
+    if (!host || host.getAttribute("data-thread-wired")) return;
+    host.setAttribute("data-thread-wired", "1");
+
+    host.addEventListener("change", function (ev) {
+      if (!ev.target.matches("[data-thread-file]")) return;
+      var key = threadKey(host);
+      pending[key] = pending[key] || [];
+      Array.prototype.forEach.call(ev.target.files, function (f) {
+        if (f.size > MAX_FILE) { App.toast(I18N.t("thread.tooBig"), "alert"); return; }
+        pending[key].push(f);
+      });
+      ev.target.value = "";
+      drawPending(host);
+    });
+
+    host.addEventListener("click", function (ev) {
+      var drop = ev.target.closest("[data-drop-file]");
+      if (drop) {
+        (pending[threadKey(host)] || []).splice(+drop.getAttribute("data-drop-file"), 1);
+        drawPending(host);
+        return;
+      }
+      // A file in a private bucket is opened through the link signed for it,
+      // which is put on the chip once it comes back.
+      var chip = ev.target.closest("[data-href]");
+      if (chip) global.open(chip.getAttribute("data-href"), "_blank", "noopener");
+    });
+
+    host.addEventListener("submit", function (ev) {
+      if (!ev.target.matches("[data-thread-form]")) return;
+      ev.preventDefault();
+      var el = threadEl(host);
+      if (!el) return;
+      var requestId = el.getAttribute("data-thread");
+      var audience = el.getAttribute("data-audience");
+      var key = threadKey(host);
+      var files = pending[key] || [];
+      var box = App.$("[data-thread-body]", host);
+      var body = box ? box.value.trim() : "";
+      if (!body && !files.length) return;
+
+      var me = global.Session.user();
+      Store.sendMessage({
+        requestId: requestId, audience: audience, authorId: me.id, body: body,
+      }, function (saved) {
+        files.forEach(function (f) {
+          Store.attachFile({
+            requestId: requestId, messageId: saved.id, audience: audience,
+            authorId: me.id, name: f.name, size: f.size,
+            mime: f.type || "application/octet-stream", file: f,
+          });
+        });
+      });
+
+      // Tell the other side, so a message does not wait on somebody happening
+      // to open the page.
+      var r = M.request(requestId);
+      if (r) {
+        var st = M.requestState(r);
+        var to = audience === "internal"
+          ? (me.id === r.lawyerId ? st.assignedTo : r.lawyerId)
+          : (me.id === r.clientId ? (st.assignedTo || r.lawyerId) : r.clientId);
+        if (to && to !== me.id) Store.notify({ to: to, type: "message", ref: requestId });
+      }
+
+      pending[key] = [];
+      if (box) box.value = "";
+      App.rerender();
+    });
+  }
+
   function sectionHead(titleKey, leadKey) {
     return '<div class="section-head"><h2 class="headline" data-i18n="' + titleKey + '"></h2>' +
       (leadKey ? '<p class="lead" data-i18n="' + leadKey + '"></p>' : "") + "</div>";
@@ -10412,7 +10551,7 @@ window.SANAD_CONFIG = {
     statusPill: statusPill, progress: progress,
     requestRow: requestRow, empty: empty, sectionHead: sectionHead,
     thread: thread, bubble: bubble, fileChip: fileChip, linkFiles: linkFiles,
-    bytes: bytes,
+    bytes: bytes, wireThread: wireThread, threadDraw: threadDraw,
     googleButton: googleButton
   };
 })(window);
@@ -11384,10 +11523,6 @@ Pages.define("requests", function (global) {
   }
 
   /* ====================================================== draw ============ */
-  // Files chosen but not yet sent, keyed by the thread they were chosen in.
-  var pending = {};
-  var MAX_FILE = 25 * 1024 * 1024;
-
   App.onRender(function () {
     var role = Session.role();
     host.innerHTML = Session.isGuest() ? guest()
@@ -11395,50 +11530,11 @@ Pages.define("requests", function (global) {
                    : role === "intern" ? internView()
                    : clientView();
     I18N.apply(host);
-    // The bucket is private, so links are filled in after the draw rather
-    // than written into it.
-    C.linkFiles(host);
-    drawPending();
-    watchThread();
+    // Private files get their links, queued files get their chips, and an
+    // open thread gets asked again while it is open.
+    C.threadDraw(host);
   });
-
-  /** What is queued to go with the next message. */
-  function drawPending() {
-    var box = $("[data-thread-pending]", host);
-    var form = $("[data-thread-form]", host);
-    if (!box || !form) return;
-    var key = threadKey();
-    var list = pending[key] || [];
-    box.hidden = !list.length;
-    box.innerHTML = list.map(function (f, i) {
-      return '<span class="file-chip">' + Icons.svg("file-text", "icon-sm") +
-        '<span class="file-chip__name">' + esc(f.name) + "</span>" +
-        '<span class="tiny faint">' + esc(C.bytes(f.size)) + "</span>" +
-        '<button class="icon-btn" type="button" data-drop-file="' + i + '">' +
-          Icons.svg("close", "icon-sm") + "</button></span>";
-    }).join("");
-  }
-
-  function threadEl() { return $("[data-thread]", host); }
-  function threadKey() {
-    var el = threadEl();
-    return el ? el.getAttribute("data-thread") + ":" + el.getAttribute("data-audience") : "";
-  }
-
-  /** A thread is two people waiting on each other, so it is asked again while
-      it is open — and only while it is open. */
-  var watching = null;
-  function watchThread() {
-    var el = threadEl();
-    var id = el ? el.getAttribute("data-thread") : null;
-    if (watching && watching.id === id) return;
-    if (watching) { clearInterval(watching.timer); watching = null; }
-    if (!id || !Store.refreshThread) return;
-    watching = { id: id, timer: setInterval(function () {
-      if (!threadEl()) { clearInterval(watching.timer); watching = null; return; }
-      Store.refreshThread(id);
-    }, 6000) };
-  }
+  C.wireThread(host);
 
   /* ====================================================== events ========== */
   host.addEventListener("click", function (ev) {
@@ -11656,78 +11752,10 @@ Pages.define("requests", function (global) {
     var sideTab = hit("data-thread-side");
     if (sideTab) { side = sideTab; App.rerender(); return; }
 
-    var drop = hit("data-drop-file");
-    if (drop !== null) {
-      var key = threadKey();
-      (pending[key] || []).splice(+drop, 1);
-      drawPending();
-      return;
-    }
-
-    // A file in a private bucket is opened through the link that was signed
-    // for it, which is put on the chip once it comes back.
-    var chip = t.closest("[data-href]");
-    if (chip) { global.open(chip.getAttribute("data-href"), "_blank", "noopener"); return; }
-
     var pop = $(".assign-pop");
     if (pop && !t.closest(".assign-pop")) pop.remove();
   });
 
-  /* Choosing files does not send them: they wait for the message so that one
-     line of text and three attachments arrive as one thing rather than four. */
-  host.addEventListener("change", function (ev) {
-    if (!ev.target.matches("[data-thread-file]")) return;
-    var key = threadKey();
-    pending[key] = pending[key] || [];
-    Array.prototype.forEach.call(ev.target.files, function (f) {
-      if (f.size > MAX_FILE) { App.toast(I18N.t("thread.tooBig"), "alert"); return; }
-      pending[key].push(f);
-    });
-    ev.target.value = "";
-    drawPending();
-  });
-
-  host.addEventListener("submit", function (ev) {
-    if (!ev.target.matches("[data-thread-form]")) return;
-    ev.preventDefault();
-    var el = threadEl();
-    if (!el) return;
-    var requestId = el.getAttribute("data-thread");
-    var audience = el.getAttribute("data-audience");
-    var key = threadKey();
-    var files = pending[key] || [];
-    var box = $("[data-thread-body]", host);
-    var body = box ? box.value.trim() : "";
-    if (!body && !files.length) return;
-
-    var me = Session.user();
-    Store.sendMessage({
-      requestId: requestId, audience: audience, authorId: me.id, body: body,
-    }, function (saved) {
-      files.forEach(function (f) {
-        Store.attachFile({
-          requestId: requestId, messageId: saved.id, audience: audience,
-          authorId: me.id, name: f.name, size: f.size,
-          mime: f.type || "application/octet-stream", file: f,
-        });
-      });
-    });
-
-    // Tell the other side something arrived, so a message does not wait on
-    // somebody happening to open the page.
-    var r = M.request(requestId);
-    if (r) {
-      var st = M.requestState(r);
-      var to = audience === "internal"
-        ? (me.id === r.lawyerId ? st.assignedTo : r.lawyerId)
-        : (me.id === r.clientId ? (st.assignedTo || r.lawyerId) : r.clientId);
-      if (to && to !== me.id) Store.notify({ to: to, type: "message", ref: requestId });
-    }
-
-    pending[key] = [];
-    if (box) box.value = "";
-    App.rerender();
-  });
 });
 
 /* ==========================================================================
@@ -15014,13 +15042,24 @@ Pages.define("call", function (global) {
     if (Session.isGuest()) { host.innerHTML = gate("auth.guestHint"); I18N.apply(host); return; }
     if (requestId && !mayJoin()) { host.innerHTML = gate("call.notYours"); I18N.apply(host); return; }
 
+    var r = request();
     host.innerHTML = '<div class="container" style="padding-block:var(--s-8) var(--s-16)">' +
       (phase === "live" ? liveScreen() : phase === "ended" ? endedScreen() : readyScreen()) +
+      // A call is not the whole of a consultation. Whatever has to be sent —
+      // the contract being argued about, a photo of the notice, the note
+      // written while talking — belongs to the same case, in the same thread
+      // the two of them already have, before the call, during it and after.
+      (r ? '<div class="call-card card card--pad" style="margin-top:var(--s-6)">' +
+             C.thread(r, "parties", { closed: M.requestState(r).status === "completed" }) +
+           "</div>"
+         : "") +
       "</div>";
     I18N.apply(host);
     if (phase === "live") attachStreams();
     syncButtons();
+    C.threadDraw(host);
   });
+  C.wireThread(host);
 
   /* The <video> elements are recreated by every redraw, so the streams have to
      be re-attached rather than set once at join time. */
