@@ -402,13 +402,26 @@ Pages.define("admin", function (global) {
           '<label class="field"><span class="label" data-i18n="adm.adLink"></span>' +
             '<input class="input" dir="ltr" data-ad-link></label>' +
           '<label class="field"><span class="label" data-i18n="adm.adAudience"></span>' +
-            '<select class="select" data-ad-audience">' +
+            '<select class="select" data-ad-audience>' +
               '<option value="all">' + esc(I18N.t("adm.audAll")) + "</option>" +
               '<option value="client">' + esc(I18N.t("role.client")) + "</option>" +
               '<option value="lawyer">' + esc(I18N.t("role.lawyer")) + "</option>" +
               '<option value="intern">' + esc(I18N.t("role.intern")) + "</option>" +
             "</select></label>" +
         "</div>" +
+        '<div class="grid grid-2" style="gap:var(--s-3);margin-top:var(--s-3)">' +
+          '<label class="field"><span class="label" data-i18n="adm.adImage"></span>' +
+            '<input class="input" dir="ltr" data-ad-image></label>' +
+          '<label class="field"><span class="label" data-i18n="adm.adPlacement"></span>' +
+            '<select class="select" data-ad-placement>' +
+              '<option value="bar">' + esc(I18N.t("adm.placeBar")) + "</option>" +
+              '<option value="home">' + esc(I18N.t("adm.placeHome")) + "</option>" +
+            "</select></label>" +
+        "</div>" +
+        '<label class="field" style="margin-top:var(--s-3)">' +
+          '<span class="label" data-i18n="adm.adHtml"></span>' +
+          '<textarea class="input" rows="3" dir="ltr" data-ad-html></textarea>' +
+          '<span class="tiny faint" data-i18n="adm.adHtmlHint"></span></label>' +
         '<button class="btn btn--primary btn--sm" style="margin-top:var(--s-4)" type="button" data-add-ad>' +
           Icons.svg("send", "icon-sm") + esc(I18N.t("adm.addAd")) + "</button>" +
       "</section>" +
@@ -677,6 +690,8 @@ Pages.define("admin", function (global) {
       if (!at) { App.toast(I18N.t("adm.needTitle"), "alert"); return; }
       Store.addAnnouncement({
         title: at, body: val("[data-ad-body]"), link: val("[data-ad-link]"),
+        imageUrl: val("[data-ad-image]"), html: val("[data-ad-html]"),
+        placement: val("[data-ad-placement]") || "bar",
         audience: val("[data-ad-audience]") || "all", active: true
       });
       Store.log({ action: "ad", byId: me.id, subject: at });

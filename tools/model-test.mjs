@@ -45,11 +45,20 @@ ok(`score breaks down: rating ${parts.rating} + volume ${parts.volume} + speed $
 
 console.log('— SERVICES & PRICE BANDS —');
 ok('Al-Mohammadi publishes 5 services', M.servicesOf('u-ahmed').length === 5);
-const band = M.priceBand('express');
-ok(`express band ${band.min}–${band.max}`, band.min === 60 && band.max === 250);
-ok('price under the floor is rejected', M.checkPrice('express', 40) === 'low');
-ok('price over the ceiling is rejected', M.checkPrice('express', 900) === 'high');
-ok('price inside the band passes', M.checkPrice('express', 99) === null);
+// The catalogue is legal work now, not a way of talking: a review is a review
+// whether it is discussed by voice or handed over as a file.
+const band = M.priceBand('review');
+ok(`the review band is ${band.min}–${band.max}`, band.min === 150 && band.max === 1200);
+ok('price under the floor is rejected', M.checkPrice('review', 40) === 'low');
+ok('price over the ceiling is rejected', M.checkPrice('review', 9000) === 'high');
+ok('price inside the band passes', M.checkPrice('review', 300) === null);
+ok('a category names the channels it allows', M.channelsFor('consult').length === 3);
+ok('and a lawyer offers a subset of them',
+   M.serviceChannels({ typeId: 'consult', channels: ['voice'] }).join() === 'voice');
+ok('a channel the category forbids is dropped rather than honoured',
+   M.serviceChannels({ typeId: 'consult', channels: ['voice', 'telepathy'] }).join() === 'voice');
+ok('whether it is a call is read from the channel, not the work',
+   M.isLive({ channel: 'video' }) === true && M.isLive({ channel: 'text' }) === false);
 
 console.log('— REQUESTS —');
 ok('Fahad has open requests', M.requestsForClient('u-fahad','open').length === 7);
@@ -131,14 +140,14 @@ St.setRequest('r-2', { status: 'delivered' });
 ok('only delivered work counts as earned', M.earnedBy('u-jaid') >= 45);
 
 console.log('— A LAWYER NAMES THEIR OWN SERVICE —');
-const svc = St.addService({ ownerId: 'u-ahmed', typeId: 'drafting', price: 640, active: true,
+const svc = St.addService({ ownerId: 'u-ahmed', typeId: 'contract', price: 640, active: true,
   title: { ar: 'مراجعة عقود امتياز', en: 'Franchise contract review' },
   meta: { ar: 'خلال يومين', en: 'Within two days' } });
 ok('the lawyer’s own wording is kept', M.tx ? true : M.serviceTitle(svc).ar === 'مراجعة عقود امتياز');
 ok('and its turnaround', M.serviceMeta(svc).en === 'Within two days');
-ok('the category still supplies the icon', M.serviceIcon(svc) === M.serviceType('drafting').icon);
-const plain = { id: 's-x', ownerId: 'u-ahmed', typeId: 'call', price: 150 };
+ok('the category still supplies the icon', M.serviceIcon(svc) === M.serviceType('contract').icon);
+const plain = { id: 's-x', ownerId: 'u-ahmed', typeId: 'consult', price: 150 };
 ok('an unnamed one falls back to its category',
-   M.serviceTitle(plain) === M.serviceType('call').title);
-ok('the band still governs the price', M.checkPrice('drafting', 640) === null &&
-   M.checkPrice('drafting', 10) === 'low');
+   M.serviceTitle(plain) === M.serviceType('consult').title);
+ok('the band still governs the price', M.checkPrice('contract', 640) === null &&
+   M.checkPrice('contract', 10) === 'low');

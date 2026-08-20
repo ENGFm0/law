@@ -39,7 +39,8 @@ ok('every cell is a table-cell', geom.every(g => g.displays.length === 1 && g.di
 console.log('— THE LAWYER WRITES THE SERVICE HIMSELF —');
 await open('services.html', 'u-ahmed');
 const before = await tab.locator('[data-del-svc]').count();
-await tab.selectOption('[data-new-type]', 'drafting');
+// 'drafting' was a way of delivering; the catalogue is the work now.
+await tab.selectOption('[data-new-type]', 'contract');
 await tab.waitForTimeout(200);
 await tab.fill('[data-new-title]', 'مراجعة عقود الامتياز التجاري');
 await tab.fill('[data-new-meta]', 'خلال يومين عمل');
@@ -62,7 +63,7 @@ ok('with his own turnaround', (await tab.innerText('main')).includes('خلال �
 
 console.log('— THE CLIENT SEES THAT NAME —');
 await open('services.html', 'u-fahad');
-await tab.click('[data-pick-type="drafting"]');
+await tab.click('[data-pick-type="contract"]');
 await tab.waitForTimeout(300);
 ok('the custom name reaches the client',
   (await tab.innerText('main')).includes('مراجعة عقود الامتياز التجاري'));

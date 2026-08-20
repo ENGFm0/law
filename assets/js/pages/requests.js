@@ -71,12 +71,12 @@ Pages.define("requests", function (global) {
     return '<div>' + C.requestRow(r, {
       status: CLIENT_STATUS[st.status] || st.status,
       actions: function () {
-        var type = M.serviceType(r.typeId);
-        var live = type && type.mode === "live" &&
+        var chan = M.channel(r.channel);
+        var live = M.isLive(r) &&
           ["delivered", "completed", "cancelled"].indexOf(st.status) === -1;
         return (live
             ? '<a class="btn btn--primary btn--sm" href="call.html?id=' + esc(r.id) + '">' +
-              Icons.svg(type.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>"
+              Icons.svg(chan.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>"
             : "") +
           '<button class="btn btn--ghost btn--sm" type="button" data-detail="' + esc(r.id) + '">' +
             esc(I18N.t("req.openDetails")) + "</button>" +
@@ -99,6 +99,7 @@ Pages.define("requests", function (global) {
           "<div>" + C.personLink(lawyer) + "</div></div></div>" +
         '<button class="icon-btn" type="button" data-detail-close>' + Icons.svg("close", "icon-sm") + "</button>" +
       "</div>" +
+      C.progress(r, "client") +
       '<h3 class="subtitle" style="margin-top:var(--s-5)" data-i18n="req.deliverable"></h3>' +
       (st.body
         ? '<pre class="draft-text" style="min-height:auto" readonly>' + esc(st.body) + "</pre>"
@@ -395,6 +396,7 @@ Pages.define("requests", function (global) {
             (r.ai ? ' <span class="dot"></span> ' + esc(I18N.t("ai.aiSource")) : "") + "</p></div>" +
         '<button class="icon-btn" type="button" data-draft-close>' + Icons.svg("close", "icon-sm") + "</button>" +
       "</div>" +
+      '<div style="padding:var(--s-5) var(--s-5) 0">' + C.progress(r, "lawyer") + "</div>" +
       (r.ai ? '<p class="disclaimer" style="border-top:0">' + Icons.svg("lock", "icon-sm") +
         "<span>" + esc(I18N.t("inbox.aiHidden")) + "</span></p>" : "") +
       '<textarea class="draft-text" data-draft-body spellcheck="false">' + esc(body) + "</textarea>" +

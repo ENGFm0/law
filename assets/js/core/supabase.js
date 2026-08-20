@@ -75,6 +75,8 @@
       status: row.status || "pending",
       // Where the platform is choosing to place them, if anywhere.
       featuredRank: row.featured_rank == null ? null : row.featured_rank,
+      // Whether they take matching work automatically when it is posted.
+      autoBid: !!row.auto_bid,
       // Whether they have ever told us who they are. False for an account
       // Google created on their behalf.
       onboarded: !!row.onboarded,
@@ -112,6 +114,7 @@
     // only a staff policy lets it through on anybody else's.
     if (data.status !== undefined) row.status = data.status;
     if (data.featuredRank !== undefined) row.featured_rank = data.featuredRank;
+    if (data.autoBid !== undefined) row.auto_bid = !!data.autoBid;
     if (data.role === "lawyer" || (data.roles || []).indexOf("lawyer") !== -1) {
       row.licence_no = data.licenceNumber || null;
       row.licence_authority = flat(data.licenceAuthority);

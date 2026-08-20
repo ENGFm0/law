@@ -29,7 +29,8 @@
   function inRequest(r) {
     return {
       id: r.id, clientId: r.client_id, lawyerId: r.lawyer_id, assignedTo: r.assigned_to,
-      typeId: r.type_id, price: Number(r.price), status: r.status,
+      typeId: r.type_id, channel: r.channel || "text",
+      price: Number(r.price), status: r.status,
       ai: !!r.ai_assisted, hours: r.hours || 3, body: r.body || null,
       internShare: r.intern_share, rated: !!r.rated,
       title: pair(r.title), brief: pair(r.brief), ago: pair(""),
@@ -38,7 +39,8 @@
   function outRequest(r) {
     return {
       client_id: r.clientId, lawyer_id: r.lawyerId || null, assigned_to: r.assignedTo || null,
-      type_id: r.typeId, title: flat(r.title), brief: flat(r.brief),
+      type_id: r.typeId, channel: r.channel || "text",
+      title: flat(r.title), brief: flat(r.brief),
       price: r.price, status: r.status || "new", ai_assisted: !!r.ai, hours: r.hours || 3,
     };
   }
@@ -46,7 +48,7 @@
   function inService(s) {
     return {
       id: s.id, ownerId: s.owner_id, typeId: s.type_id, price: Number(s.price),
-      active: s.active !== false,
+      active: s.active !== false, channels: s.channels || ["text"],
       title: s.title ? pair(s.title) : null, meta: s.meta ? pair(s.meta) : null,
     };
   }
@@ -98,6 +100,7 @@
   }
   function inAnnouncement(a) {
     return { id: a.id, title: a.title, body: a.body, link: a.link,
+             imageUrl: a.image_url, html: a.html, placement: a.placement || "bar",
              audience: a.audience, active: !!a.active,
              startsAt: a.starts_at, endsAt: a.ends_at,
              at: new Date(a.created_at).getTime() };
@@ -246,6 +249,7 @@
     if ("body" in changes) row.body = changes.body;
     if ("internShare" in changes) row.intern_share = changes.internShare;
     if ("rated" in changes) row.rated = changes.rated;
+    if ("channel" in changes) row.channel = changes.channel;
     for (var i = 0; i < cache.requests.length; i++) {
       if (cache.requests[i].id === id) {
         Object.keys(changes).forEach(function (k) { cache.requests[i][k] = changes[k]; });
@@ -256,7 +260,9 @@
   };
 
   Store.addService = function (s) {
+    s.channels = s.channels && s.channels.length ? s.channels : ["text"];
     var row = { owner_id: s.ownerId, type_id: s.typeId, price: s.price,
+                channels: s.channels,
                 title: flat(s.title), meta: flat(s.meta), active: true };
     push("services", row).then(function (res) {
       report(res);
@@ -382,6 +388,7 @@
     });
     Store.notifyAll();
     var row = SB.fromProfile(changes);
+    if ("autoBid" in changes) row.auto_bid = !!changes.autoBid;
     Object.keys(row).forEach(function (k) { if (row[k] == null) delete row[k]; });
     if (changes.skills) row.skills = changes.skills.map(flat);
     if (Object.keys(row).length) patch("profiles", id, row).then(report);
@@ -403,6 +410,8 @@
     cache.announcements.unshift(a);
     Store.notifyAll();
     push("announcements", { title: a.title, body: a.body || null, link: a.link || null,
+                            image_url: a.imageUrl || null, html: a.html || null,
+                            placement: a.placement || "bar",
                             audience: a.audience || "all", active: !!a.active,
                             starts_at: a.startsAt || null, ends_at: a.endsAt || null,
                             created_by: Store.currentId() })
@@ -421,6 +430,9 @@
     if ("body" in p) row.body = p.body;
     if ("link" in p) row.link = p.link;
     if ("audience" in p) row.audience = p.audience;
+    if ("imageUrl" in p) row.image_url = p.imageUrl;
+    if ("html" in p) row.html = p.html;
+    if ("placement" in p) row.placement = p.placement;
     if (Object.keys(row).length) patch("announcements", id, row).then(report);
   };
   Store.removeAnnouncement = function (id) {

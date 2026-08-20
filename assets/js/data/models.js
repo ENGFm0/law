@@ -169,6 +169,35 @@
      A lawyer sets their own price, but only inside the band the platform
      publishes for that service type — decided to stop undercutting and gouging. */
   function serviceTypes() { return SEED.serviceTypes; }
+
+  /* ---------- how the work is delivered ----------
+     The channel is not the work. A statement of claim is a statement of claim
+     whether it is talked through or handed over as a file — so the category
+     carries the band and the price, and the channel is how it happens. */
+  function channels() { return SEED.channels || []; }
+  function channel(id) { return byId(channels(), id); }
+
+  /** The channels this category allows at all. */
+  function channelsFor(typeId) {
+    var t = serviceType(typeId);
+    return (t && t.channels) || ["text"];
+  }
+
+  /** The channels a particular lawyer will take this work through, narrowed to
+      what the category permits — a stale row cannot offer video on something
+      the platform never allowed it on. */
+  function serviceChannels(s) {
+    var allowed = channelsFor(s.typeId);
+    return ((s.channels && s.channels.length) ? s.channels : allowed)
+      .filter(function (id) { return allowed.indexOf(id) !== -1; });
+  }
+
+  /** Whether a request happens as a call rather than as a file. Read from the
+      channel that was chosen, not from what kind of work it is. */
+  function isLive(r) {
+    var c = channel(r && r.channel);
+    return !!(c && c.live);
+  }
   function serviceType(id) { return byId(SEED.serviceTypes, id); }
 
   function servicesOf(lawyerId) {
@@ -741,6 +770,8 @@
     reviewsFor: reviewsFor, ratingOf: ratingOf, ratingSpread: ratingSpread,
     scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard, ranked: ranked,
     serviceTypes: serviceTypes, serviceType: serviceType, servicesOf: servicesOf,
+    channels: channels, channel: channel, channelsFor: channelsFor,
+    serviceChannels: serviceChannels, isLive: isLive,
     priceBand: priceBand, checkPrice: checkPrice,
     serviceTitle: serviceTitle, serviceMeta: serviceMeta, serviceIcon: serviceIcon,
     MIN_SHARE: MIN_SHARE, DEFAULT_SHARE: DEFAULT_SHARE, clampShare: clampShare,

@@ -79,7 +79,8 @@ Pages.define("assistant", function (global) {
     var rows = M.requestsForLawyer(me.id).filter(function (r) {
       var st = M.requestState(r).status;
       var type = M.serviceType(r.typeId);
-      return type && type.mode !== "live" && st !== "delivered" && st !== "completed" &&
+      // Something to draft, which a call is not.
+      return !M.isLive(r) && st !== "delivered" && st !== "completed" &&
              st !== "cancelled" && !M.requestState(r).assignedTo;
     });
 

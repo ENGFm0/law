@@ -512,6 +512,45 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .adm-tab { padding: var(--s-3) var(--s-3); font-size: .875rem; }
 }
 
+/* ---------- 11a0a. How a request is going ---------- */
+.track {
+  padding: var(--s-5); border-radius: var(--r-lg);
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.track--held { background: var(--warning-soft); border-color: var(--warning); }
+.track__steps {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+  margin-top: var(--s-5); list-style: none;
+}
+.track__step {
+  display: flex; flex-direction: column; align-items: center; gap: var(--s-2);
+  position: relative; text-align: center;
+}
+/* The rail runs between the dots rather than under the labels, so it never
+   crosses a word and never has to be redrawn when one wraps. */
+.track__step::before {
+  content: ""; position: absolute; inset-block-start: 11px; inset-inline-end: 50%;
+  inline-size: 100%; block-size: 2px; background: var(--border);
+}
+.track__step:first-child::before { display: none; }
+.track__step.is-done::before, .track__step.is-here::before { background: var(--accent); }
+.track__dot {
+  inline-size: 24px; block-size: 24px; border-radius: var(--r-full);
+  display: grid; place-items: center; flex: none; position: relative; z-index: 1;
+  background: var(--surface); border: 2px solid var(--border); color: var(--on-accent);
+}
+.track__step.is-done .track__dot { background: var(--accent); border-color: var(--accent); }
+.track__step.is-here .track__dot {
+  border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.track__label { font-size: .6875rem; color: var(--text-faint); line-height: 1.3; }
+.track__step.is-done .track__label,
+.track__step.is-here .track__label { color: var(--text); font-weight: 600; }
+
+@media (max-width: 520px) {
+  .track__label { font-size: .625rem; }
+}
+
 /* ---------- 11a0b. What the platform is saying ---------- */
 .announce {
   display: flex; align-items: flex-start; gap: var(--s-3);
@@ -521,6 +560,41 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 }
 .announce__body { font-size: .875rem; }
 .announce a { font-weight: 700; text-decoration: underline; }
+
+/* ---------- 11a0c. A promoted announcement on the home page ---------- */
+.promo {
+  position: relative; overflow: hidden;
+  border-radius: var(--r-xl);
+  padding: var(--s-10) var(--s-8);
+  background: linear-gradient(135deg,
+    var(--brand-navy) 0%,
+    color-mix(in srgb, var(--brand-navy) 80%, var(--accent)) 100%);
+  color: #fff;
+  box-shadow: var(--shadow-2);
+}
+.promo + .promo { margin-top: var(--s-4); }
+.promo__body { position: relative; z-index: 1; max-width: 46ch; }
+.promo .title { color: #fff; }
+.promo .lead { color: rgba(255,255,255,.82); margin-top: var(--s-3); }
+.promo .btn { margin-top: var(--s-5); }
+
+/* With an image behind it the text needs its own ground to sit on, or the
+   contrast is whatever the picture happens to be. */
+.promo--image { background-size: cover; background-position: center; }
+.promo--image::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to inline-start,
+    rgba(11,22,48,.15) 0%, rgba(11,22,48,.86) 62%);
+}
+
+/* Markup the platform wrote itself: given room and left alone. */
+.promo--raw { padding: 0; background: none; color: inherit; box-shadow: none; }
+.promo--raw > * { max-width: 100%; }
+.promo--raw img { display: block; width: 100%; height: auto; border-radius: var(--r-xl); }
+
+@media (max-width: 640px) {
+  .promo { padding: var(--s-8) var(--s-5); border-radius: var(--r-lg); }
+}
 
 /* ---------- 11a1. When the backend cannot be reached ---------- */
 .offline-bar {
@@ -2787,6 +2861,41 @@ window.SANAD_CONFIG = {
 
       /* --- the drafting workspace is sold, not given --- */
       "ai.needsSub": "مساحة الصياغة اشتراك للمحامين. تواصل مع إدارة المنصة لتفعيلها لحسابك.",
+
+      /* --- work, and the channels it is delivered through --- */
+      "svc.channels": "كيف تقدّمها",
+      "svc.channelsHint": "اختر ما أنت مستعد له. العميل يختار واحدة منها عند الطلب.",
+      "svc.needChannel": "اختر طريقة واحدة على الأقل.",
+      "svc.autoBid": "قبول الطلبات تلقائياً",
+      "svc.autoBidHint": "عندما تُنشر استشارة تطابق ما تقدّمه، يُرسل عرضك بسعرك المعلن دون انتظارك.",
+      "svc.autoBidOn": "مفعّل — تُرسل عروضك تلقائياً.",
+      "svc.autoBidOff": "مطفأ — لا يُرسل شيء دون ضغطك.",
+      "svc.pickChannel": "كيف تريدها؟",
+      "ord.channel": "الطريقة",
+
+      /* --- a shared progress track on a request --- */
+      "prog.title": "مسار الطلب",
+      "prog.placed": "الطلب مُرسَل",
+      "prog.accepted": "قبله المحامي",
+      "prog.working": "قيد التنفيذ",
+      "prog.delivered": "سُلّم",
+      "prog.settled": "اكتمل",
+      "prog.disputed": "قيد الاعتراض",
+      "prog.cancelled": "أُلغي",
+      "prog.now": "الآن هنا",
+      "prog.waitingOn": "ننتظر {who}",
+      "prog.you": "منك",
+      "prog.theLawyer": "المحامي",
+      "prog.theClient": "العميل",
+      "prog.staff": "إدارة المنصة",
+
+      /* --- announcements worth looking at --- */
+      "adm.adImage": "رابط صورة (اختياري)",
+      "adm.adHtml": "تنسيق خاص (HTML — اختياري)",
+      "adm.adHtmlHint": "لمن يريد تصميماً خاصاً. يُكتب من الإدارة فقط، ولهذا يُسمح به أصلاً.",
+      "adm.adPlacement": "مكان الظهور",
+      "adm.placeBar": "شريط أعلى الموقع",
+      "adm.placeHome": "بطاقة في الصفحة الرئيسية",
     },
 
     en: {
@@ -3936,6 +4045,41 @@ window.SANAD_CONFIG = {
 
       /* --- the drafting workspace is sold, not given --- */
       "ai.needsSub": "The drafting workspace is a subscription for lawyers. Ask the platform to enable it on your account.",
+
+      /* --- work, and the channels it is delivered through --- */
+      "svc.channels": "How you deliver it",
+      "svc.channelsHint": "Pick what you are willing to do. The client chooses one of them when they order.",
+      "svc.needChannel": "Choose at least one way.",
+      "svc.autoBid": "Take matching work automatically",
+      "svc.autoBidHint": "When a consultation matching your catalogue is posted, your published price is offered without waiting for you.",
+      "svc.autoBidOn": "On — your offers go out on their own.",
+      "svc.autoBidOff": "Off — nothing goes out unless you send it.",
+      "svc.pickChannel": "How would you like it?",
+      "ord.channel": "Delivered by",
+
+      /* --- a shared progress track on a request --- */
+      "prog.title": "How this is going",
+      "prog.placed": "Request placed",
+      "prog.accepted": "Taken by the lawyer",
+      "prog.working": "Being worked on",
+      "prog.delivered": "Delivered",
+      "prog.settled": "Closed",
+      "prog.disputed": "Under objection",
+      "prog.cancelled": "Cancelled",
+      "prog.now": "You are here",
+      "prog.waitingOn": "Waiting on {who}",
+      "prog.you": "you",
+      "prog.theLawyer": "the lawyer",
+      "prog.theClient": "the client",
+      "prog.staff": "the platform",
+
+      /* --- announcements worth looking at --- */
+      "adm.adImage": "Image URL (optional)",
+      "adm.adHtml": "Custom markup (HTML — optional)",
+      "adm.adHtmlHint": "For a layout you want to control. Only staff can write it, which is what makes allowing it safe.",
+      "adm.adPlacement": "Where it appears",
+      "adm.placeBar": "A bar at the top of the site",
+      "adm.placeHome": "A card on the home page",
     }
   };
 
@@ -4593,22 +4737,54 @@ window.SANAD_CONFIG = {
 
   /* Service types with the platform's published price band.
      A lawyer prices inside the band — the anti-manipulation decision. */
+  /* ---------- what a lawyer actually does ----------
+     These used to be delivery channels — "phone consultation", "video
+     consultation" — which made the catalogue a list of ways to talk rather
+     than a list of legal work, and made the price band answer the wrong
+     question. A statement of claim is a statement of claim whether it is
+     discussed by voice or delivered as a file.
+
+     So a category is the WORK, the platform sets its band, and the channels a
+     lawyer offers on it are theirs to choose from the ones the work allows. */
+  var CHANNELS = [
+    { id: "voice", icon: "phone", live: true,
+      title: { ar: "صوت", en: "Voice" } },
+    { id: "video", icon: "video", live: true,
+      title: { ar: "فيديو", en: "Video" } },
+    { id: "text",  icon: "chat",  live: false,
+      title: { ar: "كتابة", en: "In writing" } }
+  ];
+
+  function byId(list, id) {
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+
   var SERVICE_TYPES = [
-    { id: "call",   icon: "phone", minPrice: 80,  maxPrice: 400,  mode: "live",
-      title: { ar: "استشارة هاتفية", en: "Phone consultation" },
-      meta:  { ar: "30 دقيقة", en: "30 minutes" } },
-    { id: "video",  icon: "video", minPrice: 150, maxPrice: 800,  mode: "live",
-      title: { ar: "استشارة فيديو", en: "Video consultation" },
-      meta:  { ar: "60 دقيقة", en: "60 minutes" } },
-    { id: "written",icon: "chat",  minPrice: 50,  maxPrice: 300,  mode: "written",
-      title: { ar: "استشارة مكتوبة", en: "Written consultation" },
-      meta:  { ar: "خلال 24 ساعة", en: "Within 24 hours" } },
-    { id: "express",icon: "bolt",  minPrice: 60,  maxPrice: 250,  mode: "doc", tier: "quick",
-      title: { ar: "صياغة مستند — سريعة", en: "Document drafting — express" },
-      meta:  { ar: "خلال ساعات", en: "Within hours" } },
-    { id: "drafting",icon: "file-text", minPrice: 300, maxPrice: 2000, mode: "doc", tier: "full",
-      title: { ar: "صياغة مستند — كاملة", en: "Document drafting — full" },
-      meta:  { ar: "3 – 5 أيام", en: "3 – 5 days" } }
+    { id: "consult", icon: "chat", minPrice: 80, maxPrice: 500,
+      channels: ["voice", "video", "text"],
+      title: { ar: "استشارة قانونية", en: "Legal consultation" },
+      meta:  { ar: "رأي في مسألة قائمة", en: "An opinion on a live question" } },
+    { id: "claim", icon: "gavel", minPrice: 400, maxPrice: 3000,
+      channels: ["text", "voice", "video"],
+      title: { ar: "صحيفة دعوى", en: "Statement of claim" },
+      meta:  { ar: "إعداد الدعوى وقيدها", en: "Preparing and filing the claim" } },
+    { id: "memo", icon: "file-text", minPrice: 300, maxPrice: 2500,
+      channels: ["text", "voice", "video"],
+      title: { ar: "مذكرة قانونية", en: "Legal memorandum" },
+      meta:  { ar: "رد أو دفاع مكتوب", en: "A written reply or defence" } },
+    { id: "contract", icon: "briefcase", minPrice: 300, maxPrice: 4000,
+      channels: ["text", "voice", "video"],
+      title: { ar: "صياغة عقد", en: "Contract drafting" },
+      meta:  { ar: "عقد جديد بشروطك", en: "A new contract on your terms" } },
+    { id: "review", icon: "eye", minPrice: 150, maxPrice: 1200,
+      channels: ["text", "voice", "video"],
+      title: { ar: "مراجعة مستند", en: "Document review" },
+      meta:  { ar: "قراءة وملاحظات", en: "Read, with notes" } },
+    { id: "represent", icon: "scale", minPrice: 1000, maxPrice: 20000,
+      channels: ["voice", "video", "text"],
+      title: { ar: "ترافع وتمثيل", en: "Representation" },
+      meta:  { ar: "المتابعة أمام الجهة المختصة", en: "Carried before the competent body" } }
   ];
 
   /* ---------- people ---------- */
@@ -4799,107 +4975,117 @@ window.SANAD_CONFIG = {
   ];
 
   /* ---------- services each lawyer publishes, priced inside the band ---------- */
-  function svc(id, ownerId, typeId, price) {
-    return { id: id, ownerId: ownerId, typeId: typeId, price: price, active: true };
+  function svc(id, ownerId, typeId, price, channels) {
+    return { id: id, ownerId: ownerId, typeId: typeId, price: price, active: true,
+             channels: channels || (byId(SERVICE_TYPES, typeId) || {}).channels || ["text"] };
   }
+  /* Each lawyer's own catalogue: the work, their price inside the platform's
+     band, and the channels they will take it through. */
   var SERVICES = [
-    svc("s-1", "u-ahmed", "call", 150), svc("s-2", "u-ahmed", "video", 300),
-    svc("s-3", "u-ahmed", "written", 100), svc("s-4", "u-ahmed", "express", 99),
-    svc("s-5", "u-ahmed", "drafting", 500),
-    svc("s-6", "u-sara", "call", 120), svc("s-7", "u-sara", "written", 80),
-    svc("s-8", "u-sara", "express", 79), svc("s-9", "u-sara", "drafting", 420),
-    svc("s-10", "u-mohammed", "call", 200), svc("s-11", "u-mohammed", "video", 400),
-    svc("s-12", "u-mohammed", "drafting", 650),
-    svc("s-13", "u-khalid", "call", 250), svc("s-14", "u-khalid", "video", 500),
-    svc("s-15", "u-noura", "written", 120), svc("s-16", "u-noura", "express", 110),
-    svc("s-17", "u-noura", "drafting", 480),
-    svc("s-18", "u-faisal", "call", 100), svc("s-19", "u-faisal", "written", 65),
-    svc("s-20", "u-faisal", "express", 70)
+    svc("s-1",  "u-ahmed", "consult",   250, ["voice", "video", "text"]),
+    svc("s-2",  "u-ahmed", "contract",  900, ["text", "video"]),
+    svc("s-3",  "u-ahmed", "memo",      750, ["text"]),
+    svc("s-4",  "u-ahmed", "review",    300, ["text", "voice"]),
+    svc("s-5",  "u-ahmed", "represent", 4500, ["voice", "video", "text"]),
+    svc("s-6",  "u-sara", "consult",    180, ["voice", "text"]),
+    svc("s-7",  "u-sara", "claim",      1200, ["text", "voice"]),
+    svc("s-8",  "u-sara", "review",     220, ["text"]),
+    svc("s-9",  "u-sara", "contract",   700, ["text"]),
+    svc("s-10", "u-mohammed", "consult", 400, ["video", "voice"]),
+    svc("s-11", "u-mohammed", "represent", 8000, ["voice", "video", "text"]),
+    svc("s-12", "u-mohammed", "memo",   1100, ["text"]),
+    svc("s-13", "u-khalid", "consult",  320, ["voice", "video"]),
+    svc("s-14", "u-khalid", "claim",    1600, ["text", "video"]),
+    svc("s-15", "u-noura", "consult",   150, ["text", "voice"]),
+    svc("s-16", "u-noura", "review",    200, ["text"]),
+    svc("s-17", "u-noura", "contract",  600, ["text"]),
+    svc("s-18", "u-faisal", "consult",  120, ["voice", "text"]),
+    svc("s-19", "u-faisal", "review",   170, ["text"]),
+    svc("s-20", "u-faisal", "memo",     450, ["text"])
   ];
-
   /* ---------- requests already in flight ---------- */
   var REQUESTS = [
-    { id: "r-1", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "express", price: 99,
+    { id: "r-1", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "review", channel: "text", price: 99,
       status: "drafted", ai: true, doc: "employment", hours: 4,
       title: { ar: "عقد عمل لموظف تسويق", en: "Employment contract, marketing hire" },
       brief: { ar: "راتب 9,000 ريال، فترة تجربة 90 يوماً.", en: "SAR 9,000 salary, 90-day probation." },
       ago: { ar: "منذ 12 دقيقة", en: "12 minutes ago" } },
-    { id: "r-2", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "express", price: 89,
+    { id: "r-2", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "review", channel: "text", price: 89,
       status: "drafted", ai: true, doc: "demand", hours: 4,
       title: { ar: "إنذار بالمطالبة بمبلغ", en: "Formal demand for payment" },
       brief: { ar: "45,000 ريال مستحقة منذ ثلاثة أشهر.", en: "SAR 45,000 outstanding for three months." },
       ago: { ar: "منذ ساعة", en: "An hour ago" } },
-    { id: "r-3", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "express", price: 79,
+    { id: "r-3", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "review", channel: "text", price: 79,
       status: "new", ai: true, doc: "nda", hours: 3,
       title: { ar: "اتفاقية عدم إفشاء", en: "Non-disclosure agreement" },
       brief: { ar: "مع مطوّر مستقل لمدة سنتين.", en: "With a freelance developer, two-year term." },
       ago: { ar: "منذ 5 دقائق", en: "5 minutes ago" } },
-    { id: "r-4", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "written", price: 100,
+    { id: "r-4", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "consult", channel: "text", price: 100,
       status: "new", ai: true, hours: 3,
       title: { ar: "استشارة مكتوبة — نهاية الخدمة", en: "Written query — end-of-service" },
       brief: { ar: "استقالة بعد 4 سنوات، ما مستحقاتي؟", en: "Resigning after 4 years — what am I owed?" },
       ago: { ar: "منذ 3 ساعات", en: "3 hours ago" } },
-    { id: "r-5", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "drafting", price: 500,
+    { id: "r-5", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "contract", channel: "text", price: 500,
       status: "new", ai: false, hours: 8,
       title: { ar: "عقد شراكة تجارية", en: "Commercial partnership agreement" },
       brief: { ar: "ثلاثة شركاء، حصص متفاوتة، وبند خروج.", en: "Three partners, uneven shares, exit clause." },
       ago: { ar: "أمس", en: "Yesterday" } },
-    { id: "r-6", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "drafting", price: 650,
+    { id: "r-6", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "contract", channel: "text", price: 650,
       status: "new", ai: false, hours: 10,
       title: { ar: "مراجعة عقد مقاولة", en: "Construction contract review" },
       brief: { ar: "مشروع بقيمة 8 ملايين، مراجعة بنود الغرامات.", en: "SAR 8m project; review the penalty clauses." },
       ago: { ar: "أمس", en: "Yesterday" } },
-    { id: "r-7", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "call", price: 150,
+    { id: "r-7", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "consult", channel: "voice", price: 150,
       status: "scheduled", ai: false, hours: 1,
       title: { ar: "استشارة هاتفية", en: "Phone consultation" },
       brief: { ar: "نزاع إيجاري مع المالك.", en: "Tenancy dispute with the landlord." },
       ago: { ar: "اليوم 14:00", en: "Today 14:00" } },
-    { id: "r-8", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "video", price: 300,
+    { id: "r-8", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "consult", channel: "video", price: 300,
       status: "scheduled", ai: false, hours: 1,
       title: { ar: "استشارة فيديو", en: "Video consultation" },
       brief: { ar: "مراجعة مستندات قبل جلسة المحكمة.", en: "Document review ahead of a hearing." },
       ago: { ar: "غداً 11:30", en: "Tomorrow 11:30" } },
     /* delivered history, so "past requests" is not empty on first visit */
-    { id: "r-9", clientId: "u-fahad", lawyerId: "u-sara", typeId: "written", price: 80,
+    { id: "r-9", clientId: "u-fahad", lawyerId: "u-sara", typeId: "consult", channel: "text", price: 80,
       status: "completed", ai: false, hours: 3,
       title: { ar: "استشارة حول حضانة", en: "Custody consultation" },
       brief: { ar: "ترتيب الزيارة بعد الطلاق.", en: "Visitation arrangements after divorce." },
       ago: { ar: "قبل أسبوعين", en: "Two weeks ago" } },
-    { id: "r-10", clientId: "u-fahad", lawyerId: "u-mohammed", typeId: "drafting", price: 650,
+    { id: "r-10", clientId: "u-fahad", lawyerId: "u-mohammed", typeId: "contract", channel: "text", price: 650,
       status: "completed", ai: false, hours: 9,
       title: { ar: "مراجعة عقد إيجار تجاري", en: "Commercial lease review" },
       brief: { ar: "محل تجاري في الدمام، مدة خمس سنوات.", en: "Retail unit in Dammam, five-year term." },
       ago: { ar: "الشهر الماضي", en: "Last month" } },
 
     /* work already routed to a trainee, so their side is not empty on arrival */
-    { id: "r-11", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "drafting", price: 420,
+    { id: "r-11", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "contract", channel: "text", price: 420,
       status: "with_intern", assignedTo: "u-jaid", ai: false, hours: 6,
       title: { ar: "مذكرة بحث عن أحكام الوكالة", en: "Research memo on agency rulings" },
       brief: { ar: "جمع السوابق القضائية في نزاع وكالة تجارية.", en: "Collect the precedents in a commercial agency dispute." },
       ago: { ar: "منذ يومين", en: "Two days ago" } },
-    { id: "r-12", clientId: "u-fahad", lawyerId: "u-sara", typeId: "written", price: 90,
+    { id: "r-12", clientId: "u-fahad", lawyerId: "u-sara", typeId: "consult", channel: "text", price: 90,
       status: "with_intern", assignedTo: "u-layan", ai: false, hours: 4,
       title: { ar: "تلخيص لائحة اعتراضية", en: "Summary of an appeal brief" },
       brief: { ar: "تلخيص اللائحة في صفحتين قبل الجلسة.", en: "Two-page summary of the brief before the hearing." },
       ago: { ar: "أمس", en: "Yesterday" } },
-    { id: "r-13", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "drafting", price: 380,
+    { id: "r-13", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "contract", channel: "text", price: 380,
       status: "delivered", assignedTo: "u-jaid", ai: false, hours: 5,
       title: { ar: "صياغة إنذار عدلي", en: "Drafting a notarised notice" },
       brief: { ar: "إنذار بإخلاء عقار مؤجر.", en: "Notice to vacate a leased property." },
       ago: { ar: "الأسبوع الماضي", en: "Last week" } },
 
     /* other lawyers carry live work too, so every signed-in lawyer has a desk */
-    { id: "r-14", clientId: "u-fahad", lawyerId: "u-sara", typeId: "call", price: 120,
+    { id: "r-14", clientId: "u-fahad", lawyerId: "u-sara", typeId: "consult", channel: "voice", price: 120,
       status: "scheduled", ai: false, hours: 1,
       title: { ar: "استشارة هاتفية — تركة", en: "Phone consultation — estate" },
       brief: { ar: "قسمة تركة بين خمسة ورثة.", en: "Dividing an estate among five heirs." },
       ago: { ar: "غداً 09:30", en: "Tomorrow 09:30" } },
-    { id: "r-15", clientId: "u-munira", lawyerId: "u-sara", typeId: "express", price: 79,
+    { id: "r-15", clientId: "u-munira", lawyerId: "u-sara", typeId: "review", channel: "text", price: 79,
       status: "drafted", ai: true, doc: "demand", hours: 3,
       title: { ar: "خطاب مطالبة بأجرة متأخرة", en: "Letter claiming unpaid rent" },
       brief: { ar: "ثلاثة أشهر متأخرة عن مستأجر.", en: "Three months overdue from a tenant." },
       ago: { ar: "منذ 40 دقيقة", en: "40 minutes ago" } },
-    { id: "r-16", clientId: "u-fahad", lawyerId: "u-mohammed", typeId: "video", price: 400,
+    { id: "r-16", clientId: "u-fahad", lawyerId: "u-mohammed", typeId: "consult", channel: "video", price: 400,
       status: "new", ai: false, hours: 2,
       title: { ar: "استشارة فيديو — عقار", en: "Video consultation — property" },
       brief: { ar: "شراء أرض بمخطط غير معتمد.", en: "Buying land on an unapproved plan." },
@@ -5194,6 +5380,7 @@ window.SANAD_CONFIG = {
     specialties: SPECIALTIES,
     cities: CITIES,
     serviceTypes: SERVICE_TYPES,
+    channels: CHANNELS,
     users: USERS,
     services: SERVICES,
     requests: REQUESTS,
@@ -5389,6 +5576,35 @@ window.SANAD_CONFIG = {
      A lawyer sets their own price, but only inside the band the platform
      publishes for that service type — decided to stop undercutting and gouging. */
   function serviceTypes() { return SEED.serviceTypes; }
+
+  /* ---------- how the work is delivered ----------
+     The channel is not the work. A statement of claim is a statement of claim
+     whether it is talked through or handed over as a file — so the category
+     carries the band and the price, and the channel is how it happens. */
+  function channels() { return SEED.channels || []; }
+  function channel(id) { return byId(channels(), id); }
+
+  /** The channels this category allows at all. */
+  function channelsFor(typeId) {
+    var t = serviceType(typeId);
+    return (t && t.channels) || ["text"];
+  }
+
+  /** The channels a particular lawyer will take this work through, narrowed to
+      what the category permits — a stale row cannot offer video on something
+      the platform never allowed it on. */
+  function serviceChannels(s) {
+    var allowed = channelsFor(s.typeId);
+    return ((s.channels && s.channels.length) ? s.channels : allowed)
+      .filter(function (id) { return allowed.indexOf(id) !== -1; });
+  }
+
+  /** Whether a request happens as a call rather than as a file. Read from the
+      channel that was chosen, not from what kind of work it is. */
+  function isLive(r) {
+    var c = channel(r && r.channel);
+    return !!(c && c.live);
+  }
   function serviceType(id) { return byId(SEED.serviceTypes, id); }
 
   function servicesOf(lawyerId) {
@@ -5961,6 +6177,8 @@ window.SANAD_CONFIG = {
     reviewsFor: reviewsFor, ratingOf: ratingOf, ratingSpread: ratingSpread,
     scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard, ranked: ranked,
     serviceTypes: serviceTypes, serviceType: serviceType, servicesOf: servicesOf,
+    channels: channels, channel: channel, channelsFor: channelsFor,
+    serviceChannels: serviceChannels, isLive: isLive,
     priceBand: priceBand, checkPrice: checkPrice,
     serviceTitle: serviceTitle, serviceMeta: serviceMeta, serviceIcon: serviceIcon,
     MIN_SHARE: MIN_SHARE, DEFAULT_SHARE: DEFAULT_SHARE, clampShare: clampShare,
@@ -6230,6 +6448,8 @@ window.SANAD_CONFIG = {
       status: row.status || "pending",
       // Where the platform is choosing to place them, if anywhere.
       featuredRank: row.featured_rank == null ? null : row.featured_rank,
+      // Whether they take matching work automatically when it is posted.
+      autoBid: !!row.auto_bid,
       // Whether they have ever told us who they are. False for an account
       // Google created on their behalf.
       onboarded: !!row.onboarded,
@@ -6267,6 +6487,7 @@ window.SANAD_CONFIG = {
     // only a staff policy lets it through on anybody else's.
     if (data.status !== undefined) row.status = data.status;
     if (data.featuredRank !== undefined) row.featured_rank = data.featuredRank;
+    if (data.autoBid !== undefined) row.auto_bid = !!data.autoBid;
     if (data.role === "lawyer" || (data.roles || []).indexOf("lawyer") !== -1) {
       row.licence_no = data.licenceNumber || null;
       row.licence_authority = flat(data.licenceAuthority);
@@ -6524,7 +6745,8 @@ window.SANAD_CONFIG = {
   function inRequest(r) {
     return {
       id: r.id, clientId: r.client_id, lawyerId: r.lawyer_id, assignedTo: r.assigned_to,
-      typeId: r.type_id, price: Number(r.price), status: r.status,
+      typeId: r.type_id, channel: r.channel || "text",
+      price: Number(r.price), status: r.status,
       ai: !!r.ai_assisted, hours: r.hours || 3, body: r.body || null,
       internShare: r.intern_share, rated: !!r.rated,
       title: pair(r.title), brief: pair(r.brief), ago: pair(""),
@@ -6533,7 +6755,8 @@ window.SANAD_CONFIG = {
   function outRequest(r) {
     return {
       client_id: r.clientId, lawyer_id: r.lawyerId || null, assigned_to: r.assignedTo || null,
-      type_id: r.typeId, title: flat(r.title), brief: flat(r.brief),
+      type_id: r.typeId, channel: r.channel || "text",
+      title: flat(r.title), brief: flat(r.brief),
       price: r.price, status: r.status || "new", ai_assisted: !!r.ai, hours: r.hours || 3,
     };
   }
@@ -6541,7 +6764,7 @@ window.SANAD_CONFIG = {
   function inService(s) {
     return {
       id: s.id, ownerId: s.owner_id, typeId: s.type_id, price: Number(s.price),
-      active: s.active !== false,
+      active: s.active !== false, channels: s.channels || ["text"],
       title: s.title ? pair(s.title) : null, meta: s.meta ? pair(s.meta) : null,
     };
   }
@@ -6593,6 +6816,7 @@ window.SANAD_CONFIG = {
   }
   function inAnnouncement(a) {
     return { id: a.id, title: a.title, body: a.body, link: a.link,
+             imageUrl: a.image_url, html: a.html, placement: a.placement || "bar",
              audience: a.audience, active: !!a.active,
              startsAt: a.starts_at, endsAt: a.ends_at,
              at: new Date(a.created_at).getTime() };
@@ -6741,6 +6965,7 @@ window.SANAD_CONFIG = {
     if ("body" in changes) row.body = changes.body;
     if ("internShare" in changes) row.intern_share = changes.internShare;
     if ("rated" in changes) row.rated = changes.rated;
+    if ("channel" in changes) row.channel = changes.channel;
     for (var i = 0; i < cache.requests.length; i++) {
       if (cache.requests[i].id === id) {
         Object.keys(changes).forEach(function (k) { cache.requests[i][k] = changes[k]; });
@@ -6751,7 +6976,9 @@ window.SANAD_CONFIG = {
   };
 
   Store.addService = function (s) {
+    s.channels = s.channels && s.channels.length ? s.channels : ["text"];
     var row = { owner_id: s.ownerId, type_id: s.typeId, price: s.price,
+                channels: s.channels,
                 title: flat(s.title), meta: flat(s.meta), active: true };
     push("services", row).then(function (res) {
       report(res);
@@ -6877,6 +7104,7 @@ window.SANAD_CONFIG = {
     });
     Store.notifyAll();
     var row = SB.fromProfile(changes);
+    if ("autoBid" in changes) row.auto_bid = !!changes.autoBid;
     Object.keys(row).forEach(function (k) { if (row[k] == null) delete row[k]; });
     if (changes.skills) row.skills = changes.skills.map(flat);
     if (Object.keys(row).length) patch("profiles", id, row).then(report);
@@ -6898,6 +7126,8 @@ window.SANAD_CONFIG = {
     cache.announcements.unshift(a);
     Store.notifyAll();
     push("announcements", { title: a.title, body: a.body || null, link: a.link || null,
+                            image_url: a.imageUrl || null, html: a.html || null,
+                            placement: a.placement || "bar",
                             audience: a.audience || "all", active: !!a.active,
                             starts_at: a.startsAt || null, ends_at: a.endsAt || null,
                             created_by: Store.currentId() })
@@ -6916,6 +7146,9 @@ window.SANAD_CONFIG = {
     if ("body" in p) row.body = p.body;
     if ("link" in p) row.link = p.link;
     if ("audience" in p) row.audience = p.audience;
+    if ("imageUrl" in p) row.image_url = p.imageUrl;
+    if ("html" in p) row.html = p.html;
+    if ("placement" in p) row.placement = p.placement;
     if (Object.keys(row).length) patch("announcements", id, row).then(report);
   };
   Store.removeAnnouncement = function (id) {
@@ -8146,7 +8379,9 @@ window.SANAD_CONFIG = {
       to any one screen. */
   function announcements() {
     if (!global.Models || !global.Models.announcementsFor) return "";
-    var list = global.Models.announcementsFor(Session.role());
+    var list = global.Models.announcementsFor(Session.role()).filter(function (a) {
+      return (a.placement || "bar") === "bar";
+    });
     if (!list.length) return "";
     return list.map(function (a) {
       var text = global.App.esc(a.title) +
@@ -8541,6 +8776,69 @@ window.SANAD_CONFIG = {
     pending: "warn", verified: "ok", rejected: "muted"
   };
 
+  /* ---------- how a request is going ----------
+     One track, and both parties see the same one. A client watching a request
+     and a lawyer working it were reading two different vocabularies for the
+     same thing; this is the shared answer to "where are we". */
+  var TRACK = ["placed", "accepted", "working", "delivered", "settled"];
+
+  var STAGE_OF = {
+    new: "placed", quoting: "placed",
+    assigned: "accepted", scheduled: "accepted",
+    drafted: "working", with_intern: "working", open_to_interns: "working",
+    in_progress: "working",
+    delivered: "delivered", completed: "settled", cancelled: "cancelled"
+  };
+
+  /** Whose move it is. Saying this is most of what somebody wants from a
+      progress bar — the bar itself only says how far along it is. */
+  function waitingOn(stage, mine) {
+    if (stage === "placed") return mine === "lawyer" ? "prog.you" : "prog.theLawyer";
+    if (stage === "accepted" || stage === "working") {
+      return mine === "lawyer" ? "prog.you" : "prog.theLawyer";
+    }
+    if (stage === "delivered") return mine === "client" ? "prog.you" : "prog.theClient";
+    return null;
+  }
+
+  function progress(r, mine) {
+    var st = M.requestState(r);
+    var dis = M.disputeFor && M.disputeFor(r.id);
+    var open = dis && dis.status === "open";
+    var stage = STAGE_OF[st.status] || "placed";
+    if (open) stage = "disputed";
+
+    var at = TRACK.indexOf(stage);
+    var waiting = open ? "prog.staff" : waitingOn(stage, mine);
+
+    return '<div class="track' + (open ? " track--held" : "") + '">' +
+      '<div class="row between wrap gap-3">' +
+        '<strong class="small" data-i18n="prog.title"></strong>' +
+        (waiting
+          ? '<span class="tiny muted">' +
+            esc(I18N.t("prog.waitingOn", { who: I18N.t(waiting) })) + "</span>"
+          : "") +
+      "</div>" +
+      '<ol class="track__steps">' +
+        TRACK.map(function (key, i) {
+          var done = at > i, here = at === i;
+          return '<li class="track__step' + (done ? " is-done" : "") + (here ? " is-here" : "") + '">' +
+            '<span class="track__dot">' +
+              (done ? Icons.svg("check", "icon-sm") : "") + "</span>" +
+            '<span class="track__label">' + esc(I18N.t("prog." + key)) + "</span></li>";
+        }).join("") +
+      "</ol>" +
+      (stage === "disputed"
+        ? '<p class="small" style="margin-top:var(--s-3)">' +
+          Icons.svg("clock", "icon-sm") + " " + esc(I18N.t("prog.disputed")) + "</p>"
+        : "") +
+      (stage === "cancelled"
+        ? '<p class="small muted" style="margin-top:var(--s-3)">' +
+          esc(I18N.t("prog.cancelled")) + "</p>"
+        : "") +
+    "</div>";
+  }
+
   function statusPill(status) {
     return '<span class="status status--' + (STATUS_STYLE[status] || "muted") + '">' +
       esc(I18N.t("status." + status)) + "</span>";
@@ -8606,7 +8904,8 @@ window.SANAD_CONFIG = {
     ratingLine: ratingLine, verifiedMark: verifiedMark, progressBar: progressBar,
     starPicker: starPicker, ratingSummary: ratingSummary, reviewCard: reviewCard,
     lawyerCard: lawyerCard, internCard: internCard, articleCard: articleCard,
-    statusPill: statusPill, requestRow: requestRow, empty: empty, sectionHead: sectionHead,
+    statusPill: statusPill, progress: progress,
+    requestRow: requestRow, empty: empty, sectionHead: sectionHead,
     googleButton: googleButton
   };
 })(window);
@@ -8855,11 +9154,36 @@ Pages.define("home", function (global) {
   }
 
   /* ---------- draw ---------- */
+  /** Announcements the platform wants on the home page rather than in a bar.
+      An image if there is one, markup of its own if the platform wrote some,
+      and otherwise a clean card — three ways to say something, one shape. */
+  function feature() {
+    var list = (M.announcementsFor(Session.role()) || []).filter(function (a) {
+      return a.placement === "home";
+    });
+    if (!list.length) return "";
+    return '<section class="container" style="padding-block:var(--s-8) 0">' +
+      list.map(function (a) {
+        // Markup written by staff, through a table only staff can write to.
+        // Nothing a visitor types reaches this.
+        if (a.html) return '<div class="promo promo--raw">' + a.html + "</div>";
+        return '<article class="promo' + (a.imageUrl ? " promo--image" : "") + '"' +
+          (a.imageUrl ? ' style="background-image:url(' + esc(a.imageUrl) + ')"' : "") + ">" +
+          '<div class="promo__body">' +
+            '<h2 class="title">' + esc(a.title) + "</h2>" +
+            (a.body ? '<p class="lead">' + esc(a.body) + "</p>" : "") +
+            (a.link ? '<a class="btn btn--accent" href="' + esc(a.link) + '" rel="noopener">' +
+              esc(I18N.t("notice.open")) + "</a>" : "") +
+          "</div></article>";
+      }).join("") +
+    "</section>";
+  }
+
   App.onRender(function () {
     var role = Session.role();
-    host.innerHTML = role === "lawyer" ? lawyerHome()
+    host.innerHTML = feature() + (role === "lawyer" ? lawyerHome()
                    : role === "intern" ? internHome()
-                   : clientHome();
+                   : clientHome());
 
     fillAny("[data-any-specialty]", global.SEED.specialties, "dir.anySpecialty");
     fillAny("[data-any-city]", global.SEED.cities, "dir.anyCity");
@@ -8963,12 +9287,12 @@ Pages.define("requests", function (global) {
     return '<div>' + C.requestRow(r, {
       status: CLIENT_STATUS[st.status] || st.status,
       actions: function () {
-        var type = M.serviceType(r.typeId);
-        var live = type && type.mode === "live" &&
+        var chan = M.channel(r.channel);
+        var live = M.isLive(r) &&
           ["delivered", "completed", "cancelled"].indexOf(st.status) === -1;
         return (live
             ? '<a class="btn btn--primary btn--sm" href="call.html?id=' + esc(r.id) + '">' +
-              Icons.svg(type.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>"
+              Icons.svg(chan.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>"
             : "") +
           '<button class="btn btn--ghost btn--sm" type="button" data-detail="' + esc(r.id) + '">' +
             esc(I18N.t("req.openDetails")) + "</button>" +
@@ -8991,6 +9315,7 @@ Pages.define("requests", function (global) {
           "<div>" + C.personLink(lawyer) + "</div></div></div>" +
         '<button class="icon-btn" type="button" data-detail-close>' + Icons.svg("close", "icon-sm") + "</button>" +
       "</div>" +
+      C.progress(r, "client") +
       '<h3 class="subtitle" style="margin-top:var(--s-5)" data-i18n="req.deliverable"></h3>' +
       (st.body
         ? '<pre class="draft-text" style="min-height:auto" readonly>' + esc(st.body) + "</pre>"
@@ -9287,6 +9612,7 @@ Pages.define("requests", function (global) {
             (r.ai ? ' <span class="dot"></span> ' + esc(I18N.t("ai.aiSource")) : "") + "</p></div>" +
         '<button class="icon-btn" type="button" data-draft-close>' + Icons.svg("close", "icon-sm") + "</button>" +
       "</div>" +
+      '<div style="padding:var(--s-5) var(--s-5) 0">' + C.progress(r, "lawyer") + "</div>" +
       (r.ai ? '<p class="disclaimer" style="border-top:0">' + Icons.svg("lock", "icon-sm") +
         "<span>" + esc(I18N.t("inbox.aiHidden")) + "</span></p>" : "") +
       '<textarea class="draft-text" data-draft-body spellcheck="false">' + esc(body) + "</textarea>" +
@@ -9704,6 +10030,7 @@ Pages.define("services", function (global) {
   var skills = null;    // trainee's working copy, loaded on first draw
   var draft = {};       // the service being written
   var editing = null;   // the service being changed, if any
+  var ordering = {};    // serviceId -> the channel the client has picked
 
   /* ====================================================== client ==========
      Two ways in, stated up front. Either the client names the service and the
@@ -9839,6 +10166,17 @@ Pages.define("services", function (global) {
         (best ? '<span class="dot"></span><span class="tag">' +
           esc(I18N.t("quotes.bestPrice")) + "</span>" : "") +
       "</div>" +
+      '<div style="margin-top:var(--s-4)">' +
+        '<span class="tiny muted" data-i18n="svc.pickChannel"></span>' +
+        '<div class="row gap-2 wrap" style="margin-top:var(--s-2)">' +
+          M.serviceChannels(o.svc).map(function (id, i) {
+            var c = M.channel(id);
+            var on = (ordering[o.svc.id] || M.serviceChannels(o.svc)[0]) === id;
+            return '<button type="button" class="chip' + (on ? " is-active" : "") +
+              '" data-order-channel="' + esc(id) + '" data-svc="' + esc(o.svc.id) + '">' +
+              Icons.svg(c.icon, "icon-sm") + esc(tx(c.title)) + "</button>";
+          }).join("") +
+        "</div></div>" +
       '<div class="row between wrap gap-3" style="margin-top:var(--s-5);padding-top:var(--s-4);' +
         'border-top:1px solid var(--border)">' +
         '<span class="tiny muted">' + esc(tx(M.serviceMeta(o.svc))) + "</span>" +
@@ -9852,6 +10190,29 @@ Pages.define("services", function (global) {
      The category behind it is not a label, it is the price band: whatever they
      charge has to sit between the platform's floor and ceiling for that kind
      of work, which is what stops both undercutting and gouging. */
+  /** The channels the lawyer is offering on the service being written. Starts
+      from whatever the category allows, so the common case needs no clicks. */
+  function draftChannels(cat) {
+    if (!draft.channels) draft.channels = M.channelsFor(cat).slice();
+    return draft.channels.filter(function (c) {
+      return M.channelsFor(cat).indexOf(c) !== -1;
+    });
+  }
+
+  function channelPicker(cat) {
+    var on = draftChannels(cat);
+    return '<div class="field"><span class="label" data-i18n="svc.channels"></span>' +
+      '<div class="row gap-2 wrap" style="margin-top:var(--s-2)">' +
+        M.channelsFor(cat).map(function (id) {
+          var c = M.channel(id);
+          return '<button type="button" class="chip' +
+            (on.indexOf(id) !== -1 ? " is-active" : "") + '" data-channel="' + esc(id) + '">' +
+            Icons.svg(c.icon, "icon-sm") + esc(tx(c.title)) + "</button>";
+        }).join("") +
+      "</div>" +
+      '<span class="tiny faint" data-i18n="svc.channelsHint"></span></div>';
+  }
+
   function lawyerView() {
     var me = Session.user();
     var mine = M.servicesOf(me.id);
@@ -9873,7 +10234,16 @@ Pages.define("services", function (global) {
             : '<p class="small muted" data-i18n="svc.noneMine"></p>') +
         "</section>" +
 
-        '<aside class="card card--pad">' +
+        '<aside class="stack gap-4">' +
+        '<section class="card card--pad">' +
+          '<label class="row between gap-3">' +
+            '<span><strong data-i18n="svc.autoBid"></strong>' +
+              '<span class="tiny muted" style="display:block" data-i18n="svc.autoBidHint"></span></span>' +
+            '<input type="checkbox" data-auto-bid' + (me.autoBid ? " checked" : "") + "></label>" +
+          '<p class="tiny ' + (me.autoBid ? "" : "muted") + '" style="margin-top:var(--s-3)" data-i18n="' +
+            (me.autoBid ? "svc.autoBidOn" : "svc.autoBidOff") + '"></p>' +
+        "</section>" +
+        '<section class="card card--pad">' +
           '<h2 class="subtitle" data-i18n="' + (editing ? "svc.editTitle" : "svc.addTitle") + '"></h2>' +
           '<div class="stack gap-4" style="margin-top:var(--s-5)">' +
             '<label class="field"><span class="label" data-i18n="svc.category"></span>' +
@@ -9896,6 +10266,7 @@ Pages.define("services", function (global) {
               '<input class="input num" type="number" data-new-price dir="ltr" ' +
                 'min="' + band.min + '" max="' + band.max + '" ' +
                 'value="' + (draft.price != null ? draft.price : "") + '"></label>' +
+            channelPicker(cat) +
             '<p class="tiny muted" data-band></p>' +
             '<p class="form-error" data-svc-error hidden></p>' +
             '<div class="row gap-2">' +
@@ -9905,7 +10276,7 @@ Pages.define("services", function (global) {
                 'data-i18n="signup.back"></button>' : "") +
             "</div>" +
           "</div>" +
-        "</aside>" +
+        "</section></aside>" +
       "</div></div>";
   }
 
@@ -10000,9 +10371,17 @@ Pages.define("services", function (global) {
   host.addEventListener("change", function (ev) {
     var f = ev.target.closest("[data-filter]");
     if (f) { filters[f.getAttribute("data-filter")] = f.value; App.rerender(); return; }
+    if (ev.target.closest("[data-auto-bid]")) {
+      Store.updateAccount(Session.user().id, { autoBid: !!ev.target.checked });
+      App.toast(I18N.t(ev.target.checked ? "svc.autoBidOn" : "svc.autoBidOff"), "check");
+      return;
+    }
     if (ev.target.closest("[data-new-type]")) {
+      var keep = draft.channels;
       draft = readForm();
-      draft.title = draft.title; draft.meta = draft.meta;
+      // A category change resets the channels to whatever the new one allows,
+      // rather than carrying over a choice that may no longer be permitted.
+      draft.channels = null;
       showBand();
       App.rerender();
       return;
@@ -10034,6 +10413,13 @@ Pages.define("services", function (global) {
     if (pt) { filters.type = pt.getAttribute("data-pick-type"); App.rerender(); return; }
     if (t.closest("[data-clear-type]")) { filters.type = ""; App.rerender(); return; }
 
+    var oc = t.closest("[data-order-channel]");
+    if (oc) {
+      ordering[oc.getAttribute("data-svc")] = oc.getAttribute("data-order-channel");
+      App.rerender();
+      return;
+    }
+
     var ord = t.closest("[data-order]");
     if (ord) {
       if (Session.isGuest()) { App.toast(I18N.t("svc.orderSignIn"), "lock");
@@ -10042,10 +10428,12 @@ Pages.define("services", function (global) {
       var pick = null;
       for (var i = 0; i < all.length; i++) if (all[i].svc.id === ord.getAttribute("data-order")) pick = all[i];
       if (!pick) return;
-      var picked = M.serviceType(pick.svc.typeId);
+      var chosen = ordering[pick.svc.id] || M.serviceChannels(pick.svc)[0];
       Store.addRequest({
         clientId: Session.user().id, lawyerId: pick.owner.id, typeId: pick.svc.typeId,
-        price: pick.svc.price, status: "new", ai: picked.tier === "quick", hours: 3,
+        channel: chosen,
+        // Something to draft is something written; a call is not.
+        price: pick.svc.price, status: "new", ai: !M.channel(chosen).live, hours: 3,
         title: M.serviceTitle(pick.svc),
         brief: { ar: "", en: "" },
         ago: { ar: I18N.t("common.today"), en: I18N.t("common.today") }
@@ -10059,9 +10447,13 @@ Pages.define("services", function (global) {
       var f = readForm();
       var bad = M.checkPrice(f.typeId, f.price);
       if (bad) { svcError(bad === "low" ? "svc.tooLow" : bad === "high" ? "svc.tooHigh" : "svc.empty"); return; }
+      var chosen = draftChannels(f.typeId);
+      // A service nobody can be reached through is not a service.
+      if (!chosen.length) { svcError("svc.needChannel"); return; }
       svcError(null);
       var record = {
         ownerId: Session.user().id, typeId: f.typeId, price: f.price, active: true,
+        channels: chosen,
         title: f.title ? { ar: f.title, en: f.title } : null,
         meta: f.meta ? { ar: f.meta, en: f.meta } : null
       };
@@ -10083,7 +10475,20 @@ Pages.define("services", function (global) {
       if (!found) return;
       editing = found;
       draft = { typeId: found.typeId, price: found.price,
+                channels: M.serviceChannels(found).slice(),
                 title: found.title ? tx(found.title) : "", meta: found.meta ? tx(found.meta) : "" };
+      App.rerender();
+      return;
+    }
+
+    var ch = t.closest("[data-channel]");
+    if (ch) {
+      var id = ch.getAttribute("data-channel");
+      var cat = editing ? editing.typeId : (draft.typeId || M.serviceTypes()[0].id);
+      var list = draftChannels(cat);
+      var at = list.indexOf(id);
+      draft.channels = at === -1 ? list.concat([id])
+                                 : list.filter(function (x) { return x !== id; });
       App.rerender();
       return;
     }
@@ -11688,7 +12093,8 @@ Pages.define("assistant", function (global) {
     var rows = M.requestsForLawyer(me.id).filter(function (r) {
       var st = M.requestState(r).status;
       var type = M.serviceType(r.typeId);
-      return type && type.mode !== "live" && st !== "delivered" && st !== "completed" &&
+      // Something to draft, which a call is not.
+      return !M.isLive(r) && st !== "delivered" && st !== "completed" &&
              st !== "cancelled" && !M.requestState(r).assignedTo;
     });
 
@@ -13261,13 +13667,26 @@ Pages.define("admin", function (global) {
           '<label class="field"><span class="label" data-i18n="adm.adLink"></span>' +
             '<input class="input" dir="ltr" data-ad-link></label>' +
           '<label class="field"><span class="label" data-i18n="adm.adAudience"></span>' +
-            '<select class="select" data-ad-audience">' +
+            '<select class="select" data-ad-audience>' +
               '<option value="all">' + esc(I18N.t("adm.audAll")) + "</option>" +
               '<option value="client">' + esc(I18N.t("role.client")) + "</option>" +
               '<option value="lawyer">' + esc(I18N.t("role.lawyer")) + "</option>" +
               '<option value="intern">' + esc(I18N.t("role.intern")) + "</option>" +
             "</select></label>" +
         "</div>" +
+        '<div class="grid grid-2" style="gap:var(--s-3);margin-top:var(--s-3)">' +
+          '<label class="field"><span class="label" data-i18n="adm.adImage"></span>' +
+            '<input class="input" dir="ltr" data-ad-image></label>' +
+          '<label class="field"><span class="label" data-i18n="adm.adPlacement"></span>' +
+            '<select class="select" data-ad-placement>' +
+              '<option value="bar">' + esc(I18N.t("adm.placeBar")) + "</option>" +
+              '<option value="home">' + esc(I18N.t("adm.placeHome")) + "</option>" +
+            "</select></label>" +
+        "</div>" +
+        '<label class="field" style="margin-top:var(--s-3)">' +
+          '<span class="label" data-i18n="adm.adHtml"></span>' +
+          '<textarea class="input" rows="3" dir="ltr" data-ad-html></textarea>' +
+          '<span class="tiny faint" data-i18n="adm.adHtmlHint"></span></label>' +
         '<button class="btn btn--primary btn--sm" style="margin-top:var(--s-4)" type="button" data-add-ad>' +
           Icons.svg("send", "icon-sm") + esc(I18N.t("adm.addAd")) + "</button>" +
       "</section>" +
@@ -13536,6 +13955,8 @@ Pages.define("admin", function (global) {
       if (!at) { App.toast(I18N.t("adm.needTitle"), "alert"); return; }
       Store.addAnnouncement({
         title: at, body: val("[data-ad-body]"), link: val("[data-ad-link]"),
+        imageUrl: val("[data-ad-image]"), html: val("[data-ad-html]"),
+        placement: val("[data-ad-placement]") || "bar",
         audience: val("[data-ad-audience]") || "all", active: true
       });
       Store.log({ action: "ad", byId: me.id, subject: at });

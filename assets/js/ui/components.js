@@ -224,6 +224,69 @@
     pending: "warn", verified: "ok", rejected: "muted"
   };
 
+  /* ---------- how a request is going ----------
+     One track, and both parties see the same one. A client watching a request
+     and a lawyer working it were reading two different vocabularies for the
+     same thing; this is the shared answer to "where are we". */
+  var TRACK = ["placed", "accepted", "working", "delivered", "settled"];
+
+  var STAGE_OF = {
+    new: "placed", quoting: "placed",
+    assigned: "accepted", scheduled: "accepted",
+    drafted: "working", with_intern: "working", open_to_interns: "working",
+    in_progress: "working",
+    delivered: "delivered", completed: "settled", cancelled: "cancelled"
+  };
+
+  /** Whose move it is. Saying this is most of what somebody wants from a
+      progress bar — the bar itself only says how far along it is. */
+  function waitingOn(stage, mine) {
+    if (stage === "placed") return mine === "lawyer" ? "prog.you" : "prog.theLawyer";
+    if (stage === "accepted" || stage === "working") {
+      return mine === "lawyer" ? "prog.you" : "prog.theLawyer";
+    }
+    if (stage === "delivered") return mine === "client" ? "prog.you" : "prog.theClient";
+    return null;
+  }
+
+  function progress(r, mine) {
+    var st = M.requestState(r);
+    var dis = M.disputeFor && M.disputeFor(r.id);
+    var open = dis && dis.status === "open";
+    var stage = STAGE_OF[st.status] || "placed";
+    if (open) stage = "disputed";
+
+    var at = TRACK.indexOf(stage);
+    var waiting = open ? "prog.staff" : waitingOn(stage, mine);
+
+    return '<div class="track' + (open ? " track--held" : "") + '">' +
+      '<div class="row between wrap gap-3">' +
+        '<strong class="small" data-i18n="prog.title"></strong>' +
+        (waiting
+          ? '<span class="tiny muted">' +
+            esc(I18N.t("prog.waitingOn", { who: I18N.t(waiting) })) + "</span>"
+          : "") +
+      "</div>" +
+      '<ol class="track__steps">' +
+        TRACK.map(function (key, i) {
+          var done = at > i, here = at === i;
+          return '<li class="track__step' + (done ? " is-done" : "") + (here ? " is-here" : "") + '">' +
+            '<span class="track__dot">' +
+              (done ? Icons.svg("check", "icon-sm") : "") + "</span>" +
+            '<span class="track__label">' + esc(I18N.t("prog." + key)) + "</span></li>";
+        }).join("") +
+      "</ol>" +
+      (stage === "disputed"
+        ? '<p class="small" style="margin-top:var(--s-3)">' +
+          Icons.svg("clock", "icon-sm") + " " + esc(I18N.t("prog.disputed")) + "</p>"
+        : "") +
+      (stage === "cancelled"
+        ? '<p class="small muted" style="margin-top:var(--s-3)">' +
+          esc(I18N.t("prog.cancelled")) + "</p>"
+        : "") +
+    "</div>";
+  }
+
   function statusPill(status) {
     return '<span class="status status--' + (STATUS_STYLE[status] || "muted") + '">' +
       esc(I18N.t("status." + status)) + "</span>";
@@ -289,7 +352,8 @@
     ratingLine: ratingLine, verifiedMark: verifiedMark, progressBar: progressBar,
     starPicker: starPicker, ratingSummary: ratingSummary, reviewCard: reviewCard,
     lawyerCard: lawyerCard, internCard: internCard, articleCard: articleCard,
-    statusPill: statusPill, requestRow: requestRow, empty: empty, sectionHead: sectionHead,
+    statusPill: statusPill, progress: progress,
+    requestRow: requestRow, empty: empty, sectionHead: sectionHead,
     googleButton: googleButton
   };
 })(window);

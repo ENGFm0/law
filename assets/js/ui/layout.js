@@ -153,7 +153,9 @@
       to any one screen. */
   function announcements() {
     if (!global.Models || !global.Models.announcementsFor) return "";
-    var list = global.Models.announcementsFor(Session.role());
+    var list = global.Models.announcementsFor(Session.role()).filter(function (a) {
+      return (a.placement || "bar") === "bar";
+    });
     if (!list.length) return "";
     return list.map(function (a) {
       var text = global.App.esc(a.title) +

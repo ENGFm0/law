@@ -21,6 +21,7 @@ Pages.define("services", function (global) {
   var skills = null;    // trainee's working copy, loaded on first draw
   var draft = {};       // the service being written
   var editing = null;   // the service being changed, if any
+  var ordering = {};    // serviceId -> the channel the client has picked
 
   /* ====================================================== client ==========
      Two ways in, stated up front. Either the client names the service and the
@@ -156,6 +157,17 @@ Pages.define("services", function (global) {
         (best ? '<span class="dot"></span><span class="tag">' +
           esc(I18N.t("quotes.bestPrice")) + "</span>" : "") +
       "</div>" +
+      '<div style="margin-top:var(--s-4)">' +
+        '<span class="tiny muted" data-i18n="svc.pickChannel"></span>' +
+        '<div class="row gap-2 wrap" style="margin-top:var(--s-2)">' +
+          M.serviceChannels(o.svc).map(function (id, i) {
+            var c = M.channel(id);
+            var on = (ordering[o.svc.id] || M.serviceChannels(o.svc)[0]) === id;
+            return '<button type="button" class="chip' + (on ? " is-active" : "") +
+              '" data-order-channel="' + esc(id) + '" data-svc="' + esc(o.svc.id) + '">' +
+              Icons.svg(c.icon, "icon-sm") + esc(tx(c.title)) + "</button>";
+          }).join("") +
+        "</div></div>" +
       '<div class="row between wrap gap-3" style="margin-top:var(--s-5);padding-top:var(--s-4);' +
         'border-top:1px solid var(--border)">' +
         '<span class="tiny muted">' + esc(tx(M.serviceMeta(o.svc))) + "</span>" +
@@ -169,6 +181,29 @@ Pages.define("services", function (global) {
      The category behind it is not a label, it is the price band: whatever they
      charge has to sit between the platform's floor and ceiling for that kind
      of work, which is what stops both undercutting and gouging. */
+  /** The channels the lawyer is offering on the service being written. Starts
+      from whatever the category allows, so the common case needs no clicks. */
+  function draftChannels(cat) {
+    if (!draft.channels) draft.channels = M.channelsFor(cat).slice();
+    return draft.channels.filter(function (c) {
+      return M.channelsFor(cat).indexOf(c) !== -1;
+    });
+  }
+
+  function channelPicker(cat) {
+    var on = draftChannels(cat);
+    return '<div class="field"><span class="label" data-i18n="svc.channels"></span>' +
+      '<div class="row gap-2 wrap" style="margin-top:var(--s-2)">' +
+        M.channelsFor(cat).map(function (id) {
+          var c = M.channel(id);
+          return '<button type="button" class="chip' +
+            (on.indexOf(id) !== -1 ? " is-active" : "") + '" data-channel="' + esc(id) + '">' +
+            Icons.svg(c.icon, "icon-sm") + esc(tx(c.title)) + "</button>";
+        }).join("") +
+      "</div>" +
+      '<span class="tiny faint" data-i18n="svc.channelsHint"></span></div>';
+  }
+
   function lawyerView() {
     var me = Session.user();
     var mine = M.servicesOf(me.id);
@@ -190,7 +225,16 @@ Pages.define("services", function (global) {
             : '<p class="small muted" data-i18n="svc.noneMine"></p>') +
         "</section>" +
 
-        '<aside class="card card--pad">' +
+        '<aside class="stack gap-4">' +
+        '<section class="card card--pad">' +
+          '<label class="row between gap-3">' +
+            '<span><strong data-i18n="svc.autoBid"></strong>' +
+              '<span class="tiny muted" style="display:block" data-i18n="svc.autoBidHint"></span></span>' +
+            '<input type="checkbox" data-auto-bid' + (me.autoBid ? " checked" : "") + "></label>" +
+          '<p class="tiny ' + (me.autoBid ? "" : "muted") + '" style="margin-top:var(--s-3)" data-i18n="' +
+            (me.autoBid ? "svc.autoBidOn" : "svc.autoBidOff") + '"></p>' +
+        "</section>" +
+        '<section class="card card--pad">' +
           '<h2 class="subtitle" data-i18n="' + (editing ? "svc.editTitle" : "svc.addTitle") + '"></h2>' +
           '<div class="stack gap-4" style="margin-top:var(--s-5)">' +
             '<label class="field"><span class="label" data-i18n="svc.category"></span>' +
@@ -213,6 +257,7 @@ Pages.define("services", function (global) {
               '<input class="input num" type="number" data-new-price dir="ltr" ' +
                 'min="' + band.min + '" max="' + band.max + '" ' +
                 'value="' + (draft.price != null ? draft.price : "") + '"></label>' +
+            channelPicker(cat) +
             '<p class="tiny muted" data-band></p>' +
             '<p class="form-error" data-svc-error hidden></p>' +
             '<div class="row gap-2">' +
@@ -222,7 +267,7 @@ Pages.define("services", function (global) {
                 'data-i18n="signup.back"></button>' : "") +
             "</div>" +
           "</div>" +
-        "</aside>" +
+        "</section></aside>" +
       "</div></div>";
   }
 
@@ -317,9 +362,17 @@ Pages.define("services", function (global) {
   host.addEventListener("change", function (ev) {
     var f = ev.target.closest("[data-filter]");
     if (f) { filters[f.getAttribute("data-filter")] = f.value; App.rerender(); return; }
+    if (ev.target.closest("[data-auto-bid]")) {
+      Store.updateAccount(Session.user().id, { autoBid: !!ev.target.checked });
+      App.toast(I18N.t(ev.target.checked ? "svc.autoBidOn" : "svc.autoBidOff"), "check");
+      return;
+    }
     if (ev.target.closest("[data-new-type]")) {
+      var keep = draft.channels;
       draft = readForm();
-      draft.title = draft.title; draft.meta = draft.meta;
+      // A category change resets the channels to whatever the new one allows,
+      // rather than carrying over a choice that may no longer be permitted.
+      draft.channels = null;
       showBand();
       App.rerender();
       return;
@@ -351,6 +404,13 @@ Pages.define("services", function (global) {
     if (pt) { filters.type = pt.getAttribute("data-pick-type"); App.rerender(); return; }
     if (t.closest("[data-clear-type]")) { filters.type = ""; App.rerender(); return; }
 
+    var oc = t.closest("[data-order-channel]");
+    if (oc) {
+      ordering[oc.getAttribute("data-svc")] = oc.getAttribute("data-order-channel");
+      App.rerender();
+      return;
+    }
+
     var ord = t.closest("[data-order]");
     if (ord) {
       if (Session.isGuest()) { App.toast(I18N.t("svc.orderSignIn"), "lock");
@@ -359,10 +419,12 @@ Pages.define("services", function (global) {
       var pick = null;
       for (var i = 0; i < all.length; i++) if (all[i].svc.id === ord.getAttribute("data-order")) pick = all[i];
       if (!pick) return;
-      var picked = M.serviceType(pick.svc.typeId);
+      var chosen = ordering[pick.svc.id] || M.serviceChannels(pick.svc)[0];
       Store.addRequest({
         clientId: Session.user().id, lawyerId: pick.owner.id, typeId: pick.svc.typeId,
-        price: pick.svc.price, status: "new", ai: picked.tier === "quick", hours: 3,
+        channel: chosen,
+        // Something to draft is something written; a call is not.
+        price: pick.svc.price, status: "new", ai: !M.channel(chosen).live, hours: 3,
         title: M.serviceTitle(pick.svc),
         brief: { ar: "", en: "" },
         ago: { ar: I18N.t("common.today"), en: I18N.t("common.today") }
@@ -376,9 +438,13 @@ Pages.define("services", function (global) {
       var f = readForm();
       var bad = M.checkPrice(f.typeId, f.price);
       if (bad) { svcError(bad === "low" ? "svc.tooLow" : bad === "high" ? "svc.tooHigh" : "svc.empty"); return; }
+      var chosen = draftChannels(f.typeId);
+      // A service nobody can be reached through is not a service.
+      if (!chosen.length) { svcError("svc.needChannel"); return; }
       svcError(null);
       var record = {
         ownerId: Session.user().id, typeId: f.typeId, price: f.price, active: true,
+        channels: chosen,
         title: f.title ? { ar: f.title, en: f.title } : null,
         meta: f.meta ? { ar: f.meta, en: f.meta } : null
       };
@@ -400,7 +466,20 @@ Pages.define("services", function (global) {
       if (!found) return;
       editing = found;
       draft = { typeId: found.typeId, price: found.price,
+                channels: M.serviceChannels(found).slice(),
                 title: found.title ? tx(found.title) : "", meta: found.meta ? tx(found.meta) : "" };
+      App.rerender();
+      return;
+    }
+
+    var ch = t.closest("[data-channel]");
+    if (ch) {
+      var id = ch.getAttribute("data-channel");
+      var cat = editing ? editing.typeId : (draft.typeId || M.serviceTypes()[0].id);
+      var list = draftChannels(cat);
+      var at = list.indexOf(id);
+      draft.channels = at === -1 ? list.concat([id])
+                                 : list.filter(function (x) { return x !== id; });
       App.rerender();
       return;
     }

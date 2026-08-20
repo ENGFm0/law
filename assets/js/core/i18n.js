@@ -1187,6 +1187,41 @@
 
       /* --- the drafting workspace is sold, not given --- */
       "ai.needsSub": "مساحة الصياغة اشتراك للمحامين. تواصل مع إدارة المنصة لتفعيلها لحسابك.",
+
+      /* --- work, and the channels it is delivered through --- */
+      "svc.channels": "كيف تقدّمها",
+      "svc.channelsHint": "اختر ما أنت مستعد له. العميل يختار واحدة منها عند الطلب.",
+      "svc.needChannel": "اختر طريقة واحدة على الأقل.",
+      "svc.autoBid": "قبول الطلبات تلقائياً",
+      "svc.autoBidHint": "عندما تُنشر استشارة تطابق ما تقدّمه، يُرسل عرضك بسعرك المعلن دون انتظارك.",
+      "svc.autoBidOn": "مفعّل — تُرسل عروضك تلقائياً.",
+      "svc.autoBidOff": "مطفأ — لا يُرسل شيء دون ضغطك.",
+      "svc.pickChannel": "كيف تريدها؟",
+      "ord.channel": "الطريقة",
+
+      /* --- a shared progress track on a request --- */
+      "prog.title": "مسار الطلب",
+      "prog.placed": "الطلب مُرسَل",
+      "prog.accepted": "قبله المحامي",
+      "prog.working": "قيد التنفيذ",
+      "prog.delivered": "سُلّم",
+      "prog.settled": "اكتمل",
+      "prog.disputed": "قيد الاعتراض",
+      "prog.cancelled": "أُلغي",
+      "prog.now": "الآن هنا",
+      "prog.waitingOn": "ننتظر {who}",
+      "prog.you": "منك",
+      "prog.theLawyer": "المحامي",
+      "prog.theClient": "العميل",
+      "prog.staff": "إدارة المنصة",
+
+      /* --- announcements worth looking at --- */
+      "adm.adImage": "رابط صورة (اختياري)",
+      "adm.adHtml": "تنسيق خاص (HTML — اختياري)",
+      "adm.adHtmlHint": "لمن يريد تصميماً خاصاً. يُكتب من الإدارة فقط، ولهذا يُسمح به أصلاً.",
+      "adm.adPlacement": "مكان الظهور",
+      "adm.placeBar": "شريط أعلى الموقع",
+      "adm.placeHome": "بطاقة في الصفحة الرئيسية",
     },
 
     en: {
@@ -2336,6 +2371,41 @@
 
       /* --- the drafting workspace is sold, not given --- */
       "ai.needsSub": "The drafting workspace is a subscription for lawyers. Ask the platform to enable it on your account.",
+
+      /* --- work, and the channels it is delivered through --- */
+      "svc.channels": "How you deliver it",
+      "svc.channelsHint": "Pick what you are willing to do. The client chooses one of them when they order.",
+      "svc.needChannel": "Choose at least one way.",
+      "svc.autoBid": "Take matching work automatically",
+      "svc.autoBidHint": "When a consultation matching your catalogue is posted, your published price is offered without waiting for you.",
+      "svc.autoBidOn": "On — your offers go out on their own.",
+      "svc.autoBidOff": "Off — nothing goes out unless you send it.",
+      "svc.pickChannel": "How would you like it?",
+      "ord.channel": "Delivered by",
+
+      /* --- a shared progress track on a request --- */
+      "prog.title": "How this is going",
+      "prog.placed": "Request placed",
+      "prog.accepted": "Taken by the lawyer",
+      "prog.working": "Being worked on",
+      "prog.delivered": "Delivered",
+      "prog.settled": "Closed",
+      "prog.disputed": "Under objection",
+      "prog.cancelled": "Cancelled",
+      "prog.now": "You are here",
+      "prog.waitingOn": "Waiting on {who}",
+      "prog.you": "you",
+      "prog.theLawyer": "the lawyer",
+      "prog.theClient": "the client",
+      "prog.staff": "the platform",
+
+      /* --- announcements worth looking at --- */
+      "adm.adImage": "Image URL (optional)",
+      "adm.adHtml": "Custom markup (HTML — optional)",
+      "adm.adHtmlHint": "For a layout you want to control. Only staff can write it, which is what makes allowing it safe.",
+      "adm.adPlacement": "Where it appears",
+      "adm.placeBar": "A bar at the top of the site",
+      "adm.placeHome": "A card on the home page",
     }
   };
 

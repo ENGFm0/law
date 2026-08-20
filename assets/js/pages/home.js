@@ -242,11 +242,36 @@ Pages.define("home", function (global) {
   }
 
   /* ---------- draw ---------- */
+  /** Announcements the platform wants on the home page rather than in a bar.
+      An image if there is one, markup of its own if the platform wrote some,
+      and otherwise a clean card — three ways to say something, one shape. */
+  function feature() {
+    var list = (M.announcementsFor(Session.role()) || []).filter(function (a) {
+      return a.placement === "home";
+    });
+    if (!list.length) return "";
+    return '<section class="container" style="padding-block:var(--s-8) 0">' +
+      list.map(function (a) {
+        // Markup written by staff, through a table only staff can write to.
+        // Nothing a visitor types reaches this.
+        if (a.html) return '<div class="promo promo--raw">' + a.html + "</div>";
+        return '<article class="promo' + (a.imageUrl ? " promo--image" : "") + '"' +
+          (a.imageUrl ? ' style="background-image:url(' + esc(a.imageUrl) + ')"' : "") + ">" +
+          '<div class="promo__body">' +
+            '<h2 class="title">' + esc(a.title) + "</h2>" +
+            (a.body ? '<p class="lead">' + esc(a.body) + "</p>" : "") +
+            (a.link ? '<a class="btn btn--accent" href="' + esc(a.link) + '" rel="noopener">' +
+              esc(I18N.t("notice.open")) + "</a>" : "") +
+          "</div></article>";
+      }).join("") +
+    "</section>";
+  }
+
   App.onRender(function () {
     var role = Session.role();
-    host.innerHTML = role === "lawyer" ? lawyerHome()
+    host.innerHTML = feature() + (role === "lawyer" ? lawyerHome()
                    : role === "intern" ? internHome()
-                   : clientHome();
+                   : clientHome());
 
     fillAny("[data-any-specialty]", global.SEED.specialties, "dir.anySpecialty");
     fillAny("[data-any-city]", global.SEED.cities, "dir.anyCity");

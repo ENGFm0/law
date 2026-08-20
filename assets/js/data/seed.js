@@ -28,22 +28,54 @@
 
   /* Service types with the platform's published price band.
      A lawyer prices inside the band — the anti-manipulation decision. */
+  /* ---------- what a lawyer actually does ----------
+     These used to be delivery channels — "phone consultation", "video
+     consultation" — which made the catalogue a list of ways to talk rather
+     than a list of legal work, and made the price band answer the wrong
+     question. A statement of claim is a statement of claim whether it is
+     discussed by voice or delivered as a file.
+
+     So a category is the WORK, the platform sets its band, and the channels a
+     lawyer offers on it are theirs to choose from the ones the work allows. */
+  var CHANNELS = [
+    { id: "voice", icon: "phone", live: true,
+      title: { ar: "صوت", en: "Voice" } },
+    { id: "video", icon: "video", live: true,
+      title: { ar: "فيديو", en: "Video" } },
+    { id: "text",  icon: "chat",  live: false,
+      title: { ar: "كتابة", en: "In writing" } }
+  ];
+
+  function byId(list, id) {
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+
   var SERVICE_TYPES = [
-    { id: "call",   icon: "phone", minPrice: 80,  maxPrice: 400,  mode: "live",
-      title: { ar: "استشارة هاتفية", en: "Phone consultation" },
-      meta:  { ar: "30 دقيقة", en: "30 minutes" } },
-    { id: "video",  icon: "video", minPrice: 150, maxPrice: 800,  mode: "live",
-      title: { ar: "استشارة فيديو", en: "Video consultation" },
-      meta:  { ar: "60 دقيقة", en: "60 minutes" } },
-    { id: "written",icon: "chat",  minPrice: 50,  maxPrice: 300,  mode: "written",
-      title: { ar: "استشارة مكتوبة", en: "Written consultation" },
-      meta:  { ar: "خلال 24 ساعة", en: "Within 24 hours" } },
-    { id: "express",icon: "bolt",  minPrice: 60,  maxPrice: 250,  mode: "doc", tier: "quick",
-      title: { ar: "صياغة مستند — سريعة", en: "Document drafting — express" },
-      meta:  { ar: "خلال ساعات", en: "Within hours" } },
-    { id: "drafting",icon: "file-text", minPrice: 300, maxPrice: 2000, mode: "doc", tier: "full",
-      title: { ar: "صياغة مستند — كاملة", en: "Document drafting — full" },
-      meta:  { ar: "3 – 5 أيام", en: "3 – 5 days" } }
+    { id: "consult", icon: "chat", minPrice: 80, maxPrice: 500,
+      channels: ["voice", "video", "text"],
+      title: { ar: "استشارة قانونية", en: "Legal consultation" },
+      meta:  { ar: "رأي في مسألة قائمة", en: "An opinion on a live question" } },
+    { id: "claim", icon: "gavel", minPrice: 400, maxPrice: 3000,
+      channels: ["text", "voice", "video"],
+      title: { ar: "صحيفة دعوى", en: "Statement of claim" },
+      meta:  { ar: "إعداد الدعوى وقيدها", en: "Preparing and filing the claim" } },
+    { id: "memo", icon: "file-text", minPrice: 300, maxPrice: 2500,
+      channels: ["text", "voice", "video"],
+      title: { ar: "مذكرة قانونية", en: "Legal memorandum" },
+      meta:  { ar: "رد أو دفاع مكتوب", en: "A written reply or defence" } },
+    { id: "contract", icon: "briefcase", minPrice: 300, maxPrice: 4000,
+      channels: ["text", "voice", "video"],
+      title: { ar: "صياغة عقد", en: "Contract drafting" },
+      meta:  { ar: "عقد جديد بشروطك", en: "A new contract on your terms" } },
+    { id: "review", icon: "eye", minPrice: 150, maxPrice: 1200,
+      channels: ["text", "voice", "video"],
+      title: { ar: "مراجعة مستند", en: "Document review" },
+      meta:  { ar: "قراءة وملاحظات", en: "Read, with notes" } },
+    { id: "represent", icon: "scale", minPrice: 1000, maxPrice: 20000,
+      channels: ["voice", "video", "text"],
+      title: { ar: "ترافع وتمثيل", en: "Representation" },
+      meta:  { ar: "المتابعة أمام الجهة المختصة", en: "Carried before the competent body" } }
   ];
 
   /* ---------- people ---------- */
@@ -234,107 +266,117 @@
   ];
 
   /* ---------- services each lawyer publishes, priced inside the band ---------- */
-  function svc(id, ownerId, typeId, price) {
-    return { id: id, ownerId: ownerId, typeId: typeId, price: price, active: true };
+  function svc(id, ownerId, typeId, price, channels) {
+    return { id: id, ownerId: ownerId, typeId: typeId, price: price, active: true,
+             channels: channels || (byId(SERVICE_TYPES, typeId) || {}).channels || ["text"] };
   }
+  /* Each lawyer's own catalogue: the work, their price inside the platform's
+     band, and the channels they will take it through. */
   var SERVICES = [
-    svc("s-1", "u-ahmed", "call", 150), svc("s-2", "u-ahmed", "video", 300),
-    svc("s-3", "u-ahmed", "written", 100), svc("s-4", "u-ahmed", "express", 99),
-    svc("s-5", "u-ahmed", "drafting", 500),
-    svc("s-6", "u-sara", "call", 120), svc("s-7", "u-sara", "written", 80),
-    svc("s-8", "u-sara", "express", 79), svc("s-9", "u-sara", "drafting", 420),
-    svc("s-10", "u-mohammed", "call", 200), svc("s-11", "u-mohammed", "video", 400),
-    svc("s-12", "u-mohammed", "drafting", 650),
-    svc("s-13", "u-khalid", "call", 250), svc("s-14", "u-khalid", "video", 500),
-    svc("s-15", "u-noura", "written", 120), svc("s-16", "u-noura", "express", 110),
-    svc("s-17", "u-noura", "drafting", 480),
-    svc("s-18", "u-faisal", "call", 100), svc("s-19", "u-faisal", "written", 65),
-    svc("s-20", "u-faisal", "express", 70)
+    svc("s-1",  "u-ahmed", "consult",   250, ["voice", "video", "text"]),
+    svc("s-2",  "u-ahmed", "contract",  900, ["text", "video"]),
+    svc("s-3",  "u-ahmed", "memo",      750, ["text"]),
+    svc("s-4",  "u-ahmed", "review",    300, ["text", "voice"]),
+    svc("s-5",  "u-ahmed", "represent", 4500, ["voice", "video", "text"]),
+    svc("s-6",  "u-sara", "consult",    180, ["voice", "text"]),
+    svc("s-7",  "u-sara", "claim",      1200, ["text", "voice"]),
+    svc("s-8",  "u-sara", "review",     220, ["text"]),
+    svc("s-9",  "u-sara", "contract",   700, ["text"]),
+    svc("s-10", "u-mohammed", "consult", 400, ["video", "voice"]),
+    svc("s-11", "u-mohammed", "represent", 8000, ["voice", "video", "text"]),
+    svc("s-12", "u-mohammed", "memo",   1100, ["text"]),
+    svc("s-13", "u-khalid", "consult",  320, ["voice", "video"]),
+    svc("s-14", "u-khalid", "claim",    1600, ["text", "video"]),
+    svc("s-15", "u-noura", "consult",   150, ["text", "voice"]),
+    svc("s-16", "u-noura", "review",    200, ["text"]),
+    svc("s-17", "u-noura", "contract",  600, ["text"]),
+    svc("s-18", "u-faisal", "consult",  120, ["voice", "text"]),
+    svc("s-19", "u-faisal", "review",   170, ["text"]),
+    svc("s-20", "u-faisal", "memo",     450, ["text"])
   ];
-
   /* ---------- requests already in flight ---------- */
   var REQUESTS = [
-    { id: "r-1", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "express", price: 99,
+    { id: "r-1", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "review", channel: "text", price: 99,
       status: "drafted", ai: true, doc: "employment", hours: 4,
       title: { ar: "عقد عمل لموظف تسويق", en: "Employment contract, marketing hire" },
       brief: { ar: "راتب 9,000 ريال، فترة تجربة 90 يوماً.", en: "SAR 9,000 salary, 90-day probation." },
       ago: { ar: "منذ 12 دقيقة", en: "12 minutes ago" } },
-    { id: "r-2", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "express", price: 89,
+    { id: "r-2", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "review", channel: "text", price: 89,
       status: "drafted", ai: true, doc: "demand", hours: 4,
       title: { ar: "إنذار بالمطالبة بمبلغ", en: "Formal demand for payment" },
       brief: { ar: "45,000 ريال مستحقة منذ ثلاثة أشهر.", en: "SAR 45,000 outstanding for three months." },
       ago: { ar: "منذ ساعة", en: "An hour ago" } },
-    { id: "r-3", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "express", price: 79,
+    { id: "r-3", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "review", channel: "text", price: 79,
       status: "new", ai: true, doc: "nda", hours: 3,
       title: { ar: "اتفاقية عدم إفشاء", en: "Non-disclosure agreement" },
       brief: { ar: "مع مطوّر مستقل لمدة سنتين.", en: "With a freelance developer, two-year term." },
       ago: { ar: "منذ 5 دقائق", en: "5 minutes ago" } },
-    { id: "r-4", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "written", price: 100,
+    { id: "r-4", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "consult", channel: "text", price: 100,
       status: "new", ai: true, hours: 3,
       title: { ar: "استشارة مكتوبة — نهاية الخدمة", en: "Written query — end-of-service" },
       brief: { ar: "استقالة بعد 4 سنوات، ما مستحقاتي؟", en: "Resigning after 4 years — what am I owed?" },
       ago: { ar: "منذ 3 ساعات", en: "3 hours ago" } },
-    { id: "r-5", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "drafting", price: 500,
+    { id: "r-5", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "contract", channel: "text", price: 500,
       status: "new", ai: false, hours: 8,
       title: { ar: "عقد شراكة تجارية", en: "Commercial partnership agreement" },
       brief: { ar: "ثلاثة شركاء، حصص متفاوتة، وبند خروج.", en: "Three partners, uneven shares, exit clause." },
       ago: { ar: "أمس", en: "Yesterday" } },
-    { id: "r-6", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "drafting", price: 650,
+    { id: "r-6", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "contract", channel: "text", price: 650,
       status: "new", ai: false, hours: 10,
       title: { ar: "مراجعة عقد مقاولة", en: "Construction contract review" },
       brief: { ar: "مشروع بقيمة 8 ملايين، مراجعة بنود الغرامات.", en: "SAR 8m project; review the penalty clauses." },
       ago: { ar: "أمس", en: "Yesterday" } },
-    { id: "r-7", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "call", price: 150,
+    { id: "r-7", clientId: "u-fahad", lawyerId: "u-ahmed", typeId: "consult", channel: "voice", price: 150,
       status: "scheduled", ai: false, hours: 1,
       title: { ar: "استشارة هاتفية", en: "Phone consultation" },
       brief: { ar: "نزاع إيجاري مع المالك.", en: "Tenancy dispute with the landlord." },
       ago: { ar: "اليوم 14:00", en: "Today 14:00" } },
-    { id: "r-8", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "video", price: 300,
+    { id: "r-8", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "consult", channel: "video", price: 300,
       status: "scheduled", ai: false, hours: 1,
       title: { ar: "استشارة فيديو", en: "Video consultation" },
       brief: { ar: "مراجعة مستندات قبل جلسة المحكمة.", en: "Document review ahead of a hearing." },
       ago: { ar: "غداً 11:30", en: "Tomorrow 11:30" } },
     /* delivered history, so "past requests" is not empty on first visit */
-    { id: "r-9", clientId: "u-fahad", lawyerId: "u-sara", typeId: "written", price: 80,
+    { id: "r-9", clientId: "u-fahad", lawyerId: "u-sara", typeId: "consult", channel: "text", price: 80,
       status: "completed", ai: false, hours: 3,
       title: { ar: "استشارة حول حضانة", en: "Custody consultation" },
       brief: { ar: "ترتيب الزيارة بعد الطلاق.", en: "Visitation arrangements after divorce." },
       ago: { ar: "قبل أسبوعين", en: "Two weeks ago" } },
-    { id: "r-10", clientId: "u-fahad", lawyerId: "u-mohammed", typeId: "drafting", price: 650,
+    { id: "r-10", clientId: "u-fahad", lawyerId: "u-mohammed", typeId: "contract", channel: "text", price: 650,
       status: "completed", ai: false, hours: 9,
       title: { ar: "مراجعة عقد إيجار تجاري", en: "Commercial lease review" },
       brief: { ar: "محل تجاري في الدمام، مدة خمس سنوات.", en: "Retail unit in Dammam, five-year term." },
       ago: { ar: "الشهر الماضي", en: "Last month" } },
 
     /* work already routed to a trainee, so their side is not empty on arrival */
-    { id: "r-11", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "drafting", price: 420,
+    { id: "r-11", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "contract", channel: "text", price: 420,
       status: "with_intern", assignedTo: "u-jaid", ai: false, hours: 6,
       title: { ar: "مذكرة بحث عن أحكام الوكالة", en: "Research memo on agency rulings" },
       brief: { ar: "جمع السوابق القضائية في نزاع وكالة تجارية.", en: "Collect the precedents in a commercial agency dispute." },
       ago: { ar: "منذ يومين", en: "Two days ago" } },
-    { id: "r-12", clientId: "u-fahad", lawyerId: "u-sara", typeId: "written", price: 90,
+    { id: "r-12", clientId: "u-fahad", lawyerId: "u-sara", typeId: "consult", channel: "text", price: 90,
       status: "with_intern", assignedTo: "u-layan", ai: false, hours: 4,
       title: { ar: "تلخيص لائحة اعتراضية", en: "Summary of an appeal brief" },
       brief: { ar: "تلخيص اللائحة في صفحتين قبل الجلسة.", en: "Two-page summary of the brief before the hearing." },
       ago: { ar: "أمس", en: "Yesterday" } },
-    { id: "r-13", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "drafting", price: 380,
+    { id: "r-13", clientId: "u-munira", lawyerId: "u-ahmed", typeId: "contract", channel: "text", price: 380,
       status: "delivered", assignedTo: "u-jaid", ai: false, hours: 5,
       title: { ar: "صياغة إنذار عدلي", en: "Drafting a notarised notice" },
       brief: { ar: "إنذار بإخلاء عقار مؤجر.", en: "Notice to vacate a leased property." },
       ago: { ar: "الأسبوع الماضي", en: "Last week" } },
 
     /* other lawyers carry live work too, so every signed-in lawyer has a desk */
-    { id: "r-14", clientId: "u-fahad", lawyerId: "u-sara", typeId: "call", price: 120,
+    { id: "r-14", clientId: "u-fahad", lawyerId: "u-sara", typeId: "consult", channel: "voice", price: 120,
       status: "scheduled", ai: false, hours: 1,
       title: { ar: "استشارة هاتفية — تركة", en: "Phone consultation — estate" },
       brief: { ar: "قسمة تركة بين خمسة ورثة.", en: "Dividing an estate among five heirs." },
       ago: { ar: "غداً 09:30", en: "Tomorrow 09:30" } },
-    { id: "r-15", clientId: "u-munira", lawyerId: "u-sara", typeId: "express", price: 79,
+    { id: "r-15", clientId: "u-munira", lawyerId: "u-sara", typeId: "review", channel: "text", price: 79,
       status: "drafted", ai: true, doc: "demand", hours: 3,
       title: { ar: "خطاب مطالبة بأجرة متأخرة", en: "Letter claiming unpaid rent" },
       brief: { ar: "ثلاثة أشهر متأخرة عن مستأجر.", en: "Three months overdue from a tenant." },
       ago: { ar: "منذ 40 دقيقة", en: "40 minutes ago" } },
-    { id: "r-16", clientId: "u-fahad", lawyerId: "u-mohammed", typeId: "video", price: 400,
+    { id: "r-16", clientId: "u-fahad", lawyerId: "u-mohammed", typeId: "consult", channel: "video", price: 400,
       status: "new", ai: false, hours: 2,
       title: { ar: "استشارة فيديو — عقار", en: "Video consultation — property" },
       brief: { ar: "شراء أرض بمخطط غير معتمد.", en: "Buying land on an unapproved plan." },
@@ -629,6 +671,7 @@
     specialties: SPECIALTIES,
     cities: CITIES,
     serviceTypes: SERVICE_TYPES,
+    channels: CHANNELS,
     users: USERS,
     services: SERVICES,
     requests: REQUESTS,

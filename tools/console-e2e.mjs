@@ -89,12 +89,12 @@ ok('hiding it takes it off the site', await p.$('[data-announce]') === null);
 
 console.log('— SETTINGS: THE BANDS AND THE RATES —');
 await p.goto(U+'admin.html?tab=settings'); await p.waitForTimeout(500);
-await p.fill('[data-band-max="express"]','444');
+await p.fill('[data-band-max="review"]','444');
 await p.fill('[data-mada-pct]','1.75');
 await p.click('[data-save-settings]'); await p.waitForTimeout(500);
-ok('a band can be moved', await p.evaluate(()=>window.Models.priceBand('express').max) === 444);
+ok('a band can be moved', await p.evaluate(()=>window.Models.priceBand('review').max) === 444);
 ok('and it binds a lawyer at once',
-   await p.evaluate(()=>window.Models.checkPrice('express', 500)) === 'high');
+   await p.evaluate(()=>window.Models.checkPrice('review', 500)) === 'high');
 ok('the gateway rate is kept', await p.evaluate(()=>window.Models.platformSettings().madaPct) === 1.75);
 
 console.log('— AND NOBODY ELSE SEES ANY OF IT —');

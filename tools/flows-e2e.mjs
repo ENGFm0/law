@@ -88,8 +88,9 @@ p = await open('services.html', 'u-fahad');
 ok('both routes are offered up front',
   (await p.locator('[data-i18n="svc.routePick"]').count()) === 1 &&
   (await p.locator('a[href="quotes.html"]').count()) >= 1);
-ok('step one is the service types', (await p.locator('[data-pick-type]').count()) === 5);
-await p.click('[data-pick-type="call"]');
+// The catalogue is legal work now — six kinds of it — not five ways of talking.
+ok('step one is the kinds of legal work', (await p.locator('[data-pick-type]').count()) === 6);
+await p.click('[data-pick-type="consult"]');
 await p.waitForTimeout(300);
 const cards = await p.locator('[data-order]').count();
 ok('step two lists the lawyers offering it', cards >= 3, String(cards));
@@ -99,7 +100,7 @@ ok('cheapest first', prices.join() === [...prices].sort((a, b) => a - b).join(),
 ok('the cheapest is flagged', await p.locator('.card--rule-gold [data-order]').first().isVisible());
 await p.click('[data-clear-type]');
 await p.waitForTimeout(250);
-ok('you can go back and change service', (await p.locator('[data-pick-type]').count()) === 5);
+ok('you can go back and change service', (await p.locator('[data-pick-type]').count()) === 6);
 
 console.log('— RANK IS FOR THE PROFESSION, RATING IS FOR EVERYONE —');
 for (const [who, boardExpected] of [['u-fahad', false], [null, false], ['u-ahmed', true], ['u-jaid', true]]) {
