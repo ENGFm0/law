@@ -342,6 +342,111 @@
       '<p class="subtitle">' + esc(I18N.t(textKey)) + "</p></div>";
   }
 
+  /* ---------- the conversation on a case ----------
+     Two threads live on a request and this draws either of them. The audience
+     is not decoration: `internal` is the lawyer and the trainee, and the
+     client is not in it — enforced by a row policy, said out loud here so
+     whoever is typing knows who will read it.
+
+     Files are part of the conversation rather than a feature beside it. The
+     bucket is private, so an attachment is drawn as a placeholder and its
+     link filled in afterwards from a URL that expires. */
+  function bytes(n) {
+    if (!n) return "";
+    if (n < 1024) return I18N.num(n) + " B";
+    if (n < 1024 * 1024) return I18N.num(Math.round(n / 1024)) + " KB";
+    return I18N.num(Math.round(n / 104857.6) / 10) + " MB";
+  }
+
+  function fileChip(a) {
+    var image = /^image\//.test(a.mime || "");
+    var pending = String(a.id || "").slice(0, 7) === "pending";
+    return '<span class="file-chip' + (pending ? " is-pending" : "") + '" data-file="' +
+      App.esc(a.id) + '">' +
+      Icons.svg(image ? "image" : "file-text", "icon-sm") +
+      '<span class="file-chip__name">' + App.esc(a.name) + "</span>" +
+      '<span class="tiny faint">' + App.esc(pending ? I18N.t("thread.sending") : bytes(a.size)) +
+        "</span>" +
+      (image ? '<img class="file-chip__thumb" alt="" hidden data-file-img="' + App.esc(a.id) + '">' : "") +
+      "</span>";
+  }
+
+  function bubble(m, meId) {
+    var who = M.user(m.authorId);
+    var mine = m.authorId === meId;
+    var files = Store.attachmentsOn(m.id);
+    return '<article class="bubble' + (mine ? " bubble--mine" : "") + '">' +
+      '<div class="bubble__who">' +
+        (mine ? "" : avatar(who, "sm")) +
+        "<strong class=\"tiny\">" + App.esc(mine ? I18N.t("thread.you") : (who ? App.tx(who.name) : "")) +
+          "</strong>" +
+        '<span class="tiny faint">' + App.esc(I18N.date(m.at)) + "</span></div>" +
+      (m.body ? '<p class="bubble__body">' + App.esc(m.body) + "</p>" : "") +
+      (files.length ? '<div class="bubble__files">' + files.map(fileChip).join("") + "</div>" : "") +
+    "</article>";
+  }
+
+  function thread(r, audience, opts) {
+    var o = opts || {};
+    var me = global.Session.user();
+    var kind = audience || "parties";
+    var log = Store.messages(r.id, kind);
+    var closed = !!o.closed;
+
+    return '<section class="thread" data-thread="' + App.esc(r.id) +
+        '" data-audience="' + App.esc(kind) + '">' +
+      '<div class="row between wrap gap-3">' +
+        '<h3 class="subtitle">' + App.esc(I18N.t("thread.title")) + "</h3>" +
+        (o.tabs || "") +
+      "</div>" +
+      (kind === "internal"
+        ? '<p class="tiny faint row gap-2" style="margin-top:var(--s-2)">' +
+          Icons.svg("lock", "icon-sm") + App.esc(I18N.t("thread.internalNote")) + "</p>"
+        : "") +
+      '<div class="thread__log">' +
+        (log.length
+          ? log.map(function (m) { return bubble(m, me ? me.id : null); }).join("")
+          : '<p class="small muted center">' + App.esc(I18N.t("thread.empty")) + "</p>") +
+      "</div>" +
+      (closed
+        ? '<p class="tiny muted" style="margin-top:var(--s-3)">' +
+          App.esc(I18N.t("thread.closed")) + "</p>"
+        : '<div class="thread__pending" data-thread-pending hidden></div>' +
+          '<form class="thread__compose" data-thread-form>' +
+            '<label class="icon-btn" title="' + App.esc(I18N.t("thread.attach")) + '">' +
+              Icons.svg("upload", "icon-sm") +
+              '<input type="file" multiple hidden data-thread-file></label>' +
+            '<input class="input" data-thread-body placeholder="' +
+              App.esc(I18N.t("thread.placeholder")) + '">' +
+            '<button class="btn btn--primary btn--sm" type="submit">' +
+              App.esc(I18N.t("thread.send")) + "</button>" +
+          "</form>") +
+    "</section>";
+  }
+
+  /** Fill in the links for whatever the last draw put on screen. The bucket
+      is private, so every one of these is a URL that expires — which is also
+      why they cannot simply be rendered as hrefs in the first place. */
+  function linkFiles(root) {
+    var all = (Store.attachments && Store.attachments()) || [];
+    App.$$("[data-file]", root || document).forEach(function (node) {
+      var id = node.getAttribute("data-file");
+      if (node.getAttribute("data-linked") === id) return;
+      var att = null;
+      all.forEach(function (a) { if (a.id === id) att = a; });
+      if (!att) return;
+      node.setAttribute("data-linked", id);
+      Store.fileUrl(att).then(function (url) {
+        if (!url) return;
+        var img = node.querySelector("[data-file-img]");
+        if (img) { img.src = url; img.hidden = false; }
+        node.setAttribute("data-href", url);
+        node.setAttribute("tabindex", "0");
+        node.title = I18N.t("thread.openFile");
+      });
+    });
+  }
+
   function sectionHead(titleKey, leadKey) {
     return '<div class="section-head"><h2 class="headline" data-i18n="' + titleKey + '"></h2>' +
       (leadKey ? '<p class="lead" data-i18n="' + leadKey + '"></p>' : "") + "</div>";
@@ -354,6 +459,8 @@
     lawyerCard: lawyerCard, internCard: internCard, articleCard: articleCard,
     statusPill: statusPill, progress: progress,
     requestRow: requestRow, empty: empty, sectionHead: sectionHead,
+    thread: thread, bubble: bubble, fileChip: fileChip, linkFiles: linkFiles,
+    bytes: bytes,
     googleButton: googleButton
   };
 })(window);

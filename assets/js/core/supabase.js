@@ -382,7 +382,8 @@
            "platform_settings", "reviews", "announcements"],
     REST: ["requests", "articles", "comments", "endorsements", "agreements",
            "disputes", "notifications", "audit_log", "subscriptions",
-           "operating_costs", "partners", "quotes", "offers", "contacts"],
+           "operating_costs", "partners", "quotes", "offers", "contacts",
+           "messages", "attachments"],
 
     hydrate: function (names) {
       return load().then(function (sb) {
@@ -413,6 +414,10 @@
           // Staff-only, and it says so inside the function rather than
           // trusting the caller. Everyone else gets an empty list.
           contacts:         function () { return sb.rpc("contact_book"); },
+          // Only the threads on cases this account is on come back — the row
+          // policy decides that, not this query.
+          messages:         function () { return sb.from("messages").select("*").order("created_at").limit(1000); },
+          attachments:      function () { return sb.from("attachments").select("*").order("created_at").limit(1000); },
         };
 
         return Promise.all(want.map(function (name) { return query[name](); }))

@@ -190,8 +190,62 @@
     return api;
   }
 
+  /* ---------- files ----------
+     Storage is another REST endpoint on the same host, so it needs no library
+     either. Uploads go as the raw file with the session on the request; the
+     bucket is private, so reading one back means asking for a URL that
+     expires rather than linking to it. */
+  function upload(bucket, path, file) {
+    var s = session();
+    if (!s || s.expired) {
+      return refresh().then(function (fresh) {
+        if (!fresh) return { error: { message: "not signed in", code: "401" } };
+        return upload(bucket, path, file);
+      });
+    }
+    return global.fetch(URL_BASE + "/storage/v1/object/" + bucket + "/" + path, {
+      method: "POST",
+      headers: {
+        apikey: KEY,
+        Authorization: "Bearer " + s.token,
+        "Content-Type": file.type || "application/octet-stream",
+        "x-upsert": "false",
+      },
+      body: file,
+    }).then(function (res) {
+      if (res.ok) return { path: path, error: null };
+      return res.text().then(function (text) {
+        var body = null;
+        try { body = JSON.parse(text); } catch (e) { /* not json */ }
+        return { path: null, error: {
+          message: (body && (body.message || body.error)) || text || ("HTTP " + res.status),
+          code: String(res.status) } };
+      });
+    }).catch(function (e) {
+      return { path: null, error: { message: e.message || String(e), code: "network" } };
+    });
+  }
+
+  /** A link to one file that stops working. Nothing in this bucket is public,
+      so this is the only way anything in it is ever shown. */
+  function signUrl(bucket, path, seconds) {
+    return global.fetch(URL_BASE + "/storage/v1/object/sign/" + bucket + "/" + path, {
+      method: "POST",
+      headers: headers({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ expiresIn: seconds || 3600 }),
+    }).then(function (res) {
+      if (!res.ok) return null;
+      return res.json().then(function (body) {
+        var signed = body && (body.signedURL || body.signedUrl);
+        return signed ? URL_BASE + "/storage/v1" + signed : null;
+      });
+    }).catch(function () { return null; });
+  }
+
   global.REST = {
     ready: function () { return !!(URL_BASE && KEY); },
+    upload: upload,
+    signUrl: signUrl,
     session: session,
     refresh: refresh,
     storeKey: function () { return STORE_KEY; },

@@ -34,7 +34,7 @@ function makeFake() {
     reviews: [], comments: [], endorsements: [], agreements: [], applications: [],
     notifications: [], disputes: [], audit_log: [], price_bands: [],
     announcements: [], subscriptions: [], operating_costs: [], partners: [],
-    service_types: [], quotes: [], offers: [],
+    service_types: [], quotes: [], offers: [], messages: [], attachments: [],
   };
   const client = {
     from(table) {
@@ -85,6 +85,12 @@ function boot(rows = {}) {
   };
   w.CustomEvent = class { constructor(t) { this.type = t; } };
   w.console = console;
+  w.REST = {
+    session: () => (rows.authId ? { sub: rows.authId, token: 't', expired: false } : null),
+    upload: () => Promise.resolve({ path: 'p', error: null }),
+    signUrl: () => Promise.resolve('https://signed.example/x'),
+    forget() {},
+  };
 
   new Function('window', 'document', 'localStorage', 'sessionStorage', 'CustomEvent',
     read('assets/js/core/store.js'))(w, w.document, w.localStorage, w.sessionStorage, w.CustomEvent);
@@ -133,6 +139,7 @@ function boot(rows = {}) {
           : (rows.errors || []),
       });
     },
+    profile: () => Promise.resolve(null),
     toProfile: (row) => ({
       id: row.id, name: { ar: row.full_name || '', en: row.full_name || '' },
       email: row.email || '', roles: row.roles || ['client'],
@@ -150,7 +157,7 @@ function boot(rows = {}) {
 
   new Function('window', 'document', 'localStorage', 'sessionStorage', 'console',
     read('assets/js/core/store.remote.js'))(w, w.document, w.localStorage, w.sessionStorage, console);
-  return { S: w.Store, fake };
+  return { S: w.Store, fake, w };
 }
 
 section('HYDRATION MAPS COLUMNS TO THE SHAPES PAGES EXPECT');
@@ -274,6 +281,50 @@ section('THE CATALOGUE AND THE AUCTION COME BACK AS OBJECTS');
   await flush();
   const cat = fake.lastTo('service_types');
   ok('a category is written flat', cat.row.title_ar === 'أ' && cat.row.title_en === 'B');
+}
+
+section('THE CONVERSATION GOES TO THE DATABASE, THE FILE TO STORAGE');
+{
+  const { S, fake, w } = boot({ authId: 'me-1', session: 'me-1' });
+  await S.hydrate();
+  await flush();
+
+  S.sendMessage({ requestId: 'r-1', audience: 'parties', authorId: 'stale', body: 'مرحبا' });
+  await flush();
+  const wrote = fake.lastTo('messages');
+  ok('a message is a row', wrote.op === 'insert' && wrote.row.request_id === 'r-1');
+  ok('signed by the session, not by whoever asked', wrote.row.author_id === 'me-1', wrote.row);
+  ok('carrying which thread it belongs to', wrote.row.audience === 'parties');
+  ok('and it shows before the round trip', S.messages('r-1', 'parties').length === 1);
+
+  // The upload is the part that must happen first: a row pointing at an
+  // object that was never written shows a file nobody can open.
+  const uploads = [];
+  w.REST.upload = (bucket, path, file) => {
+    uploads.push({ bucket, path, file });
+    return Promise.resolve({ path, error: null });
+  };
+  S.attachFile({ requestId: 'r-1', messageId: 'm-1', authorId: 'me-1',
+                 name: 'عقد العمل.pdf', size: 1200, mime: 'application/pdf',
+                 file: { name: 'x' } });
+  await flush(); await flush();
+  ok('the file went to the private bucket', uploads[0] && uploads[0].bucket === 'case-files');
+  ok('into the case’s own folder', /^r-1\//.test(uploads[0].path), uploads[0] && uploads[0].path);
+  ok('with a name a URL can carry', !/\s/.test(uploads[0].path), uploads[0].path);
+  const row = fake.lastTo('attachments');
+  ok('and the row followed it', row && row.op === 'insert' && row.row.path === uploads[0].path);
+  ok('keeping the name a person typed', row.row.name === 'عقد العمل.pdf');
+}
+{
+  // An upload that fails must not leave a row, or a chip, behind.
+  const { S, fake, w } = boot({ authId: 'me-1', session: 'me-1' });
+  await S.hydrate();
+  await flush();
+  w.REST.upload = () => Promise.resolve({ path: null, error: { message: 'too big', code: '413' } });
+  S.attachFile({ requestId: 'r-1', authorId: 'me-1', name: 'big.pdf', size: 99, mime: 'application/pdf', file: {} });
+  await flush(); await flush();
+  ok('a failed upload writes no row', !fake.lastTo('attachments'));
+  ok('and takes its chip back off the thread', S.filesOf('r-1', 'parties').length === 0);
 }
 
 section('A REQUEST REPORTS THE ID THE DATABASE GAVE IT');

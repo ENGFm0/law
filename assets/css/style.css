@@ -503,6 +503,49 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .adm-tab { padding: var(--s-3) var(--s-3); font-size: .875rem; }
 }
 
+/* ---------- 11a09. The conversation on a case ----------
+   A thread, not a comment list: bubbles that lean to the side of whoever
+   wrote them, a log that scrolls on its own, and a composer pinned under it.
+   Files are chips inside the bubble rather than a separate list, because
+   "here is the contract" and the contract are one message. */
+.thread { margin-top: var(--s-6); padding-top: var(--s-5); border-top: 1px solid var(--border); }
+.thread__log {
+  display: flex; flex-direction: column; gap: var(--s-3);
+  max-height: 420px; overflow-y: auto; padding: var(--s-4) var(--s-1);
+  background: var(--surface-2); border-radius: var(--r-lg); margin-top: var(--s-4);
+}
+.bubble {
+  align-self: flex-start; max-width: min(84%, 560px);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: var(--s-3) var(--s-4);
+  border-start-start-radius: var(--s-1);
+}
+.bubble--mine {
+  align-self: flex-end; background: var(--accent-soft); border-color: var(--accent-soft);
+  border-start-start-radius: var(--r-lg); border-start-end-radius: var(--s-1);
+}
+.bubble__who { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-2); }
+.bubble__body { white-space: pre-wrap; word-break: break-word; font-size: .9375rem; }
+.bubble__files { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
+
+.file-chip {
+  display: inline-flex; align-items: center; gap: var(--s-2); cursor: pointer;
+  padding: var(--s-2) var(--s-3); border: 1px solid var(--border);
+  border-radius: var(--r); background: var(--surface-2); max-width: 100%;
+}
+.file-chip.is-pending { opacity: .6; cursor: default; }
+.file-chip__name { font-size: .8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+.file-chip__thumb { display: block; width: 100%; max-width: 220px; border-radius: var(--r); margin-top: var(--s-2); }
+.file-chip:has(.file-chip__thumb:not([hidden])) { flex-wrap: wrap; }
+
+.thread__pending { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
+.thread__compose { display: flex; gap: var(--s-2); align-items: center; margin-top: var(--s-3); }
+.thread__compose .input { flex: 1 1 auto; min-width: 0; }
+@media (max-width: 720px) {
+  .thread__log { max-height: 320px; }
+  .bubble { max-width: 92%; }
+}
+
 /* ---------- 11a0a. How a request is going ---------- */
 .track {
   padding: var(--s-5); border-radius: var(--r-lg);

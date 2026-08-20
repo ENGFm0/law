@@ -155,12 +155,33 @@ S.addRequest({ clientId: reg.user.id, lawyerId: lawyer.id, typeId: 'consult', pr
              (saved) => { landed = saved; });
 ok('a request reports when it exists', landed !== null && !!landed.id);
 
+section('THE CONVERSATION ON A CASE');
+const caseReq = S.addRequest({ clientId: reg.user.id, lawyerId: lawyer.id,
+                               typeId: 'consult', price: 200 });
+S.sendMessage({ requestId: caseReq.id, authorId: reg.user.id, body: 'مرفق العقد' });
+S.sendMessage({ requestId: caseReq.id, authorId: lawyer.id,
+                audience: 'internal', body: 'راجع الاختصاص' });
+ok('a message lands in the thread it was sent to',
+   S.messages(caseReq.id, 'parties').length === 1);
+ok('and the internal thread is a different one',
+   S.messages(caseReq.id, 'internal').length === 1);
+ok('threads are per request', S.messages('nope', 'parties').length === 0);
+const msg = S.messages(caseReq.id, 'parties')[0];
+ok('a message is stamped and signed', !!msg.id && !!msg.at && msg.authorId === reg.user.id);
+S.attachFile({ requestId: caseReq.id, messageId: msg.id, authorId: reg.user.id,
+               name: 'contract.pdf', size: 1200, mime: 'application/pdf' });
+ok('a file hangs off its message', S.attachmentsOn(msg.id).length === 1);
+ok('and is listed against the case', S.filesOf(caseReq.id, 'parties').length === 1);
+ok('but not against the other thread', S.filesOf(caseReq.id, 'internal').length === 0);
+ok('every attachment is reachable', S.attachments().length === 1);
+
 section('CHANGE NOTIFICATION');
 let fired = 0;
 S.onChange(() => { fired++; });
 S.addRequest({ clientId: reg.user.id, typeId: 'call', price: 10 });
 S.setRequest(r.id, { status: 'delivered' });
-ok('every write notifies listeners', fired === 2, String(fired));
+S.sendMessage({ requestId: r.id, authorId: reg.user.id, body: 'hello' });
+ok('every write notifies listeners', fired === 3, String(fired));
 
 section('RESET');
 S.resetWork();

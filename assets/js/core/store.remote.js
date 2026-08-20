@@ -171,6 +171,19 @@
     };
   }
 
+  function inMessage(m) {
+    return { id: m.id, requestId: m.request_id, authorId: m.author_id,
+             audience: m.audience || "parties", body: m.body || "",
+             at: new Date(m.created_at).getTime() };
+  }
+  function inAttachment(a) {
+    return { id: a.id, requestId: a.request_id, messageId: a.message_id,
+             authorId: a.author_id, audience: a.audience || "parties",
+             path: a.path, name: a.name, size: Number(a.size || 0),
+             mime: a.mime || "application/octet-stream",
+             at: new Date(a.created_at).getTime() };
+  }
+
   function inAgreement(a) {
     return { id: a.id, lawyerId: a.lawyer_id, internId: a.intern_id, kind: a.kind,
              amount: Number(a.amount), cases: a.cases, startedAt: a.started_at };
@@ -258,7 +271,7 @@
     reviews: [], comments: [], endorsements: [], agreements: [], applications: {},
     disputes: [], notices: [], audit: [], settings: {},
     announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
-    types: [], quotes: [], offers: [],
+    types: [], quotes: [], offers: [], messages: [], attachments: [],
   };
   var ready = false;
 
@@ -807,6 +820,130 @@
     return true;
   };
 
+  /* ---------- the conversation on a case ---------- */
+  Store.messages = function (requestId, audience) {
+    var want = audience || "parties";
+    return cache.messages.filter(function (m) {
+      return m.requestId === requestId && m.audience === want;
+    }).sort(function (a, b) { return a.at - b.at; });
+  };
+  Store.attachments = function () { return cache.attachments; };
+  Store.attachmentsOn = function (messageId) {
+    return cache.attachments.filter(function (a) { return a.messageId === messageId; });
+  };
+  Store.filesOf = function (requestId, audience) {
+    var want = audience || "parties";
+    return cache.attachments.filter(function (a) {
+      return a.requestId === requestId && a.audience === want;
+    }).sort(function (a, b) { return a.at - b.at; });
+  };
+
+  Store.sendMessage = function (m, done) {
+    if (noSession()) return m;
+    if (authId) m.authorId = authId;
+    m.audience = m.audience || "parties";
+    push("messages", {
+      request_id: m.requestId, author_id: m.authorId,
+      audience: m.audience, body: m.body || null,
+    }).then(function (res) {
+      report(res);
+      if (!res || !res.data) return;
+      var real = inMessage(res.data);
+      cache.messages = cache.messages.filter(function (x) { return x.id !== m.id; });
+      cache.messages.push(real);
+      m.id = real.id;
+      Store.notifyAll();
+      if (done) done(m);
+    });
+    m.id = m.id || "pending-" + Math.random().toString(36).slice(2, 8);
+    m.at = Date.now();
+    cache.messages.push(m);
+    Store.notifyAll();
+    return m;
+  };
+
+  /** The file goes to Storage first and the row second: a row pointing at an
+      object that was never written is worse than no row, because the thread
+      then shows an attachment that cannot be opened. */
+  Store.attachFile = function (a, done) {
+    if (noSession()) return a;
+    if (authId) a.authorId = authId;
+    a.audience = a.audience || "parties";
+    var path = a.requestId + "/" + Math.random().toString(36).slice(2, 10) + "-" +
+      String(a.name).replace(/[^\w.\-]/g, "_").slice(-60);
+
+    global.REST.upload("case-files", path, a.file).then(function (up) {
+      if (up.error) {
+        cache.attachments = cache.attachments.filter(function (x) { return x.id !== a.id; });
+        Store.notifyAll();
+        report({ error: up.error });
+        return;
+      }
+      return push("attachments", {
+        request_id: a.requestId, message_id: a.messageId || null,
+        author_id: a.authorId, audience: a.audience,
+        path: path, name: a.name, size: a.size, mime: a.mime,
+      }).then(function (res) {
+        report(res);
+        if (!res || !res.data) return;
+        var real = inAttachment(res.data);
+        cache.attachments = cache.attachments.filter(function (x) { return x.id !== a.id; });
+        cache.attachments.push(real);
+        a.id = real.id;
+        Store.notifyAll();
+        if (done) done(a);
+      });
+    });
+
+    a.id = a.id || "pending-" + Math.random().toString(36).slice(2, 8);
+    a.at = Date.now();
+    a.path = path;
+    cache.attachments.push(a);
+    Store.notifyAll();
+    return a;
+  };
+
+  /** Nothing in the bucket is public, so a file is shown through a link that
+      expires. Held for a few minutes so a redraw does not ask again. */
+  var signed = {};
+  Store.fileUrl = function (att) {
+    if (!att || !att.path) return Promise.resolve(null);
+    var held = signed[att.path];
+    if (held && held.until > Date.now()) return Promise.resolve(held.url);
+    return global.REST.signUrl("case-files", att.path, 3600).then(function (url) {
+      if (url) signed[att.path] = { url: url, until: Date.now() + 50 * 60000 };
+      return url;
+    });
+  };
+
+  /** A thread is the one place two people are waiting on each other, so it is
+      asked again while it is open. Announced only when it has changed. */
+  Store.refreshThread = function (requestId) {
+    return SB.load().then(function (sb) {
+      return Promise.all([
+        sb.from("messages").select("*").eq("request_id", requestId).order("created_at"),
+        sb.from("attachments").select("*").eq("request_id", requestId).order("created_at"),
+      ]);
+    }).then(function (r) {
+      var before = threadSignature(requestId);
+      if (r[0] && !r[0].error && r[0].data) {
+        cache.messages = cache.messages.filter(function (m) { return m.requestId !== requestId; })
+          .concat(r[0].data.map(inMessage));
+      }
+      if (r[1] && !r[1].error && r[1].data) {
+        cache.attachments = cache.attachments.filter(function (a) { return a.requestId !== requestId; })
+          .concat(r[1].data.map(inAttachment));
+      }
+      if (threadSignature(requestId) !== before) Store.notifyAll();
+    }).catch(function (e) { console.error(e); });
+  };
+  function threadSignature(requestId) {
+    return cache.messages.filter(function (m) { return m.requestId === requestId; })
+      .map(function (m) { return m.id; }).join(",") + "|" +
+      cache.attachments.filter(function (a) { return a.requestId === requestId; })
+        .map(function (a) { return a.id; }).join(",");
+  }
+
   Store.bands = function () { return cache.bands; };
   Store.setBand = function (typeId, band) {
     cache.bands[typeId] = { min: band.min, max: band.max };
@@ -968,6 +1105,8 @@
     cache.partners = take("partners", inPartner, cache.partners);
     cache.quotes = take("quotes", inQuote, cache.quotes);
     cache.offers = take("offers", inOffer, cache.offers);
+    cache.messages = take("messages", inMessage, cache.messages);
+    cache.attachments = take("attachments", inAttachment, cache.attachments);
 
     if (had("platform_settings")) cache.settings = inSettings(rows.platform_settings);
     if (had("price_bands") && rows.price_bands) {

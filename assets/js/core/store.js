@@ -33,7 +33,7 @@
     "articles", "articleStates", "comments", "endorsements", "applications",
     "agreements", "disputes", "audit", "profiles", "notices",
     "announcements", "subscriptions", "costs", "partners", "bands",
-    "types", "removedTypes", "quotes", "offers"
+    "types", "removedTypes", "quotes", "offers", "messages", "attachments"
   ].forEach(function (k) {
     if (!work[k]) {
       work[k] = (k.indexOf("States") !== -1 || k === "applications" ||
@@ -495,6 +495,62 @@
     },
     removedTypes: function () { return work.removedTypes; },
 
+    /* ---------------- the conversation on a case ----------------
+       Two threads per request. `parties` is the client and whoever is doing
+       the work; `internal` is the lawyer and the trainee they routed it to,
+       and the client cannot read it — a trainee asking whether the claim is
+       even in the right forum is not a message to the person paying for the
+       answer.
+
+       Files are part of it rather than a separate feature: what a client
+       uploads is a message with something attached to it. */
+    messages: function (requestId, audience) {
+      return work.messages.filter(function (m) {
+        return m.requestId === requestId && m.audience === (audience || "parties");
+      }).sort(function (a, b) { return a.at - b.at; });
+    },
+    attachments: function () { return work.attachments; },
+    attachmentsOn: function (messageId) {
+      return work.attachments.filter(function (a) { return a.messageId === messageId; });
+    },
+    /** Files on a case, whichever message carried them — what the request
+        page lists under "everything that was sent". */
+    filesOf: function (requestId, audience) {
+      return work.attachments.filter(function (a) {
+        return a.requestId === requestId && a.audience === (audience || "parties");
+      }).sort(function (a, b) { return a.at - b.at; });
+    },
+    sendMessage: function (m, done) {
+      m.id = m.id || uid("msg");
+      m.at = Date.now();
+      m.audience = m.audience || "parties";
+      work.messages.push(m);
+      notify();
+      if (done) done(m);
+      return m;
+    },
+    /** In the demo the file never leaves the browser: it is kept as a data
+        URL beside the message, so the thread works with no network at all. */
+    attachFile: function (a) {
+      a.id = a.id || uid("att");
+      a.at = Date.now();
+      a.audience = a.audience || "parties";
+      work.attachments.push(a);
+      notify();
+      return a;
+    },
+    /** The file never left this browser, so the link is made from the copy
+        in memory. Nothing is uploaded anywhere in demo mode, by design. */
+    fileUrl: function (att) {
+      if (!att) return Promise.resolve(null);
+      if (att.url) return Promise.resolve(att.url);
+      if (att.file && global.URL && global.URL.createObjectURL) {
+        att.url = global.URL.createObjectURL(att.file);
+        return Promise.resolve(att.url);
+      }
+      return Promise.resolve(null);
+    },
+
     /* ---------------- the reverse auction ----------------
        A brief and the offers on it. This used to be a single object in this
        browser's sessionStorage, which meant a brief was posted to nobody: no
@@ -557,7 +613,8 @@
                endorsements: [], applications: {}, agreements: [], disputes: [],
                audit: [], profiles: {}, notices: [],
                announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
-               types: [], removedTypes: [], quotes: [], offers: [] };
+               types: [], removedTypes: [], quotes: [], offers: [],
+               messages: [], attachments: [] };
       notify();
     },
     resetAll: function () {

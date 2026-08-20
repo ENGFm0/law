@@ -82,6 +82,7 @@ const READERS = {
   inSubscription: 'subscriptions', inCost: 'operating_costs',
   inPartner: 'partners', inAgreement: 'agreements', inType: 'service_types',
   inQuote: 'quotes', inOffer: 'offers',
+  inMessage: 'messages', inAttachment: 'attachments',
 };
 Object.keys(READERS).forEach((name) => {
   const table = READERS[name];

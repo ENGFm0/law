@@ -512,6 +512,49 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .adm-tab { padding: var(--s-3) var(--s-3); font-size: .875rem; }
 }
 
+/* ---------- 11a09. The conversation on a case ----------
+   A thread, not a comment list: bubbles that lean to the side of whoever
+   wrote them, a log that scrolls on its own, and a composer pinned under it.
+   Files are chips inside the bubble rather than a separate list, because
+   "here is the contract" and the contract are one message. */
+.thread { margin-top: var(--s-6); padding-top: var(--s-5); border-top: 1px solid var(--border); }
+.thread__log {
+  display: flex; flex-direction: column; gap: var(--s-3);
+  max-height: 420px; overflow-y: auto; padding: var(--s-4) var(--s-1);
+  background: var(--surface-2); border-radius: var(--r-lg); margin-top: var(--s-4);
+}
+.bubble {
+  align-self: flex-start; max-width: min(84%, 560px);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: var(--s-3) var(--s-4);
+  border-start-start-radius: var(--s-1);
+}
+.bubble--mine {
+  align-self: flex-end; background: var(--accent-soft); border-color: var(--accent-soft);
+  border-start-start-radius: var(--r-lg); border-start-end-radius: var(--s-1);
+}
+.bubble__who { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-2); }
+.bubble__body { white-space: pre-wrap; word-break: break-word; font-size: .9375rem; }
+.bubble__files { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
+
+.file-chip {
+  display: inline-flex; align-items: center; gap: var(--s-2); cursor: pointer;
+  padding: var(--s-2) var(--s-3); border: 1px solid var(--border);
+  border-radius: var(--r); background: var(--surface-2); max-width: 100%;
+}
+.file-chip.is-pending { opacity: .6; cursor: default; }
+.file-chip__name { font-size: .8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+.file-chip__thumb { display: block; width: 100%; max-width: 220px; border-radius: var(--r); margin-top: var(--s-2); }
+.file-chip:has(.file-chip__thumb:not([hidden])) { flex-wrap: wrap; }
+
+.thread__pending { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
+.thread__compose { display: flex; gap: var(--s-2); align-items: center; margin-top: var(--s-3); }
+.thread__compose .input { flex: 1 1 auto; min-width: 0; }
+@media (max-width: 720px) {
+  .thread__log { max-height: 320px; }
+  .bubble { max-width: 92%; }
+}
+
 /* ---------- 11a0a. How a request is going ---------- */
 .track {
   padding: var(--s-5); border-radius: var(--r-lg);
@@ -2950,6 +2993,24 @@ window.SANAD_CONFIG = {
       "brief.reachNone": "لا يوجد محامٍ يقدّم هذا العمل بهذه الطريقة بعد — غيّر الطريقة أو انتظر انضمام محامين.",
       "svc.autoNeedsApproval": "لن تُرسل عروضك التلقائية قبل اعتماد حسابك.",
       "bids.listFirst": "لن تصلك طلبات حتى تسجّل خدماتك — الطلب يُعرض على من يقدّم هذا العمل بهذه الطريقة.",
+
+      /* --- the conversation on a case --- */
+      "thread.title": "المحادثة والمرفقات",
+      "thread.withClient": "مع العميل",
+      "thread.withIntern": "مع المتدرب",
+      "thread.withLawyer": "مع المحامي",
+      "thread.placeholder": "اكتب رسالة…",
+      "thread.send": "إرسال",
+      "thread.attach": "أرفق ملفاً",
+      "thread.empty": "لا رسائل بعد — اكتب أو أرفق ملفاً.",
+      "thread.sending": "جارٍ الرفع…",
+      "thread.tooBig": "الملف أكبر من 25 ميجابايت.",
+      "thread.internalNote": "هذه المحادثة بينك وبين المتدرب فقط — لا يراها العميل.",
+      "thread.closed": "انتهى العمل — المحادثة محفوظة للاطلاع.",
+      "thread.you": "أنت",
+      "thread.openFile": "فتح الملف",
+      "thread.pending": "سيُرسل مع الرسالة",
+      "notice.message": "رسالة جديدة على طلبك",
     },
 
     en: {
@@ -4184,6 +4245,24 @@ window.SANAD_CONFIG = {
       "brief.reachNone": "No lawyer offers this work through this channel yet — change the channel, or wait.",
       "svc.autoNeedsApproval": "Automatic offers are not sent until your account is approved.",
       "bids.listFirst": "Nothing will reach you until you list your services — a brief goes to whoever does that work through that channel.",
+
+      /* --- the conversation on a case --- */
+      "thread.title": "Conversation and files",
+      "thread.withClient": "With the client",
+      "thread.withIntern": "With the trainee",
+      "thread.withLawyer": "With the lawyer",
+      "thread.placeholder": "Write a message…",
+      "thread.send": "Send",
+      "thread.attach": "Attach a file",
+      "thread.empty": "Nothing yet — write, or attach a file.",
+      "thread.sending": "Uploading…",
+      "thread.tooBig": "That file is larger than 25 MB.",
+      "thread.internalNote": "This thread is between you and the trainee. The client cannot see it.",
+      "thread.closed": "The work is finished — the thread is kept as a record.",
+      "thread.you": "You",
+      "thread.openFile": "Open",
+      "thread.pending": "Will be sent with the message",
+      "notice.message": "A new message on your request",
     }
   };
 
@@ -4350,7 +4429,7 @@ window.SANAD_CONFIG = {
     "articles", "articleStates", "comments", "endorsements", "applications",
     "agreements", "disputes", "audit", "profiles", "notices",
     "announcements", "subscriptions", "costs", "partners", "bands",
-    "types", "removedTypes", "quotes", "offers"
+    "types", "removedTypes", "quotes", "offers", "messages", "attachments"
   ].forEach(function (k) {
     if (!work[k]) {
       work[k] = (k.indexOf("States") !== -1 || k === "applications" ||
@@ -4812,6 +4891,62 @@ window.SANAD_CONFIG = {
     },
     removedTypes: function () { return work.removedTypes; },
 
+    /* ---------------- the conversation on a case ----------------
+       Two threads per request. `parties` is the client and whoever is doing
+       the work; `internal` is the lawyer and the trainee they routed it to,
+       and the client cannot read it — a trainee asking whether the claim is
+       even in the right forum is not a message to the person paying for the
+       answer.
+
+       Files are part of it rather than a separate feature: what a client
+       uploads is a message with something attached to it. */
+    messages: function (requestId, audience) {
+      return work.messages.filter(function (m) {
+        return m.requestId === requestId && m.audience === (audience || "parties");
+      }).sort(function (a, b) { return a.at - b.at; });
+    },
+    attachments: function () { return work.attachments; },
+    attachmentsOn: function (messageId) {
+      return work.attachments.filter(function (a) { return a.messageId === messageId; });
+    },
+    /** Files on a case, whichever message carried them — what the request
+        page lists under "everything that was sent". */
+    filesOf: function (requestId, audience) {
+      return work.attachments.filter(function (a) {
+        return a.requestId === requestId && a.audience === (audience || "parties");
+      }).sort(function (a, b) { return a.at - b.at; });
+    },
+    sendMessage: function (m, done) {
+      m.id = m.id || uid("msg");
+      m.at = Date.now();
+      m.audience = m.audience || "parties";
+      work.messages.push(m);
+      notify();
+      if (done) done(m);
+      return m;
+    },
+    /** In the demo the file never leaves the browser: it is kept as a data
+        URL beside the message, so the thread works with no network at all. */
+    attachFile: function (a) {
+      a.id = a.id || uid("att");
+      a.at = Date.now();
+      a.audience = a.audience || "parties";
+      work.attachments.push(a);
+      notify();
+      return a;
+    },
+    /** The file never left this browser, so the link is made from the copy
+        in memory. Nothing is uploaded anywhere in demo mode, by design. */
+    fileUrl: function (att) {
+      if (!att) return Promise.resolve(null);
+      if (att.url) return Promise.resolve(att.url);
+      if (att.file && global.URL && global.URL.createObjectURL) {
+        att.url = global.URL.createObjectURL(att.file);
+        return Promise.resolve(att.url);
+      }
+      return Promise.resolve(null);
+    },
+
     /* ---------------- the reverse auction ----------------
        A brief and the offers on it. This used to be a single object in this
        browser's sessionStorage, which meant a brief was posted to nobody: no
@@ -4874,7 +5009,8 @@ window.SANAD_CONFIG = {
                endorsements: [], applications: {}, agreements: [], disputes: [],
                audit: [], profiles: {}, notices: [],
                announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
-               types: [], removedTypes: [], quotes: [], offers: [] };
+               types: [], removedTypes: [], quotes: [], offers: [],
+               messages: [], attachments: [] };
       notify();
     },
     resetAll: function () {
@@ -6858,8 +6994,62 @@ window.SANAD_CONFIG = {
     return api;
   }
 
+  /* ---------- files ----------
+     Storage is another REST endpoint on the same host, so it needs no library
+     either. Uploads go as the raw file with the session on the request; the
+     bucket is private, so reading one back means asking for a URL that
+     expires rather than linking to it. */
+  function upload(bucket, path, file) {
+    var s = session();
+    if (!s || s.expired) {
+      return refresh().then(function (fresh) {
+        if (!fresh) return { error: { message: "not signed in", code: "401" } };
+        return upload(bucket, path, file);
+      });
+    }
+    return global.fetch(URL_BASE + "/storage/v1/object/" + bucket + "/" + path, {
+      method: "POST",
+      headers: {
+        apikey: KEY,
+        Authorization: "Bearer " + s.token,
+        "Content-Type": file.type || "application/octet-stream",
+        "x-upsert": "false",
+      },
+      body: file,
+    }).then(function (res) {
+      if (res.ok) return { path: path, error: null };
+      return res.text().then(function (text) {
+        var body = null;
+        try { body = JSON.parse(text); } catch (e) { /* not json */ }
+        return { path: null, error: {
+          message: (body && (body.message || body.error)) || text || ("HTTP " + res.status),
+          code: String(res.status) } };
+      });
+    }).catch(function (e) {
+      return { path: null, error: { message: e.message || String(e), code: "network" } };
+    });
+  }
+
+  /** A link to one file that stops working. Nothing in this bucket is public,
+      so this is the only way anything in it is ever shown. */
+  function signUrl(bucket, path, seconds) {
+    return global.fetch(URL_BASE + "/storage/v1/object/sign/" + bucket + "/" + path, {
+      method: "POST",
+      headers: headers({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ expiresIn: seconds || 3600 }),
+    }).then(function (res) {
+      if (!res.ok) return null;
+      return res.json().then(function (body) {
+        var signed = body && (body.signedURL || body.signedUrl);
+        return signed ? URL_BASE + "/storage/v1" + signed : null;
+      });
+    }).catch(function () { return null; });
+  }
+
   global.REST = {
     ready: function () { return !!(URL_BASE && KEY); },
+    upload: upload,
+    signUrl: signUrl,
     session: session,
     refresh: refresh,
     storeKey: function () { return STORE_KEY; },
@@ -7273,7 +7463,8 @@ window.SANAD_CONFIG = {
            "platform_settings", "reviews", "announcements"],
     REST: ["requests", "articles", "comments", "endorsements", "agreements",
            "disputes", "notifications", "audit_log", "subscriptions",
-           "operating_costs", "partners", "quotes", "offers", "contacts"],
+           "operating_costs", "partners", "quotes", "offers", "contacts",
+           "messages", "attachments"],
 
     hydrate: function (names) {
       return load().then(function (sb) {
@@ -7304,6 +7495,10 @@ window.SANAD_CONFIG = {
           // Staff-only, and it says so inside the function rather than
           // trusting the caller. Everyone else gets an empty list.
           contacts:         function () { return sb.rpc("contact_book"); },
+          // Only the threads on cases this account is on come back — the row
+          // policy decides that, not this query.
+          messages:         function () { return sb.from("messages").select("*").order("created_at").limit(1000); },
+          attachments:      function () { return sb.from("attachments").select("*").order("created_at").limit(1000); },
         };
 
         return Promise.all(want.map(function (name) { return query[name](); }))
@@ -7505,6 +7700,19 @@ window.SANAD_CONFIG = {
     };
   }
 
+  function inMessage(m) {
+    return { id: m.id, requestId: m.request_id, authorId: m.author_id,
+             audience: m.audience || "parties", body: m.body || "",
+             at: new Date(m.created_at).getTime() };
+  }
+  function inAttachment(a) {
+    return { id: a.id, requestId: a.request_id, messageId: a.message_id,
+             authorId: a.author_id, audience: a.audience || "parties",
+             path: a.path, name: a.name, size: Number(a.size || 0),
+             mime: a.mime || "application/octet-stream",
+             at: new Date(a.created_at).getTime() };
+  }
+
   function inAgreement(a) {
     return { id: a.id, lawyerId: a.lawyer_id, internId: a.intern_id, kind: a.kind,
              amount: Number(a.amount), cases: a.cases, startedAt: a.started_at };
@@ -7592,7 +7800,7 @@ window.SANAD_CONFIG = {
     reviews: [], comments: [], endorsements: [], agreements: [], applications: {},
     disputes: [], notices: [], audit: [], settings: {},
     announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
-    types: [], quotes: [], offers: [],
+    types: [], quotes: [], offers: [], messages: [], attachments: [],
   };
   var ready = false;
 
@@ -8141,6 +8349,130 @@ window.SANAD_CONFIG = {
     return true;
   };
 
+  /* ---------- the conversation on a case ---------- */
+  Store.messages = function (requestId, audience) {
+    var want = audience || "parties";
+    return cache.messages.filter(function (m) {
+      return m.requestId === requestId && m.audience === want;
+    }).sort(function (a, b) { return a.at - b.at; });
+  };
+  Store.attachments = function () { return cache.attachments; };
+  Store.attachmentsOn = function (messageId) {
+    return cache.attachments.filter(function (a) { return a.messageId === messageId; });
+  };
+  Store.filesOf = function (requestId, audience) {
+    var want = audience || "parties";
+    return cache.attachments.filter(function (a) {
+      return a.requestId === requestId && a.audience === want;
+    }).sort(function (a, b) { return a.at - b.at; });
+  };
+
+  Store.sendMessage = function (m, done) {
+    if (noSession()) return m;
+    if (authId) m.authorId = authId;
+    m.audience = m.audience || "parties";
+    push("messages", {
+      request_id: m.requestId, author_id: m.authorId,
+      audience: m.audience, body: m.body || null,
+    }).then(function (res) {
+      report(res);
+      if (!res || !res.data) return;
+      var real = inMessage(res.data);
+      cache.messages = cache.messages.filter(function (x) { return x.id !== m.id; });
+      cache.messages.push(real);
+      m.id = real.id;
+      Store.notifyAll();
+      if (done) done(m);
+    });
+    m.id = m.id || "pending-" + Math.random().toString(36).slice(2, 8);
+    m.at = Date.now();
+    cache.messages.push(m);
+    Store.notifyAll();
+    return m;
+  };
+
+  /** The file goes to Storage first and the row second: a row pointing at an
+      object that was never written is worse than no row, because the thread
+      then shows an attachment that cannot be opened. */
+  Store.attachFile = function (a, done) {
+    if (noSession()) return a;
+    if (authId) a.authorId = authId;
+    a.audience = a.audience || "parties";
+    var path = a.requestId + "/" + Math.random().toString(36).slice(2, 10) + "-" +
+      String(a.name).replace(/[^\w.\-]/g, "_").slice(-60);
+
+    global.REST.upload("case-files", path, a.file).then(function (up) {
+      if (up.error) {
+        cache.attachments = cache.attachments.filter(function (x) { return x.id !== a.id; });
+        Store.notifyAll();
+        report({ error: up.error });
+        return;
+      }
+      return push("attachments", {
+        request_id: a.requestId, message_id: a.messageId || null,
+        author_id: a.authorId, audience: a.audience,
+        path: path, name: a.name, size: a.size, mime: a.mime,
+      }).then(function (res) {
+        report(res);
+        if (!res || !res.data) return;
+        var real = inAttachment(res.data);
+        cache.attachments = cache.attachments.filter(function (x) { return x.id !== a.id; });
+        cache.attachments.push(real);
+        a.id = real.id;
+        Store.notifyAll();
+        if (done) done(a);
+      });
+    });
+
+    a.id = a.id || "pending-" + Math.random().toString(36).slice(2, 8);
+    a.at = Date.now();
+    a.path = path;
+    cache.attachments.push(a);
+    Store.notifyAll();
+    return a;
+  };
+
+  /** Nothing in the bucket is public, so a file is shown through a link that
+      expires. Held for a few minutes so a redraw does not ask again. */
+  var signed = {};
+  Store.fileUrl = function (att) {
+    if (!att || !att.path) return Promise.resolve(null);
+    var held = signed[att.path];
+    if (held && held.until > Date.now()) return Promise.resolve(held.url);
+    return global.REST.signUrl("case-files", att.path, 3600).then(function (url) {
+      if (url) signed[att.path] = { url: url, until: Date.now() + 50 * 60000 };
+      return url;
+    });
+  };
+
+  /** A thread is the one place two people are waiting on each other, so it is
+      asked again while it is open. Announced only when it has changed. */
+  Store.refreshThread = function (requestId) {
+    return SB.load().then(function (sb) {
+      return Promise.all([
+        sb.from("messages").select("*").eq("request_id", requestId).order("created_at"),
+        sb.from("attachments").select("*").eq("request_id", requestId).order("created_at"),
+      ]);
+    }).then(function (r) {
+      var before = threadSignature(requestId);
+      if (r[0] && !r[0].error && r[0].data) {
+        cache.messages = cache.messages.filter(function (m) { return m.requestId !== requestId; })
+          .concat(r[0].data.map(inMessage));
+      }
+      if (r[1] && !r[1].error && r[1].data) {
+        cache.attachments = cache.attachments.filter(function (a) { return a.requestId !== requestId; })
+          .concat(r[1].data.map(inAttachment));
+      }
+      if (threadSignature(requestId) !== before) Store.notifyAll();
+    }).catch(function (e) { console.error(e); });
+  };
+  function threadSignature(requestId) {
+    return cache.messages.filter(function (m) { return m.requestId === requestId; })
+      .map(function (m) { return m.id; }).join(",") + "|" +
+      cache.attachments.filter(function (a) { return a.requestId === requestId; })
+        .map(function (a) { return a.id; }).join(",");
+  }
+
   Store.bands = function () { return cache.bands; };
   Store.setBand = function (typeId, band) {
     cache.bands[typeId] = { min: band.min, max: band.max };
@@ -8302,6 +8634,8 @@ window.SANAD_CONFIG = {
     cache.partners = take("partners", inPartner, cache.partners);
     cache.quotes = take("quotes", inQuote, cache.quotes);
     cache.offers = take("offers", inOffer, cache.offers);
+    cache.messages = take("messages", inMessage, cache.messages);
+    cache.attachments = take("attachments", inAttachment, cache.attachments);
 
     if (had("platform_settings")) cache.settings = inSettings(rows.platform_settings);
     if (had("price_bands") && rows.price_bands) {
@@ -9378,11 +9712,11 @@ window.SANAD_CONFIG = {
     resolved: "notice.resolved", routed: "notice.routed", opened: "notice.opened",
     offer: "notice.offer", rated: "notice.rated", approved: "notice.approved",
     rejected: "notice.rejected", signed: "notice.signed",
-    quote: "notice.quote", won: "notice.won"
+    quote: "notice.quote", won: "notice.won", message: "notice.message"
   };
   var NOTICE_HREF = {
     offer: "quotes.html", approved: "account.html", rejected: "account.html",
-    signed: "blog.html", quote: "quotes.html"
+    signed: "blog.html", quote: "quotes.html", message: "requests.html"
   };
 
   function bell() {
@@ -9960,6 +10294,111 @@ window.SANAD_CONFIG = {
       '<p class="subtitle">' + esc(I18N.t(textKey)) + "</p></div>";
   }
 
+  /* ---------- the conversation on a case ----------
+     Two threads live on a request and this draws either of them. The audience
+     is not decoration: `internal` is the lawyer and the trainee, and the
+     client is not in it — enforced by a row policy, said out loud here so
+     whoever is typing knows who will read it.
+
+     Files are part of the conversation rather than a feature beside it. The
+     bucket is private, so an attachment is drawn as a placeholder and its
+     link filled in afterwards from a URL that expires. */
+  function bytes(n) {
+    if (!n) return "";
+    if (n < 1024) return I18N.num(n) + " B";
+    if (n < 1024 * 1024) return I18N.num(Math.round(n / 1024)) + " KB";
+    return I18N.num(Math.round(n / 104857.6) / 10) + " MB";
+  }
+
+  function fileChip(a) {
+    var image = /^image\//.test(a.mime || "");
+    var pending = String(a.id || "").slice(0, 7) === "pending";
+    return '<span class="file-chip' + (pending ? " is-pending" : "") + '" data-file="' +
+      App.esc(a.id) + '">' +
+      Icons.svg(image ? "image" : "file-text", "icon-sm") +
+      '<span class="file-chip__name">' + App.esc(a.name) + "</span>" +
+      '<span class="tiny faint">' + App.esc(pending ? I18N.t("thread.sending") : bytes(a.size)) +
+        "</span>" +
+      (image ? '<img class="file-chip__thumb" alt="" hidden data-file-img="' + App.esc(a.id) + '">' : "") +
+      "</span>";
+  }
+
+  function bubble(m, meId) {
+    var who = M.user(m.authorId);
+    var mine = m.authorId === meId;
+    var files = Store.attachmentsOn(m.id);
+    return '<article class="bubble' + (mine ? " bubble--mine" : "") + '">' +
+      '<div class="bubble__who">' +
+        (mine ? "" : avatar(who, "sm")) +
+        "<strong class=\"tiny\">" + App.esc(mine ? I18N.t("thread.you") : (who ? App.tx(who.name) : "")) +
+          "</strong>" +
+        '<span class="tiny faint">' + App.esc(I18N.date(m.at)) + "</span></div>" +
+      (m.body ? '<p class="bubble__body">' + App.esc(m.body) + "</p>" : "") +
+      (files.length ? '<div class="bubble__files">' + files.map(fileChip).join("") + "</div>" : "") +
+    "</article>";
+  }
+
+  function thread(r, audience, opts) {
+    var o = opts || {};
+    var me = global.Session.user();
+    var kind = audience || "parties";
+    var log = Store.messages(r.id, kind);
+    var closed = !!o.closed;
+
+    return '<section class="thread" data-thread="' + App.esc(r.id) +
+        '" data-audience="' + App.esc(kind) + '">' +
+      '<div class="row between wrap gap-3">' +
+        '<h3 class="subtitle">' + App.esc(I18N.t("thread.title")) + "</h3>" +
+        (o.tabs || "") +
+      "</div>" +
+      (kind === "internal"
+        ? '<p class="tiny faint row gap-2" style="margin-top:var(--s-2)">' +
+          Icons.svg("lock", "icon-sm") + App.esc(I18N.t("thread.internalNote")) + "</p>"
+        : "") +
+      '<div class="thread__log">' +
+        (log.length
+          ? log.map(function (m) { return bubble(m, me ? me.id : null); }).join("")
+          : '<p class="small muted center">' + App.esc(I18N.t("thread.empty")) + "</p>") +
+      "</div>" +
+      (closed
+        ? '<p class="tiny muted" style="margin-top:var(--s-3)">' +
+          App.esc(I18N.t("thread.closed")) + "</p>"
+        : '<div class="thread__pending" data-thread-pending hidden></div>' +
+          '<form class="thread__compose" data-thread-form>' +
+            '<label class="icon-btn" title="' + App.esc(I18N.t("thread.attach")) + '">' +
+              Icons.svg("upload", "icon-sm") +
+              '<input type="file" multiple hidden data-thread-file></label>' +
+            '<input class="input" data-thread-body placeholder="' +
+              App.esc(I18N.t("thread.placeholder")) + '">' +
+            '<button class="btn btn--primary btn--sm" type="submit">' +
+              App.esc(I18N.t("thread.send")) + "</button>" +
+          "</form>") +
+    "</section>";
+  }
+
+  /** Fill in the links for whatever the last draw put on screen. The bucket
+      is private, so every one of these is a URL that expires — which is also
+      why they cannot simply be rendered as hrefs in the first place. */
+  function linkFiles(root) {
+    var all = (Store.attachments && Store.attachments()) || [];
+    App.$$("[data-file]", root || document).forEach(function (node) {
+      var id = node.getAttribute("data-file");
+      if (node.getAttribute("data-linked") === id) return;
+      var att = null;
+      all.forEach(function (a) { if (a.id === id) att = a; });
+      if (!att) return;
+      node.setAttribute("data-linked", id);
+      Store.fileUrl(att).then(function (url) {
+        if (!url) return;
+        var img = node.querySelector("[data-file-img]");
+        if (img) { img.src = url; img.hidden = false; }
+        node.setAttribute("data-href", url);
+        node.setAttribute("tabindex", "0");
+        node.title = I18N.t("thread.openFile");
+      });
+    });
+  }
+
   function sectionHead(titleKey, leadKey) {
     return '<div class="section-head"><h2 class="headline" data-i18n="' + titleKey + '"></h2>' +
       (leadKey ? '<p class="lead" data-i18n="' + leadKey + '"></p>' : "") + "</div>";
@@ -9972,6 +10411,8 @@ window.SANAD_CONFIG = {
     lawyerCard: lawyerCard, internCard: internCard, articleCard: articleCard,
     statusPill: statusPill, progress: progress,
     requestRow: requestRow, empty: empty, sectionHead: sectionHead,
+    thread: thread, bubble: bubble, fileChip: fileChip, linkFiles: linkFiles,
+    bytes: bytes,
     googleButton: googleButton
   };
 })(window);
@@ -10300,6 +10741,8 @@ Pages.define("requests", function (global) {
   if (!host) return;
 
   var open = null;      // request id whose editor/detail panel is expanded
+  // Which of the two conversations the lawyer is looking at.
+  var side = "parties";
   var rating = {};      // requestId -> stars picked but not yet sent
   var arguing = null;   // requestId whose refusal form is open
   var revising = null;  // requestId whose revision form is open
@@ -10450,6 +10893,8 @@ Pages.define("requests", function (global) {
         : '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="req.noDeliverable"></p>') +
       acceptPanel(r) +
       (rating[r.id] !== undefined ? rateForm(r) : "") +
+      // Everything the two of them said and sent, on the case it belongs to.
+      C.thread(r, "parties", { closed: st.status === "completed" }) +
     "</div>";
   }
 
@@ -10617,6 +11062,12 @@ Pages.define("requests", function (global) {
       return '<span class="tiny muted">' +
           esc(I18N.t("inbox.assignedTo", { name: who ? tx(who.name) : "" })) + "</span>" +
         '<span>' + payLine(r, "pay.share") + "</span>" +
+        // Routing work to a trainee used to be the last thing a lawyer could
+        // do with it: the row offered "unassign" and nothing else, so the
+        // draft, the client and now both conversations were out of reach on
+        // exactly the cases somebody else is writing.
+        '<button class="btn btn--outline btn--sm" type="button" data-open="' + esc(r.id) + '">' +
+          esc(I18N.t("req.openDetails")) + "</button>" +
         '<button class="btn btn--ghost btn--sm" type="button" data-unassign="' + esc(r.id) + '">' +
           esc(I18N.t("inbox.unassign")) + "</button>";
     }
@@ -10753,6 +11204,20 @@ Pages.define("requests", function (global) {
           Icons.svg("graduation", "icon-sm") + esc(I18N.t("inbox.assign")) + "</button>" +
         '<button class="btn btn--accent" type="button" data-approve="' + esc(r.id) + '">' +
           Icons.svg("check", "icon-sm") + esc(I18N.t("ai.approve")) + "</button>" +
+      "</div>" +
+      // Two conversations, kept apart. The tabs are the honest way to show
+      // that: one of them the client reads, and one of them they do not.
+      '<div style="padding:0 var(--s-5) var(--s-5)">' +
+        (M.requestState(r).assignedTo
+          ? '<div class="row gap-2 wrap" style="margin-bottom:var(--s-4)">' +
+              '<button type="button" class="chip' + (side === "parties" ? " is-active" : "") +
+                '" data-thread-side="parties">' + esc(I18N.t("thread.withClient")) + "</button>" +
+              '<button type="button" class="chip' + (side === "internal" ? " is-active" : "") +
+                '" data-thread-side="internal">' + esc(I18N.t("thread.withIntern")) + "</button>" +
+            "</div>"
+          : "") +
+        C.thread(r, M.requestState(r).assignedTo ? side : "parties",
+                 { closed: M.requestState(r).status === "completed" }) +
       "</div></section>";
   }
 
@@ -10888,7 +11353,10 @@ Pages.define("requests", function (global) {
               '<button class="btn btn--ghost btn--sm" type="button" data-task-save="' + esc(r.id) + '" ' +
                 'data-i18n="dash.saveDraft"></button>' +
               '<button class="btn btn--accent btn--sm" type="button" data-task-deliver="' + esc(r.id) + '">' +
-                Icons.svg("send", "icon-sm") + esc(I18N.t("task.deliver")) + "</button></div></div>"
+                Icons.svg("send", "icon-sm") + esc(I18N.t("task.deliver")) + "</button></div>" +
+            // The supervising lawyer, and nobody else: the client is not in
+            // this one and cannot be.
+            C.thread(r, "internal", { closed: false }) + "</div>"
         : "") +
     "</article>";
   }
@@ -10916,6 +11384,10 @@ Pages.define("requests", function (global) {
   }
 
   /* ====================================================== draw ============ */
+  // Files chosen but not yet sent, keyed by the thread they were chosen in.
+  var pending = {};
+  var MAX_FILE = 25 * 1024 * 1024;
+
   App.onRender(function () {
     var role = Session.role();
     host.innerHTML = Session.isGuest() ? guest()
@@ -10923,7 +11395,50 @@ Pages.define("requests", function (global) {
                    : role === "intern" ? internView()
                    : clientView();
     I18N.apply(host);
+    // The bucket is private, so links are filled in after the draw rather
+    // than written into it.
+    C.linkFiles(host);
+    drawPending();
+    watchThread();
   });
+
+  /** What is queued to go with the next message. */
+  function drawPending() {
+    var box = $("[data-thread-pending]", host);
+    var form = $("[data-thread-form]", host);
+    if (!box || !form) return;
+    var key = threadKey();
+    var list = pending[key] || [];
+    box.hidden = !list.length;
+    box.innerHTML = list.map(function (f, i) {
+      return '<span class="file-chip">' + Icons.svg("file-text", "icon-sm") +
+        '<span class="file-chip__name">' + esc(f.name) + "</span>" +
+        '<span class="tiny faint">' + esc(C.bytes(f.size)) + "</span>" +
+        '<button class="icon-btn" type="button" data-drop-file="' + i + '">' +
+          Icons.svg("close", "icon-sm") + "</button></span>";
+    }).join("");
+  }
+
+  function threadEl() { return $("[data-thread]", host); }
+  function threadKey() {
+    var el = threadEl();
+    return el ? el.getAttribute("data-thread") + ":" + el.getAttribute("data-audience") : "";
+  }
+
+  /** A thread is two people waiting on each other, so it is asked again while
+      it is open — and only while it is open. */
+  var watching = null;
+  function watchThread() {
+    var el = threadEl();
+    var id = el ? el.getAttribute("data-thread") : null;
+    if (watching && watching.id === id) return;
+    if (watching) { clearInterval(watching.timer); watching = null; }
+    if (!id || !Store.refreshThread) return;
+    watching = { id: id, timer: setInterval(function () {
+      if (!threadEl()) { clearInterval(watching.timer); watching = null; return; }
+      Store.refreshThread(id);
+    }, 6000) };
+  }
 
   /* ====================================================== events ========== */
   host.addEventListener("click", function (ev) {
@@ -11137,8 +11652,81 @@ Pages.define("requests", function (global) {
       return;
     }
 
+    /* --- the conversation --- */
+    var sideTab = hit("data-thread-side");
+    if (sideTab) { side = sideTab; App.rerender(); return; }
+
+    var drop = hit("data-drop-file");
+    if (drop !== null) {
+      var key = threadKey();
+      (pending[key] || []).splice(+drop, 1);
+      drawPending();
+      return;
+    }
+
+    // A file in a private bucket is opened through the link that was signed
+    // for it, which is put on the chip once it comes back.
+    var chip = t.closest("[data-href]");
+    if (chip) { global.open(chip.getAttribute("data-href"), "_blank", "noopener"); return; }
+
     var pop = $(".assign-pop");
     if (pop && !t.closest(".assign-pop")) pop.remove();
+  });
+
+  /* Choosing files does not send them: they wait for the message so that one
+     line of text and three attachments arrive as one thing rather than four. */
+  host.addEventListener("change", function (ev) {
+    if (!ev.target.matches("[data-thread-file]")) return;
+    var key = threadKey();
+    pending[key] = pending[key] || [];
+    Array.prototype.forEach.call(ev.target.files, function (f) {
+      if (f.size > MAX_FILE) { App.toast(I18N.t("thread.tooBig"), "alert"); return; }
+      pending[key].push(f);
+    });
+    ev.target.value = "";
+    drawPending();
+  });
+
+  host.addEventListener("submit", function (ev) {
+    if (!ev.target.matches("[data-thread-form]")) return;
+    ev.preventDefault();
+    var el = threadEl();
+    if (!el) return;
+    var requestId = el.getAttribute("data-thread");
+    var audience = el.getAttribute("data-audience");
+    var key = threadKey();
+    var files = pending[key] || [];
+    var box = $("[data-thread-body]", host);
+    var body = box ? box.value.trim() : "";
+    if (!body && !files.length) return;
+
+    var me = Session.user();
+    Store.sendMessage({
+      requestId: requestId, audience: audience, authorId: me.id, body: body,
+    }, function (saved) {
+      files.forEach(function (f) {
+        Store.attachFile({
+          requestId: requestId, messageId: saved.id, audience: audience,
+          authorId: me.id, name: f.name, size: f.size,
+          mime: f.type || "application/octet-stream", file: f,
+        });
+      });
+    });
+
+    // Tell the other side something arrived, so a message does not wait on
+    // somebody happening to open the page.
+    var r = M.request(requestId);
+    if (r) {
+      var st = M.requestState(r);
+      var to = audience === "internal"
+        ? (me.id === r.lawyerId ? st.assignedTo : r.lawyerId)
+        : (me.id === r.clientId ? (st.assignedTo || r.lawyerId) : r.clientId);
+      if (to && to !== me.id) Store.notify({ to: to, type: "message", ref: requestId });
+    }
+
+    pending[key] = [];
+    if (box) box.value = "";
+    App.rerender();
   });
 });
 

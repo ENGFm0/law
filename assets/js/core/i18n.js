@@ -1272,6 +1272,24 @@
       "brief.reachNone": "لا يوجد محامٍ يقدّم هذا العمل بهذه الطريقة بعد — غيّر الطريقة أو انتظر انضمام محامين.",
       "svc.autoNeedsApproval": "لن تُرسل عروضك التلقائية قبل اعتماد حسابك.",
       "bids.listFirst": "لن تصلك طلبات حتى تسجّل خدماتك — الطلب يُعرض على من يقدّم هذا العمل بهذه الطريقة.",
+
+      /* --- the conversation on a case --- */
+      "thread.title": "المحادثة والمرفقات",
+      "thread.withClient": "مع العميل",
+      "thread.withIntern": "مع المتدرب",
+      "thread.withLawyer": "مع المحامي",
+      "thread.placeholder": "اكتب رسالة…",
+      "thread.send": "إرسال",
+      "thread.attach": "أرفق ملفاً",
+      "thread.empty": "لا رسائل بعد — اكتب أو أرفق ملفاً.",
+      "thread.sending": "جارٍ الرفع…",
+      "thread.tooBig": "الملف أكبر من 25 ميجابايت.",
+      "thread.internalNote": "هذه المحادثة بينك وبين المتدرب فقط — لا يراها العميل.",
+      "thread.closed": "انتهى العمل — المحادثة محفوظة للاطلاع.",
+      "thread.you": "أنت",
+      "thread.openFile": "فتح الملف",
+      "thread.pending": "سيُرسل مع الرسالة",
+      "notice.message": "رسالة جديدة على طلبك",
     },
 
     en: {
@@ -2506,6 +2524,24 @@
       "brief.reachNone": "No lawyer offers this work through this channel yet — change the channel, or wait.",
       "svc.autoNeedsApproval": "Automatic offers are not sent until your account is approved.",
       "bids.listFirst": "Nothing will reach you until you list your services — a brief goes to whoever does that work through that channel.",
+
+      /* --- the conversation on a case --- */
+      "thread.title": "Conversation and files",
+      "thread.withClient": "With the client",
+      "thread.withIntern": "With the trainee",
+      "thread.withLawyer": "With the lawyer",
+      "thread.placeholder": "Write a message…",
+      "thread.send": "Send",
+      "thread.attach": "Attach a file",
+      "thread.empty": "Nothing yet — write, or attach a file.",
+      "thread.sending": "Uploading…",
+      "thread.tooBig": "That file is larger than 25 MB.",
+      "thread.internalNote": "This thread is between you and the trainee. The client cannot see it.",
+      "thread.closed": "The work is finished — the thread is kept as a record.",
+      "thread.you": "You",
+      "thread.openFile": "Open",
+      "thread.pending": "Will be sent with the message",
+      "notice.message": "A new message on your request",
     }
   };
 
