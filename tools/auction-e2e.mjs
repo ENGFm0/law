@@ -36,6 +36,7 @@ await p.click('[data-window="15"]');
 await p.click('[data-quote-form] button[type=submit]'); await p.waitForTimeout(600);
 ok('the board is live', /طلبك مفتوح/.test(await body()));
 ok('the compose form stepped aside', await p.$eval('[data-quote-compose]', e=>e.hidden));
+ok('and it says how many lawyers could answer it', /وصل إلى|لا يوجد محامٍ/.test(await body()));
 const stored = await p.evaluate(()=>JSON.parse(sessionStorage.getItem('sanad.work')||'{}'));
 ok('the brief is a row, not a flag', Array.isArray(stored.quotes) && stored.quotes.length === 1);
 ok('and it carries the work and the channel',
@@ -89,6 +90,35 @@ ok('so does the lawyer who won it', /نهاية الخدمة|استشارة/.tes
 console.log('— A LAWYER WHO DID NOT WIN IT SEES NOTHING —');
 await open('requests.html', 'u-sara');
 ok('no trace of it', !/نهاية الخدمة/.test(await body()));
+
+console.log('— A BRIEF NOBODY HAS TAKEN IS STILL SOMEWHERE —');
+await open('quotes.html', 'u-fahad');
+await p.click('[data-type="memo"]'); await p.waitForTimeout(200);
+await p.fill('#q-brief','مذكرة جوابية على دعوى مقامة ضدي أمام المحكمة التجارية');
+await p.click('[data-quote-form] button[type=submit]'); await p.waitForTimeout(500);
+await p.goto(U+'requests.html'); await p.waitForTimeout(500);
+let t2 = await body();
+ok('it is in the requests list while the clock runs', /بانتظار العروض/.test(t2));
+ok('with the brief on it', /مذكرة جوابية/.test(t2));
+ok('and it says how long is left', /يُغلق خلال/.test(t2));
+
+// Run the window out without waiting a quarter of an hour for it.
+await p.evaluate(() => {
+  const q = Store.quotes().find((x) => /مذكرة جوابية/.test(x.brief));
+  Store.setQuote(q.id, { expiresAt: Date.now() - 1000 });
+});
+await p.goto(U+'requests.html'); await p.waitForTimeout(500);
+t2 = await body();
+ok('when the window closes it drops to the finished list', /انتهت المهلة/.test(t2));
+ok('carrying the date it was posted', /\d{4}/.test(t2));
+ok('and it is no longer waiting', !/بانتظار العروض/.test(t2));
+const againLink = await p.$('[href*="again="]');
+ok('with a way to post it again', !!againLink);
+await againLink.click(); await p.waitForTimeout(600);
+ok('which hands the old brief back',
+   /مذكرة جوابية/.test(await p.$eval('#q-brief', e=>e.value)));
+ok('with the same kind of work chosen',
+   await p.$eval('[data-type="memo"]', e=>e.classList.contains('is-active')));
 
 console.log('\nerrors: ' + (errs.length ? errs.join(' | ') : 'none'));
 console.log(pass + ' passed, ' + fail + ' failed');

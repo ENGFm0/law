@@ -1256,6 +1256,22 @@
       "notice.won": "قُبل عرضك — بدأ العمل",
       "sys.sessionGone": "انتهت جلستك",
       "sys.sessionGoneBody": "المتصفح ما زال يذكرك، لكن الخادم لم يعد يعرف الجلسة — فأي حفظ سيُرفض. سجّل الدخول من جديد.",
+
+      /* --- a brief that nobody has taken yet --- */
+      "brief.waiting": "طلبات بانتظار العروض",
+      "brief.offers": "{n} عرضاً",
+      "brief.closesInMin": "يُغلق خلال {n} دقيقة",
+      "brief.open": "مفتوح",
+      "brief.expired": "انتهت المهلة",
+      "brief.cancelled": "ملغى",
+      "brief.accepted": "قُبل عرض",
+      "brief.watch": "تابع العروض",
+      "brief.again": "انشره من جديد",
+      "brief.reposted": "جاهز للنشر من جديد — راجعه وأرسله.",
+      "brief.reach": "وصل إلى {n} محامياً يقدّمون هذا العمل بهذه الطريقة",
+      "brief.reachNone": "لا يوجد محامٍ يقدّم هذا العمل بهذه الطريقة بعد — غيّر الطريقة أو انتظر انضمام محامين.",
+      "svc.autoNeedsApproval": "لن تُرسل عروضك التلقائية قبل اعتماد حسابك.",
+      "bids.listFirst": "لن تصلك طلبات حتى تسجّل خدماتك — الطلب يُعرض على من يقدّم هذا العمل بهذه الطريقة.",
     },
 
     en: {
@@ -2474,6 +2490,22 @@
       "notice.won": "Your offer was accepted — the work has started",
       "sys.sessionGone": "Your session has ended",
       "sys.sessionGoneBody": "This browser still remembers you, but the server no longer holds the session, so nothing can be saved. Sign in again.",
+
+      /* --- a brief that nobody has taken yet --- */
+      "brief.waiting": "Briefs waiting for offers",
+      "brief.offers": "{n} offers",
+      "brief.closesInMin": "closes in {n} min",
+      "brief.open": "Open",
+      "brief.expired": "Window closed",
+      "brief.cancelled": "Cancelled",
+      "brief.accepted": "Offer taken",
+      "brief.watch": "Watch the offers",
+      "brief.again": "Post it again",
+      "brief.reposted": "Ready to post again — check it and send.",
+      "brief.reach": "Reached {n} lawyers who do this work through this channel",
+      "brief.reachNone": "No lawyer offers this work through this channel yet — change the channel, or wait.",
+      "svc.autoNeedsApproval": "Automatic offers are not sent until your account is approved.",
+      "bids.listFirst": "Nothing will reach you until you list your services — a brief goes to whoever does that work through that channel.",
     }
   };
 
@@ -2522,6 +2554,16 @@
     /** Localised digits stay Latin — legal/financial figures read better that way. */
     num: function (n) {
       return new Intl.NumberFormat(current === "ar" ? "ar-SA-u-nu-latn" : "en-US").format(n);
+    },
+
+    /** A date somebody can check against their own memory: Gregorian, Latin
+        digits, month written out so 3/4 is never read two ways. */
+    date: function (ms) {
+      if (!ms) return "";
+      return new Intl.DateTimeFormat(
+        current === "ar" ? "ar-SA-u-nu-latn-ca-gregory" : "en-GB",
+        { day: "numeric", month: "short", year: "numeric" }
+      ).format(new Date(ms));
     },
 
     /**

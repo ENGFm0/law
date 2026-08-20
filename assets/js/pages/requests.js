@@ -29,16 +29,74 @@ Pages.define("requests", function (global) {
         '<a class="btn btn--primary" href="login.html" data-i18n="auth.signIn"></a></p></div>';
   }
 
+  /* ------------------------------------------------------- posted briefs
+     A brief that nobody has taken yet is not nothing. It used to vanish the
+     moment it was sent — the client saw an empty list and could only assume
+     it had gone somewhere. It belongs here, with its clock running, until it
+     is taken or the window closes; then it drops to the finished list with
+     the date on it and a way to post it again. */
+  function briefRow(q) {
+    var state = M.quoteState(q);
+    var kind = M.serviceType(q.typeId) || { title: {} };
+    var ch = M.channel(q.channel);
+    var offers = M.offersOn(q.id).length;
+    var open = state === "open";
+    var left = Math.max(0, Math.floor((q.expiresAt - Date.now()) / 60000));
+    var pill = { open: "ok", accepted: "ok", expired: "", cancelled: "" }[state];
+
+    return '<article class="req-row">' +
+      '<span class="req-row__icon">' + Icons.svg(open ? "gavel" : "clock", "icon-sm") + "</span>" +
+      '<div class="grow" style="min-width:0">' +
+        '<div class="row gap-2 wrap"><strong class="small">' +
+          esc(q.brief.slice(0, 70)) + (q.brief.length > 70 ? "…" : "") + "</strong>" +
+          '<span class="tag">' + esc(tx(kind.title)) + "</span></div>" +
+        '<p class="tiny muted">' + esc(ch ? tx(ch.title) : "") +
+          ' <span class="dot"></span> ' + esc(I18N.t("brief.offers", { n: I18N.num(offers) })) +
+          ' <span class="dot"></span> ' +
+          esc(open ? I18N.t("brief.closesInMin", { n: I18N.num(left) })
+                   : I18N.date(q.at)) + "</p></div>" +
+      '<div class="req-row__side">' +
+        '<span class="status' + (pill ? " status--" + pill : "") + '">' +
+          esc(I18N.t("brief." + state)) + "</span>" +
+        (open
+          ? '<a class="btn btn--ghost btn--sm" href="quotes.html">' +
+              esc(I18N.t("brief.watch")) + "</a>" +
+            '<button class="btn btn--ghost btn--sm" type="button" data-brief-cancel="' +
+              esc(q.id) + '">' + esc(I18N.t("quotes.cancel")) + "</button>"
+          : state === "accepted"
+            ? ""
+            : '<a class="btn btn--outline btn--sm" href="quotes.html?again=' + esc(q.id) + '">' +
+                Icons.svg("send", "icon-sm") + esc(I18N.t("brief.again")) + "</a>") +
+      "</div></article>";
+  }
+
+  function briefs(me, which) {
+    return M.quotesForClient(me.id).filter(function (q) {
+      var state = M.quoteState(q);
+      // An accepted brief became a request; it is in the list below as itself.
+      if (state === "accepted") return false;
+      return which === "open" ? state === "open" : state !== "open";
+    });
+  }
+
   /* ====================================================== client ========== */
   function clientView() {
     var me = Session.user();
     var live = M.requestsForClient(me.id, "open");
     var past = M.requestsForClient(me.id, "past");
+    var waiting = briefs(me, "open");
+    var closed = briefs(me, "past");
 
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       '<header style="margin-bottom:var(--s-8)">' +
         '<h1 class="headline" data-i18n="req.heading"></h1>' +
         '<p class="lead" data-i18n="req.leadClient"></p></header>' +
+
+      (waiting.length
+        ? '<section class="card card--pad" style="margin-bottom:var(--s-6)">' +
+            '<h2 class="subtitle" style="margin-bottom:var(--s-5)" data-i18n="brief.waiting"></h2>' +
+            '<div class="req-list">' + waiting.map(briefRow).join("") + "</div></section>"
+        : "") +
 
       '<section class="card card--pad" style="margin-bottom:var(--s-6)">' +
         '<h2 class="subtitle" style="margin-bottom:var(--s-5)" data-i18n="req.current"></h2>' +
@@ -49,8 +107,9 @@ Pages.define("requests", function (global) {
 
       '<section class="card card--pad">' +
         '<h2 class="subtitle" style="margin-bottom:var(--s-5)" data-i18n="req.past"></h2>' +
-        (past.length
-          ? '<div class="req-list">' + past.map(clientRow).join("") + "</div>"
+        (past.length || closed.length
+          ? '<div class="req-list">' + past.map(clientRow).join("") +
+            closed.map(briefRow).join("") + "</div>"
           : '<p class="small muted" data-i18n="req.nonePast"></p>') +
       "</section></div>";
   }
@@ -596,6 +655,13 @@ Pages.define("requests", function (global) {
     if (f) { filter = f.getAttribute("data-filter"); App.rerender(); return; }
 
     /* --- client --- */
+    var bc = hit("data-brief-cancel");
+    if (bc) {
+      Store.setQuote(bc, { status: "cancelled" });
+      App.toast(I18N.t("quotes.cancelled"), "close");
+      return;
+    }
+
     var det = hit("data-detail");
     if (det) { open = open === det ? null : det; App.rerender(); return; }
     if (t.closest("[data-detail-close]")) { open = null; App.rerender(); return; }

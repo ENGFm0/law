@@ -29,6 +29,10 @@ Pages.define("quotes", function (global) {
   var remote = (global.SANAD_CONFIG || {}).backend === "supabase";
 
   var draft = { city: "", specialty: "", typeId: "", channel: "", window: 30 };
+  // "Post it again" hands the old brief back rather than making somebody type
+  // it a second time. The old row is left where it is — it is the record of a
+  // window that closed.
+  var again = App.param("again");
   var sort = "price";
   var offerTimers = [];
 
@@ -170,11 +174,14 @@ Pages.define("quotes", function (global) {
     var cur = mine();
     if (!host) return;
 
-    compose.hidden = !!(cur && cur.status === "open");
+    // Worked out, not read off the row: a window that ran out while nobody
+    // had the page open is over, whatever the stored status still says.
+    var state = M.quoteState(cur);
+    compose.hidden = state === "open";
     host.hidden = !cur;
     if (!cur) return;
 
-    if (cur.status === "accepted") {
+    if (state === "accepted") {
       var won = M.user(cur.acceptedBy);
       host.innerHTML =
         '<div class="card card--rule-gold card--pad center stack gap-4" style="align-items:center">' +
@@ -192,14 +199,14 @@ Pages.define("quotes", function (global) {
             esc(I18N.t("quotes.newRequest")) + "</button></div>";
       return;
     }
-    if (cur.status === "expired" || cur.status === "cancelled") {
+    if (state === "expired" || state === "cancelled") {
       host.innerHTML =
         '<div class="card card--pad center stack gap-4" style="align-items:center">' +
           '<span class="feature__icon">' + Icons.svg("clock", "icon-xl") + "</span>" +
           '<h1 class="headline">' +
-            esc(I18N.t(cur.status === "expired" ? "quotes.expired" : "quotes.cancelled")) + "</h1>" +
+            esc(I18N.t(state === "expired" ? "quotes.expired" : "quotes.cancelled")) + "</h1>" +
           '<p class="lead">' +
-            esc(I18N.t(cur.status === "expired" ? "quotes.expiredBody" : "quotes.cancelled")) + "</p>" +
+            esc(I18N.t(state === "expired" ? "quotes.expiredBody" : "quotes.cancelled")) + "</p>" +
           '<button class="btn btn--accent" type="button" data-quote-reset>' +
             esc(I18N.t("quotes.repost")) + "</button></div>";
       return;
@@ -209,6 +216,10 @@ Pages.define("quotes", function (global) {
     var city = cur.city ? tx(M.city(cur.city)) : I18N.t("quotes.anyCity");
     var ch = M.channel(cur.channel);
     var list = offers(cur);
+    // How many lawyers could answer this at all. A board with nothing on it
+    // means one thing when twelve people could have bid and quite another
+    // when nobody on the platform does this work through this channel.
+    var reach = M.lawyersForQuote(cur).length;
     host.innerHTML =
       '<div class="card card--rule-gold card--pad" style="margin-bottom:var(--s-6)">' +
         '<div class="row between wrap gap-6">' +
@@ -224,6 +235,9 @@ Pages.define("quotes", function (global) {
             '<p class="tiny muted">' + esc(I18N.t("quotes.timeLeft")) + "</p></div>" +
         "</div>" +
         '<hr class="divider">' +
+        '<p class="tiny ' + (reach ? "muted" : "faint") + '" style="margin-bottom:var(--s-3)">' +
+          esc(reach ? I18N.t("brief.reach", { n: I18N.num(reach) })
+                    : I18N.t("brief.reachNone")) + "</p>" +
         '<div class="row between wrap gap-3">' +
           "<strong class=\"small\">" + esc(I18N.t("quotes.offersIn", { n: I18N.num(list.length) })) + "</strong>" +
           '<button class="btn btn--ghost btn--sm" type="button" data-quote-cancel>' +
@@ -314,7 +328,16 @@ Pages.define("quotes", function (global) {
             esc(I18N.t("bids.openCount", { n: I18N.num(open.length) })) + "</p>" +
           open.map(function (q) { return briefCard(q, who); }).join("")
         : '<div class="card empty">' + Icons.svg("gavel", "icon-xl") +
-          '<p class="subtitle">' + esc(I18N.t("bids.none")) + "</p></div>") +
+          '<p class="subtitle">' + esc(I18N.t("bids.none")) + "</p>" +
+          // A board is empty for two different reasons, and only one of them
+          // is "wait". A lawyer who has listed nothing will wait forever.
+          (M.servicesOf(who.id).length
+            ? ""
+            : '<p class="small muted" style="margin-top:var(--s-3)">' +
+              esc(I18N.t("bids.listFirst")) + "</p>" +
+              '<a class="btn btn--outline btn--sm" style="margin-top:var(--s-3)" ' +
+              'href="services.html">' + esc(I18N.t("nav.services")) + "</a>") +
+          "</div>") +
       settled.map(function (q) {
         var won = q.status === "accepted" && q.acceptedBy === who.id;
         return '<p class="status ' + (won ? "status--ok" : "") + '" style="width:100%;' +
@@ -362,12 +385,26 @@ Pages.define("quotes", function (global) {
     });
   }
 
+  /* The other side of the auction is another browser, or the database itself
+     answering on a lawyer's behalf. Neither of them can reach into this page,
+     so a board that is only drawn once shows nought offers for as long as
+     anybody watches it. Asked again every few seconds while something is
+     actually open, and redrawn only when the answer has changed — a redraw on
+     a timer would take the half-typed bid out from under whoever is typing. */
+  var polls = 0;
+  function poll(active) {
+    if (!active || !Store.refreshAuction) return;
+    if (polls++ % 5 !== 0) return;               // every fifth second
+    Store.refreshAuction();
+  }
+
   function startTicker() {
     clearInterval(ticker);
     ticker = global.__quoteTicker = setInterval(function () {
       var cur = mine();
       var el = $("[data-quote-clock]");
-      if (cur && cur.status === "open") {
+      poll(Session.is("lawyer") ? true : !!(cur && M.quoteState(cur) === "open"));
+      if (cur && M.quoteState(cur) === "open") {
         var left = remaining(cur);
         if (el) el.textContent = clock(left);
         if (left <= 0) {
@@ -384,7 +421,11 @@ Pages.define("quotes", function (global) {
         any = true;
         node.textContent = I18N.t("bids.closesIn") + " " + clock(remaining(q));
       });
-      if (!any && (!cur || cur.status !== "open")) clearInterval(ticker);
+      // A lawyer with an empty board is the one person who most needs the
+      // page to keep asking: the next brief is what they are waiting for.
+      if (!any && !Session.is("lawyer") && (!cur || M.quoteState(cur) !== "open")) {
+        clearInterval(ticker);
+      }
     }, 1000);
   }
 
@@ -403,10 +444,21 @@ Pages.define("quotes", function (global) {
     }
 
     if (bids) { bids.hidden = true; bids.innerHTML = ""; }
+    if (again) {
+      var old = M.quote(again);
+      if (old && old.clientId === (me() ? me().id : null)) {
+        draft.typeId = old.typeId; draft.channel = old.channel;
+        draft.city = old.city || ""; draft.specialty = old.specialty || "";
+        var box = $("#q-brief");
+        if (box && !box.value) box.value = old.brief;
+        App.toast(I18N.t("brief.reposted"), "send");
+      }
+      again = null;                    // once, not on every redraw
+    }
     drawCompose();
     drawLive();
     var cur = mine();
-    if (cur && cur.status === "open") { startTicker(); scheduleOffers(cur); }
+    if (cur && M.quoteState(cur) === "open") { startTicker(); scheduleOffers(cur); }
   });
 
   /* ================================================== events ============= */

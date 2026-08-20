@@ -233,6 +233,12 @@ Pages.define("services", function (global) {
             '<input type="checkbox" data-auto-bid' + (me.autoBid ? " checked" : "") + "></label>" +
           '<p class="tiny ' + (me.autoBid ? "" : "muted") + '" style="margin-top:var(--s-3)" data-i18n="' +
             (me.autoBid ? "svc.autoBidOn" : "svc.autoBidOff") + '"></p>' +
+          // Switching it on is not enough on its own: the database only bids
+          // on behalf of an account whose licence has been checked. Saying so
+          // here beats a lawyer watching a board that will never call them.
+          (me.autoBid && me.status !== "verified"
+            ? '<p class="note-inline" style="margin-top:var(--s-3)" data-i18n="svc.autoNeedsApproval"></p>'
+            : "") +
         "</section>" +
         '<section class="card card--pad">' +
           '<h2 class="subtitle" data-i18n="' + (editing ? "svc.editTitle" : "svc.addTitle") + '"></h2>' +

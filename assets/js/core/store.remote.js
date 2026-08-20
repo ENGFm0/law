@@ -315,6 +315,7 @@
   function local(list, row) { list.push(row); Store.notifyAll(); return row; }
 
   Store.addRequest = function (r, done) {
+    if (noSession()) return r;
     var row = outRequest(r);
     push("requests", row).then(function (res) {
       report(res);
@@ -642,7 +643,30 @@
     return cache.offers.filter(function (o) { return o.quoteId === quoteId; });
   };
 
+  /** Ask again for the two tables that change while somebody is watching
+      them. Announced only when the answer is different: a redraw on a timer
+      replaces every input on the page, including the one being typed into. */
+  Store.refreshAuction = function () {
+    return SB.load().then(function (sb) {
+      return Promise.all([
+        sb.from("quotes").select("*").order("created_at", { ascending: false }),
+        sb.from("offers").select("*"),
+      ]);
+    }).then(function (r) {
+      var before = signature();
+      if (r[0] && !r[0].error && r[0].data) cache.quotes = r[0].data.map(inQuote);
+      if (r[1] && !r[1].error && r[1].data) cache.offers = r[1].data.map(inOffer);
+      if (signature() !== before) Store.notifyAll();
+      return cache;
+    }).catch(function (e) { console.error(e); });
+  };
+  function signature() {
+    return cache.quotes.map(function (q) { return q.id + q.status; }).join(",") + "|" +
+           cache.offers.map(function (o) { return o.id + o.price; }).join(",");
+  }
+
   Store.openQuote = function (q) {
+    if (noSession()) return q;
     // Addressed with the id the server will check it against, not the one
     // this browser remembers. They are the same id in every ordinary case —
     // and when they are not, the row is refused and nothing explains why.
@@ -690,6 +714,7 @@
   };
 
   Store.addOffer = function (offer) {
+    if (noSession()) return false;
     if (authId) offer.lawyer = authId;
     var q = Store.quote(offer.quoteId);
     if (!q || q.status !== "open") return false;
@@ -954,7 +979,22 @@
      remembered. Every ownership rule on the server is written against the
      first one, so every write is addressed with it. */
   var authId = null;
+  var authKnown = false;
   Store.authId = function () { return authId; };
+
+  /** Refuse a write we already know the server will refuse, and say why in a
+      sentence about the session rather than about the row. Only once the
+      provider has actually answered — before that, silence is not a no. */
+  function noSession() {
+    if (!authKnown || authId) return false;
+    // Only when this browser believes somebody is signed in. A guest never
+    // reaches a write from the pages, and if one ever did, the database
+    // refusing it is the right answer rather than a bar about a session
+    // nobody claimed to have.
+    if (!Store.currentId()) return false;
+    sessionGone();
+    return true;
+  }
   // Whose session this browser claimed at the moment the page loaded. The
   // check below compares against it rather than against "whoever is signed in
   // now", so somebody who signs in while the first answer is still in flight
@@ -966,20 +1006,23 @@
 
   SB.currentId().then(function (id) {
     authId = id;
+    authKnown = true;
     if (id) SB.cleanUrl && SB.cleanUrl();
     // The browser says one thing and the provider says another. This is the
-    // state that produced "new row violates row-level security policy": the
-    // local session key survived, the site drew as signed in, every read went
-    // through because most of them are public — and then the first write
-    // reached the database carrying no token at all, so `auth.uid()` was null
-    // and the row was refused by a rule that was doing its job. Better to say
-    // the session ended than to leave a site that looks signed in and cannot
-    // write a thing.
-    if (!id && bootSession && Store.currentId() === bootSession) {
-      Store.signOut();
-      document.dispatchEvent(new CustomEvent("sessionchange"));
-      sessionGone();
-    }
+    // state behind "new row violates row-level security policy": the local
+    // session key outlived the provider's, the site drew as signed in, every
+    // read went through because most of them are public — and then the first
+    // write reached the database carrying no token, so `auth.uid()` was null
+    // and the row was refused by a rule doing its job.
+    //
+    // Saying so is right; signing them out here was not. The answer arrives a
+    // second or two after the page has drawn, so the header emptied and
+    // filled again on every navigation — which is the same flicker this cache
+    // exists to prevent, only worse, because now it looked like being logged
+    // out. So the local session is left alone, `authId` stays null, and the
+    // bar says the session ended with the way back to it. Writes will refuse
+    // themselves with that same explanation rather than a Postgres sentence.
+    if (!id && bootSession && Store.currentId() === bootSession) sessionGone();
     if (id) {
       Store.signIn(id);
       // Store.signIn announces a store change, which redraws pages but not the

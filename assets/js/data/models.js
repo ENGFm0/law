@@ -290,11 +290,38 @@
   function quoteLive(q) {
     return !!q && q.status === "open" && q.expiresAt > Date.now();
   }
-  /** The brief this client is currently watching — the newest one they have
-      not cleared. One at a time, which is what the screen shows. */
+  /** Every brief this client has posted, newest first. */
+  function quotesForClient(clientId) {
+    return quotes().filter(function (q) { return q.clientId === clientId; })
+      .sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+  }
+
+  /** Where a brief stands, worked out rather than trusted. A window that ran
+      out while nobody had the page open is over whatever the stored status
+      still says — the clock that closes it lives in a browser, and browsers
+      get closed. */
+  function quoteState(q) {
+    if (!q) return "cancelled";
+    if (q.status === "accepted" || q.status === "cancelled") return q.status;
+    return q.expiresAt > Date.now() ? "open" : "expired";
+  }
+
+  /** The brief this client is currently watching — the newest one. */
   function myQuote(clientId) {
-    var mine = quotes().filter(function (q) { return q.clientId === clientId; });
-    return mine.sort(function (a, b) { return (b.at || 0) - (a.at || 0); })[0] || null;
+    return quotesForClient(clientId)[0] || null;
+  }
+
+  /** How many lawyers could have answered this brief at all: the ones whose
+      listed work matches it. A board with no bids means something different
+      when the answer is nought. */
+  function lawyersForQuote(q) {
+    if (!q) return [];
+    return listedLawyers().filter(function (l) {
+      if (l.id === q.clientId) return false;
+      return servicesOf(l.id).some(function (s) {
+        return s.typeId === q.typeId && serviceChannels(s).indexOf(q.channel) !== -1;
+      });
+    });
   }
   /** Briefs this lawyer could bid on: still open, and work they have actually
       listed through a channel the client asked for. */
@@ -850,6 +877,8 @@
     serviceType: serviceType, servicesOf: servicesOf, services: services,
     quotes: quotes, quote: quote, offersOn: offersOn, quoteLive: quoteLive,
     myQuote: myQuote, openQuotesFor: openQuotesFor, quotePrice: quotePrice,
+    quotesForClient: quotesForClient, quoteState: quoteState,
+    lawyersForQuote: lawyersForQuote,
     channels: channels, channel: channel, channelsFor: channelsFor,
     serviceChannels: serviceChannels, isLive: isLive,
     priceBand: priceBand, checkPrice: checkPrice,

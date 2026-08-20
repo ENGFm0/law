@@ -177,11 +177,19 @@ section('A SESSION THE SERVER NO LONGER HOLDS');
   // that produced "new row violates row-level security policy" — every read
   // went through because most of them are public, and the first write went
   // out with no token on it.
-  const { S } = boot({ session: 'someone' });
+  const { S, fake } = boot({ session: 'someone' });
   ok('the browser starts out believing it', S.currentId() === 'someone');
   await flush(); await flush();
-  ok('and the store gives that up when the provider says no', S.currentId() === null);
-  ok('nobody is left in the cache to draw as signed in', S.signups().length === 0);
+  // The local session is deliberately left alone. Clearing it here emptied
+  // and refilled the header on every navigation, which reads as being logged
+  // out and back in — the exact flicker the remembered profile exists to
+  // prevent. What changes is that nothing is addressed to a session that
+  // does not exist.
+  ok('the page is not torn down under whoever is reading it', S.currentId() === 'someone');
+  ok('but the server-side identity is known to be missing', S.authId() === null);
+  const refused = S.addOffer({ quoteId: 'q1', lawyer: 'someone', price: 100 });
+  ok('and a write is refused here rather than by the database', refused === false);
+  ok('with nothing sent', !fake.lastTo('offers'));
 }
 {
   const { S } = boot({ authId: 'auth-1' });
@@ -205,6 +213,7 @@ section('A WRITE IS ADDRESSED WITH THE ID THE SERVER WILL CHECK');
 section('THE CATALOGUE AND THE AUCTION COME BACK AS OBJECTS');
 {
   const { S, fake } = boot({
+    authId: 'l2',
     types: [{ id: 'company', title_ar: 'تأسيس شركة', title_en: 'Company formation',
               meta_ar: 'من الصفر', icon: 'briefcase', channels: ['text', 'video'],
               sort: 70, active: true }],

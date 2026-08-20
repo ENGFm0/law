@@ -502,6 +502,9 @@
        and created nothing. It is a list now, and on the remote backend it is
        a pair of tables, so the two sides of an auction are looking at the
        same thing. */
+    /* Nothing to fetch: this backend is the only copy there is. Defined so
+       the page can ask without knowing which backend it is talking to. */
+    refreshAuction: function () { return Promise.resolve(); },
     quotes: function () { return work.quotes; },
     quote: function (id) {
       for (var i = 0; i < work.quotes.length; i++) {
