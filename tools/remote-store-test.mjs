@@ -32,6 +32,9 @@ function makeFake() {
   const tables = {
     profiles: [], requests: [], services: [], articles: [],
     reviews: [], comments: [], endorsements: [], agreements: [], applications: [],
+    notifications: [], disputes: [], audit_log: [], price_bands: [],
+    announcements: [], subscriptions: [], operating_costs: [], partners: [],
+    service_types: [], quotes: [], offers: [],
   };
   const client = {
     from(table) {
@@ -66,7 +69,18 @@ function boot(rows = {}) {
     getItem: (k) => (m.has(k) ? m.get(k) : null),
     setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) }; };
   w.localStorage = mem(); w.sessionStorage = mem();
-  w.document = { dispatchEvent() {}, addEventListener() {} };
+  // Enough of a DOM for the one thing the store draws itself: the bar that
+  // names a table the database refused to hand over.
+  const node = () => ({
+    className: '', textContent: '', type: '',
+    setAttribute() {}, appendChild() {}, addEventListener() {},
+    querySelector: () => node(),
+  });
+  w.document = {
+    dispatchEvent() {}, addEventListener() {},
+    querySelector: () => null, createElement: node, body: node(),
+    documentElement: node(),
+  };
   w.CustomEvent = class { constructor(t) { this.type = t; } };
   w.console = console;
 
@@ -74,6 +88,7 @@ function boot(rows = {}) {
     read('assets/js/core/store.js'))(w, w.document, w.localStorage, w.sessionStorage, w.CustomEvent);
 
   const fake = makeFake();
+  let hydrated = 0;
   w.SB = {
     configured: () => true,
     load: () => Promise.resolve(fake.client),
@@ -82,13 +97,30 @@ function boot(rows = {}) {
       const f = (v) => (v && typeof v === 'object' ? (v.ar || v.en || null) : (v ?? null));
       return { full_name: f(d.name), phone: d.phone || null, bio: f(d.bio) };
     },
-    hydrate: () => Promise.resolve({
-      profiles: rows.profiles || [], services: rows.services || [],
-      requests: rows.requests || [], articles: rows.articles || [],
-      reviews: [], comments: [], endorsements: [], agreements: rows.agreements || [],
-      disputes: rows.disputes || [], notices: rows.notices || [],
-      audit: rows.audit || [], settings: rows.settings || null,
-    }),
+    hydrate: () => {
+      hydrated++;
+      // What the 500 looked like from in here: the read did not come back
+      // empty, it did not come back at all.
+      if (rows.failFrom && hydrated >= rows.failFrom) {
+        return Promise.resolve({
+          profiles: null, services: null, requests: null, articles: null,
+          reviews: null, comments: null, endorsements: null, agreements: null,
+          disputes: null, notices: null, audit: null, settings: null,
+          types: null, quotes: null, offers: null, bands: null,
+          errors: [{ table: 'profiles', code: '42P17',
+                     message: 'infinite recursion detected in policy for relation "profiles"' }],
+        });
+      }
+      return Promise.resolve({
+        profiles: rows.profiles || [], services: rows.services || [],
+        requests: rows.requests || [], articles: rows.articles || [],
+        reviews: [], comments: [], endorsements: [], agreements: rows.agreements || [],
+        disputes: rows.disputes || [], notices: rows.notices || [],
+        audit: rows.audit || [], settings: rows.settings || null,
+        types: rows.types || [], quotes: rows.quotes || [], offers: rows.offers || [],
+        errors: rows.errors || [],
+      });
+    },
   };
 
   new Function('window', 'document', 'localStorage', 'sessionStorage', 'console',
@@ -121,6 +153,74 @@ section('HYDRATION MAPS COLUMNS TO THE SHAPES PAGES EXPECT');
   const g = S.agreements()[0];
   ok('an agreement maps both parties', g.lawyerId === 'l1' && g.internId === 'i1');
   ok('and its amount', g.amount === 800 && g.cases === 5);
+}
+
+section('A READ THAT FAILED IS NOT A READ THAT CAME BACK EMPTY');
+{
+  const { S } = boot({
+    profiles: [{ id: 'p1', full_name: 'اسم', roles: ['client'] }],
+    requests: [{ id: 'r1', client_id: 'p1', type_id: 'consult', title: 't', price: '10' }],
+    failFrom: 2,
+  });
+  await S.hydrate();
+  ok('a good read fills the cache', S.signups().length === 1 && S.requests().length === 1);
+  await S.hydrate();
+  ok('a failing read does not empty it', S.signups().length === 1, S.signups());
+  ok('nor anything else on the page', S.requests().length === 1);
+}
+
+section('THE CATALOGUE AND THE AUCTION COME BACK AS OBJECTS');
+{
+  const { S, fake } = boot({
+    types: [{ id: 'company', title_ar: 'تأسيس شركة', title_en: 'Company formation',
+              meta_ar: 'من الصفر', icon: 'briefcase', channels: ['text', 'video'],
+              sort: 70, active: true }],
+    quotes: [{ id: 'q1', client_id: 'c1', type_id: 'consult', channel: 'text',
+               brief: 'سؤال', status: 'open', expires_at: '2030-01-01T00:00:00Z',
+               created_at: '2026-01-01T00:00:00Z' }],
+    offers: [{ id: 'o1', quote_id: 'q1', lawyer_id: 'l1', price: '250.00', eta: 6,
+               auto: true, created_at: '2026-01-01T00:00:00Z' }],
+  });
+  await S.hydrate();
+  const t = S.types()[0];
+  ok('a category carries both languages', t.title.ar === 'تأسيس شركة' && t.title.en === 'Company formation');
+  ok('and the channels it allows', t.channels.length === 2);
+  const q = S.quotes()[0];
+  ok('a brief maps its columns', q.clientId === 'c1' && q.typeId === 'consult');
+  ok('and its deadline is a number', typeof q.expiresAt === 'number');
+  const o = S.offersOn('q1')[0];
+  ok('an offer maps to the lawyer who made it', o.lawyer === 'l1' && o.price === 250);
+  ok('and says it was made automatically', o.auto === true);
+
+  S.addOffer({ quoteId: 'q1', lawyer: 'l2', price: 300, eta: 3 });
+  await flush();
+  const wrote = fake.lastTo('offers');
+  ok('a bid is written as a row', wrote.op === 'insert' && wrote.row.lawyer_id === 'l2');
+  ok('and shows on the board before the round trip', S.offersOn('q1').length === 2);
+
+  S.setQuote('q1', { status: 'accepted', acceptedBy: 'l1' });
+  await flush();
+  const closed = fake.lastTo('quotes');
+  ok('closing it is an update, not an insert', closed.op === 'update');
+  ok('carrying the winner', closed.row.accepted_by === 'l1' && closed.row.status === 'accepted');
+
+  S.addType({ id: 'x', title: { ar: 'أ', en: 'B' }, channels: ['text'], active: true });
+  await flush();
+  const cat = fake.lastTo('service_types');
+  ok('a category is written flat', cat.row.title_ar === 'أ' && cat.row.title_en === 'B');
+}
+
+section('A REQUEST REPORTS THE ID THE DATABASE GAVE IT');
+{
+  const { S } = boot();
+  await S.hydrate();
+  let landed = null;
+  S.addRequest({ clientId: 'c1', lawyerId: 'l1', typeId: 'consult', price: 200 },
+               (saved) => { landed = saved; });
+  await flush();
+  ok('the callback runs once the row exists', landed !== null);
+  ok('with the server id, not the placeholder',
+     landed && /^srv-/.test(landed.id), landed && landed.id);
 }
 
 section('THE ROW IS THE STATE — NO OVERLAY');

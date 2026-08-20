@@ -86,11 +86,12 @@
     revision: "notice.revision", disputed: "notice.disputed",
     resolved: "notice.resolved", routed: "notice.routed", opened: "notice.opened",
     offer: "notice.offer", rated: "notice.rated", approved: "notice.approved",
-    rejected: "notice.rejected", signed: "notice.signed"
+    rejected: "notice.rejected", signed: "notice.signed",
+    quote: "notice.quote", won: "notice.won"
   };
   var NOTICE_HREF = {
     offer: "quotes.html", approved: "account.html", rejected: "account.html",
-    signed: "blog.html"
+    signed: "blog.html", quote: "quotes.html"
   };
 
   function bell() {

@@ -88,6 +88,10 @@ Pages.define("requests", function (global) {
               : "");
       }
     }) +
+    // On the row itself, not behind "open details". Both sides asked the same
+    // question about an agreed piece of work — where has it got to — and
+    // answering it should not require finding a button first.
+    '<div class="track-slot">' + C.progress(r, "client") + "</div>" +
     (open === r.id ? clientDetail(r, st, lawyer) : "") + "</div>";
   }
 
@@ -99,7 +103,6 @@ Pages.define("requests", function (global) {
           "<div>" + C.personLink(lawyer) + "</div></div></div>" +
         '<button class="icon-btn" type="button" data-detail-close>' + Icons.svg("close", "icon-sm") + "</button>" +
       "</div>" +
-      C.progress(r, "client") +
       '<h3 class="subtitle" style="margin-top:var(--s-5)" data-i18n="req.deliverable"></h3>' +
       (st.body
         ? '<pre class="draft-text" style="min-height:auto" readonly>' + esc(st.body) + "</pre>"
@@ -339,6 +342,7 @@ Pages.define("requests", function (global) {
                     esc(I18N.t("common.sar")) + "</strong>" +
                   '<div class="inbox-row__actions">' + lawyerActions(r) + "</div>" +
                 "</div></div>" +
+              '<div class="track-slot">' + C.progress(r, "lawyer") + "</div>" +
               (open === r.id
                 ? (M.requestState(r).status === "open_to_interns" && !M.requestState(r).assignedTo
                     ? applicantsPanel(r)
@@ -396,7 +400,6 @@ Pages.define("requests", function (global) {
             (r.ai ? ' <span class="dot"></span> ' + esc(I18N.t("ai.aiSource")) : "") + "</p></div>" +
         '<button class="icon-btn" type="button" data-draft-close>' + Icons.svg("close", "icon-sm") + "</button>" +
       "</div>" +
-      '<div style="padding:var(--s-5) var(--s-5) 0">' + C.progress(r, "lawyer") + "</div>" +
       (r.ai ? '<p class="disclaimer" style="border-top:0">' + Icons.svg("lock", "icon-sm") +
         "<span>" + esc(I18N.t("inbox.aiHidden")) + "</span></p>" : "") +
       '<textarea class="draft-text" data-draft-body spellcheck="false">' + esc(body) + "</textarea>" +

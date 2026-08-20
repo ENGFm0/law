@@ -27,6 +27,7 @@ Pages.define("admin", function (global) {
     { id: "requests", key: "adm.tabRequests", icon: "inbox" },
     { id: "money",    key: "adm.tabMoney",    icon: "wallet" },
     { id: "ads",      key: "adm.tabAds",      icon: "bell" },
+    { id: "catalogue",key: "admin.tabCat",    icon: "tag" },
     { id: "settings", key: "adm.tabSettings", icon: "settings" }
   ];
 
@@ -449,6 +450,74 @@ Pages.define("admin", function (global) {
   }
 
   /* ============================================================== settings */
+  /* ============================================================= catalogue
+     What a lawyer is allowed to offer to do. This used to be six entries
+     compiled into the page, so the platform could not add a kind of work
+     without a release — and the one thing a legal marketplace does as it
+     grows is add kinds of work. */
+  function catalogue() {
+    var all = M.allServiceTypes();
+    var chans = M.channels();
+
+    var row = function (t) {
+      var band = M.priceBand(t.id);
+      return '<div class="card card--pad" style="margin-bottom:var(--s-3)">' +
+        '<div class="row between wrap gap-3">' +
+          "<div><strong>" + esc(tx(t.title)) + "</strong>" +
+            '<p class="tiny muted" style="margin-top:var(--s-1)">' + esc(t.id) +
+              ' <span class="dot"></span> <span class="num">' + I18N.num(band.min) + "</span>–" +
+              '<span class="num">' + I18N.num(band.max) + "</span> " +
+              esc(I18N.t("common.sar")) + "</p></div>" +
+          '<span class="row gap-2 wrap">' +
+            '<span class="status' + (t.active === false ? "" : " status--ok") + '">' +
+              esc(I18N.t(t.active === false ? "admin.catHidden" : "admin.catShown")) + "</span>" +
+            '<button class="btn btn--ghost btn--sm" type="button" data-cat-toggle="' + esc(t.id) + '">' +
+              esc(I18N.t(t.active === false ? "admin.catShown" : "admin.catHidden")) + "</button>" +
+            '<button class="btn btn--ghost btn--sm" type="button" data-cat-remove="' + esc(t.id) + '">' +
+              esc(I18N.t("adm.remove")) + "</button>" +
+          "</span></div>" +
+        '<div class="row gap-2 wrap" style="margin-top:var(--s-3)">' +
+          chans.map(function (c) {
+            var on = (t.channels || []).indexOf(c.id) !== -1;
+            return '<label class="chip' + (on ? " is-active" : "") + '">' +
+              '<input type="checkbox" style="margin-inline-end:var(--s-2)"' + (on ? " checked" : "") +
+              ' data-cat-channel="' + esc(t.id) + '" value="' + esc(c.id) + '">' +
+              esc(tx(c.title)) + "</label>";
+          }).join("") +
+        "</div></div>";
+    };
+
+    return head("admin.catTitle", "admin.catLead") +
+      '<div style="margin-bottom:var(--s-8)">' + all.map(row).join("") + "</div>" +
+
+      '<section class="card card--pad">' +
+        '<h3 class="subtitle" data-i18n="admin.catAdd"></h3>' +
+        '<div class="grid grid-2" style="gap:var(--s-4);margin-top:var(--s-4)">' +
+          '<label class="field"><span class="label" data-i18n="admin.catName"></span>' +
+            '<input class="input" data-cat-ar></label>' +
+          '<label class="field"><span class="label" data-i18n="admin.catNameEn"></span>' +
+            '<input class="input" dir="ltr" data-cat-en></label>' +
+          '<label class="field"><span class="label" data-i18n="admin.catId"></span>' +
+            '<input class="input" dir="ltr" data-cat-id></label>' +
+          '<label class="field"><span class="label" data-i18n="admin.catMeta"></span>' +
+            '<input class="input" data-cat-meta></label>' +
+          num("adm.min", "data-cat-min", 100, 0) +
+          num("adm.max", "data-cat-max", 1000, 0) +
+        "</div>" +
+        '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="admin.catIdHint"></p>' +
+        '<span class="label" style="margin-top:var(--s-4);display:block" data-i18n="admin.catChannels"></span>' +
+        '<div class="row gap-2 wrap" style="margin-top:var(--s-2)">' +
+          chans.map(function (c) {
+            return '<label class="chip"><input type="checkbox" checked value="' + esc(c.id) +
+              '" style="margin-inline-end:var(--s-2)" data-cat-new-channel>' +
+              esc(tx(c.title)) + "</label>";
+          }).join("") +
+        "</div>" +
+        '<button class="btn btn--primary" style="margin-top:var(--s-5)" type="button" data-cat-save>' +
+          esc(I18N.t("admin.catAdd")) + "</button>" +
+      "</section>";
+  }
+
   function num(labelKey, attr, value, min, max, step) {
     return '<label class="field"><span class="label" data-i18n="' + labelKey + '"></span>' +
       '<input class="input" type="number"' +
@@ -515,7 +584,8 @@ Pages.define("admin", function (global) {
   var ACT = { approve: "admin.actApprove", reject: "admin.actReject",
               resolve: "admin.actResolve", settings: "admin.actSettings",
               feature: "adm.feature", ai: "adm.aiOff", ad: "adm.ads",
-              cost: "adm.costs", partner: "adm.partners", band: "adm.bands" };
+              cost: "adm.costs", partner: "adm.partners", band: "adm.bands",
+              catalogue: "admin.catTitle" };
 
   function record() {
     var log = Store.audit().slice(0, 40);
@@ -536,7 +606,7 @@ Pages.define("admin", function (global) {
 
   /* =============================================================== render */
   var VIEWS = { overview: overview, people: people, requests: requests,
-                money: money, ads: ads, settings: settings };
+                money: money, ads: ads, catalogue: catalogue, settings: settings };
 
   App.onRender(function () {
     if (!Session.is("staff")) { host.innerHTML = denied(); I18N.apply(host); return; }
@@ -567,6 +637,19 @@ Pages.define("admin", function (global) {
 
   host.addEventListener("input", function (ev) {
     if (ev.target.matches("[data-search]")) { query = ev.target.value.trim(); App.rerender(); }
+  });
+
+  // Which channels a category allows. Ticking one is the whole edit — there
+  // is no save button, because a half-saved catalogue is worse than none.
+  host.addEventListener("change", function (ev) {
+    var box = ev.target.closest("[data-cat-channel]");
+    if (!box || !Session.is("staff")) return;
+    var id = box.getAttribute("data-cat-channel");
+    var picked = $$('[data-cat-channel="' + id + '"]', host)
+      .filter(function (b) { return b.checked; })
+      .map(function (b) { return b.value; });
+    if (!picked.length) { App.toast(I18N.t("admin.catNeed"), "alert"); box.checked = true; return; }
+    Store.setType(id, { channels: picked });
   });
 
   host.addEventListener("click", function (ev) {
@@ -706,6 +789,51 @@ Pages.define("admin", function (global) {
     }
     var da = hit("data-del-ad");
     if (da) { Store.removeAnnouncement(da); return; }
+
+    /* --- the catalogue --- */
+    if (t.closest("[data-cat-save]")) {
+      var id = val("[data-cat-id]").toLowerCase().replace(/[^a-z0-9_-]/g, "");
+      var ar = val("[data-cat-ar]"), en = val("[data-cat-en]");
+      if (!id || !ar) { App.toast(I18N.t("admin.catNeed"), "alert"); return; }
+      if (M.serviceType(id)) { App.toast(I18N.t("admin.catNeed"), "alert"); return; }
+      var picked = $$("[data-cat-new-channel]", host)
+        .filter(function (b) { return b.checked; })
+        .map(function (b) { return b.value; });
+      var min = +val("[data-cat-min]") || 0;
+      var max = +val("[data-cat-max]") || 0;
+      // The band goes in first. A category with no band is one a lawyer
+      // cannot price anything under, so it would appear in the picker and
+      // refuse every number typed into it.
+      Store.setBand(id, { min: min, max: Math.max(min, max) });
+      Store.addType({
+        id: id, icon: "tag", active: true,
+        title: { ar: ar, en: en || ar },
+        meta: { ar: val("[data-cat-meta]"), en: val("[data-cat-meta]") },
+        channels: picked.length ? picked : ["text"],
+        sort: (M.allServiceTypes().length + 1) * 10,
+      });
+      Store.log({ action: "catalogue", byId: me.id, subject: ar });
+      App.toast(I18N.t("admin.catAdded"), "check");
+      return;
+    }
+    var ct = hit("data-cat-toggle");
+    if (ct) {
+      var cur = M.serviceType(ct);
+      Store.setType(ct, { active: !(cur && cur.active !== false) });
+      Store.log({ action: "catalogue", byId: me.id, subject: tx((cur || {}).title || {}) });
+      return;
+    }
+    var cr = hit("data-cat-remove");
+    if (cr) {
+      // Refused by the database when anything is sold under it, and the
+      // message says so rather than the row quietly coming back.
+      var used = M.services().some(function (sv) { return sv.typeId === cr; }) ||
+                 M.requests().some(function (rq) { return rq.typeId === cr; });
+      if (used) { App.toast(I18N.t("admin.catInUse"), "alert"); return; }
+      Store.removeType(cr);
+      Store.log({ action: "catalogue", byId: me.id, subject: cr });
+      return;
+    }
 
     /* --- settings --- */
     if (t.closest("[data-save-settings]")) {

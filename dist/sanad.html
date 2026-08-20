@@ -518,6 +518,10 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   background: var(--surface-2); border: 1px solid var(--border);
 }
 .track--held { background: var(--warning-soft); border-color: var(--warning); }
+/* On a row rather than in a panel: tucked under the request it belongs to,
+   quieter than the card above it so the list still reads as a list. */
+.track-slot { margin: calc(var(--s-2) * -1) 0 var(--s-4); padding-inline: var(--s-3); }
+.track-slot .track { background: transparent; border-style: dashed; padding: var(--s-4); }
 .track__steps {
   display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
   margin-top: var(--s-5); list-style: none;
@@ -1546,7 +1550,7 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 
 <script>window.__SPA__ = true;
 window.__ASSETS__ = {"cover-contracts.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Contracts%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22ct%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%2322375c%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23ct)%22%2F%3E%0A%20%20%3Cg%20transform%3D%22rotate(-8%20400%20225)%22%3E%0A%20%20%20%20%3Crect%20x%3D%22250%22%20y%3D%2280%22%20width%3D%22300%22%20height%3D%22300%22%20rx%3D%2212%22%20fill%3D%22%23f3f6ff%22%20opacity%3D%22.95%22%2F%3E%0A%20%20%20%20%3Cg%20stroke%3D%22%238b93a7%22%20stroke-width%3D%227%22%20stroke-linecap%3D%22round%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M290%20140%20h180%20M290%20180%20h220%20M290%20220%20h150%20M290%20260%20h200%22%2F%3E%0A%20%20%20%20%3C%2Fg%3E%0A%20%20%20%20%3Cpath%20d%3D%22M300%20320%20c30%20-30%2060%2020%2090%20-10%20s60%20-40%20100%2010%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Ccircle%20cx%3D%22660%22%20cy%3D%22360%22%20r%3D%2256%22%20fill%3D%22%23c8912a%22%20opacity%3D%22.25%22%2F%3E%0A%3C%2Fsvg%3E%0A","cover-corporate.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Corporate%20governance%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22cg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%230f172a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%231e3a5f%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23cg)%22%2F%3E%0A%20%20%3Cg%20fill%3D%22%23ffffff%22%20opacity%3D%22.07%22%3E%0A%20%20%20%20%3Crect%20x%3D%2260%22%20y%3D%22180%22%20width%3D%2290%22%20height%3D%22270%22%2F%3E%3Crect%20x%3D%22170%22%20y%3D%22120%22%20width%3D%2270%22%20height%3D%22330%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22260%22%20y%3D%22220%22%20width%3D%22110%22%20height%3D%22230%22%2F%3E%3Crect%20x%3D%22390%22%20y%3D%2290%22%20width%3D%2280%22%20height%3D%22360%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22490%22%20y%3D%22170%22%20width%3D%22100%22%20height%3D%22280%22%2F%3E%3Crect%20x%3D%22610%22%20y%3D%22130%22%20width%3D%2260%22%20height%3D%22320%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22690%22%20y%3D%22230%22%20width%3D%2280%22%20height%3D%22220%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20fill%3D%22%23c8912a%22%20opacity%3D%22.85%22%3E%0A%20%20%20%20%3Crect%20x%3D%22182%22%20y%3D%22150%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22204%22%20y%3D%22150%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22182%22%20y%3D%22180%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22204%22%20y%3D%22210%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22402%22%20y%3D%22120%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22424%22%20y%3D%22150%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22402%22%20y%3D%22200%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22446%22%20y%3D%22120%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22502%22%20y%3D%22200%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22546%22%20y%3D%22240%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22622%22%20y%3D%22160%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%3Crect%20x%3D%22644%22%20y%3D%22200%22%20width%3D%2210%22%20height%3D%2210%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cpath%20d%3D%22M0%20380%20L800%20300%20L800%20450%20L0%20450%20Z%22%20fill%3D%22%23060c18%22%20opacity%3D%22.55%22%2F%3E%0A%3C%2Fsvg%3E%0A","cover-family.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Family%20law%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22fm%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23183050%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230d1e38%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23fm)%22%2F%3E%0A%20%20%3Cg%20fill%3D%22none%22%20stroke%3D%22%23e8eefc%22%20stroke-width%3D%225%22%20opacity%3D%22.7%22%3E%0A%20%20%20%20%3Crect%20x%3D%22230%22%20y%3D%22120%22%20width%3D%22210%22%20height%3D%22270%22%20rx%3D%2210%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M265%20175%20h140%20M265%20215%20h140%20M265%20255%20h100%20M265%20295%20h120%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20fill%3D%22%23c8912a%22%20opacity%3D%22.9%22%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22520%22%20cy%3D%22215%22%20r%3D%2246%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%2210%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22580%22%20cy%3D%22215%22%20r%3D%2246%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%2210%22%20opacity%3D%22.6%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Ccircle%20cx%3D%22140%22%20cy%3D%22330%22%20r%3D%2270%22%20fill%3D%22%23c8912a%22%20opacity%3D%22.18%22%2F%3E%0A%3C%2Fsvg%3E%0A","cover-ip.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Intellectual%20property%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22ip%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%230b1b3a%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23132a52%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23ip)%22%2F%3E%0A%20%20%3Cg%20stroke%3D%22%234f7fd4%22%20stroke-width%3D%221.5%22%20opacity%3D%22.35%22%20fill%3D%22none%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M0%2090%20H800%20M0%20180%20H800%20M0%20270%20H800%20M0%20360%20H800%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M100%200%20V450%20M250%200%20V450%20M400%200%20V450%20M550%200%20V450%20M700%200%20V450%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20fill%3D%22%234f7fd4%22%20opacity%3D%22.55%22%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22100%22%20cy%3D%22180%22%20r%3D%225%22%2F%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%2290%22%20r%3D%225%22%2F%3E%3Ccircle%20cx%3D%22400%22%20cy%3D%22270%22%20r%3D%225%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%22550%22%20cy%3D%22180%22%20r%3D%225%22%2F%3E%3Ccircle%20cx%3D%22700%22%20cy%3D%22360%22%20r%3D%225%22%2F%3E%3Ccircle%20cx%3D%22250%22%20cy%3D%22360%22%20r%3D%225%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20transform%3D%22translate(400%20225)%22%3E%0A%20%20%20%20%3Crect%20x%3D%22-56%22%20y%3D%22-14%22%20width%3D%22112%22%20height%3D%2290%22%20rx%3D%2210%22%20fill%3D%22%23c8912a%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M-30%20-14%20v-26%20a30%2030%200%200%201%2060%200%20v26%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%2214%22%2F%3E%0A%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%2226%22%20r%3D%2210%22%20fill%3D%22%230b1b3a%22%2F%3E%3Crect%20x%3D%22-4%22%20y%3D%2226%22%20width%3D%228%22%20height%3D%2222%22%20fill%3D%22%230b1b3a%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A","cover-labour.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Labour%20law%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22lb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2312233f%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b1729%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23lb)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22690%22%20cy%3D%22380%22%20r%3D%2270%22%20fill%3D%22%23c8912a%22%20opacity%3D%22.16%22%2F%3E%0A%20%20%3Cg%20transform%3D%22translate(400%20235)%22%3E%0A%20%20%20%20%3Cg%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%228%22%20stroke-linecap%3D%22round%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M-150%2060%20h300%22%2F%3E%3Cpath%20d%3D%22M0%20-110%20v170%22%2F%3E%0A%20%20%20%20%3C%2Fg%3E%0A%20%20%20%20%3Cg%20fill%3D%22none%22%20stroke%3D%22%23e8eefc%22%20stroke-width%3D%226%22%20opacity%3D%22.85%22%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M-120%20-70%20h240%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M-120%20-70%20l-40%2070%20h80%20z%22%2F%3E%3Cpath%20d%3D%22M120%20-70%20l-40%2070%20h80%20z%22%2F%3E%0A%20%20%20%20%3C%2Fg%3E%0A%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%22-110%22%20r%3D%2212%22%20fill%3D%22%23c8912a%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22-70%22%20y%3D%2260%22%20width%3D%22140%22%20height%3D%2216%22%20rx%3D%226%22%20fill%3D%22%23c8912a%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A","cover-realestate.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20800%20450%22%20role%3D%22img%22%20aria-label%3D%22Real%20estate%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22re%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231b3a5c%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230c1c30%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22800%22%20height%3D%22450%22%20fill%3D%22url(%23re)%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22640%22%20cy%3D%22110%22%20r%3D%2252%22%20fill%3D%22%23c8912a%22%20opacity%3D%22.35%22%2F%3E%0A%20%20%3Cg%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222%22%20fill%3D%22none%22%20opacity%3D%22.22%22%3E%0A%20%20%20%20%3Cpath%20d%3D%22M120%20300%20L240%20220%20L360%20300%20L360%20420%20L120%20420%20Z%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M180%20420%20L180%20350%20L230%20350%20L230%20420%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M400%20340%20L500%20275%20L600%20340%20L600%20420%20L400%20420%20Z%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Cg%20fill%3D%22%23c8912a%22%20opacity%3D%22.6%22%3E%0A%20%20%20%20%3Crect%20x%3D%22265%22%20y%3D%22315%22%20width%3D%2226%22%20height%3D%2226%22%2F%3E%3Crect%20x%3D%22265%22%20y%3D%22360%22%20width%3D%2226%22%20height%3D%2226%22%2F%3E%0A%20%20%20%20%3Crect%20x%3D%22430%22%20y%3D%22360%22%20width%3D%2224%22%20height%3D%2224%22%2F%3E%3Crect%20x%3D%22540%22%20y%3D%22360%22%20width%3D%2224%22%20height%3D%2224%22%2F%3E%0A%20%20%3C%2Fg%3E%0A%20%20%3Crect%20x%3D%220%22%20y%3D%22418%22%20width%3D%22800%22%20height%3D%2232%22%20fill%3D%22%23060c18%22%20opacity%3D%22.6%22%2F%3E%0A%20%20%3Cg%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223%22%20opacity%3D%22.8%22%3E%3Cpath%20d%3D%22M60%20130%20L60%20200%20M60%20130%20L140%20130%22%2F%3E%3C%2Fg%3E%0A%3C%2Fsvg%3E%0A","favicon.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Sanad%22%3E%0A%20%20%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2260%22%20height%3D%2260%22%20rx%3D%2214%22%20fill%3D%22none%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M32%2014%20v34%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M16%2022%20h32%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M16%2022%20l-7%2013%20h14%20z%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M48%2022%20l-7%2013%20h14%20z%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2050%20h16%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2214%22%20r%3D%223.6%22%20fill%3D%22%23c8912a%22%2F%3E%0A%3C%2Fsvg%3E%0A","logo.svg":"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%20role%3D%22img%22%20aria-label%3D%22Sanad%22%3E%0A%20%20%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%2260%22%20height%3D%2260%22%20rx%3D%2214%22%20fill%3D%22none%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M32%2014%20v34%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M16%2022%20h32%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M16%2022%20l-7%2013%20h14%20z%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M48%2022%20l-7%2013%20h14%20z%22%20fill%3D%22none%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%223.2%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M24%2050%20h16%22%20stroke%3D%22%23c8912a%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2214%22%20r%3D%223.6%22%20fill%3D%22%23c8912a%22%2F%3E%0A%3C%2Fsvg%3E%0A"};
-window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.title","html":"<main id=\"main\" data-home></main>"},"requests":{"page":"requests","script":"requests","titleKey":"req.title","html":"<main id=\"main\" data-requests></main>"},"services":{"page":"services","script":"services","titleKey":"svc.title","html":"<main id=\"main\" data-services></main>"},"lawyers":{"page":"lawyers","script":"lawyers","titleKey":"dir.title","html":"<main id=\"main\" data-people></main>"},"lawyer":{"page":"lawyers","script":"lawyer","titleKey":"profile.title","html":"<main id=\"main\" data-profile></main>"},"intern":{"page":"lawyers","script":"intern","titleKey":"profile.internTitle","html":"<main id=\"main\" data-profile></main>"},"blog":{"page":"blog","script":"blog","titleKey":"blog.title","html":"<main id=\"main\" data-blog></main>"},"article":{"page":"blog","script":"article","titleKey":"blog.title","html":"<main id=\"main\" data-article></main>"},"editor":{"page":"blog","script":"editor","titleKey":"ed.heading","html":"<main id=\"main\" data-editor></main>"},"quotes":{"page":"quotes","script":"quotes","titleKey":"quotes.title","html":"<main id=\"main\">\n  <div class=\"container\" style=\"max-width:960px;padding-block:var(--s-8) var(--s-20)\">\n    <nav class=\"breadcrumb\">\n      <a href=\"index.html\" data-i18n=\"nav.home\"></a>\n      <span aria-hidden=\"true\">·</span>\n      <span data-i18n=\"nav.quotes\"></span>\n    </nav>\n\n    <!-- ===== the client's side: compose, only while nothing is live ===== -->\n    <section data-quote-compose hidden>\n      <header style=\"margin-bottom:var(--s-8);max-width:660px\">\n        <span class=\"eyebrow\" data-i18n=\"nav.quotes\"></span>\n        <h1 class=\"headline\" style=\"margin-top:var(--s-3)\" data-i18n=\"quotes.heading\"></h1>\n        <p class=\"lead\" data-i18n=\"quotes.lead\"></p>\n      </header>\n\n      <div class=\"quote-layout\">\n        <form class=\"card card--pad stack gap-6\" data-quote-form>\n          <div class=\"field\">\n            <label class=\"label\" for=\"q-brief\" data-i18n=\"quotes.brief\"></label>\n            <!-- Validated in JS rather than with [required]: the native bubble\n                 speaks the browser's language, not the page's. -->\n            <textarea class=\"textarea\" id=\"q-brief\"\n                      data-i18n-attr=\"placeholder:quotes.briefPlaceholder\"></textarea>\n            <p class=\"tiny faint\" data-i18n=\"quotes.briefHint\"></p>\n          </div>\n\n          <div class=\"grid grid-2\" style=\"gap:var(--s-4)\">\n            <div class=\"field\">\n              <label class=\"label\" for=\"q-city\" data-i18n=\"quotes.where\"></label>\n              <select class=\"select\" id=\"q-city\" data-quote-city></select>\n            </div>\n            <div class=\"field\">\n              <label class=\"label\" for=\"q-spec\" data-i18n=\"quotes.specialty\"></label>\n              <select class=\"select\" id=\"q-spec\" data-quote-spec></select>\n            </div>\n          </div>\n\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"quotes.how\"></span>\n            <div class=\"row gap-2 wrap\" data-quote-modes></div>\n          </div>\n\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"quotes.window\"></span>\n            <div class=\"row gap-2 wrap\" data-quote-window></div>\n          </div>\n\n          <button class=\"btn btn--accent btn--lg btn--block\" type=\"submit\" data-i18n=\"quotes.publish\"></button>\n        </form>\n\n        <aside class=\"card card--rule-navy card--pad\" style=\"align-self:start\">\n          <h2 class=\"subtitle\" data-i18n=\"quotes.privacy\"></h2>\n          <p class=\"small muted\" style=\"margin-top:var(--s-3)\" data-i18n=\"quotes.privacyBody\"></p>\n          <hr class=\"divider\">\n          <div data-quote-preview></div>\n        </aside>\n      </div>\n    </section>\n\n    <!-- ===== the live board the client watches ===== -->\n    <section data-quote-live hidden></section>\n\n    <!-- ===== the same auction seen from a lawyer's chair ===== -->\n    <section data-quote-bids hidden></section>\n  </div>\n</main>"},"assistant":{"page":"assistant","script":"assistant","titleKey":"ai.title","html":"<main id=\"main\" data-assistant></main>"},"account":{"page":"account","script":"account","titleKey":"account.title","html":"<main id=\"main\" data-account></main>"},"about":{"page":"about","script":"about","titleKey":"about.title","html":"<main id=\"main\" data-about></main>"},"login":{"page":"login","script":"login","titleKey":"auth.title","html":"<main id=\"main\">\n  <div data-signed-in-panel hidden></div>\n  <div class=\"auth\">\n    <aside class=\"auth__aside\">\n      <h2 class=\"headline\" data-i18n=\"auth.asideTitle\"></h2>\n      <p class=\"lead\" style=\"color:rgba(232,238,252,.72)\" data-i18n=\"auth.asideBody\"></p>\n      <ul class=\"stack gap-4\" data-auth-points></ul>\n    </aside>\n\n    <section class=\"auth__form\">\n      <p class=\"demo-banner\" data-demo-banner hidden></p>\n      <h1 class=\"headline\" style=\"margin-top:var(--s-6)\" data-i18n=\"auth.welcome\"></h1>\n      <p class=\"lead\" style=\"margin:var(--s-2) 0 var(--s-8)\" data-i18n=\"auth.welcomeLead\"></p>\n\n      <div data-google-slot></div>\n\n      <form class=\"stack gap-4\" data-login novalidate>\n        <label class=\"field\"><span class=\"label\" data-i18n=\"auth.email\"></span>\n          <input class=\"input\" name=\"email\" type=\"email\" autocomplete=\"email\" dir=\"ltr\"></label>\n        <label class=\"field\"><span class=\"label\" data-i18n=\"auth.password\"></span>\n          <input class=\"input\" name=\"password\" type=\"password\" autocomplete=\"current-password\"></label>\n        <p class=\"form-error\" data-login-error hidden></p>\n        <button class=\"btn btn--primary btn--lg btn--block\" type=\"submit\" data-i18n=\"auth.signIn\"></button>\n      </form>\n\n      <p class=\"center small muted\" style=\"margin-top:var(--s-6)\">\n        <span data-i18n=\"signup.noAccount\"></span>\n        <a href=\"signup.html\" style=\"color:var(--accent);font-weight:700\" data-i18n=\"auth.createAccount\"></a>\n      </p>\n\n      <div style=\"margin-top:var(--s-10)\">\n        <p class=\"small muted center\" data-i18n=\"login.tryAs\"></p>\n        <div class=\"grid grid-3\" style=\"gap:var(--s-3);margin-top:var(--s-3)\" data-demo-accounts></div>\n      </div>\n    </section>\n  </div>\n</main>"},"signup":{"page":"signup","script":"signup","titleKey":"signup.title","html":"<main id=\"main\">\n  <div data-signed-in-panel hidden></div>\n  <div class=\"container\" style=\"max-width:820px;padding-bottom:var(--s-20)\">\n    <p class=\"demo-banner\" data-demo-banner hidden></p>\n\n    <header style=\"margin:var(--s-8) 0\">\n      <h1 class=\"headline\" data-i18n=\"signup.heading\"></h1>\n      <p class=\"lead\" data-i18n=\"signup.lead\" data-signup-head></p>\n    </header>\n\n    <ol class=\"stepper\" data-stepper></ol>\n\n    <form class=\"card card--pad\" data-signup novalidate>\n      <!-- step 1: who are you -->\n      <section data-step=\"1\">\n        <h2 class=\"title\" data-i18n=\"signup.pickRole\"></h2>\n        <p class=\"small muted\" style=\"margin-top:var(--s-2)\" data-i18n=\"signup.pickRoleHint\"></p>\n        <div class=\"grid grid-3\" style=\"margin-top:var(--s-5)\" data-role-picker></div>\n      </section>\n\n      <!-- step 2: the basics everyone gives -->\n      <section data-step=\"2\" hidden>\n        <div data-google-slot></div>\n        <h2 class=\"title\" data-i18n=\"signup.basics\"></h2>\n        <div class=\"grid grid-2\" style=\"gap:var(--s-4);margin-top:var(--s-5)\">\n          <label class=\"field\"><span class=\"label\" data-i18n=\"auth.fullName\"></span>\n            <input class=\"input\" name=\"name\" autocomplete=\"name\"></label>\n          <label class=\"field\" data-signed-in-hide><span class=\"label\" data-i18n=\"auth.email\"></span>\n            <input class=\"input\" name=\"email\" type=\"email\" autocomplete=\"email\" dir=\"ltr\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"signup.phone\"></span>\n            <input class=\"input num\" name=\"phone\" type=\"tel\" inputmode=\"tel\" dir=\"ltr\" placeholder=\"05XXXXXXXX\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"home.city\"></span>\n            <select class=\"select\" name=\"city\" data-city-options></select></label>\n          <label class=\"field\" data-signed-in-hide><span class=\"label\" data-i18n=\"auth.password\"></span>\n            <input class=\"input\" name=\"password\" type=\"password\" autocomplete=\"new-password\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"signup.avatar\"></span>\n            <input class=\"input\" name=\"avatar\" type=\"file\" accept=\"image/*\"></label>\n        </div>\n        <p class=\"tiny faint\" style=\"margin-top:var(--s-2)\" data-i18n=\"signup.avatarHint\"></p>\n      </section>\n\n      <!-- step 3: proof of standing — differs by role -->\n      <section data-step=\"3\" hidden>\n        <h2 class=\"title\" data-step3-title></h2>\n        <div style=\"margin-top:var(--s-5)\" data-step3-fields></div>\n      </section>\n\n      <!-- step 4: review -->\n      <section data-step=\"4\" hidden>\n        <h2 class=\"title\" data-i18n=\"signup.review\"></h2>\n        <div style=\"margin-top:var(--s-5)\" data-review></div>\n        <label class=\"check\" style=\"margin-top:var(--s-5)\">\n          <input type=\"checkbox\" name=\"terms\"><span data-i18n=\"auth.terms\"></span></label>\n      </section>\n\n      <p class=\"form-error\" data-signup-error hidden></p>\n\n      <div class=\"row between gap-3\" style=\"margin-top:var(--s-8)\">\n        <button class=\"btn btn--outline\" type=\"button\" data-back hidden data-i18n=\"signup.back\"></button>\n        <span class=\"grow\"></span>\n        <button class=\"btn btn--primary btn--lg\" type=\"button\" data-next data-i18n=\"signup.next\"></button>\n        <button class=\"btn btn--accent btn--lg\" type=\"submit\" data-finish hidden data-i18n=\"signup.finish\"></button>\n      </div>\n    </form>\n\n    <p class=\"center small muted\" style=\"margin-top:var(--s-6)\" data-signed-in-hide>\n      <span data-i18n=\"signup.haveAccount\"></span>\n      <a href=\"login.html\" style=\"color:var(--accent);font-weight:700\" data-i18n=\"auth.signIn\"></a>\n    </p>\n  </div>\n</main>"},"call":{"page":"requests","script":"call","titleKey":"call.title","html":"<main id=\"main\" data-call></main>"},"admin":{"page":"admin","script":"admin","titleKey":"admin.title","html":"<main id=\"main\" data-admin></main>"}};
+window.__ROUTES__ = {"index":{"page":"home","script":"home","titleKey":"home.title","html":"<main id=\"main\" data-home></main>"},"requests":{"page":"requests","script":"requests","titleKey":"req.title","html":"<main id=\"main\" data-requests></main>"},"services":{"page":"services","script":"services","titleKey":"svc.title","html":"<main id=\"main\" data-services></main>"},"lawyers":{"page":"lawyers","script":"lawyers","titleKey":"dir.title","html":"<main id=\"main\" data-people></main>"},"lawyer":{"page":"lawyers","script":"lawyer","titleKey":"profile.title","html":"<main id=\"main\" data-profile></main>"},"intern":{"page":"lawyers","script":"intern","titleKey":"profile.internTitle","html":"<main id=\"main\" data-profile></main>"},"blog":{"page":"blog","script":"blog","titleKey":"blog.title","html":"<main id=\"main\" data-blog></main>"},"article":{"page":"blog","script":"article","titleKey":"blog.title","html":"<main id=\"main\" data-article></main>"},"editor":{"page":"blog","script":"editor","titleKey":"ed.heading","html":"<main id=\"main\" data-editor></main>"},"quotes":{"page":"quotes","script":"quotes","titleKey":"quotes.title","html":"<main id=\"main\">\n  <div class=\"container\" style=\"max-width:960px;padding-block:var(--s-8) var(--s-20)\">\n    <nav class=\"breadcrumb\">\n      <a href=\"index.html\" data-i18n=\"nav.home\"></a>\n      <span aria-hidden=\"true\">·</span>\n      <span data-i18n=\"nav.quotes\"></span>\n    </nav>\n\n    <!-- ===== the client's side: compose, only while nothing is live ===== -->\n    <section data-quote-compose hidden>\n      <header style=\"margin-bottom:var(--s-8);max-width:660px\">\n        <span class=\"eyebrow\" data-i18n=\"nav.quotes\"></span>\n        <h1 class=\"headline\" style=\"margin-top:var(--s-3)\" data-i18n=\"quotes.heading\"></h1>\n        <p class=\"lead\" data-i18n=\"quotes.lead\"></p>\n      </header>\n\n      <div class=\"quote-layout\">\n        <form class=\"card card--pad stack gap-6\" data-quote-form>\n          <div class=\"field\">\n            <label class=\"label\" for=\"q-brief\" data-i18n=\"quotes.brief\"></label>\n            <!-- Validated in JS rather than with [required]: the native bubble\n                 speaks the browser's language, not the page's. -->\n            <textarea class=\"textarea\" id=\"q-brief\"\n                      data-i18n-attr=\"placeholder:quotes.briefPlaceholder\"></textarea>\n            <p class=\"tiny faint\" data-i18n=\"quotes.briefHint\"></p>\n          </div>\n\n          <div class=\"grid grid-2\" style=\"gap:var(--s-4)\">\n            <div class=\"field\">\n              <label class=\"label\" for=\"q-city\" data-i18n=\"quotes.where\"></label>\n              <select class=\"select\" id=\"q-city\" data-quote-city></select>\n            </div>\n            <div class=\"field\">\n              <label class=\"label\" for=\"q-spec\" data-i18n=\"quotes.specialty\"></label>\n              <select class=\"select\" id=\"q-spec\" data-quote-spec></select>\n            </div>\n          </div>\n\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"quotes.what\"></span>\n            <div class=\"row gap-2 wrap\" data-quote-types></div>\n          </div>\n\n          <!-- The channel, narrowed to the ones the work above allows: a\n               statement of claim is written whether or not it is talked\n               through, and nothing here lets a client ask for a channel the\n               platform does not offer on that kind of work. -->\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"quotes.how\"></span>\n            <div class=\"row gap-2 wrap\" data-quote-modes></div>\n          </div>\n\n          <div class=\"field\">\n            <span class=\"label\" data-i18n=\"quotes.window\"></span>\n            <div class=\"row gap-2 wrap\" data-quote-window></div>\n          </div>\n\n          <button class=\"btn btn--accent btn--lg btn--block\" type=\"submit\" data-i18n=\"quotes.publish\"></button>\n        </form>\n\n        <aside class=\"card card--rule-navy card--pad\" style=\"align-self:start\">\n          <h2 class=\"subtitle\" data-i18n=\"quotes.privacy\"></h2>\n          <p class=\"small muted\" style=\"margin-top:var(--s-3)\" data-i18n=\"quotes.privacyBody\"></p>\n          <hr class=\"divider\">\n          <div data-quote-preview></div>\n        </aside>\n      </div>\n    </section>\n\n    <!-- ===== the live board the client watches ===== -->\n    <section data-quote-live hidden></section>\n\n    <!-- ===== the same auction seen from a lawyer's chair ===== -->\n    <section data-quote-bids hidden></section>\n  </div>\n</main>"},"assistant":{"page":"assistant","script":"assistant","titleKey":"ai.title","html":"<main id=\"main\" data-assistant></main>"},"account":{"page":"account","script":"account","titleKey":"account.title","html":"<main id=\"main\" data-account></main>"},"about":{"page":"about","script":"about","titleKey":"about.title","html":"<main id=\"main\" data-about></main>"},"login":{"page":"login","script":"login","titleKey":"auth.title","html":"<main id=\"main\">\n  <div data-signed-in-panel hidden></div>\n  <div class=\"auth\">\n    <aside class=\"auth__aside\">\n      <h2 class=\"headline\" data-i18n=\"auth.asideTitle\"></h2>\n      <p class=\"lead\" style=\"color:rgba(232,238,252,.72)\" data-i18n=\"auth.asideBody\"></p>\n      <ul class=\"stack gap-4\" data-auth-points></ul>\n    </aside>\n\n    <section class=\"auth__form\">\n      <p class=\"demo-banner\" data-demo-banner hidden></p>\n      <h1 class=\"headline\" style=\"margin-top:var(--s-6)\" data-i18n=\"auth.welcome\"></h1>\n      <p class=\"lead\" style=\"margin:var(--s-2) 0 var(--s-8)\" data-i18n=\"auth.welcomeLead\"></p>\n\n      <div data-google-slot></div>\n\n      <form class=\"stack gap-4\" data-login novalidate>\n        <label class=\"field\"><span class=\"label\" data-i18n=\"auth.email\"></span>\n          <input class=\"input\" name=\"email\" type=\"email\" autocomplete=\"email\" dir=\"ltr\"></label>\n        <label class=\"field\"><span class=\"label\" data-i18n=\"auth.password\"></span>\n          <input class=\"input\" name=\"password\" type=\"password\" autocomplete=\"current-password\"></label>\n        <p class=\"form-error\" data-login-error hidden></p>\n        <button class=\"btn btn--primary btn--lg btn--block\" type=\"submit\" data-i18n=\"auth.signIn\"></button>\n      </form>\n\n      <p class=\"center small muted\" style=\"margin-top:var(--s-6)\">\n        <span data-i18n=\"signup.noAccount\"></span>\n        <a href=\"signup.html\" style=\"color:var(--accent);font-weight:700\" data-i18n=\"auth.createAccount\"></a>\n      </p>\n\n      <div style=\"margin-top:var(--s-10)\">\n        <p class=\"small muted center\" data-i18n=\"login.tryAs\"></p>\n        <div class=\"grid grid-3\" style=\"gap:var(--s-3);margin-top:var(--s-3)\" data-demo-accounts></div>\n      </div>\n    </section>\n  </div>\n</main>"},"signup":{"page":"signup","script":"signup","titleKey":"signup.title","html":"<main id=\"main\">\n  <div data-signed-in-panel hidden></div>\n  <div class=\"container\" style=\"max-width:820px;padding-bottom:var(--s-20)\">\n    <p class=\"demo-banner\" data-demo-banner hidden></p>\n\n    <header style=\"margin:var(--s-8) 0\">\n      <h1 class=\"headline\" data-i18n=\"signup.heading\"></h1>\n      <p class=\"lead\" data-i18n=\"signup.lead\" data-signup-head></p>\n    </header>\n\n    <ol class=\"stepper\" data-stepper></ol>\n\n    <form class=\"card card--pad\" data-signup novalidate>\n      <!-- step 1: who are you -->\n      <section data-step=\"1\">\n        <h2 class=\"title\" data-i18n=\"signup.pickRole\"></h2>\n        <p class=\"small muted\" style=\"margin-top:var(--s-2)\" data-i18n=\"signup.pickRoleHint\"></p>\n        <div class=\"grid grid-3\" style=\"margin-top:var(--s-5)\" data-role-picker></div>\n      </section>\n\n      <!-- step 2: the basics everyone gives -->\n      <section data-step=\"2\" hidden>\n        <div data-google-slot></div>\n        <h2 class=\"title\" data-i18n=\"signup.basics\"></h2>\n        <div class=\"grid grid-2\" style=\"gap:var(--s-4);margin-top:var(--s-5)\">\n          <label class=\"field\"><span class=\"label\" data-i18n=\"auth.fullName\"></span>\n            <input class=\"input\" name=\"name\" autocomplete=\"name\"></label>\n          <label class=\"field\" data-signed-in-hide><span class=\"label\" data-i18n=\"auth.email\"></span>\n            <input class=\"input\" name=\"email\" type=\"email\" autocomplete=\"email\" dir=\"ltr\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"signup.phone\"></span>\n            <input class=\"input num\" name=\"phone\" type=\"tel\" inputmode=\"tel\" dir=\"ltr\" placeholder=\"05XXXXXXXX\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"home.city\"></span>\n            <select class=\"select\" name=\"city\" data-city-options></select></label>\n          <label class=\"field\" data-signed-in-hide><span class=\"label\" data-i18n=\"auth.password\"></span>\n            <input class=\"input\" name=\"password\" type=\"password\" autocomplete=\"new-password\"></label>\n          <label class=\"field\"><span class=\"label\" data-i18n=\"signup.avatar\"></span>\n            <input class=\"input\" name=\"avatar\" type=\"file\" accept=\"image/*\"></label>\n        </div>\n        <p class=\"tiny faint\" style=\"margin-top:var(--s-2)\" data-i18n=\"signup.avatarHint\"></p>\n      </section>\n\n      <!-- step 3: proof of standing — differs by role -->\n      <section data-step=\"3\" hidden>\n        <h2 class=\"title\" data-step3-title></h2>\n        <div style=\"margin-top:var(--s-5)\" data-step3-fields></div>\n      </section>\n\n      <!-- step 4: review -->\n      <section data-step=\"4\" hidden>\n        <h2 class=\"title\" data-i18n=\"signup.review\"></h2>\n        <div style=\"margin-top:var(--s-5)\" data-review></div>\n        <label class=\"check\" style=\"margin-top:var(--s-5)\">\n          <input type=\"checkbox\" name=\"terms\"><span data-i18n=\"auth.terms\"></span></label>\n      </section>\n\n      <p class=\"form-error\" data-signup-error hidden></p>\n\n      <div class=\"row between gap-3\" style=\"margin-top:var(--s-8)\">\n        <button class=\"btn btn--outline\" type=\"button\" data-back hidden data-i18n=\"signup.back\"></button>\n        <span class=\"grow\"></span>\n        <button class=\"btn btn--primary btn--lg\" type=\"button\" data-next data-i18n=\"signup.next\"></button>\n        <button class=\"btn btn--accent btn--lg\" type=\"submit\" data-finish hidden data-i18n=\"signup.finish\"></button>\n      </div>\n    </form>\n\n    <p class=\"center small muted\" style=\"margin-top:var(--s-6)\" data-signed-in-hide>\n      <span data-i18n=\"signup.haveAccount\"></span>\n      <a href=\"login.html\" style=\"color:var(--accent);font-weight:700\" data-i18n=\"auth.signIn\"></a>\n    </p>\n  </div>\n</main>"},"call":{"page":"requests","script":"call","titleKey":"call.title","html":"<main id=\"main\" data-call></main>"},"admin":{"page":"admin","script":"admin","titleKey":"admin.title","html":"<main id=\"main\" data-admin></main>"}};
 </script>
 <script>/* ==========================================================================
    Runtime configuration.
@@ -2896,6 +2900,38 @@ window.SANAD_CONFIG = {
       "adm.adPlacement": "مكان الظهور",
       "adm.placeBar": "شريط أعلى الموقع",
       "adm.placeHome": "بطاقة في الصفحة الرئيسية",
+
+      /* --- the catalogue, the auction and a read that failed --- */
+      "quotes.what": "أي عمل تحتاج؟",
+      "quotes.needType": "اختر نوع العمل أولاً.",
+      "quotes.trackTitle": "الطلب الآن في قائمة طلباتك",
+      "quotes.trackBody": "أنت والمحامي ترون الطلب نفسه، ومراحله خطوة بخطوة.",
+      "quotes.openRequest": "افتح الطلب",
+      "quotes.mine": "طلبك المفتوح",
+      "bids.auto": "قُدّم هذا العرض تلقائياً نيابة عنك",
+      "bids.autoOn": "القبول التلقائي مفعّل — تصلك العروض بسعرك المعلن.",
+      "bids.kind": "نوع العمل",
+      "bids.channel": "الطريقة",
+      "bids.openCount": "{n} طلب مفتوح",
+      "sys.dataFailed": "تعذّر تحميل بعض البيانات",
+      "admin.tabCat": "الخدمات",
+      "admin.catTitle": "أنواع العمل القانوني",
+      "admin.catLead": "ما يستطيع المحامي تقديمه، ونطاق سعره. يُضاف من هنا ويظهر للمحامين مباشرة.",
+      "admin.catName": "الاسم بالعربية",
+      "admin.catNameEn": "الاسم بالإنجليزية",
+      "admin.catMeta": "وصف مختصر",
+      "admin.catId": "المعرّف",
+      "admin.catIdHint": "حروف إنجليزية صغيرة بلا مسافات، ولا يتغيّر بعد الحفظ.",
+      "admin.catChannels": "الطرق المتاحة",
+      "admin.catAdd": "أضف نوع عمل",
+      "admin.catAdded": "أُضيف، وصار معروضاً للمحامين.",
+      "admin.catShown": "معروض",
+      "admin.catHidden": "مخفي",
+      "admin.catInUse": "لا يمكن حذف نوع مستخدم في خدمة أو طلب — أخفِه بدلاً من حذفه.",
+      "admin.catNeed": "أكمل الاسم والمعرّف.",
+      "admin.catBand": "نطاق السعر",
+      "notice.quote": "طلب جديد مفتوح للمزايدة",
+      "notice.won": "قُبل عرضك — بدأ العمل",
     },
 
     en: {
@@ -4080,6 +4116,38 @@ window.SANAD_CONFIG = {
       "adm.adPlacement": "Where it appears",
       "adm.placeBar": "A bar at the top of the site",
       "adm.placeHome": "A card on the home page",
+
+      /* --- the catalogue, the auction and a read that failed --- */
+      "quotes.what": "What do you need done?",
+      "quotes.needType": "Choose the kind of work first.",
+      "quotes.trackTitle": "The work is now in your requests",
+      "quotes.trackBody": "You and the lawyer see the same request, stage by stage.",
+      "quotes.openRequest": "Open the request",
+      "quotes.mine": "Your open brief",
+      "bids.auto": "Made automatically on your behalf",
+      "bids.autoOn": "Automatic bidding is on — briefs are answered at your listed price.",
+      "bids.kind": "Kind of work",
+      "bids.channel": "Channel",
+      "bids.openCount": "{n} open briefs",
+      "sys.dataFailed": "Some data could not be loaded",
+      "admin.tabCat": "Catalogue",
+      "admin.catTitle": "Kinds of legal work",
+      "admin.catLead": "What a lawyer may offer, and what it may cost. Added here, offered to lawyers at once.",
+      "admin.catName": "Name in Arabic",
+      "admin.catNameEn": "Name in English",
+      "admin.catMeta": "Short description",
+      "admin.catId": "Identifier",
+      "admin.catIdHint": "Lowercase latin letters, no spaces, and it does not change afterwards.",
+      "admin.catChannels": "Channels allowed",
+      "admin.catAdd": "Add a kind of work",
+      "admin.catAdded": "Added, and offered to lawyers.",
+      "admin.catShown": "Offered",
+      "admin.catHidden": "Hidden",
+      "admin.catInUse": "A kind something is already sold under cannot be deleted — hide it instead.",
+      "admin.catNeed": "Fill in the name and the identifier.",
+      "admin.catBand": "Price band",
+      "notice.quote": "A new brief is open for bids",
+      "notice.won": "Your offer was accepted — the work has started",
     }
   };
 
@@ -4235,7 +4303,8 @@ window.SANAD_CONFIG = {
     "requests", "requestStates", "services", "removedServices", "reviews",
     "articles", "articleStates", "comments", "endorsements", "applications",
     "agreements", "disputes", "audit", "profiles", "notices",
-    "announcements", "subscriptions", "costs", "partners", "bands"
+    "announcements", "subscriptions", "costs", "partners", "bands",
+    "types", "removedTypes", "quotes", "offers"
   ].forEach(function (k) {
     if (!work[k]) {
       work[k] = (k.indexOf("States") !== -1 || k === "applications" ||
@@ -4394,11 +4463,16 @@ window.SANAD_CONFIG = {
 
     /* ---------------- work created during a visit ---------------- */
     requests: function () { return work.requests; },
-    addRequest: function (r) {
+    /* `done` is called once the request exists somewhere it can be pointed
+       at. Here that is immediately; the remote backend calls it when the
+       database has given the row an id, which is the only id worth writing
+       down anywhere else. */
+    addRequest: function (r, done) {
       r.id = r.id || uid("r");
       r.createdAt = Date.now();
       work.requests.push(r);
       notify();
+      if (done) done(r);
       return r;
     },
     requestState: function (id) { return work.requestStates[id] || {}; },
@@ -4664,23 +4738,85 @@ window.SANAD_CONFIG = {
       return e;
     },
 
-    /* ---------------- quote auction (unchanged behaviour) ---------------- */
-    getQuote: function () { return work.quote || null; },
-    openQuote: function (q) { work.quote = q; notify(); return q; },
+    /* ---------------- the catalogue ----------------
+       What a lawyer can offer to do. The seed carries the six the site
+       shipped with; anything the platform adds from the console lives here
+       and, on the remote backend, in a table everyone can read. */
+    types: function () { return work.types; },
+    addType: function (t) {
+      t.id = t.id || uid("type");
+      work.types.push(t);
+      notify();
+      return t;
+    },
+    /* Editing one of the six the site shipped with writes an overlay rather
+       than changing the fixture — the same way an approved licence does. The
+       merge in models.js puts these on top. */
+    setType: function (id, changes) {
+      var found = null;
+      work.types.forEach(function (t) { if (t.id === id) found = t; });
+      if (!found) { found = { id: id }; work.types.push(found); }
+      Object.keys(changes).forEach(function (k) { found[k] = changes[k]; });
+      notify();
+    },
+    removeType: function (id) {
+      work.types = work.types.filter(function (t) { return t.id !== id; });
+      if (work.removedTypes.indexOf(id) === -1) work.removedTypes.push(id);
+      notify();
+    },
+    removedTypes: function () { return work.removedTypes; },
+
+    /* ---------------- the reverse auction ----------------
+       A brief and the offers on it. This used to be a single object in this
+       browser's sessionStorage, which meant a brief was posted to nobody: no
+       lawyer on another machine could see it, and taking an offer set a flag
+       and created nothing. It is a list now, and on the remote backend it is
+       a pair of tables, so the two sides of an auction are looking at the
+       same thing. */
+    quotes: function () { return work.quotes; },
+    quote: function (id) {
+      for (var i = 0; i < work.quotes.length; i++) {
+        if (work.quotes[i].id === id) return work.quotes[i];
+      }
+      return null;
+    },
+    openQuote: function (q) {
+      q.id = q.id || uid("q");
+      q.status = q.status || "open";
+      q.at = Date.now();
+      work.quotes.push(q);
+      notify();
+      return q;
+    },
+    setQuote: function (id, changes) {
+      var found = null;
+      work.quotes.forEach(function (q) {
+        if (q.id !== id) return;
+        found = q;
+        Object.keys(changes).forEach(function (k) { q[k] = changes[k]; });
+      });
+      notify();
+      return found;
+    },
+    offers: function () { return work.offers; },
+    offersOn: function (quoteId) {
+      return work.offers.filter(function (o) { return o.quoteId === quoteId; });
+    },
+    /** One offer per lawyer per brief, on a brief that is still open. Returns
+        whether it was taken, because the form says so either way. */
     addOffer: function (offer) {
-      if (!work.quote || work.quote.status !== "open") return false;
-      if (work.quote.offers.some(function (o) { return o.lawyer === offer.lawyer; })) return false;
-      work.quote.offers.push(offer);
+      var q = Store.quote(offer.quoteId);
+      if (!q || q.status !== "open") return false;
+      var already = work.offers.some(function (o) {
+        return o.quoteId === offer.quoteId && o.lawyer === offer.lawyer;
+      });
+      if (already) return false;
+      offer.id = offer.id || uid("off");
+      offer.at = Date.now();
+      work.offers.push(offer);
       notify();
       return true;
     },
-    setQuoteStatus: function (status, extra) {
-      if (!work.quote) return;
-      work.quote.status = status;
-      Object.keys(extra || {}).forEach(function (k) { work.quote[k] = extra[k]; });
-      notify();
-    },
-    clearQuote: function () { delete work.quote; notify(); },
 
     /* ---------------- housekeeping ---------------- */
     resetWork: function () {
@@ -4688,7 +4824,8 @@ window.SANAD_CONFIG = {
                reviews: [], articles: [], articleStates: {}, comments: [],
                endorsements: [], applications: {}, agreements: [], disputes: [],
                audit: [], profiles: {}, notices: [],
-               announcements: [], subscriptions: [], costs: [], partners: [], bands: {} };
+               announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
+               types: [], removedTypes: [], quotes: [], offers: [] };
       notify();
     },
     resetAll: function () {
@@ -5575,7 +5712,33 @@ window.SANAD_CONFIG = {
   /* ---------- services ----------
      A lawyer sets their own price, but only inside the band the platform
      publishes for that service type — decided to stop undercutting and gouging. */
-  function serviceTypes() { return SEED.serviceTypes; }
+  /** Every category the platform knows about, including the ones it has
+      stopped offering — an old service still has to be able to say what it
+      was. The seed is the starting point in the demo; on the remote backend
+      the table is the catalogue and the seed is only the fallback for a
+      database that has not had the migration run against it yet. */
+  function allServiceTypes() {
+    var extra = (Store.types && Store.types()) || [];
+    var gone = (Store.removedTypes && Store.removedTypes()) || [];
+    var base = seeded(SEED.serviceTypes);
+    if (!extra.length && !base.length) return SEED.serviceTypes;
+    var out = base.filter(function (t) { return gone.indexOf(t.id) === -1; });
+    extra.forEach(function (t) {
+      var at = -1;
+      for (var i = 0; i < out.length; i++) if (out[i].id === t.id) at = i;
+      if (at === -1) { out.push(t); return; }
+      var merged = {};
+      Object.keys(out[at]).forEach(function (k) { merged[k] = out[at][k]; });
+      Object.keys(t).forEach(function (k) { merged[k] = t[k]; });
+      out[at] = merged;
+    });
+    return out.sort(function (a, b) { return (a.sort || 100) - (b.sort || 100); });
+  }
+
+  /** The ones a lawyer may actually pick from today. */
+  function serviceTypes() {
+    return allServiceTypes().filter(function (t) { return t.active !== false; });
+  }
 
   /* ---------- how the work is delivered ----------
      The channel is not the work. A statement of claim is a statement of claim
@@ -5605,7 +5768,16 @@ window.SANAD_CONFIG = {
     var c = channel(r && r.channel);
     return !!(c && c.live);
   }
-  function serviceType(id) { return byId(SEED.serviceTypes, id); }
+  function serviceType(id) { return byId(allServiceTypes(), id); }
+
+  /** Every service on the platform, seeded and added alike. The console needs
+      it to answer one question: is anything actually sold under this
+      category? */
+  function services() {
+    var removed = Store.removedServices();
+    return seeded(SEED.services).concat(Store.services())
+      .filter(function (s) { return removed.indexOf(s.id) === -1; });
+  }
 
   function servicesOf(lawyerId) {
     var own = seeded(SEED.services).filter(function (s) { return s.ownerId === lawyerId; });
@@ -5647,6 +5819,48 @@ window.SANAD_CONFIG = {
     if (price < band.min) return "low";
     if (price > band.max) return "high";
     return null;
+  }
+
+  /* ---------- the reverse auction ----------
+     A brief is posted once and answered by whoever can take it. What a lawyer
+     is shown is decided here rather than in the page, because it is the same
+     question the row-level policy answers on the server: could this person
+     do this work? */
+  function quotes() { return (Store.quotes && Store.quotes()) || []; }
+  function quote(id) { return byId(quotes(), id); }
+  function offersOn(quoteId) {
+    return (Store.offersOn && Store.offersOn(quoteId)) || [];
+  }
+  function quoteLive(q) {
+    return !!q && q.status === "open" && q.expiresAt > Date.now();
+  }
+  /** The brief this client is currently watching — the newest one they have
+      not cleared. One at a time, which is what the screen shows. */
+  function myQuote(clientId) {
+    var mine = quotes().filter(function (q) { return q.clientId === clientId; });
+    return mine.sort(function (a, b) { return (b.at || 0) - (a.at || 0); })[0] || null;
+  }
+  /** Briefs this lawyer could bid on: still open, and work they have actually
+      listed through a channel the client asked for. */
+  function openQuotesFor(lawyerId) {
+    var mine = servicesOf(lawyerId);
+    return quotes().filter(function (q) {
+      if (!quoteLive(q)) return false;
+      if (q.clientId === lawyerId) return false;
+      return mine.some(function (s) {
+        return s.typeId === q.typeId && serviceChannels(s).indexOf(q.channel) !== -1;
+      });
+    }).sort(function (a, b) { return (a.expiresAt || 0) - (b.expiresAt || 0); });
+  }
+  /** What this lawyer would charge for that brief: their own listed price for
+      the work, or the middle of the platform's band if they have not listed
+      it. Pulled inside the band either way — the band is the platform's
+      promise, and a stale row is not a reason to break it. */
+  function quotePrice(lawyerId, typeId) {
+    var band = priceBand(typeId);
+    var own = servicesOf(lawyerId).filter(function (s) { return s.typeId === typeId; })[0];
+    var price = own ? own.price : Math.round((band.min + band.max) / 2 / 5) * 5;
+    return Math.min(band.max, Math.max(band.min, price));
   }
 
   /* ---------- requests ---------- */
@@ -6176,7 +6390,10 @@ window.SANAD_CONFIG = {
     noticesFor: noticesFor, unreadFor: unreadFor, partiesOf: partiesOf,
     reviewsFor: reviewsFor, ratingOf: ratingOf, ratingSpread: ratingSpread,
     scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard, ranked: ranked,
-    serviceTypes: serviceTypes, serviceType: serviceType, servicesOf: servicesOf,
+    serviceTypes: serviceTypes, allServiceTypes: allServiceTypes,
+    serviceType: serviceType, servicesOf: servicesOf, services: services,
+    quotes: quotes, quote: quote, offersOn: offersOn, quoteLive: quoteLive,
+    myQuote: myQuote, openQuotesFor: openQuotesFor, quotePrice: quotePrice,
     channels: channels, channel: channel, channelsFor: channelsFor,
     serviceChannels: serviceChannels, isLive: isLive,
     priceBand: priceBand, checkPrice: checkPrice,
@@ -6664,13 +6881,34 @@ window.SANAD_CONFIG = {
     profile: function (id) {
       return load().then(function (sb) {
         return sb.from("profiles").select("*").eq("id", id).maybeSingle()
-          .then(function (res) { return res.error ? null : toProfile(res.data); });
+          .then(function (res) {
+            // Named, not swallowed. This read is the one the whole session
+            // depends on, and a silent null here is indistinguishable from
+            // an account that does not exist.
+            if (res.error) { console.error("profile read failed", res.error); return null; }
+            return toProfile(res.data);
+          });
       });
     },
 
-    /** Everything the site reads at once, for the cache that keeps reads sync. */
+    /** Everything the site reads at once, for the cache that keeps reads sync.
+
+        Every table is named, because the answer has to say which one failed.
+        A read that comes back with an error used to be turned into an empty
+        array here, so a database refusing to hand over `profiles` looked
+        exactly like a database with nobody in it: the signed-in person
+        vanished, every page drew as a guest, and the only clue was a 500 in a
+        panel nobody had open. Now the failures come back with the data and the
+        caller decides — which, for a table it already holds a copy of, is to
+        keep the copy and say so out loud. */
     hydrate: function () {
       return load().then(function (sb) {
+        var names = ["profiles", "services", "requests", "articles", "reviews",
+                     "comments", "endorsements", "agreements", "disputes",
+                     "notifications", "platform_settings", "audit_log",
+                     "price_bands", "announcements", "subscriptions",
+                     "operating_costs", "partners", "service_types", "quotes",
+                     "offers"];
         return Promise.all([
           sb.from("profiles").select("*"),
           sb.from("services").select("*"),
@@ -6693,18 +6931,33 @@ window.SANAD_CONFIG = {
           // back empty, which is exactly what an ordinary account should see.
           sb.from("operating_costs").select("*").order("created_at", { ascending: false }),
           sb.from("partners").select("*").order("created_at"),
+          sb.from("service_types").select("*").order("sort"),
+          sb.from("quotes").select("*").order("created_at", { ascending: false }),
+          sb.from("offers").select("*"),
         ]).then(function (r) {
-          var pick = function (x) { return (x && !x.error && x.data) || []; };
+          var failed = [];
+          var pick = function (i) {
+            var x = r[i];
+            if (x && x.error) {
+              failed.push({ table: names[i], code: x.error.code || "",
+                            message: x.error.message || String(x.error) });
+              return null;                 // not [] — "we do not know" is not "none"
+            }
+            return (x && x.data) || [];
+          };
+          var people = pick(0);
           return {
-            profiles: pick(r[0]).map(toProfile),
-            services: pick(r[1]), requests: pick(r[2]), articles: pick(r[3]),
-            reviews: pick(r[4]), comments: pick(r[5]),
-            endorsements: pick(r[6]), agreements: pick(r[7]),
-            disputes: pick(r[8]), notices: pick(r[9]),
+            profiles: people && people.map(toProfile),
+            services: pick(1), requests: pick(2), articles: pick(3),
+            reviews: pick(4), comments: pick(5),
+            endorsements: pick(6), agreements: pick(7),
+            disputes: pick(8), notices: pick(9),
             settings: (r[10] && !r[10].error && r[10].data) || null,
-            audit: pick(r[11]),
-            bands: pick(r[12]), announcements: pick(r[13]), subscriptions: pick(r[14]),
-            costs: pick(r[15]), partners: pick(r[16]),
+            audit: pick(11),
+            bands: pick(12), announcements: pick(13), subscriptions: pick(14),
+            costs: pick(15), partners: pick(16),
+            types: pick(17), quotes: pick(18), offers: pick(19),
+            errors: failed,
           };
         });
       });
@@ -6834,6 +7087,59 @@ window.SANAD_CONFIG = {
     return { id: p.id, name: p.name, sharePct: Number(p.share_pct), note: p.note };
   }
 
+  function inType(t) {
+    return {
+      id: t.id, icon: t.icon || "tag",
+      title: { ar: t.title_ar || "", en: t.title_en || t.title_ar || "" },
+      meta:  { ar: t.meta_ar  || "", en: t.meta_en  || t.meta_ar  || "" },
+      channels: t.channels || ["text"], sort: t.sort == null ? 100 : t.sort,
+      active: t.active !== false,
+    };
+  }
+  function outType(t) {
+    var row = {};
+    if (t.id !== undefined) row.id = t.id;
+    if (t.title) { row.title_ar = t.title.ar || ""; row.title_en = t.title.en || t.title.ar || ""; }
+    if (t.meta)  { row.meta_ar  = t.meta.ar  || ""; row.meta_en  = t.meta.en  || t.meta.ar  || ""; }
+    if (t.icon !== undefined) row.icon = t.icon || "tag";
+    if (t.channels !== undefined) row.channels = t.channels;
+    if (t.sort !== undefined) row.sort = t.sort;
+    if (t.active !== undefined) row.active = !!t.active;
+    return row;
+  }
+
+  function inQuote(q) {
+    return {
+      id: q.id, clientId: q.client_id, typeId: q.type_id, channel: q.channel || "text",
+      brief: q.brief || "", city: q.city || "", specialty: q.specialty || "",
+      status: q.status, acceptedBy: q.accepted_by, requestId: q.request_id,
+      expiresAt: new Date(q.expires_at).getTime(),
+      at: new Date(q.created_at).getTime(),
+    };
+  }
+  function outQuote(q) {
+    var row = {};
+    if (q.clientId !== undefined) row.client_id = q.clientId;
+    if (q.typeId !== undefined) row.type_id = q.typeId;
+    if (q.channel !== undefined) row.channel = q.channel || "text";
+    if (q.brief !== undefined) row.brief = q.brief;
+    if (q.city !== undefined) row.city = q.city || null;
+    if (q.specialty !== undefined) row.specialty = q.specialty || null;
+    if (q.status !== undefined) row.status = q.status;
+    if (q.acceptedBy !== undefined) row.accepted_by = q.acceptedBy || null;
+    if (q.requestId !== undefined) row.request_id = q.requestId || null;
+    if (q.expiresAt !== undefined) row.expires_at = new Date(q.expiresAt).toISOString();
+    return row;
+  }
+
+  function inOffer(o) {
+    return {
+      id: o.id, quoteId: o.quote_id, lawyer: o.lawyer_id, price: Number(o.price),
+      eta: o.eta == null ? 24 : o.eta, auto: !!o.auto, note: o.note || "",
+      at: new Date(o.created_at).getTime(),
+    };
+  }
+
   function inAgreement(a) {
     return { id: a.id, lawyerId: a.lawyer_id, internId: a.intern_id, kind: a.kind,
              amount: Number(a.amount), cases: a.cases, startedAt: a.started_at };
@@ -6875,6 +7181,7 @@ window.SANAD_CONFIG = {
     reviews: [], comments: [], endorsements: [], agreements: [], applications: {},
     disputes: [], notices: [], audit: [], settings: {},
     announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
+    types: [], quotes: [], offers: [],
   };
   var ready = false;
 
@@ -6948,11 +7255,15 @@ window.SANAD_CONFIG = {
   /* ---------- writes: cache first, database behind ---------- */
   function local(list, row) { list.push(row); Store.notifyAll(); return row; }
 
-  Store.addRequest = function (r) {
+  Store.addRequest = function (r, done) {
     var row = outRequest(r);
     push("requests", row).then(function (res) {
       report(res);
-      if (res && res.data) { r.id = res.data.id; Store.notifyAll(); }
+      if (res && res.data) {
+        r.id = res.data.id;
+        Store.notifyAll();
+        if (done) done(r);
+      }
     });
     r.id = r.id || "pending-" + Math.random().toString(36).slice(2, 8);
     return local(cache.requests, r);
@@ -7220,6 +7531,128 @@ window.SANAD_CONFIG = {
     }).then(report);
   };
 
+  /* ---------- the catalogue ----------
+     Six categories used to be a constant compiled into the page, so adding
+     one meant a release. They are rows now: staff write them, everybody
+     reads them, and a lawyer picks from whatever the platform is currently
+     offering. */
+  Store.types = function () { return cache.types; };
+  // Nothing is hidden behind a list here: a category the platform deleted is
+  // gone from the table, and the table is the catalogue.
+  Store.removedTypes = function () { return []; };
+  Store.addType = function (t) {
+    var row = outType(t);
+    push("service_types", row).then(function (res) {
+      report(res);
+      if (res && res.data) { cache.types.push(inType(res.data)); Store.notifyAll(); }
+    });
+    return t;
+  };
+  Store.setType = function (id, changes) {
+    cache.types.forEach(function (t) {
+      if (t.id !== id) return;
+      Object.keys(changes).forEach(function (k) { t[k] = changes[k]; });
+    });
+    Store.notifyAll();
+    patch("service_types", id, outType(changes)).then(report);
+  };
+  Store.removeType = function (id) {
+    var kept = cache.types.filter(function (t) { return t.id !== id; });
+    cache.types = kept;
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("service_types").delete().eq("id", id);
+    }).then(function (res) {
+      // A category something is already sold under cannot go; the database
+      // says so and the row comes back, because pretending otherwise would
+      // leave the console showing a catalogue the platform does not have.
+      if (res && res.error) { Store.hydrate(); report(res); }
+    });
+  };
+
+  /* ---------- the auction ---------- */
+  Store.quotes = function () { return cache.quotes; };
+  Store.quote = function (id) {
+    for (var i = 0; i < cache.quotes.length; i++) {
+      if (cache.quotes[i].id === id) return cache.quotes[i];
+    }
+    return null;
+  };
+  Store.offers = function () { return cache.offers; };
+  Store.offersOn = function (quoteId) {
+    return cache.offers.filter(function (o) { return o.quoteId === quoteId; });
+  };
+
+  Store.openQuote = function (q) {
+    var row = outQuote(q);
+    push("quotes", row).then(function (res) {
+      report(res);
+      if (!res || !res.data) return;
+      var real = inQuote(res.data);
+      // Swap the placeholder for the row the database made, then read the
+      // offers it made with it: a lawyer who takes matching work
+      // automatically has already bid by the time this returns, and the
+      // board would otherwise sit empty until the next page load.
+      cache.quotes = cache.quotes.filter(function (x) { return x.id !== q.id; });
+      cache.quotes.unshift(real);
+      q.id = real.id;
+      Store.notifyAll();
+      SB.load().then(function (sb) {
+        return sb.from("offers").select("*").eq("quote_id", real.id);
+      }).then(function (out) {
+        if (!out || out.error || !out.data) return;
+        cache.offers = cache.offers.filter(function (o) { return o.quoteId !== real.id; })
+          .concat(out.data.map(inOffer));
+        Store.notifyAll();
+      });
+    });
+    q.id = q.id || "pending-" + Math.random().toString(36).slice(2, 8);
+    q.status = q.status || "open";
+    q.at = Date.now();
+    cache.quotes.unshift(q);
+    Store.notifyAll();
+    return q;
+  };
+
+  Store.setQuote = function (id, changes) {
+    var found = null;
+    cache.quotes.forEach(function (q) {
+      if (q.id !== id) return;
+      found = q;
+      Object.keys(changes).forEach(function (k) { q[k] = changes[k]; });
+    });
+    Store.notifyAll();
+    patch("quotes", id, outQuote(changes)).then(report);
+    return found;
+  };
+
+  Store.addOffer = function (offer) {
+    var q = Store.quote(offer.quoteId);
+    if (!q || q.status !== "open") return false;
+    var already = cache.offers.some(function (o) {
+      return o.quoteId === offer.quoteId && o.lawyer === offer.lawyer;
+    });
+    if (already) return false;
+    push("offers", {
+      quote_id: offer.quoteId, lawyer_id: offer.lawyer, price: offer.price,
+      eta: offer.eta || 24, auto: !!offer.auto, note: offer.note || null,
+    }).then(function (res) {
+      report(res);
+      if (res && res.data) {
+        cache.offers = cache.offers.filter(function (o) {
+          return !(o.quoteId === offer.quoteId && o.lawyer === offer.lawyer);
+        });
+        cache.offers.push(inOffer(res.data));
+        Store.notifyAll();
+      }
+    });
+    offer.id = offer.id || "pending-" + Math.random().toString(36).slice(2, 8);
+    offer.at = Date.now();
+    cache.offers.push(offer);
+    Store.notifyAll();
+    return true;
+  };
+
   Store.bands = function () { return cache.bands; };
   Store.setBand = function (typeId, band) {
     cache.bands[typeId] = { min: band.min, max: band.max };
@@ -7337,35 +7770,75 @@ window.SANAD_CONFIG = {
   /* ---------- filling the cache ---------- */
   Store.hydrate = function () {
     return SB.hydrate().then(function (d) {
-      cache.profiles = d.profiles;
-      cache.requests = d.requests.map(inRequest);
-      cache.services = d.services.map(inService);
-      cache.articles = d.articles.map(inArticle);
-      cache.reviews = d.reviews.map(inReview);
-      cache.comments = d.comments.map(inComment);
-      cache.endorsements = d.endorsements.map(inEndorsement);
-      cache.agreements = d.agreements.map(inAgreement);
-      // Defensive: a table the account may not read comes back empty, and a
-      // database that predates a migration returns nothing at all. Neither is
-      // a reason for the whole site to fail to start.
-      cache.disputes = (d.disputes || []).map(inDispute);
-      cache.notices = (d.notices || []).map(inNotice);
-      cache.audit = (d.audit || []).map(inAudit);
+      // A read that failed comes back as null, not as an empty list, and a
+      // list we do not have is not a list with nothing in it. Keeping what
+      // the cache already holds is the difference between a page that is
+      // missing one section and a page that has decided nobody is signed in:
+      // when `profiles` failed, the signed-in person disappeared, every
+      // permission with them, and the only trace was a 500 in a panel nobody
+      // had open.
+      var take = function (rows, map, current) {
+        return rows ? rows.map(map) : current;
+      };
+      cache.profiles = d.profiles || cache.profiles;
+      cache.requests = take(d.requests, inRequest, cache.requests);
+      cache.services = take(d.services, inService, cache.services);
+      cache.articles = take(d.articles, inArticle, cache.articles);
+      cache.reviews = take(d.reviews, inReview, cache.reviews);
+      cache.comments = take(d.comments, inComment, cache.comments);
+      cache.endorsements = take(d.endorsements, inEndorsement, cache.endorsements);
+      cache.agreements = take(d.agreements, inAgreement, cache.agreements);
+      // A table the account may not read comes back empty, and a database
+      // that predates a migration does not have it at all. Neither is a
+      // reason for the site to fail to start.
+      cache.disputes = take(d.disputes, inDispute, cache.disputes);
+      cache.notices = take(d.notices, inNotice, cache.notices);
+      cache.audit = take(d.audit, inAudit, cache.audit);
       cache.settings = inSettings(d.settings);
-      cache.announcements = (d.announcements || []).map(inAnnouncement);
-      cache.subscriptions = (d.subscriptions || []).map(inSubscription);
-      cache.costs = (d.costs || []).map(inCost);
-      cache.partners = (d.partners || []).map(inPartner);
-      cache.bands = {};
-      (d.bands || []).forEach(function (b) {
-        cache.bands[b.type_id] = { min: Number(b.min_price), max: Number(b.max_price) };
-      });
+      cache.announcements = take(d.announcements, inAnnouncement, cache.announcements);
+      cache.subscriptions = take(d.subscriptions, inSubscription, cache.subscriptions);
+      cache.costs = take(d.costs, inCost, cache.costs);
+      cache.partners = take(d.partners, inPartner, cache.partners);
+      cache.types = take(d.types, inType, cache.types);
+      cache.quotes = take(d.quotes, inQuote, cache.quotes);
+      cache.offers = take(d.offers, inOffer, cache.offers);
+      if (d.bands) {
+        cache.bands = {};
+        d.bands.forEach(function (b) {
+          cache.bands[b.type_id] = { min: Number(b.min_price), max: Number(b.max_price) };
+        });
+      }
       ready = true;
       keepMe();
       Store.notifyAll();
+      if (d.errors && d.errors.length) dataProblem(d.errors);
       return cache;
     });
   };
+
+  /** A table the database refused to hand over, named, with the reason it
+      gave. The alternative is what happened for a week: a site that looks
+      fine, holds half of what it should, and explains nothing. */
+  function dataProblem(errors) {
+    console.error("Supabase read failed", errors);
+    var line = errors.map(function (e) {
+      return e.table + ": " + e.message + (e.code ? " (" + e.code + ")" : "");
+    }).join(" · ");
+    var bar = document.querySelector("[data-datafail]");
+    if (!bar) {
+      var t = function (k) { return global.I18N ? global.I18N.t(k) : ""; };
+      bar = document.createElement("div");
+      bar.setAttribute("data-datafail", "");
+      bar.className = "offline-bar";
+      var title = document.createElement("strong");
+      title.textContent = t("sys.dataFailed");
+      var body = document.createElement("span");
+      body.setAttribute("data-datafail-detail", "");
+      bar.appendChild(title); bar.appendChild(body);
+      (document.body || document.documentElement).appendChild(bar);
+    }
+    bar.querySelector("[data-datafail-detail]").textContent = line;
+  }
   /** Keep the remembered copy in step with the real one. */
   function keepMe() {
     var id = Store.currentId();
@@ -7425,6 +7898,24 @@ window.SANAD_CONFIG = {
       // this left the site rendering the guest view for somebody who was in
       // fact signed in, which read as the sign-in having failed.
       document.dispatchEvent(new CustomEvent("sessionchange"));
+      // One row, asked for by id, rather than waiting on the twenty tables
+      // the rest of the site needs. Who you are and what you may do is the
+      // one answer every page is blocked on, so it is fetched on its own and
+      // arrives first — and it still arrives if the big read is the thing
+      // that is failing.
+      SB.profile(id).then(function (me) {
+        if (!me) return;
+        var known = false;
+        cache.profiles = cache.profiles.map(function (p) {
+          if (p.id !== me.id) return p;
+          known = true;
+          return me;
+        });
+        if (!known) cache.profiles.push(me);
+        remember(me);
+        Store.notifyAll();
+        document.dispatchEvent(new CustomEvent("sessionchange"));
+      }).catch(function (e) { console.error(e); });
     }
     return Store.hydrate().then(function () {
       // Roles and status arrive with the profiles, so the navigation is only
@@ -8312,11 +8803,12 @@ window.SANAD_CONFIG = {
     revision: "notice.revision", disputed: "notice.disputed",
     resolved: "notice.resolved", routed: "notice.routed", opened: "notice.opened",
     offer: "notice.offer", rated: "notice.rated", approved: "notice.approved",
-    rejected: "notice.rejected", signed: "notice.signed"
+    rejected: "notice.rejected", signed: "notice.signed",
+    quote: "notice.quote", won: "notice.won"
   };
   var NOTICE_HREF = {
     offer: "quotes.html", approved: "account.html", rejected: "account.html",
-    signed: "blog.html"
+    signed: "blog.html", quote: "quotes.html"
   };
 
   function bell() {
@@ -9304,6 +9796,10 @@ Pages.define("requests", function (global) {
               : "");
       }
     }) +
+    // On the row itself, not behind "open details". Both sides asked the same
+    // question about an agreed piece of work — where has it got to — and
+    // answering it should not require finding a button first.
+    '<div class="track-slot">' + C.progress(r, "client") + "</div>" +
     (open === r.id ? clientDetail(r, st, lawyer) : "") + "</div>";
   }
 
@@ -9315,7 +9811,6 @@ Pages.define("requests", function (global) {
           "<div>" + C.personLink(lawyer) + "</div></div></div>" +
         '<button class="icon-btn" type="button" data-detail-close>' + Icons.svg("close", "icon-sm") + "</button>" +
       "</div>" +
-      C.progress(r, "client") +
       '<h3 class="subtitle" style="margin-top:var(--s-5)" data-i18n="req.deliverable"></h3>' +
       (st.body
         ? '<pre class="draft-text" style="min-height:auto" readonly>' + esc(st.body) + "</pre>"
@@ -9555,6 +10050,7 @@ Pages.define("requests", function (global) {
                     esc(I18N.t("common.sar")) + "</strong>" +
                   '<div class="inbox-row__actions">' + lawyerActions(r) + "</div>" +
                 "</div></div>" +
+              '<div class="track-slot">' + C.progress(r, "lawyer") + "</div>" +
               (open === r.id
                 ? (M.requestState(r).status === "open_to_interns" && !M.requestState(r).assignedTo
                     ? applicantsPanel(r)
@@ -9612,7 +10108,6 @@ Pages.define("requests", function (global) {
             (r.ai ? ' <span class="dot"></span> ' + esc(I18N.t("ai.aiSource")) : "") + "</p></div>" +
         '<button class="icon-btn" type="button" data-draft-close>' + Icons.svg("close", "icon-sm") + "</button>" +
       "</div>" +
-      '<div style="padding:var(--s-5) var(--s-5) 0">' + C.progress(r, "lawyer") + "</div>" +
       (r.ai ? '<p class="disclaimer" style="border-top:0">' + Icons.svg("lock", "icon-sm") +
         "<span>" + esc(I18N.t("inbox.aiHidden")) + "</span></p>" : "") +
       '<textarea class="draft-text" data-draft-body spellcheck="false">' + esc(body) + "</textarea>" +
@@ -11584,11 +12079,19 @@ Pages.define("editor", function (global) {
 /* ==========================================================================
    Reverse auction — one brief, many lawyers, a closing bell.
 
-   The client writes once; every matching lawyer sees the case but never the
-   person. Offers arrive while the clock runs, the client takes the one they
-   want, and if nobody is taken before the window closes the request cancels
-   itself. A signed-in lawyer sees the same board from the other side and
-   bids by hand; the rest of the field is simulated.
+   The client says what work they need, how they want it done, and how long
+   they will wait. Every lawyer who has listed that work through that channel
+   sees the case and never the person. Offers arrive while the clock runs, the
+   client takes the one they want, and the moment they do the agreement stops
+   being an auction and becomes a request that both sides can see and follow.
+
+   Two things changed here after the first version. The brief used to be a
+   single object in this browser's own storage, so it was posted to nobody:
+   no lawyer on another machine could see it, and accepting an offer set a
+   flag and created nothing — which is why an agreed piece of work never
+   turned up in either side's list. And the choice used to be "call, video or
+   written", which is not work, it is a channel; the work is the statement of
+   claim, and the channel is how it is handed over.
    ========================================================================== */
 Pages.define("quotes", function (global) {
   "use strict";
@@ -11600,14 +12103,10 @@ Pages.define("quotes", function (global) {
   var compose = $("[data-quote-compose]");
   if (!compose) return;
 
-  var MODES = [
-    { id: "call", icon: "phone", key: "lawyer.call", typeId: "call" },
-    { id: "video", icon: "video", key: "req.video", typeId: "video" },
-    { id: "written", icon: "chat", key: "req.written", typeId: "written" }
-  ];
   var WINDOWS = [15, 30, 60];
+  var remote = (global.SANAD_CONFIG || {}).backend === "supabase";
 
-  var draft = { city: "", specialty: "", mode: "call", window: 30 };
+  var draft = { city: "", specialty: "", typeId: "", channel: "", window: 30 };
   var sort = "price";
   var offerTimers = [];
 
@@ -11616,27 +12115,33 @@ Pages.define("quotes", function (global) {
   clearInterval(global.__quoteTicker);
   var ticker = null;
 
-  function q() { return Store.getQuote(); }
+  function me() { return Session.user(); }
+  function mine() { return me() ? M.myQuote(me().id) : null; }
+  function offers(cur) { return cur ? M.offersOn(cur.id) : []; }
   function remaining(cur) { return Math.max(0, Math.floor((cur.expiresAt - Date.now()) / 1000)); }
   function clock(total) {
     var m = Math.floor(total / 60), s = total % 60;
     return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
   }
-  function modeOf(id) {
-    for (var i = 0; i < MODES.length; i++) if (MODES[i].id === id) return MODES[i];
-    return MODES[0];
+
+  function types() { return M.serviceTypes(); }
+  function firstType() { return (types()[0] || {}).id || ""; }
+  function typeOf(id) { return M.serviceType(id) || { title: {}, meta: {} }; }
+  function channelsOf(typeId) {
+    return M.channelsFor(typeId).map(function (id) { return M.channel(id); })
+      .filter(Boolean);
   }
-  /** A lawyer's own price for that mode, or the middle of the band if unlisted. */
-  function priceFor(u, modeId) {
-    var typeId = modeOf(modeId).typeId;
-    var own = M.servicesOf(u.id).filter(function (s) { return s.typeId === typeId; })[0];
-    if (own) return own.price;
-    var band = M.priceBand(typeId);
-    return Math.round((band.min + band.max) / 2 / 5) * 5;
+  /** Keep the draft answerable: a category always chosen, and a channel that
+      the category actually allows. */
+  function settle() {
+    if (!draft.typeId || !M.serviceType(draft.typeId)) draft.typeId = firstType();
+    var allowed = M.channelsFor(draft.typeId);
+    if (allowed.indexOf(draft.channel) === -1) draft.channel = allowed[0] || "text";
   }
 
   /* ================================================== client: compose ===== */
   function drawCompose() {
+    settle();
     var citySel = $("[data-quote-city]");
     if (citySel) {
       citySel.innerHTML = '<option value="">' + esc(I18N.t("quotes.anyCity")) + "</option>" +
@@ -11658,11 +12163,21 @@ Pages.define("quotes", function (global) {
   }
 
   function drawChips() {
-    var modes = $("[data-quote-modes]");
-    if (modes) {
-      modes.innerHTML = MODES.map(function (m) {
-        return '<button type="button" class="chip' + (draft.mode === m.id ? " is-active" : "") +
-          '" data-mode="' + m.id + '">' + Icons.svg(m.icon, "icon-sm") + esc(I18N.t(m.key)) + "</button>";
+    settle();
+    var kinds = $("[data-quote-types]");
+    if (kinds) {
+      kinds.innerHTML = types().map(function (t) {
+        return '<button type="button" class="chip' + (draft.typeId === t.id ? " is-active" : "") +
+          '" data-type="' + esc(t.id) + '">' + Icons.svg(t.icon || "tag", "icon-sm") +
+          esc(tx(t.title)) + "</button>";
+      }).join("");
+    }
+    var ways = $("[data-quote-modes]");
+    if (ways) {
+      ways.innerHTML = channelsOf(draft.typeId).map(function (c) {
+        return '<button type="button" class="chip' + (draft.channel === c.id ? " is-active" : "") +
+          '" data-mode="' + esc(c.id) + '">' + Icons.svg(c.icon, "icon-sm") +
+          esc(tx(c.title)) + "</button>";
       }).join("");
     }
     var win = $("[data-quote-window]");
@@ -11678,15 +12193,19 @@ Pages.define("quotes", function (global) {
   function drawPreview() {
     var prev = $("[data-quote-preview]");
     if (!prev) return;
+    settle();
     var city = draft.city ? tx(M.city(draft.city)) : I18N.t("quotes.anyCity");
     var sp = draft.specialty ? tx(M.specialty(draft.specialty)) : I18N.t("quotes.anySpecialty");
+    var ch = M.channel(draft.channel);
     prev.innerHTML =
       '<p class="tiny muted">' + esc(I18N.t("bids.clientHidden")) + "</p>" +
       '<div class="anon-card" style="margin-top:var(--s-3)"><div class="row gap-3">' +
         '<span class="anon-card__mark">' + Icons.svg("user", "icon-sm") + "</span>" +
         "<div><strong class=\"small\">" + esc(I18N.t("quotes.anonId", { id: "4821" })) + "</strong>" +
-        '<p class="tiny muted">' + esc(city) + ' <span class="dot"></span> ' + esc(sp) +
-          ' <span class="dot"></span> ' + esc(I18N.t(modeOf(draft.mode).key)) + "</p></div>" +
+        '<p class="tiny muted">' + esc(tx(typeOf(draft.typeId).title)) +
+          ' <span class="dot"></span> ' + esc(ch ? tx(ch.title) : "") +
+          ' <span class="dot"></span> ' + esc(city) +
+          ' <span class="dot"></span> ' + esc(sp) + "</p></div>" +
       "</div></div>";
   }
 
@@ -11694,7 +12213,8 @@ Pages.define("quotes", function (global) {
   function offerRow(cur, o) {
     var l = M.user(o.lawyer);
     if (!l) return "";
-    var best = o.price === Math.min.apply(null, cur.offers.map(function (x) { return x.price; }));
+    var prices = M.offersOn(cur.id).map(function (x) { return x.price; });
+    var best = o.price === Math.min.apply(null, prices);
     return '<article class="offer-card' + (best ? " is-best" : "") + '">' +
       (best ? '<span class="offer-card__flag">' + esc(I18N.t("quotes.bestPrice")) + "</span>" : "") +
       C.avatar(l, "md") +
@@ -11710,13 +12230,13 @@ Pages.define("quotes", function (global) {
       '<div class="offer-card__end">' +
         '<strong class="offer-card__price"><span class="num">' + I18N.num(o.price) + "</span> " +
           '<span class="small muted">' + esc(I18N.t("common.sar")) + "</span></strong>" +
-        '<button class="btn btn--accent btn--sm" type="button" data-accept="' + esc(o.lawyer) + '">' +
+        '<button class="btn btn--accent btn--sm" type="button" data-accept="' + esc(o.id) + '">' +
           esc(I18N.t("quotes.accept")) + "</button>" +
       "</div></article>";
   }
 
   function sortedOffers(cur) {
-    return cur.offers.slice().sort(function (a, b) {
+    return offers(cur).slice().sort(function (a, b) {
       if (sort === "rating") return M.ratingOf(b.lawyer).avg - M.ratingOf(a.lawyer).avg;
       if (sort === "speed") return a.eta - b.eta;
       return a.price - b.price;
@@ -11725,10 +12245,10 @@ Pages.define("quotes", function (global) {
 
   function drawLive() {
     var host = $("[data-quote-live]");
-    var cur = q();
+    var cur = mine();
     if (!host) return;
 
-    compose.hidden = !!cur;
+    compose.hidden = !!(cur && cur.status === "open");
     host.hidden = !cur;
     if (!cur) return;
 
@@ -11740,8 +12260,12 @@ Pages.define("quotes", function (global) {
             Icons.svg("check", "icon-lg") + "</span>" +
           '<h1 class="headline">' + esc(I18N.t("quotes.acceptedTitle")) + "</h1>" +
           '<p class="lead">' + esc(I18N.t("quotes.acceptedBody", { name: won ? tx(won.name) : "" })) + "</p>" +
-          '<a class="btn btn--primary" href="' + (won ? M.profileHref(won) : "#") + '">' +
-            esc(I18N.t("dir.viewProfile")) + "</a>" +
+          '<hr class="divider" style="width:100%">' +
+          '<strong class="subtitle">' + esc(I18N.t("quotes.trackTitle")) + "</strong>" +
+          '<p class="small muted">' + esc(I18N.t("quotes.trackBody")) + "</p>" +
+          '<a class="btn btn--primary" href="requests.html' +
+            (cur.requestId ? "?r=" + encodeURIComponent(cur.requestId) : "") + '">' +
+            esc(I18N.t("quotes.openRequest")) + "</a>" +
           '<button class="btn btn--ghost btn--sm" type="button" data-quote-reset>' +
             esc(I18N.t("quotes.newRequest")) + "</button></div>";
       return;
@@ -11749,7 +12273,7 @@ Pages.define("quotes", function (global) {
     if (cur.status === "expired" || cur.status === "cancelled") {
       host.innerHTML =
         '<div class="card card--pad center stack gap-4" style="align-items:center">' +
-          '<span class="feature__icon">' + Icons.svg("clock", "icon-lg") + "</span>" +
+          '<span class="feature__icon">' + Icons.svg("clock", "icon-xl") + "</span>" +
           '<h1 class="headline">' +
             esc(I18N.t(cur.status === "expired" ? "quotes.expired" : "quotes.cancelled")) + "</h1>" +
           '<p class="lead">' +
@@ -11761,6 +12285,8 @@ Pages.define("quotes", function (global) {
 
     var left = remaining(cur);
     var city = cur.city ? tx(M.city(cur.city)) : I18N.t("quotes.anyCity");
+    var ch = M.channel(cur.channel);
+    var list = offers(cur);
     host.innerHTML =
       '<div class="card card--rule-gold card--pad" style="margin-bottom:var(--s-6)">' +
         '<div class="row between wrap gap-6">' +
@@ -11768,19 +12294,20 @@ Pages.define("quotes", function (global) {
             '<span class="status status--ok">' + esc(I18N.t("quotes.live")) + "</span>" +
             '<h1 class="title" style="margin-top:var(--s-3)">' + esc(cur.brief.slice(0, 90)) +
               (cur.brief.length > 90 ? "…" : "") + "</h1>" +
-            '<p class="small muted" style="margin-top:var(--s-2)">' + esc(city) +
-              ' <span class="dot"></span> ' + esc(I18N.t(modeOf(cur.mode).key)) + "</p></div>" +
+            '<p class="small muted" style="margin-top:var(--s-2)">' +
+              esc(tx(typeOf(cur.typeId).title)) + ' <span class="dot"></span> ' +
+              esc(ch ? tx(ch.title) : "") + ' <span class="dot"></span> ' + esc(city) + "</p></div>" +
           '<div class="countdown" style="min-width:180px">' +
             '<div class="countdown__time" data-quote-clock>' + clock(left) + "</div>" +
             '<p class="tiny muted">' + esc(I18N.t("quotes.timeLeft")) + "</p></div>" +
         "</div>" +
         '<hr class="divider">' +
         '<div class="row between wrap gap-3">' +
-          "<strong class=\"small\">" + esc(I18N.t("quotes.offersIn", { n: I18N.num(cur.offers.length) })) + "</strong>" +
+          "<strong class=\"small\">" + esc(I18N.t("quotes.offersIn", { n: I18N.num(list.length) })) + "</strong>" +
           '<button class="btn btn--ghost btn--sm" type="button" data-quote-cancel>' +
             esc(I18N.t("quotes.cancel")) + "</button></div>" +
       "</div>" +
-      (cur.offers.length
+      (list.length
         ? '<div class="row gap-2 wrap" style="margin-bottom:var(--s-4)">' +
             [["price", "quotes.sortPrice"], ["rating", "quotes.sortRating"], ["speed", "quotes.sortSpeed"]]
               .map(function (p) {
@@ -11795,78 +12322,100 @@ Pages.define("quotes", function (global) {
   }
 
   /* ================================================== lawyer: bidding ===== */
-  function drawBids() {
-    var host = $("[data-quote-bids]");
-    if (!host) return;
-    var cur = q();
-    var me = Session.user();
-
-    host.hidden = false;
-    if (!cur) {
-      host.innerHTML = '<div class="card empty">' + Icons.svg("gavel", "icon-xl") +
-        '<p class="subtitle">' + esc(I18N.t("bids.none")) + "</p></div>";
-      return;
-    }
-
-    var open = cur.status === "open" && remaining(cur) > 0;
-    var mine = cur.offers.filter(function (o) { return o.lawyer === me.id; })[0];
-
-    if (!open) {
-      var won = cur.status === "accepted" && cur.acceptedBy === me.id;
-      host.innerHTML = '<div class="card empty">' + Icons.svg(won ? "trophy" : "clock", "icon-xl") +
-        '<p class="subtitle">' +
-        esc(I18N.t(won ? "bids.won" : (cur.status === "accepted" && mine) ? "bids.lost" : "bids.none")) +
-        "</p></div>";
-      return;
-    }
-
+  function briefCard(cur, who) {
     var city = cur.city ? tx(M.city(cur.city)) : I18N.t("quotes.anyCity");
     var spec = cur.specialty ? tx(M.specialty(cur.specialty)) : I18N.t("quotes.anySpecialty");
+    var ch = M.channel(cur.channel);
+    var list = M.offersOn(cur.id);
+    var ours = list.filter(function (o) { return o.lawyer === who.id; })[0];
+    var band = M.priceBand(cur.typeId);
 
-    host.innerHTML = '<div class="card card--pad">' +
-      '<div class="row between wrap gap-3" style="margin-bottom:var(--s-5)">' +
-        '<h1 class="headline" data-i18n="bids.title"></h1>' +
-        '<span class="countdown__time" data-bids-clock>' +
+    return '<article class="card card--pad" style="margin-bottom:var(--s-5)">' +
+      '<div class="row between wrap gap-3" style="margin-bottom:var(--s-4)">' +
+        '<strong class="subtitle">' + esc(tx(typeOf(cur.typeId).title)) + "</strong>" +
+        '<span class="countdown__time" data-brief-clock="' + esc(cur.id) + '">' +
           esc(I18N.t("bids.closesIn")) + " " + clock(remaining(cur)) + "</span></div>" +
-      '<p class="lead" data-i18n="bids.lead"></p>' +
 
-      '<div class="anon-card" style="margin-top:var(--s-6)">' +
-        '<div class="row gap-3" style="align-items:flex-start">' +
-          '<span class="anon-card__mark">' + Icons.svg("user", "icon-sm") + "</span>" +
-          '<div class="grow" style="min-width:0">' +
-            "<strong class=\"small\">" + esc(I18N.t("quotes.anonId", { id: esc(cur.id) })) + "</strong>" +
-            '<p class="tiny muted">' + esc(city) + ' <span class="dot"></span> ' + esc(spec) +
-              ' <span class="dot"></span> ' + esc(I18N.t(modeOf(cur.mode).key)) + "</p></div></div>" +
+      '<div class="anon-card"><div class="row gap-3" style="align-items:flex-start">' +
+        '<span class="anon-card__mark">' + Icons.svg("user", "icon-sm") + "</span>" +
+        '<div class="grow" style="min-width:0">' +
+          "<strong class=\"small\">" + esc(I18N.t("quotes.anonId", { id: String(cur.id).slice(0, 4) })) + "</strong>" +
+          '<p class="tiny muted">' + esc(city) + ' <span class="dot"></span> ' + esc(spec) +
+            ' <span class="dot"></span> ' + esc(ch ? tx(ch.title) : "") + "</p></div></div>" +
         '<p class="small" style="margin-top:var(--s-3)">' + esc(cur.brief) + "</p>" +
         '<p class="tiny faint row gap-2" style="margin-top:var(--s-3)">' + Icons.svg("lock", "icon-sm") +
           esc(I18N.t("bids.clientHidden")) + "</p></div>" +
 
       '<p class="tiny muted" style="margin-top:var(--s-4)">' +
-        esc(I18N.t("bids.competing", { n: I18N.num(cur.offers.length) })) + "</p>" +
+        esc(I18N.t("bids.competing", { n: I18N.num(list.length) })) + "</p>" +
 
-      (mine
+      (ours
         ? '<p class="status status--ok" style="width:100%;justify-content:center;margin-top:var(--s-4)">' +
-          Icons.svg("check", "icon-sm") + esc(I18N.t("bids.already")) + " — " +
-          '<span class="num">' + I18N.num(mine.price) + "</span> " + esc(I18N.t("common.sar")) + "</p>"
-        : '<form class="bid-form" data-bid-form>' +
+            Icons.svg("check", "icon-sm") +
+            esc(ours.auto ? I18N.t("bids.auto") : I18N.t("bids.already")) + " — " +
+            '<span class="num">' + I18N.num(ours.price) + "</span> " + esc(I18N.t("common.sar")) + "</p>"
+        : '<form class="bid-form" data-bid-form="' + esc(cur.id) + '">' +
             '<label class="field"><span class="tiny muted">' + esc(I18N.t("bids.yourPrice")) + "</span>" +
-              '<input class="input num" type="number" min="40" step="5" data-bid-price value="' +
-                priceFor(me, cur.mode) + '"></label>' +
+              '<input class="input num" type="number" min="' + band.min + '" max="' + band.max +
+                '" step="5" data-bid-price value="' + M.quotePrice(who.id, cur.typeId) + '"></label>' +
             '<label class="field"><span class="tiny muted">' + esc(I18N.t("bids.yourEta")) + "</span>" +
               '<input class="input num" type="number" min="1" max="72" step="1" data-bid-eta value="4"></label>' +
             '<button class="btn btn--accent" type="submit">' + esc(I18N.t("bids.submit")) + "</button>" +
           "</form>") +
-    "</div>";
+    "</article>";
+  }
+
+  function drawBids() {
+    var host = $("[data-quote-bids]");
+    if (!host) return;
+    var who = me();
+    host.hidden = false;
+
+    var open = M.openQuotesFor(who.id);
+    // What happened to the briefs they did bid on, whether or not they are
+    // still open: a lawyer should not have to guess why a board went quiet.
+    var settled = M.quotes().filter(function (q) {
+      if (q.status === "open") return false;
+      return M.offersOn(q.id).some(function (o) { return o.lawyer === who.id; });
+    }).slice(0, 4);
+
+    host.innerHTML =
+      '<div class="row between wrap gap-3" style="margin-bottom:var(--s-5)">' +
+        '<div><h1 class="headline" data-i18n="bids.title"></h1>' +
+        '<p class="lead" data-i18n="bids.lead"></p></div>' +
+        (who.autoBid
+          ? '<span class="status status--ok">' + Icons.svg("check", "icon-sm") +
+            esc(I18N.t("bids.autoOn")) + "</span>" : "") +
+      "</div>" +
+      (open.length
+        ? '<p class="tiny muted" style="margin-bottom:var(--s-4)">' +
+            esc(I18N.t("bids.openCount", { n: I18N.num(open.length) })) + "</p>" +
+          open.map(function (q) { return briefCard(q, who); }).join("")
+        : '<div class="card empty">' + Icons.svg("gavel", "icon-xl") +
+          '<p class="subtitle">' + esc(I18N.t("bids.none")) + "</p></div>") +
+      settled.map(function (q) {
+        var won = q.status === "accepted" && q.acceptedBy === who.id;
+        return '<p class="status ' + (won ? "status--ok" : "") + '" style="width:100%;' +
+          'justify-content:center;margin-top:var(--s-3)">' +
+          Icons.svg(won ? "trophy" : "clock", "icon-sm") +
+          esc(I18N.t(won ? "bids.won" : "bids.lost")) + "</p>";
+      }).join("");
     I18N.apply(host);
   }
 
-  /* ================================================== the field =========== */
+  /* ================================================== the field ===========
+     On the demo backend there is nobody else on the other end, so the rest of
+     the board is simulated. On the real one it must not be: an offer is a row
+     that belongs to the lawyer who made it, and a browser cannot write one in
+     somebody else's name — nor should it. There, a lawyer who has said they
+     take matching work automatically has already bid, from the database, by
+     the time the brief is posted. */
   function scheduleOffers(cur) {
     offerTimers.forEach(clearTimeout);
     offerTimers = [];
+    if (remote) return;
 
-    // Whoever is signed in bids by hand; the simulation stands in for the rest.
-    var meId = Session.user() ? Session.user().id : null;
+    var meId = me() ? me().id : null;
     var eligible = M.listedLawyers().filter(function (l) { return l.id !== meId; });
     var pool = eligible.filter(function (l) {
       if (cur.specialty && (l.specialties || []).indexOf(cur.specialty) === -1) return false;
@@ -11876,15 +12425,16 @@ Pages.define("quotes", function (global) {
     if (pool.length < 3) pool = eligible.slice();
 
     pool.slice(0, 5).forEach(function (l, i) {
-      var base = priceFor(l, cur.mode);
-      // A competitive board: bids land between 25% under and 10% over list.
+      var base = M.quotePrice(l.id, cur.typeId);
+      var band = M.priceBand(cur.typeId);
+      // A competitive board: bids land between 25% under and 10% over list,
+      // and never outside what the platform publishes.
       var factor = 0.75 + ((i * 37) % 35) / 100;
-      var price = Math.max(40, Math.round(base * factor / 5) * 5);
+      var price = Math.min(band.max, Math.max(band.min, Math.round(base * factor / 5) * 5));
       var eta = 2 + ((i * 3) % 10);
       offerTimers.push(setTimeout(function () {
-        if (Store.addOffer({ lawyer: l.id, price: price, eta: eta })) {
-          var q = Store.getQuote();
-          if (q && q.clientId) Store.notify({ to: q.clientId, type: "offer", ref: l.id });
+        if (Store.addOffer({ quoteId: cur.id, lawyer: l.id, price: price, eta: eta })) {
+          if (cur.clientId) Store.notify({ to: cur.clientId, type: "offer", ref: l.id });
         }
       }, 2200 + i * 2600));
     });
@@ -11893,19 +12443,26 @@ Pages.define("quotes", function (global) {
   function startTicker() {
     clearInterval(ticker);
     ticker = global.__quoteTicker = setInterval(function () {
-      var cur = q();
-      if (!cur || cur.status !== "open") { clearInterval(ticker); return; }
-      var left = remaining(cur);
+      var cur = mine();
       var el = $("[data-quote-clock]");
-      if (el) el.textContent = clock(left);
-      var bel = $("[data-bids-clock]");
-      if (bel) bel.textContent = I18N.t("bids.closesIn") + " " + clock(left);
-      if (left <= 0) {
-        clearInterval(ticker);
-        offerTimers.forEach(clearTimeout);
-        Store.setQuoteStatus("expired");
-        App.toast(I18N.t("quotes.expired"), "clock");
+      if (cur && cur.status === "open") {
+        var left = remaining(cur);
+        if (el) el.textContent = clock(left);
+        if (left <= 0) {
+          offerTimers.forEach(clearTimeout);
+          Store.setQuote(cur.id, { status: "expired" });
+          App.toast(I18N.t("quotes.expired"), "clock");
+        }
       }
+      // The lawyer's board is a list, so each brief carries its own clock.
+      var any = false;
+      App.$$("[data-brief-clock]").forEach(function (node) {
+        var q = M.quote(node.getAttribute("data-brief-clock"));
+        if (!q) return;
+        any = true;
+        node.textContent = I18N.t("bids.closesIn") + " " + clock(remaining(q));
+      });
+      if (!any && (!cur || cur.status !== "open")) clearInterval(ticker);
     }, 1000);
   }
 
@@ -11919,20 +12476,23 @@ Pages.define("quotes", function (global) {
       compose.hidden = true;
       if (live) live.hidden = true;
       drawBids();
-    } else {
-      if (bids) { bids.hidden = true; bids.innerHTML = ""; }
-      drawCompose();
-      drawLive();
+      startTicker();
+      return;
     }
 
-    var cur = q();
-    if (cur && cur.status === "open") { startTicker(); if (!isLawyer) scheduleOffers(cur); }
+    if (bids) { bids.hidden = true; bids.innerHTML = ""; }
+    drawCompose();
+    drawLive();
+    var cur = mine();
+    if (cur && cur.status === "open") { startTicker(); scheduleOffers(cur); }
   });
 
   /* ================================================== events ============= */
   compose.addEventListener("click", function (ev) {
+    var t = ev.target.closest("[data-type]");
+    if (t) { draft.typeId = t.getAttribute("data-type"); drawChips(); drawPreview(); return; }
     var m = ev.target.closest("[data-mode]");
-    if (m) { draft.mode = m.getAttribute("data-mode"); drawChips(); drawPreview(); return; }
+    if (m) { draft.channel = m.getAttribute("data-mode"); drawChips(); drawPreview(); return; }
     var w = ev.target.closest("[data-window]");
     if (w) { draft.window = parseInt(w.getAttribute("data-window"), 10); drawChips(); }
   });
@@ -11955,20 +12515,53 @@ Pages.define("quotes", function (global) {
       ev.preventDefault();
       var brief = $("#q-brief").value.trim();
       if (brief.length < 10) { App.toast(I18N.t("quotes.needBrief"), "file-text"); return; }
+      settle();
+      if (!draft.typeId) { App.toast(I18N.t("quotes.needType"), "tag"); return; }
+      if (!me()) { App.go("login.html"); return; }
+
       var cur = Store.openQuote({
-        id: "4821", brief: brief, city: draft.city, specialty: draft.specialty,
-        mode: draft.mode, minutes: draft.window,
+        brief: brief, city: draft.city, specialty: draft.specialty,
+        typeId: draft.typeId, channel: draft.channel, minutes: draft.window,
         expiresAt: Date.now() + draft.window * 60000,
-        // Whose consultation it is — without it there is nobody to tell when
-        // an offer lands on it.
-        clientId: Session.user() ? Session.user().id : null,
-        status: "open", offers: []
+        clientId: me().id, status: "open"
       });
       App.toast(I18N.t("quotes.published"), "check");
       startTicker();
       scheduleOffers(cur);
       global.scrollTo({ top: 0, behavior: "smooth" });
     });
+  }
+
+  /** Taking an offer is where an auction stops being an auction. The work
+      becomes a request carrying both names, at the price that was agreed, and
+      from here on the two of them are looking at the same row. */
+  function accept(offerId) {
+    var cur = mine();
+    if (!cur || cur.status !== "open") return;
+    var offer = M.offersOn(cur.id).filter(function (o) { return o.id === offerId; })[0];
+    if (!offer) return;
+
+    offerTimers.forEach(clearTimeout);
+    clearInterval(ticker);
+
+    var kind = typeOf(cur.typeId);
+    // The brief closes at once — nobody else may bid on work that has been
+    // given away — and the link to the request is written when the request
+    // has an id the database agrees with, which on the remote backend is one
+    // round trip later.
+    Store.setQuote(cur.id, { status: "accepted", acceptedBy: offer.lawyer });
+    Store.addRequest({
+      clientId: cur.clientId, lawyerId: offer.lawyer,
+      typeId: cur.typeId, channel: cur.channel,
+      title: kind.title, brief: { ar: cur.brief, en: cur.brief },
+      price: offer.price, status: "new", hours: offer.eta || 4,
+    }, function (saved) {
+      Store.setQuote(cur.id, { requestId: saved.id });
+      Store.notify({ to: offer.lawyer, type: "won", ref: saved.id });
+    });
+
+    var who = M.user(offer.lawyer);
+    App.toast(I18N.t("quotes.accepted", { name: who ? tx(who.name) : "" }), "check");
   }
 
   var live = $("[data-quote-live]");
@@ -11978,36 +12571,47 @@ Pages.define("quotes", function (global) {
       if (so) { sort = so.getAttribute("data-sort"); drawLive(); return; }
 
       var ac = ev.target.closest("[data-accept]");
-      if (ac) {
-        var id = ac.getAttribute("data-accept");
-        offerTimers.forEach(clearTimeout);
-        clearInterval(ticker);
-        Store.setQuoteStatus("accepted", { acceptedBy: id });
-        var who = M.user(id);
-        App.toast(I18N.t("quotes.accepted", { name: who ? tx(who.name) : "" }), "check");
-        return;
-      }
+      if (ac) { accept(ac.getAttribute("data-accept")); return; }
+
       if (ev.target.closest("[data-quote-cancel]")) {
+        var cur = mine();
         offerTimers.forEach(clearTimeout);
         clearInterval(ticker);
-        Store.setQuoteStatus("cancelled");
+        if (cur) Store.setQuote(cur.id, { status: "cancelled" });
         App.toast(I18N.t("quotes.cancelled"), "close");
         return;
       }
-      if (ev.target.closest("[data-quote-reset]")) Store.clearQuote();
+      // "Post another" leaves the old brief where it is. It is the record of
+      // what was agreed and what it cost, and on the remote backend it is a
+      // row with a request hanging off it — so this scrolls to the form
+      // rather than deleting anything.
+      if (ev.target.closest("[data-quote-reset]")) {
+        compose.hidden = false;
+        var box = $("#q-brief");
+        if (box) { box.value = ""; box.focus(); }
+        compose.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
   }
 
   var bidsHost = $("[data-quote-bids]");
   if (bidsHost) {
     bidsHost.addEventListener("submit", function (ev) {
-      if (!ev.target.matches("[data-bid-form]")) return;
+      var f = ev.target.closest("[data-bid-form]");
+      if (!f) return;
       ev.preventDefault();
-      var price = parseInt($("[data-bid-price]").value, 10);
-      var eta = parseInt($("[data-bid-eta]").value, 10) || 4;
-      if (!price || price < 40) { App.toast(I18N.t("bids.badPrice"), "file-text"); return; }
-      App.toast(I18N.t(Store.addOffer({ lawyer: Session.user().id, price: price, eta: eta })
-        ? "bids.submitted" : "bids.already"), "check");
+      var cur = M.quote(f.getAttribute("data-bid-form"));
+      if (!cur) return;
+      var price = parseInt(f.querySelector("[data-bid-price]").value, 10);
+      var eta = parseInt(f.querySelector("[data-bid-eta]").value, 10) || 4;
+      var band = M.priceBand(cur.typeId);
+      if (!price || price < band.min || price > band.max) {
+        App.toast(I18N.t("bids.badPrice"), "file-text");
+        return;
+      }
+      App.toast(I18N.t(Store.addOffer({
+        quoteId: cur.id, lawyer: me().id, price: price, eta: eta,
+      }) ? "bids.submitted" : "bids.already"), "check");
     });
   }
 });
@@ -13292,6 +13896,7 @@ Pages.define("admin", function (global) {
     { id: "requests", key: "adm.tabRequests", icon: "inbox" },
     { id: "money",    key: "adm.tabMoney",    icon: "wallet" },
     { id: "ads",      key: "adm.tabAds",      icon: "bell" },
+    { id: "catalogue",key: "admin.tabCat",    icon: "tag" },
     { id: "settings", key: "adm.tabSettings", icon: "settings" }
   ];
 
@@ -13714,6 +14319,74 @@ Pages.define("admin", function (global) {
   }
 
   /* ============================================================== settings */
+  /* ============================================================= catalogue
+     What a lawyer is allowed to offer to do. This used to be six entries
+     compiled into the page, so the platform could not add a kind of work
+     without a release — and the one thing a legal marketplace does as it
+     grows is add kinds of work. */
+  function catalogue() {
+    var all = M.allServiceTypes();
+    var chans = M.channels();
+
+    var row = function (t) {
+      var band = M.priceBand(t.id);
+      return '<div class="card card--pad" style="margin-bottom:var(--s-3)">' +
+        '<div class="row between wrap gap-3">' +
+          "<div><strong>" + esc(tx(t.title)) + "</strong>" +
+            '<p class="tiny muted" style="margin-top:var(--s-1)">' + esc(t.id) +
+              ' <span class="dot"></span> <span class="num">' + I18N.num(band.min) + "</span>–" +
+              '<span class="num">' + I18N.num(band.max) + "</span> " +
+              esc(I18N.t("common.sar")) + "</p></div>" +
+          '<span class="row gap-2 wrap">' +
+            '<span class="status' + (t.active === false ? "" : " status--ok") + '">' +
+              esc(I18N.t(t.active === false ? "admin.catHidden" : "admin.catShown")) + "</span>" +
+            '<button class="btn btn--ghost btn--sm" type="button" data-cat-toggle="' + esc(t.id) + '">' +
+              esc(I18N.t(t.active === false ? "admin.catShown" : "admin.catHidden")) + "</button>" +
+            '<button class="btn btn--ghost btn--sm" type="button" data-cat-remove="' + esc(t.id) + '">' +
+              esc(I18N.t("adm.remove")) + "</button>" +
+          "</span></div>" +
+        '<div class="row gap-2 wrap" style="margin-top:var(--s-3)">' +
+          chans.map(function (c) {
+            var on = (t.channels || []).indexOf(c.id) !== -1;
+            return '<label class="chip' + (on ? " is-active" : "") + '">' +
+              '<input type="checkbox" style="margin-inline-end:var(--s-2)"' + (on ? " checked" : "") +
+              ' data-cat-channel="' + esc(t.id) + '" value="' + esc(c.id) + '">' +
+              esc(tx(c.title)) + "</label>";
+          }).join("") +
+        "</div></div>";
+    };
+
+    return head("admin.catTitle", "admin.catLead") +
+      '<div style="margin-bottom:var(--s-8)">' + all.map(row).join("") + "</div>" +
+
+      '<section class="card card--pad">' +
+        '<h3 class="subtitle" data-i18n="admin.catAdd"></h3>' +
+        '<div class="grid grid-2" style="gap:var(--s-4);margin-top:var(--s-4)">' +
+          '<label class="field"><span class="label" data-i18n="admin.catName"></span>' +
+            '<input class="input" data-cat-ar></label>' +
+          '<label class="field"><span class="label" data-i18n="admin.catNameEn"></span>' +
+            '<input class="input" dir="ltr" data-cat-en></label>' +
+          '<label class="field"><span class="label" data-i18n="admin.catId"></span>' +
+            '<input class="input" dir="ltr" data-cat-id></label>' +
+          '<label class="field"><span class="label" data-i18n="admin.catMeta"></span>' +
+            '<input class="input" data-cat-meta></label>' +
+          num("adm.min", "data-cat-min", 100, 0) +
+          num("adm.max", "data-cat-max", 1000, 0) +
+        "</div>" +
+        '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="admin.catIdHint"></p>' +
+        '<span class="label" style="margin-top:var(--s-4);display:block" data-i18n="admin.catChannels"></span>' +
+        '<div class="row gap-2 wrap" style="margin-top:var(--s-2)">' +
+          chans.map(function (c) {
+            return '<label class="chip"><input type="checkbox" checked value="' + esc(c.id) +
+              '" style="margin-inline-end:var(--s-2)" data-cat-new-channel>' +
+              esc(tx(c.title)) + "</label>";
+          }).join("") +
+        "</div>" +
+        '<button class="btn btn--primary" style="margin-top:var(--s-5)" type="button" data-cat-save>' +
+          esc(I18N.t("admin.catAdd")) + "</button>" +
+      "</section>";
+  }
+
   function num(labelKey, attr, value, min, max, step) {
     return '<label class="field"><span class="label" data-i18n="' + labelKey + '"></span>' +
       '<input class="input" type="number"' +
@@ -13780,7 +14453,8 @@ Pages.define("admin", function (global) {
   var ACT = { approve: "admin.actApprove", reject: "admin.actReject",
               resolve: "admin.actResolve", settings: "admin.actSettings",
               feature: "adm.feature", ai: "adm.aiOff", ad: "adm.ads",
-              cost: "adm.costs", partner: "adm.partners", band: "adm.bands" };
+              cost: "adm.costs", partner: "adm.partners", band: "adm.bands",
+              catalogue: "admin.catTitle" };
 
   function record() {
     var log = Store.audit().slice(0, 40);
@@ -13801,7 +14475,7 @@ Pages.define("admin", function (global) {
 
   /* =============================================================== render */
   var VIEWS = { overview: overview, people: people, requests: requests,
-                money: money, ads: ads, settings: settings };
+                money: money, ads: ads, catalogue: catalogue, settings: settings };
 
   App.onRender(function () {
     if (!Session.is("staff")) { host.innerHTML = denied(); I18N.apply(host); return; }
@@ -13832,6 +14506,19 @@ Pages.define("admin", function (global) {
 
   host.addEventListener("input", function (ev) {
     if (ev.target.matches("[data-search]")) { query = ev.target.value.trim(); App.rerender(); }
+  });
+
+  // Which channels a category allows. Ticking one is the whole edit — there
+  // is no save button, because a half-saved catalogue is worse than none.
+  host.addEventListener("change", function (ev) {
+    var box = ev.target.closest("[data-cat-channel]");
+    if (!box || !Session.is("staff")) return;
+    var id = box.getAttribute("data-cat-channel");
+    var picked = $$('[data-cat-channel="' + id + '"]', host)
+      .filter(function (b) { return b.checked; })
+      .map(function (b) { return b.value; });
+    if (!picked.length) { App.toast(I18N.t("admin.catNeed"), "alert"); box.checked = true; return; }
+    Store.setType(id, { channels: picked });
   });
 
   host.addEventListener("click", function (ev) {
@@ -13971,6 +14658,51 @@ Pages.define("admin", function (global) {
     }
     var da = hit("data-del-ad");
     if (da) { Store.removeAnnouncement(da); return; }
+
+    /* --- the catalogue --- */
+    if (t.closest("[data-cat-save]")) {
+      var id = val("[data-cat-id]").toLowerCase().replace(/[^a-z0-9_-]/g, "");
+      var ar = val("[data-cat-ar]"), en = val("[data-cat-en]");
+      if (!id || !ar) { App.toast(I18N.t("admin.catNeed"), "alert"); return; }
+      if (M.serviceType(id)) { App.toast(I18N.t("admin.catNeed"), "alert"); return; }
+      var picked = $$("[data-cat-new-channel]", host)
+        .filter(function (b) { return b.checked; })
+        .map(function (b) { return b.value; });
+      var min = +val("[data-cat-min]") || 0;
+      var max = +val("[data-cat-max]") || 0;
+      // The band goes in first. A category with no band is one a lawyer
+      // cannot price anything under, so it would appear in the picker and
+      // refuse every number typed into it.
+      Store.setBand(id, { min: min, max: Math.max(min, max) });
+      Store.addType({
+        id: id, icon: "tag", active: true,
+        title: { ar: ar, en: en || ar },
+        meta: { ar: val("[data-cat-meta]"), en: val("[data-cat-meta]") },
+        channels: picked.length ? picked : ["text"],
+        sort: (M.allServiceTypes().length + 1) * 10,
+      });
+      Store.log({ action: "catalogue", byId: me.id, subject: ar });
+      App.toast(I18N.t("admin.catAdded"), "check");
+      return;
+    }
+    var ct = hit("data-cat-toggle");
+    if (ct) {
+      var cur = M.serviceType(ct);
+      Store.setType(ct, { active: !(cur && cur.active !== false) });
+      Store.log({ action: "catalogue", byId: me.id, subject: tx((cur || {}).title || {}) });
+      return;
+    }
+    var cr = hit("data-cat-remove");
+    if (cr) {
+      // Refused by the database when anything is sold under it, and the
+      // message says so rather than the row quietly coming back.
+      var used = M.services().some(function (sv) { return sv.typeId === cr; }) ||
+                 M.requests().some(function (rq) { return rq.typeId === cr; });
+      if (used) { App.toast(I18N.t("admin.catInUse"), "alert"); return; }
+      Store.removeType(cr);
+      Store.log({ action: "catalogue", byId: me.id, subject: cr });
+      return;
+    }
 
     /* --- settings --- */
     if (t.closest("[data-save-settings]")) {

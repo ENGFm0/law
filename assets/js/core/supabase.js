@@ -291,13 +291,34 @@
     profile: function (id) {
       return load().then(function (sb) {
         return sb.from("profiles").select("*").eq("id", id).maybeSingle()
-          .then(function (res) { return res.error ? null : toProfile(res.data); });
+          .then(function (res) {
+            // Named, not swallowed. This read is the one the whole session
+            // depends on, and a silent null here is indistinguishable from
+            // an account that does not exist.
+            if (res.error) { console.error("profile read failed", res.error); return null; }
+            return toProfile(res.data);
+          });
       });
     },
 
-    /** Everything the site reads at once, for the cache that keeps reads sync. */
+    /** Everything the site reads at once, for the cache that keeps reads sync.
+
+        Every table is named, because the answer has to say which one failed.
+        A read that comes back with an error used to be turned into an empty
+        array here, so a database refusing to hand over `profiles` looked
+        exactly like a database with nobody in it: the signed-in person
+        vanished, every page drew as a guest, and the only clue was a 500 in a
+        panel nobody had open. Now the failures come back with the data and the
+        caller decides — which, for a table it already holds a copy of, is to
+        keep the copy and say so out loud. */
     hydrate: function () {
       return load().then(function (sb) {
+        var names = ["profiles", "services", "requests", "articles", "reviews",
+                     "comments", "endorsements", "agreements", "disputes",
+                     "notifications", "platform_settings", "audit_log",
+                     "price_bands", "announcements", "subscriptions",
+                     "operating_costs", "partners", "service_types", "quotes",
+                     "offers"];
         return Promise.all([
           sb.from("profiles").select("*"),
           sb.from("services").select("*"),
@@ -320,18 +341,33 @@
           // back empty, which is exactly what an ordinary account should see.
           sb.from("operating_costs").select("*").order("created_at", { ascending: false }),
           sb.from("partners").select("*").order("created_at"),
+          sb.from("service_types").select("*").order("sort"),
+          sb.from("quotes").select("*").order("created_at", { ascending: false }),
+          sb.from("offers").select("*"),
         ]).then(function (r) {
-          var pick = function (x) { return (x && !x.error && x.data) || []; };
+          var failed = [];
+          var pick = function (i) {
+            var x = r[i];
+            if (x && x.error) {
+              failed.push({ table: names[i], code: x.error.code || "",
+                            message: x.error.message || String(x.error) });
+              return null;                 // not [] — "we do not know" is not "none"
+            }
+            return (x && x.data) || [];
+          };
+          var people = pick(0);
           return {
-            profiles: pick(r[0]).map(toProfile),
-            services: pick(r[1]), requests: pick(r[2]), articles: pick(r[3]),
-            reviews: pick(r[4]), comments: pick(r[5]),
-            endorsements: pick(r[6]), agreements: pick(r[7]),
-            disputes: pick(r[8]), notices: pick(r[9]),
+            profiles: people && people.map(toProfile),
+            services: pick(1), requests: pick(2), articles: pick(3),
+            reviews: pick(4), comments: pick(5),
+            endorsements: pick(6), agreements: pick(7),
+            disputes: pick(8), notices: pick(9),
             settings: (r[10] && !r[10].error && r[10].data) || null,
-            audit: pick(r[11]),
-            bands: pick(r[12]), announcements: pick(r[13]), subscriptions: pick(r[14]),
-            costs: pick(r[15]), partners: pick(r[16]),
+            audit: pick(11),
+            bands: pick(12), announcements: pick(13), subscriptions: pick(14),
+            costs: pick(15), partners: pick(16),
+            types: pick(17), quotes: pick(18), offers: pick(19),
+            errors: failed,
           };
         });
       });

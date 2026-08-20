@@ -53,7 +53,7 @@ insert into public.requests (id, client_id, lawyer_id, type_id, title, price, st
 values ('aaaaaaaa-0000-0000-0000-000000000001',
         '11111111-1111-1111-1111-111111111111',
         '33333333-3333-3333-3333-333333333333',
-        'written','Client A''s matter', 100, 'delivered');
+        'consult','Client A''s matter', 100, 'delivered');
 
 \echo '── a request is visible only to its parties ──'
 set role authenticated;
@@ -88,11 +88,11 @@ select case when count(*) = 0 then 'PASS' else 'FAIL' end
 set role authenticated;
 set request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
 insert into public.services (owner_id, type_id, price)
-  values ('33333333-3333-3333-3333-333333333333','written',120);
+  values ('33333333-3333-3333-3333-333333333333','consult',120);
 insert into public.services (owner_id, type_id, price)
-  values ('33333333-3333-3333-3333-333333333333','written',10);
+  values ('33333333-3333-3333-3333-333333333333','consult',10);
 insert into public.services (owner_id, type_id, price)
-  values ('33333333-3333-3333-3333-333333333333','written',9000);
+  values ('33333333-3333-3333-3333-333333333333','consult',9000);
 reset role;
 select case when count(*) = 1 then 'PASS' else 'FAIL' end
   || '  only the price inside the band survived' from public.services;

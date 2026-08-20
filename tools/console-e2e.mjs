@@ -17,8 +17,8 @@ await p.goto(U+'index.html');
 await p.evaluate(()=>localStorage.setItem('sanad.session.user','u-staff'));
 await p.goto(U+'admin.html'); await p.waitForTimeout(600);
 
-console.log('— SIX SECTIONS, NOT ONE LONG PAGE —');
-ok('the tabs are there', (await p.$$('.adm-tab')).length === 6);
+console.log('— SEVEN SECTIONS, NOT ONE LONG PAGE —');
+ok('the tabs are there', (await p.$$('.adm-tab')).length === 7);
 ok('overview opens first', await p.$eval('.adm-tab.is-active span', e=>e.textContent.trim()) === 'نظرة عامة');
 ok('with figures on it', (await p.$$('.kpi')).length === 6);
 ok('and what is waiting on you', /يحتاج قرارك/.test(await body()));
@@ -96,6 +96,32 @@ ok('a band can be moved', await p.evaluate(()=>window.Models.priceBand('review')
 ok('and it binds a lawyer at once',
    await p.evaluate(()=>window.Models.checkPrice('review', 500)) === 'high');
 ok('the gateway rate is kept', await p.evaluate(()=>window.Models.platformSettings().madaPct) === 1.75);
+
+console.log('— THE CATALOGUE IS FILLED IN FROM HERE —');
+await p.goto(U+'admin.html?tab=catalogue'); await p.waitForTimeout(500);
+ok('the six the site ships with are listed', (await p.$$('[data-cat-toggle]')).length >= 6);
+await p.fill('[data-cat-ar]','تأسيس شركة');
+await p.fill('[data-cat-en]','Company formation');
+await p.fill('[data-cat-id]','company');
+await p.fill('[data-cat-min]','800');
+await p.fill('[data-cat-max]','6000');
+await p.click('[data-cat-save]'); await p.waitForTimeout(500);
+ok('a new kind of work is added', await p.evaluate(()=>!!window.Models.serviceType('company')));
+ok('with the band that was typed with it',
+   await p.evaluate(()=>window.Models.priceBand('company').max) === 6000);
+
+await p.evaluate(()=>localStorage.setItem('sanad.session.user','u-ahmed'));
+await p.goto(U+'services.html'); await p.waitForTimeout(500);
+ok('and a lawyer can pick it the moment it exists',
+   await p.$eval('[data-new-type]', e=>[...e.options].some(o=>o.value==='company')));
+
+await p.evaluate(()=>localStorage.setItem('sanad.session.user','u-staff'));
+await p.goto(U+'admin.html?tab=catalogue'); await p.waitForTimeout(500);
+await p.click('[data-cat-toggle="company"]'); await p.waitForTimeout(400);
+await p.evaluate(()=>localStorage.setItem('sanad.session.user','u-ahmed'));
+await p.goto(U+'services.html'); await p.waitForTimeout(500);
+ok('hiding it takes it out of the picker',
+   await p.$eval('[data-new-type]', e=>![...e.options].some(o=>o.value==='company')));
 
 console.log('— AND NOBODY ELSE SEES ANY OF IT —');
 await p.evaluate(()=>localStorage.setItem('sanad.session.user','u-ahmed'));

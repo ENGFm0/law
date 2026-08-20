@@ -509,6 +509,10 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   background: var(--surface-2); border: 1px solid var(--border);
 }
 .track--held { background: var(--warning-soft); border-color: var(--warning); }
+/* On a row rather than in a panel: tucked under the request it belongs to,
+   quieter than the card above it so the list still reads as a list. */
+.track-slot { margin: calc(var(--s-2) * -1) 0 var(--s-4); padding-inline: var(--s-3); }
+.track-slot .track { background: transparent; border-style: dashed; padding: var(--s-4); }
 .track__steps {
   display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
   margin-top: var(--s-5); list-style: none;

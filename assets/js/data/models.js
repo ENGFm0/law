@@ -168,7 +168,33 @@
   /* ---------- services ----------
      A lawyer sets their own price, but only inside the band the platform
      publishes for that service type — decided to stop undercutting and gouging. */
-  function serviceTypes() { return SEED.serviceTypes; }
+  /** Every category the platform knows about, including the ones it has
+      stopped offering — an old service still has to be able to say what it
+      was. The seed is the starting point in the demo; on the remote backend
+      the table is the catalogue and the seed is only the fallback for a
+      database that has not had the migration run against it yet. */
+  function allServiceTypes() {
+    var extra = (Store.types && Store.types()) || [];
+    var gone = (Store.removedTypes && Store.removedTypes()) || [];
+    var base = seeded(SEED.serviceTypes);
+    if (!extra.length && !base.length) return SEED.serviceTypes;
+    var out = base.filter(function (t) { return gone.indexOf(t.id) === -1; });
+    extra.forEach(function (t) {
+      var at = -1;
+      for (var i = 0; i < out.length; i++) if (out[i].id === t.id) at = i;
+      if (at === -1) { out.push(t); return; }
+      var merged = {};
+      Object.keys(out[at]).forEach(function (k) { merged[k] = out[at][k]; });
+      Object.keys(t).forEach(function (k) { merged[k] = t[k]; });
+      out[at] = merged;
+    });
+    return out.sort(function (a, b) { return (a.sort || 100) - (b.sort || 100); });
+  }
+
+  /** The ones a lawyer may actually pick from today. */
+  function serviceTypes() {
+    return allServiceTypes().filter(function (t) { return t.active !== false; });
+  }
 
   /* ---------- how the work is delivered ----------
      The channel is not the work. A statement of claim is a statement of claim
@@ -198,7 +224,16 @@
     var c = channel(r && r.channel);
     return !!(c && c.live);
   }
-  function serviceType(id) { return byId(SEED.serviceTypes, id); }
+  function serviceType(id) { return byId(allServiceTypes(), id); }
+
+  /** Every service on the platform, seeded and added alike. The console needs
+      it to answer one question: is anything actually sold under this
+      category? */
+  function services() {
+    var removed = Store.removedServices();
+    return seeded(SEED.services).concat(Store.services())
+      .filter(function (s) { return removed.indexOf(s.id) === -1; });
+  }
 
   function servicesOf(lawyerId) {
     var own = seeded(SEED.services).filter(function (s) { return s.ownerId === lawyerId; });
@@ -240,6 +275,48 @@
     if (price < band.min) return "low";
     if (price > band.max) return "high";
     return null;
+  }
+
+  /* ---------- the reverse auction ----------
+     A brief is posted once and answered by whoever can take it. What a lawyer
+     is shown is decided here rather than in the page, because it is the same
+     question the row-level policy answers on the server: could this person
+     do this work? */
+  function quotes() { return (Store.quotes && Store.quotes()) || []; }
+  function quote(id) { return byId(quotes(), id); }
+  function offersOn(quoteId) {
+    return (Store.offersOn && Store.offersOn(quoteId)) || [];
+  }
+  function quoteLive(q) {
+    return !!q && q.status === "open" && q.expiresAt > Date.now();
+  }
+  /** The brief this client is currently watching — the newest one they have
+      not cleared. One at a time, which is what the screen shows. */
+  function myQuote(clientId) {
+    var mine = quotes().filter(function (q) { return q.clientId === clientId; });
+    return mine.sort(function (a, b) { return (b.at || 0) - (a.at || 0); })[0] || null;
+  }
+  /** Briefs this lawyer could bid on: still open, and work they have actually
+      listed through a channel the client asked for. */
+  function openQuotesFor(lawyerId) {
+    var mine = servicesOf(lawyerId);
+    return quotes().filter(function (q) {
+      if (!quoteLive(q)) return false;
+      if (q.clientId === lawyerId) return false;
+      return mine.some(function (s) {
+        return s.typeId === q.typeId && serviceChannels(s).indexOf(q.channel) !== -1;
+      });
+    }).sort(function (a, b) { return (a.expiresAt || 0) - (b.expiresAt || 0); });
+  }
+  /** What this lawyer would charge for that brief: their own listed price for
+      the work, or the middle of the platform's band if they have not listed
+      it. Pulled inside the band either way — the band is the platform's
+      promise, and a stale row is not a reason to break it. */
+  function quotePrice(lawyerId, typeId) {
+    var band = priceBand(typeId);
+    var own = servicesOf(lawyerId).filter(function (s) { return s.typeId === typeId; })[0];
+    var price = own ? own.price : Math.round((band.min + band.max) / 2 / 5) * 5;
+    return Math.min(band.max, Math.max(band.min, price));
   }
 
   /* ---------- requests ---------- */
@@ -769,7 +846,10 @@
     noticesFor: noticesFor, unreadFor: unreadFor, partiesOf: partiesOf,
     reviewsFor: reviewsFor, ratingOf: ratingOf, ratingSpread: ratingSpread,
     scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard, ranked: ranked,
-    serviceTypes: serviceTypes, serviceType: serviceType, servicesOf: servicesOf,
+    serviceTypes: serviceTypes, allServiceTypes: allServiceTypes,
+    serviceType: serviceType, servicesOf: servicesOf, services: services,
+    quotes: quotes, quote: quote, offersOn: offersOn, quoteLive: quoteLive,
+    myQuote: myQuote, openQuotesFor: openQuotesFor, quotePrice: quotePrice,
     channels: channels, channel: channel, channelsFor: channelsFor,
     serviceChannels: serviceChannels, isLive: isLive,
     priceBand: priceBand, checkPrice: checkPrice,

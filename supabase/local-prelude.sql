@@ -29,3 +29,12 @@ do $$ begin
   end if;
 end $$;
 grant usage on schema public to anon, authenticated;
+
+-- Supabase grants every table in `public` to anon and authenticated as it is
+-- created — the API roles are meant to reach the tables and be stopped by row
+-- policies, not by table privileges. A plain PostgreSQL grants nothing, so
+-- every policy test came back "permission denied for table …" and proved
+-- nothing about the policy it was written for.
+alter default privileges in schema public grant all on tables to anon, authenticated;
+alter default privileges in schema public grant all on sequences to anon, authenticated;
+alter default privileges in schema public grant execute on functions to anon, authenticated;

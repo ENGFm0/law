@@ -118,6 +118,59 @@
     return { id: p.id, name: p.name, sharePct: Number(p.share_pct), note: p.note };
   }
 
+  function inType(t) {
+    return {
+      id: t.id, icon: t.icon || "tag",
+      title: { ar: t.title_ar || "", en: t.title_en || t.title_ar || "" },
+      meta:  { ar: t.meta_ar  || "", en: t.meta_en  || t.meta_ar  || "" },
+      channels: t.channels || ["text"], sort: t.sort == null ? 100 : t.sort,
+      active: t.active !== false,
+    };
+  }
+  function outType(t) {
+    var row = {};
+    if (t.id !== undefined) row.id = t.id;
+    if (t.title) { row.title_ar = t.title.ar || ""; row.title_en = t.title.en || t.title.ar || ""; }
+    if (t.meta)  { row.meta_ar  = t.meta.ar  || ""; row.meta_en  = t.meta.en  || t.meta.ar  || ""; }
+    if (t.icon !== undefined) row.icon = t.icon || "tag";
+    if (t.channels !== undefined) row.channels = t.channels;
+    if (t.sort !== undefined) row.sort = t.sort;
+    if (t.active !== undefined) row.active = !!t.active;
+    return row;
+  }
+
+  function inQuote(q) {
+    return {
+      id: q.id, clientId: q.client_id, typeId: q.type_id, channel: q.channel || "text",
+      brief: q.brief || "", city: q.city || "", specialty: q.specialty || "",
+      status: q.status, acceptedBy: q.accepted_by, requestId: q.request_id,
+      expiresAt: new Date(q.expires_at).getTime(),
+      at: new Date(q.created_at).getTime(),
+    };
+  }
+  function outQuote(q) {
+    var row = {};
+    if (q.clientId !== undefined) row.client_id = q.clientId;
+    if (q.typeId !== undefined) row.type_id = q.typeId;
+    if (q.channel !== undefined) row.channel = q.channel || "text";
+    if (q.brief !== undefined) row.brief = q.brief;
+    if (q.city !== undefined) row.city = q.city || null;
+    if (q.specialty !== undefined) row.specialty = q.specialty || null;
+    if (q.status !== undefined) row.status = q.status;
+    if (q.acceptedBy !== undefined) row.accepted_by = q.acceptedBy || null;
+    if (q.requestId !== undefined) row.request_id = q.requestId || null;
+    if (q.expiresAt !== undefined) row.expires_at = new Date(q.expiresAt).toISOString();
+    return row;
+  }
+
+  function inOffer(o) {
+    return {
+      id: o.id, quoteId: o.quote_id, lawyer: o.lawyer_id, price: Number(o.price),
+      eta: o.eta == null ? 24 : o.eta, auto: !!o.auto, note: o.note || "",
+      at: new Date(o.created_at).getTime(),
+    };
+  }
+
   function inAgreement(a) {
     return { id: a.id, lawyerId: a.lawyer_id, internId: a.intern_id, kind: a.kind,
              amount: Number(a.amount), cases: a.cases, startedAt: a.started_at };
@@ -159,6 +212,7 @@
     reviews: [], comments: [], endorsements: [], agreements: [], applications: {},
     disputes: [], notices: [], audit: [], settings: {},
     announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
+    types: [], quotes: [], offers: [],
   };
   var ready = false;
 
@@ -232,11 +286,15 @@
   /* ---------- writes: cache first, database behind ---------- */
   function local(list, row) { list.push(row); Store.notifyAll(); return row; }
 
-  Store.addRequest = function (r) {
+  Store.addRequest = function (r, done) {
     var row = outRequest(r);
     push("requests", row).then(function (res) {
       report(res);
-      if (res && res.data) { r.id = res.data.id; Store.notifyAll(); }
+      if (res && res.data) {
+        r.id = res.data.id;
+        Store.notifyAll();
+        if (done) done(r);
+      }
     });
     r.id = r.id || "pending-" + Math.random().toString(36).slice(2, 8);
     return local(cache.requests, r);
@@ -504,6 +562,128 @@
     }).then(report);
   };
 
+  /* ---------- the catalogue ----------
+     Six categories used to be a constant compiled into the page, so adding
+     one meant a release. They are rows now: staff write them, everybody
+     reads them, and a lawyer picks from whatever the platform is currently
+     offering. */
+  Store.types = function () { return cache.types; };
+  // Nothing is hidden behind a list here: a category the platform deleted is
+  // gone from the table, and the table is the catalogue.
+  Store.removedTypes = function () { return []; };
+  Store.addType = function (t) {
+    var row = outType(t);
+    push("service_types", row).then(function (res) {
+      report(res);
+      if (res && res.data) { cache.types.push(inType(res.data)); Store.notifyAll(); }
+    });
+    return t;
+  };
+  Store.setType = function (id, changes) {
+    cache.types.forEach(function (t) {
+      if (t.id !== id) return;
+      Object.keys(changes).forEach(function (k) { t[k] = changes[k]; });
+    });
+    Store.notifyAll();
+    patch("service_types", id, outType(changes)).then(report);
+  };
+  Store.removeType = function (id) {
+    var kept = cache.types.filter(function (t) { return t.id !== id; });
+    cache.types = kept;
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("service_types").delete().eq("id", id);
+    }).then(function (res) {
+      // A category something is already sold under cannot go; the database
+      // says so and the row comes back, because pretending otherwise would
+      // leave the console showing a catalogue the platform does not have.
+      if (res && res.error) { Store.hydrate(); report(res); }
+    });
+  };
+
+  /* ---------- the auction ---------- */
+  Store.quotes = function () { return cache.quotes; };
+  Store.quote = function (id) {
+    for (var i = 0; i < cache.quotes.length; i++) {
+      if (cache.quotes[i].id === id) return cache.quotes[i];
+    }
+    return null;
+  };
+  Store.offers = function () { return cache.offers; };
+  Store.offersOn = function (quoteId) {
+    return cache.offers.filter(function (o) { return o.quoteId === quoteId; });
+  };
+
+  Store.openQuote = function (q) {
+    var row = outQuote(q);
+    push("quotes", row).then(function (res) {
+      report(res);
+      if (!res || !res.data) return;
+      var real = inQuote(res.data);
+      // Swap the placeholder for the row the database made, then read the
+      // offers it made with it: a lawyer who takes matching work
+      // automatically has already bid by the time this returns, and the
+      // board would otherwise sit empty until the next page load.
+      cache.quotes = cache.quotes.filter(function (x) { return x.id !== q.id; });
+      cache.quotes.unshift(real);
+      q.id = real.id;
+      Store.notifyAll();
+      SB.load().then(function (sb) {
+        return sb.from("offers").select("*").eq("quote_id", real.id);
+      }).then(function (out) {
+        if (!out || out.error || !out.data) return;
+        cache.offers = cache.offers.filter(function (o) { return o.quoteId !== real.id; })
+          .concat(out.data.map(inOffer));
+        Store.notifyAll();
+      });
+    });
+    q.id = q.id || "pending-" + Math.random().toString(36).slice(2, 8);
+    q.status = q.status || "open";
+    q.at = Date.now();
+    cache.quotes.unshift(q);
+    Store.notifyAll();
+    return q;
+  };
+
+  Store.setQuote = function (id, changes) {
+    var found = null;
+    cache.quotes.forEach(function (q) {
+      if (q.id !== id) return;
+      found = q;
+      Object.keys(changes).forEach(function (k) { q[k] = changes[k]; });
+    });
+    Store.notifyAll();
+    patch("quotes", id, outQuote(changes)).then(report);
+    return found;
+  };
+
+  Store.addOffer = function (offer) {
+    var q = Store.quote(offer.quoteId);
+    if (!q || q.status !== "open") return false;
+    var already = cache.offers.some(function (o) {
+      return o.quoteId === offer.quoteId && o.lawyer === offer.lawyer;
+    });
+    if (already) return false;
+    push("offers", {
+      quote_id: offer.quoteId, lawyer_id: offer.lawyer, price: offer.price,
+      eta: offer.eta || 24, auto: !!offer.auto, note: offer.note || null,
+    }).then(function (res) {
+      report(res);
+      if (res && res.data) {
+        cache.offers = cache.offers.filter(function (o) {
+          return !(o.quoteId === offer.quoteId && o.lawyer === offer.lawyer);
+        });
+        cache.offers.push(inOffer(res.data));
+        Store.notifyAll();
+      }
+    });
+    offer.id = offer.id || "pending-" + Math.random().toString(36).slice(2, 8);
+    offer.at = Date.now();
+    cache.offers.push(offer);
+    Store.notifyAll();
+    return true;
+  };
+
   Store.bands = function () { return cache.bands; };
   Store.setBand = function (typeId, band) {
     cache.bands[typeId] = { min: band.min, max: band.max };
@@ -621,35 +801,75 @@
   /* ---------- filling the cache ---------- */
   Store.hydrate = function () {
     return SB.hydrate().then(function (d) {
-      cache.profiles = d.profiles;
-      cache.requests = d.requests.map(inRequest);
-      cache.services = d.services.map(inService);
-      cache.articles = d.articles.map(inArticle);
-      cache.reviews = d.reviews.map(inReview);
-      cache.comments = d.comments.map(inComment);
-      cache.endorsements = d.endorsements.map(inEndorsement);
-      cache.agreements = d.agreements.map(inAgreement);
-      // Defensive: a table the account may not read comes back empty, and a
-      // database that predates a migration returns nothing at all. Neither is
-      // a reason for the whole site to fail to start.
-      cache.disputes = (d.disputes || []).map(inDispute);
-      cache.notices = (d.notices || []).map(inNotice);
-      cache.audit = (d.audit || []).map(inAudit);
+      // A read that failed comes back as null, not as an empty list, and a
+      // list we do not have is not a list with nothing in it. Keeping what
+      // the cache already holds is the difference between a page that is
+      // missing one section and a page that has decided nobody is signed in:
+      // when `profiles` failed, the signed-in person disappeared, every
+      // permission with them, and the only trace was a 500 in a panel nobody
+      // had open.
+      var take = function (rows, map, current) {
+        return rows ? rows.map(map) : current;
+      };
+      cache.profiles = d.profiles || cache.profiles;
+      cache.requests = take(d.requests, inRequest, cache.requests);
+      cache.services = take(d.services, inService, cache.services);
+      cache.articles = take(d.articles, inArticle, cache.articles);
+      cache.reviews = take(d.reviews, inReview, cache.reviews);
+      cache.comments = take(d.comments, inComment, cache.comments);
+      cache.endorsements = take(d.endorsements, inEndorsement, cache.endorsements);
+      cache.agreements = take(d.agreements, inAgreement, cache.agreements);
+      // A table the account may not read comes back empty, and a database
+      // that predates a migration does not have it at all. Neither is a
+      // reason for the site to fail to start.
+      cache.disputes = take(d.disputes, inDispute, cache.disputes);
+      cache.notices = take(d.notices, inNotice, cache.notices);
+      cache.audit = take(d.audit, inAudit, cache.audit);
       cache.settings = inSettings(d.settings);
-      cache.announcements = (d.announcements || []).map(inAnnouncement);
-      cache.subscriptions = (d.subscriptions || []).map(inSubscription);
-      cache.costs = (d.costs || []).map(inCost);
-      cache.partners = (d.partners || []).map(inPartner);
-      cache.bands = {};
-      (d.bands || []).forEach(function (b) {
-        cache.bands[b.type_id] = { min: Number(b.min_price), max: Number(b.max_price) };
-      });
+      cache.announcements = take(d.announcements, inAnnouncement, cache.announcements);
+      cache.subscriptions = take(d.subscriptions, inSubscription, cache.subscriptions);
+      cache.costs = take(d.costs, inCost, cache.costs);
+      cache.partners = take(d.partners, inPartner, cache.partners);
+      cache.types = take(d.types, inType, cache.types);
+      cache.quotes = take(d.quotes, inQuote, cache.quotes);
+      cache.offers = take(d.offers, inOffer, cache.offers);
+      if (d.bands) {
+        cache.bands = {};
+        d.bands.forEach(function (b) {
+          cache.bands[b.type_id] = { min: Number(b.min_price), max: Number(b.max_price) };
+        });
+      }
       ready = true;
       keepMe();
       Store.notifyAll();
+      if (d.errors && d.errors.length) dataProblem(d.errors);
       return cache;
     });
   };
+
+  /** A table the database refused to hand over, named, with the reason it
+      gave. The alternative is what happened for a week: a site that looks
+      fine, holds half of what it should, and explains nothing. */
+  function dataProblem(errors) {
+    console.error("Supabase read failed", errors);
+    var line = errors.map(function (e) {
+      return e.table + ": " + e.message + (e.code ? " (" + e.code + ")" : "");
+    }).join(" · ");
+    var bar = document.querySelector("[data-datafail]");
+    if (!bar) {
+      var t = function (k) { return global.I18N ? global.I18N.t(k) : ""; };
+      bar = document.createElement("div");
+      bar.setAttribute("data-datafail", "");
+      bar.className = "offline-bar";
+      var title = document.createElement("strong");
+      title.textContent = t("sys.dataFailed");
+      var body = document.createElement("span");
+      body.setAttribute("data-datafail-detail", "");
+      bar.appendChild(title); bar.appendChild(body);
+      (document.body || document.documentElement).appendChild(bar);
+    }
+    bar.querySelector("[data-datafail-detail]").textContent = line;
+  }
   /** Keep the remembered copy in step with the real one. */
   function keepMe() {
     var id = Store.currentId();
@@ -709,6 +929,24 @@
       // this left the site rendering the guest view for somebody who was in
       // fact signed in, which read as the sign-in having failed.
       document.dispatchEvent(new CustomEvent("sessionchange"));
+      // One row, asked for by id, rather than waiting on the twenty tables
+      // the rest of the site needs. Who you are and what you may do is the
+      // one answer every page is blocked on, so it is fetched on its own and
+      // arrives first — and it still arrives if the big read is the thing
+      // that is failing.
+      SB.profile(id).then(function (me) {
+        if (!me) return;
+        var known = false;
+        cache.profiles = cache.profiles.map(function (p) {
+          if (p.id !== me.id) return p;
+          known = true;
+          return me;
+        });
+        if (!known) cache.profiles.push(me);
+        remember(me);
+        Store.notifyAll();
+        document.dispatchEvent(new CustomEvent("sessionchange"));
+      }).catch(function (e) { console.error(e); });
     }
     return Store.hydrate().then(function () {
       // Roles and status arrive with the profiles, so the navigation is only

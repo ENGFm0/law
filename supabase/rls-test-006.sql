@@ -47,18 +47,18 @@ select case when status = 'verified' then 'PASS' else 'FAIL' end
 \echo '── the price bands ──'
 set role authenticated;
 set request.jwt.claim.sub = 'ffffffff-0000-0000-0000-00000000ffff';
-update public.price_bands set max_price = 99999 where type_id = 'express';
+update public.price_bands set max_price = 99999 where type_id = 'consult';
 reset role;
 select case when count(*) = 0 then 'PASS' else 'FAIL' end
   || '  a lawyer cannot widen the band they sell in'
-  from public.price_bands where type_id = 'express' and max_price = 99999;
+  from public.price_bands where type_id = 'consult' and max_price = 99999;
 
 set role authenticated;
 set request.jwt.claim.sub = 'eeeeeeee-0000-0000-0000-00000000eeee';
-update public.price_bands set max_price = 500 where type_id = 'express';
+update public.price_bands set max_price = 500 where type_id = 'consult';
 reset role;
 select case when count(*) = 1 then 'PASS' else 'FAIL' end
-  || '  staff can' from public.price_bands where type_id = 'express' and max_price = 500;
+  || '  staff can' from public.price_bands where type_id = 'consult' and max_price = 500;
 
 \echo '── announcements are public to read and staff to write ──'
 set role authenticated;

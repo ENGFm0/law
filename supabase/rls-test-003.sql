@@ -51,7 +51,7 @@ values ('aaaaaaaa-0000-0000-0000-000000000001',
         '11111111-1111-1111-1111-111111111111',
         '33333333-3333-3333-3333-333333333333',
         '44444444-4444-4444-4444-444444444444',
-        'written','A delivered matter', 100, 'delivered', now());
+        'consult','A delivered matter', 100, 'delivered', now());
 
 \echo '── the licence queue: nobody approves themselves ──'
 set role authenticated;

@@ -32,7 +32,8 @@
     "requests", "requestStates", "services", "removedServices", "reviews",
     "articles", "articleStates", "comments", "endorsements", "applications",
     "agreements", "disputes", "audit", "profiles", "notices",
-    "announcements", "subscriptions", "costs", "partners", "bands"
+    "announcements", "subscriptions", "costs", "partners", "bands",
+    "types", "removedTypes", "quotes", "offers"
   ].forEach(function (k) {
     if (!work[k]) {
       work[k] = (k.indexOf("States") !== -1 || k === "applications" ||
@@ -191,11 +192,16 @@
 
     /* ---------------- work created during a visit ---------------- */
     requests: function () { return work.requests; },
-    addRequest: function (r) {
+    /* `done` is called once the request exists somewhere it can be pointed
+       at. Here that is immediately; the remote backend calls it when the
+       database has given the row an id, which is the only id worth writing
+       down anywhere else. */
+    addRequest: function (r, done) {
       r.id = r.id || uid("r");
       r.createdAt = Date.now();
       work.requests.push(r);
       notify();
+      if (done) done(r);
       return r;
     },
     requestState: function (id) { return work.requestStates[id] || {}; },
@@ -461,23 +467,85 @@
       return e;
     },
 
-    /* ---------------- quote auction (unchanged behaviour) ---------------- */
-    getQuote: function () { return work.quote || null; },
-    openQuote: function (q) { work.quote = q; notify(); return q; },
+    /* ---------------- the catalogue ----------------
+       What a lawyer can offer to do. The seed carries the six the site
+       shipped with; anything the platform adds from the console lives here
+       and, on the remote backend, in a table everyone can read. */
+    types: function () { return work.types; },
+    addType: function (t) {
+      t.id = t.id || uid("type");
+      work.types.push(t);
+      notify();
+      return t;
+    },
+    /* Editing one of the six the site shipped with writes an overlay rather
+       than changing the fixture — the same way an approved licence does. The
+       merge in models.js puts these on top. */
+    setType: function (id, changes) {
+      var found = null;
+      work.types.forEach(function (t) { if (t.id === id) found = t; });
+      if (!found) { found = { id: id }; work.types.push(found); }
+      Object.keys(changes).forEach(function (k) { found[k] = changes[k]; });
+      notify();
+    },
+    removeType: function (id) {
+      work.types = work.types.filter(function (t) { return t.id !== id; });
+      if (work.removedTypes.indexOf(id) === -1) work.removedTypes.push(id);
+      notify();
+    },
+    removedTypes: function () { return work.removedTypes; },
+
+    /* ---------------- the reverse auction ----------------
+       A brief and the offers on it. This used to be a single object in this
+       browser's sessionStorage, which meant a brief was posted to nobody: no
+       lawyer on another machine could see it, and taking an offer set a flag
+       and created nothing. It is a list now, and on the remote backend it is
+       a pair of tables, so the two sides of an auction are looking at the
+       same thing. */
+    quotes: function () { return work.quotes; },
+    quote: function (id) {
+      for (var i = 0; i < work.quotes.length; i++) {
+        if (work.quotes[i].id === id) return work.quotes[i];
+      }
+      return null;
+    },
+    openQuote: function (q) {
+      q.id = q.id || uid("q");
+      q.status = q.status || "open";
+      q.at = Date.now();
+      work.quotes.push(q);
+      notify();
+      return q;
+    },
+    setQuote: function (id, changes) {
+      var found = null;
+      work.quotes.forEach(function (q) {
+        if (q.id !== id) return;
+        found = q;
+        Object.keys(changes).forEach(function (k) { q[k] = changes[k]; });
+      });
+      notify();
+      return found;
+    },
+    offers: function () { return work.offers; },
+    offersOn: function (quoteId) {
+      return work.offers.filter(function (o) { return o.quoteId === quoteId; });
+    },
+    /** One offer per lawyer per brief, on a brief that is still open. Returns
+        whether it was taken, because the form says so either way. */
     addOffer: function (offer) {
-      if (!work.quote || work.quote.status !== "open") return false;
-      if (work.quote.offers.some(function (o) { return o.lawyer === offer.lawyer; })) return false;
-      work.quote.offers.push(offer);
+      var q = Store.quote(offer.quoteId);
+      if (!q || q.status !== "open") return false;
+      var already = work.offers.some(function (o) {
+        return o.quoteId === offer.quoteId && o.lawyer === offer.lawyer;
+      });
+      if (already) return false;
+      offer.id = offer.id || uid("off");
+      offer.at = Date.now();
+      work.offers.push(offer);
       notify();
       return true;
     },
-    setQuoteStatus: function (status, extra) {
-      if (!work.quote) return;
-      work.quote.status = status;
-      Object.keys(extra || {}).forEach(function (k) { work.quote[k] = extra[k]; });
-      notify();
-    },
-    clearQuote: function () { delete work.quote; notify(); },
 
     /* ---------------- housekeeping ---------------- */
     resetWork: function () {
@@ -485,7 +553,8 @@
                reviews: [], articles: [], articleStates: {}, comments: [],
                endorsements: [], applications: {}, agreements: [], disputes: [],
                audit: [], profiles: {}, notices: [],
-               announcements: [], subscriptions: [], costs: [], partners: [], bands: {} };
+               announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
+               types: [], removedTypes: [], quotes: [], offers: [] };
       notify();
     },
     resetAll: function () {

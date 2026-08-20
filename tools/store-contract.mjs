@@ -124,6 +124,37 @@ ok('a comment gets an id', !!S.addComment({ articleId: a.id, authorId: reg.user.
 ok('a review gets an id and a time', !!S.addReview({ targetId: lawyer.id, rating: 5 }).at);
 ok('an endorsement gets an id', !!S.addEndorsement({ internId: 'u-jaid', lawyerId: lawyer.id }).id);
 
+section('THE CATALOGUE AND THE AUCTION');
+S.addType({ id: 'company', title: { ar: 'تأسيس شركة', en: 'Company formation' },
+            channels: ['text'], active: true });
+ok('a category can be added', S.types().some((t) => t.id === 'company'));
+S.setType('company', { active: false });
+ok('and hidden without being lost', S.types().find((t) => t.id === 'company').active === false);
+S.setType('consult', { channels: ['text'] });
+ok('editing a shipped one writes an overlay',
+   S.types().some((t) => t.id === 'consult' && t.channels.length === 1));
+S.removeType('company');
+ok('removing it takes it out', !S.types().some((t) => t.id === 'company'));
+ok('and records that it went', S.removedTypes().indexOf('company') !== -1);
+
+const q = S.openQuote({ clientId: reg.user.id, typeId: 'consult', channel: 'text',
+                        brief: 'a question', expiresAt: Date.now() + 60000 });
+ok('a brief gets an id', !!q.id);
+ok('and is a row in a list', S.quotes().length === 1);
+ok('an offer lands on it',
+   S.addOffer({ quoteId: q.id, lawyer: lawyer.id, price: 200, eta: 4 }) === true);
+ok('one offer per lawyer per brief',
+   S.addOffer({ quoteId: q.id, lawyer: lawyer.id, price: 150 }) === false);
+ok('the offers are readable by brief', S.offersOn(q.id).length === 1);
+S.setQuote(q.id, { status: 'accepted', acceptedBy: lawyer.id });
+ok('taking one closes the brief', S.quote(q.id).status === 'accepted');
+ok('and nothing may be bid on a closed brief',
+   S.addOffer({ quoteId: q.id, lawyer: 'u-sara', price: 100 }) === false);
+let landed = null;
+S.addRequest({ clientId: reg.user.id, lawyerId: lawyer.id, typeId: 'consult', price: 200 },
+             (saved) => { landed = saved; });
+ok('a request reports when it exists', landed !== null && !!landed.id);
+
 section('CHANGE NOTIFICATION');
 let fired = 0;
 S.onChange(() => { fired++; });
