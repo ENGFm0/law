@@ -3011,6 +3011,8 @@ window.SANAD_CONFIG = {
       "thread.openFile": "فتح الملف",
       "thread.pending": "سيُرسل مع الرسالة",
       "notice.message": "رسالة جديدة على طلبك",
+      "thread.open": "المحادثة",
+      "thread.count": "المحادثة · {n}",
     },
 
     en: {
@@ -4263,6 +4265,8 @@ window.SANAD_CONFIG = {
       "thread.openFile": "Open",
       "thread.pending": "Will be sent with the message",
       "notice.message": "A new message on your request",
+      "thread.open": "Conversation",
+      "thread.count": "Conversation · {n}",
     }
   };
 
@@ -8608,13 +8612,13 @@ window.SANAD_CONFIG = {
     else { n.at = Date.now(); n.read = false; cache.notices.push(n); }
     Store.notifyAll();
 
-    // A notice raised for somebody else cannot be read back by the sender, so
-    // nothing is selected here.
+    // Raised through a function rather than written directly. Reopening a
+    // notice that belongs to somebody else is a privileged act — the sender
+    // may not read that row, let alone update it — and an upsert asked
+    // Postgres to do exactly that, which it refused, out loud, on the second
+    // message of every case.
     SB.load().then(function (sb) {
-      return sb.from("notifications").upsert({
-        to_id: n.to, type: n.type, ref: n.ref || null,
-        read: false, at: new Date().toISOString(),
-      }, { onConflict: "to_id,type,ref" });
+      return sb.rpc("raise_notice", { p_to: n.to, p_kind: n.type, p_ref: n.ref || null });
     }).then(function (res) {
       if (res && res.error && res.error.code !== "23505") report(res);
     });
@@ -8705,7 +8709,13 @@ window.SANAD_CONFIG = {
       ready = true;
       return d;
     });
-    var rest = SB.hydrate(SB.REST).then(absorb);
+    // Fifteen of the twenty reads are about one account: their requests,
+    // their notices, their threads, the desk's ledgers. A visitor who is not
+    // signed in has none of them, and asking anyway was fifteen round trips
+    // to be told so.
+    var rest = Store.currentId() || global.REST.session()
+      ? SB.hydrate(SB.REST).then(absorb)
+      : Promise.resolve();
     return Promise.all([core, rest]).then(function () {
       ready = true;
       return cache;
@@ -8830,6 +8840,18 @@ window.SANAD_CONFIG = {
   var authFail = SB.authError && SB.authError();
   if (authFail) authProblem(authFail.message);
 
+  // The data does not wait to be told who is asking for it. Most of it is
+  // public, the rest is decided by a row policy on the server, and holding
+  // every read behind "who am I" was the last thing still doing that — it
+  // costs nothing when the answer is in this browser's own token, and a whole
+  // library-load when the token needs renewing first.
+  var hydrating = Store.hydrate().then(function () {
+    document.dispatchEvent(new CustomEvent("sessionchange"));
+  }).catch(function (e) {
+    console.error(e);
+    offline();
+  });
+
   SB.currentId().then(function (id) {
     authId = id;
     authKnown = true;
@@ -8868,12 +8890,9 @@ window.SANAD_CONFIG = {
         document.dispatchEvent(new CustomEvent("sessionchange"));
       }).catch(function (e) { console.error(e); });
     }
-    return Store.hydrate().then(function () {
-      // Roles and status arrive with the profiles, so the navigation is only
-      // right once they have.
-      document.dispatchEvent(new CustomEvent("sessionchange"));
-      return needsOnboarding(id);
-    });
+    // Roles and status arrive with the profiles, so the question of where to
+    // send somebody is only answerable once they have.
+    return hydrating.then(function () { return needsOnboarding(id); });
   }).catch(function (e) {
     console.error(e);
     // One explanation is enough. If the provider already told us why, a second
@@ -11029,10 +11048,18 @@ Pages.define("requests", function (global) {
         var chan = M.channel(r.channel);
         var live = M.isLive(r) &&
           ["delivered", "completed", "cancelled"].indexOf(st.status) === -1;
+        var said = Store.messages(r.id, "parties").length;
         return (live
             ? '<a class="btn btn--primary btn--sm" href="call.html?id=' + esc(r.id) + '">' +
               Icons.svg(chan.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>"
             : "") +
+          // The conversation was behind "open details", which is a place
+          // nobody looks for a conversation. It gets its own way in, and says
+          // how much is in it.
+          '<button class="btn btn--outline btn--sm" type="button" data-detail="' + esc(r.id) + '" ' +
+            'data-go-thread>' + Icons.svg("comment", "icon-sm") +
+            esc(said ? I18N.t("thread.count", { n: I18N.num(said) }) : I18N.t("thread.open")) +
+            "</button>" +
           '<button class="btn btn--ghost btn--sm" type="button" data-detail="' + esc(r.id) + '">' +
             esc(I18N.t("req.openDetails")) + "</button>" +
           (canRate
@@ -11213,6 +11240,14 @@ Pages.define("requests", function (global) {
     return { cls: "warn", key: "inbox.needsYou" };
   }
 
+  /** One way in to the conversation, from the row, saying how much is in it. */
+  function threadButton(r) {
+    var said = Store.messages(r.id, "parties").length;
+    return '<button class="btn btn--outline btn--sm" type="button" data-open="' + esc(r.id) + '" ' +
+      'data-go-thread>' + Icons.svg("comment", "icon-sm") +
+      esc(said ? I18N.t("thread.count", { n: I18N.num(said) }) : I18N.t("thread.open")) + "</button>";
+  }
+
   function lawyerActions(r) {
     var st = M.requestState(r);
     var t = M.serviceType(r.typeId) || {};
@@ -11237,6 +11272,7 @@ Pages.define("requests", function (global) {
         // do with it: the row offered "unassign" and nothing else, so the
         // draft, the client and now both conversations were out of reach on
         // exactly the cases somebody else is writing.
+        threadButton(r) +
         '<button class="btn btn--outline btn--sm" type="button" data-open="' + esc(r.id) + '">' +
           esc(I18N.t("req.openDetails")) + "</button>" +
         '<button class="btn btn--ghost btn--sm" type="button" data-unassign="' + esc(r.id) + '">' +
@@ -11257,7 +11293,7 @@ Pages.define("requests", function (global) {
       : '<button class="btn btn--outline btn--sm" type="button" data-open="' + esc(r.id) + '">' +
         esc(I18N.t("inbox.writeSelf")) + "</button>";
 
-    return main +
+    return threadButton(r) + main +
       '<button class="btn btn--ghost btn--sm" type="button" data-assign="' + esc(r.id) + '">' +
         Icons.svg("graduation", "icon-sm") + esc(I18N.t("inbox.assign")) + "</button>";
   }
@@ -11568,6 +11604,15 @@ Pages.define("requests", function (global) {
   });
   C.wireThread(host);
 
+  /** Put the conversation where the eye is, and the cursor in it. */
+  function goToThread() {
+    var el = $("[data-thread]", host);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    var box = $("[data-thread-body]", host);
+    if (box) box.focus({ preventScroll: true });
+  }
+
   /* ====================================================== events ========== */
   host.addEventListener("click", function (ev) {
     var t = ev.target;
@@ -11588,7 +11633,13 @@ Pages.define("requests", function (global) {
     }
 
     var det = hit("data-detail");
-    if (det) { open = open === det ? null : det; App.rerender(); return; }
+    if (det) {
+      var wantsThread = !!t.closest("[data-go-thread]");
+      open = (open === det && !wantsThread) ? null : det;
+      App.rerender();
+      if (wantsThread) goToThread();
+      return;
+    }
     if (t.closest("[data-detail-close]")) { open = null; App.rerender(); return; }
 
     var rt = hit("data-rate");
@@ -11687,7 +11738,12 @@ Pages.define("requests", function (global) {
     }
 
     var op = hit("data-open");
-    if (op) { open = op; App.rerender(); return; }
+    if (op) {
+      open = op;
+      App.rerender();
+      if (t.closest("[data-go-thread]")) goToThread();
+      return;
+    }
     if (t.closest("[data-draft-close]")) { open = null; App.rerender(); return; }
 
     var ap = hit("data-approve");

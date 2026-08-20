@@ -29,6 +29,7 @@ const flush = () => new Promise((r) => setTimeout(r, 0));
 /* A fake postgrest: records every call, answers like the real one. */
 function makeFake() {
   const sent = [];
+  const rpcs = [];
   const tables = {
     profiles: [], requests: [], services: [], articles: [],
     reviews: [], comments: [], endorsements: [], agreements: [], applications: [],
@@ -54,12 +55,22 @@ function makeFake() {
       };
       return api;
     },
+    rpc(name, args) {
+      rpcs.push({ name, args: args || {} });
+      const answer = { data: [], error: null };
+      return {
+        single: () => Promise.resolve(answer),
+        maybeSingle: () => Promise.resolve(answer),
+        then: (ok) => Promise.resolve(answer).then(ok),
+      };
+    },
     auth: {
       getSession: () => Promise.resolve({ data: { session: null } }),
       signOut: () => Promise.resolve({}),
     },
   };
-  return { client, sent, tables, lastTo: (t) => [...sent].reverse().find((s) => s.table === t) };
+  return { client, sent, tables, rpcs,
+           lastTo: (t) => [...sent].reverse().find((s) => s.table === t) };
 }
 
 /* Load config → store → the fake SB → the remote backend, in that order. */
@@ -86,7 +97,9 @@ function boot(rows = {}) {
   w.CustomEvent = class { constructor(t) { this.type = t; } };
   w.console = console;
   w.REST = {
-    session: () => (rows.authId ? { sub: rows.authId, token: 't', expired: false } : null),
+    // A browser holding a token, unless the case under test is a visitor.
+    session: () => (rows.guest ? null
+                               : { sub: rows.authId || 'someone', token: 't', expired: false }),
     upload: () => Promise.resolve({ path: 'p', error: null }),
     signUrl: () => Promise.resolve('https://signed.example/x'),
     forget() {},
@@ -192,8 +205,9 @@ section('A READ THAT FAILED IS NOT A READ THAT CAME BACK EMPTY');
   const { S } = boot({
     profiles: [{ id: 'p1', full_name: 'اسم', roles: ['client'] }],
     requests: [{ id: 'r1', client_id: 'p1', type_id: 'consult', title: 't', price: '10' }],
-    // Each Store.hydrate() is two waves, so the second call is the third read.
-    failFrom: 3,
+    // The store hydrates itself as it loads, and each hydrate is two waves —
+    // so the second explicit call is the fifth read.
+    failFrom: 5,
   });
   await S.hydrate();
   ok('a good read fills the cache', S.signups().length === 1 && S.requests().length === 1);
@@ -469,9 +483,11 @@ section('THE DESK COMES FROM THE DATABASE, NOT FROM THIS BROWSER');
     ok('a second message reopens the same notice', again.length === 1 && again[0].read === false);
     ok('rather than adding another', S.notices().length === before + 1);
     await flush();
-    const sent = fake.lastTo('notifications');
-    ok('and it is an upsert, not an insert that will be refused',
-       sent.op === 'upsert' && sent.row.read === false, sent && sent.op);
+    ok('and it goes through the function that is allowed to reopen it',
+       fake.rpcs.some((r) => r.name === 'raise_notice' && r.args.p_kind === 'message'),
+       JSON.stringify(fake.rpcs));
+    ok('rather than an upsert the database will refuse',
+       !fake.sent.some((x) => x.table === 'notifications' && x.op === 'upsert'));
   }
 
   ok('a new notice lands in the list', S.notices().length === 4, S.notices().length);

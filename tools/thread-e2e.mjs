@@ -95,6 +95,16 @@ ok('their own message is there', /البند الخامس/.test(t4));
 ok('the internal note is not', !/راجع الاختصاص/.test(t4));
 ok('and no tab offers it', !/مع المتدرب/.test(t4));
 
+console.log('— THE WAY IN IS ON THE ROW —');
+await open('requests.html', 'u-fahad');
+const row = await body();
+ok('the conversation has its own button', /المحادثة/.test(row), row.slice(0, 120));
+ok('saying how much is in it', /المحادثة · [٠-٩0-9]/.test(row), row.match(/المحادثة[^\n]*/));
+await p.click(`[data-detail="${rid}"][data-go-thread]`); await p.waitForTimeout(500);
+ok('and it opens straight onto the thread', (await p.$('[data-thread]')) !== null);
+ok('with the cursor in it',
+   await p.evaluate(() => document.activeElement && document.activeElement.hasAttribute('data-thread-body')));
+
 console.log('— A CALL IS NOT THE WHOLE OF A CONSULTATION —');
 await p.evaluate(() => {
   const rid = localStorage.getItem('rid');

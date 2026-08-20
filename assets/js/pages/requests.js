@@ -135,10 +135,18 @@ Pages.define("requests", function (global) {
         var chan = M.channel(r.channel);
         var live = M.isLive(r) &&
           ["delivered", "completed", "cancelled"].indexOf(st.status) === -1;
+        var said = Store.messages(r.id, "parties").length;
         return (live
             ? '<a class="btn btn--primary btn--sm" href="call.html?id=' + esc(r.id) + '">' +
               Icons.svg(chan.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>"
             : "") +
+          // The conversation was behind "open details", which is a place
+          // nobody looks for a conversation. It gets its own way in, and says
+          // how much is in it.
+          '<button class="btn btn--outline btn--sm" type="button" data-detail="' + esc(r.id) + '" ' +
+            'data-go-thread>' + Icons.svg("comment", "icon-sm") +
+            esc(said ? I18N.t("thread.count", { n: I18N.num(said) }) : I18N.t("thread.open")) +
+            "</button>" +
           '<button class="btn btn--ghost btn--sm" type="button" data-detail="' + esc(r.id) + '">' +
             esc(I18N.t("req.openDetails")) + "</button>" +
           (canRate
@@ -319,6 +327,14 @@ Pages.define("requests", function (global) {
     return { cls: "warn", key: "inbox.needsYou" };
   }
 
+  /** One way in to the conversation, from the row, saying how much is in it. */
+  function threadButton(r) {
+    var said = Store.messages(r.id, "parties").length;
+    return '<button class="btn btn--outline btn--sm" type="button" data-open="' + esc(r.id) + '" ' +
+      'data-go-thread>' + Icons.svg("comment", "icon-sm") +
+      esc(said ? I18N.t("thread.count", { n: I18N.num(said) }) : I18N.t("thread.open")) + "</button>";
+  }
+
   function lawyerActions(r) {
     var st = M.requestState(r);
     var t = M.serviceType(r.typeId) || {};
@@ -343,6 +359,7 @@ Pages.define("requests", function (global) {
         // do with it: the row offered "unassign" and nothing else, so the
         // draft, the client and now both conversations were out of reach on
         // exactly the cases somebody else is writing.
+        threadButton(r) +
         '<button class="btn btn--outline btn--sm" type="button" data-open="' + esc(r.id) + '">' +
           esc(I18N.t("req.openDetails")) + "</button>" +
         '<button class="btn btn--ghost btn--sm" type="button" data-unassign="' + esc(r.id) + '">' +
@@ -363,7 +380,7 @@ Pages.define("requests", function (global) {
       : '<button class="btn btn--outline btn--sm" type="button" data-open="' + esc(r.id) + '">' +
         esc(I18N.t("inbox.writeSelf")) + "</button>";
 
-    return main +
+    return threadButton(r) + main +
       '<button class="btn btn--ghost btn--sm" type="button" data-assign="' + esc(r.id) + '">' +
         Icons.svg("graduation", "icon-sm") + esc(I18N.t("inbox.assign")) + "</button>";
   }
@@ -674,6 +691,15 @@ Pages.define("requests", function (global) {
   });
   C.wireThread(host);
 
+  /** Put the conversation where the eye is, and the cursor in it. */
+  function goToThread() {
+    var el = $("[data-thread]", host);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    var box = $("[data-thread-body]", host);
+    if (box) box.focus({ preventScroll: true });
+  }
+
   /* ====================================================== events ========== */
   host.addEventListener("click", function (ev) {
     var t = ev.target;
@@ -694,7 +720,13 @@ Pages.define("requests", function (global) {
     }
 
     var det = hit("data-detail");
-    if (det) { open = open === det ? null : det; App.rerender(); return; }
+    if (det) {
+      var wantsThread = !!t.closest("[data-go-thread]");
+      open = (open === det && !wantsThread) ? null : det;
+      App.rerender();
+      if (wantsThread) goToThread();
+      return;
+    }
     if (t.closest("[data-detail-close]")) { open = null; App.rerender(); return; }
 
     var rt = hit("data-rate");
@@ -793,7 +825,12 @@ Pages.define("requests", function (global) {
     }
 
     var op = hit("data-open");
-    if (op) { open = op; App.rerender(); return; }
+    if (op) {
+      open = op;
+      App.rerender();
+      if (t.closest("[data-go-thread]")) goToThread();
+      return;
+    }
     if (t.closest("[data-draft-close]")) { open = null; App.rerender(); return; }
 
     var ap = hit("data-approve");

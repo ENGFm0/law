@@ -1040,13 +1040,13 @@
     else { n.at = Date.now(); n.read = false; cache.notices.push(n); }
     Store.notifyAll();
 
-    // A notice raised for somebody else cannot be read back by the sender, so
-    // nothing is selected here.
+    // Raised through a function rather than written directly. Reopening a
+    // notice that belongs to somebody else is a privileged act — the sender
+    // may not read that row, let alone update it — and an upsert asked
+    // Postgres to do exactly that, which it refused, out loud, on the second
+    // message of every case.
     SB.load().then(function (sb) {
-      return sb.from("notifications").upsert({
-        to_id: n.to, type: n.type, ref: n.ref || null,
-        read: false, at: new Date().toISOString(),
-      }, { onConflict: "to_id,type,ref" });
+      return sb.rpc("raise_notice", { p_to: n.to, p_kind: n.type, p_ref: n.ref || null });
     }).then(function (res) {
       if (res && res.error && res.error.code !== "23505") report(res);
     });
@@ -1137,7 +1137,13 @@
       ready = true;
       return d;
     });
-    var rest = SB.hydrate(SB.REST).then(absorb);
+    // Fifteen of the twenty reads are about one account: their requests,
+    // their notices, their threads, the desk's ledgers. A visitor who is not
+    // signed in has none of them, and asking anyway was fifteen round trips
+    // to be told so.
+    var rest = Store.currentId() || global.REST.session()
+      ? SB.hydrate(SB.REST).then(absorb)
+      : Promise.resolve();
     return Promise.all([core, rest]).then(function () {
       ready = true;
       return cache;
@@ -1262,6 +1268,18 @@
   var authFail = SB.authError && SB.authError();
   if (authFail) authProblem(authFail.message);
 
+  // The data does not wait to be told who is asking for it. Most of it is
+  // public, the rest is decided by a row policy on the server, and holding
+  // every read behind "who am I" was the last thing still doing that — it
+  // costs nothing when the answer is in this browser's own token, and a whole
+  // library-load when the token needs renewing first.
+  var hydrating = Store.hydrate().then(function () {
+    document.dispatchEvent(new CustomEvent("sessionchange"));
+  }).catch(function (e) {
+    console.error(e);
+    offline();
+  });
+
   SB.currentId().then(function (id) {
     authId = id;
     authKnown = true;
@@ -1300,12 +1318,9 @@
         document.dispatchEvent(new CustomEvent("sessionchange"));
       }).catch(function (e) { console.error(e); });
     }
-    return Store.hydrate().then(function () {
-      // Roles and status arrive with the profiles, so the navigation is only
-      // right once they have.
-      document.dispatchEvent(new CustomEvent("sessionchange"));
-      return needsOnboarding(id);
-    });
+    // Roles and status arrive with the profiles, so the question of where to
+    // send somebody is only answerable once they have.
+    return hydrating.then(function () { return needsOnboarding(id); });
   }).catch(function (e) {
     console.error(e);
     // One explanation is enough. If the provider already told us why, a second

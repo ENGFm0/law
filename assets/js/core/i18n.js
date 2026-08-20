@@ -1290,6 +1290,8 @@
       "thread.openFile": "فتح الملف",
       "thread.pending": "سيُرسل مع الرسالة",
       "notice.message": "رسالة جديدة على طلبك",
+      "thread.open": "المحادثة",
+      "thread.count": "المحادثة · {n}",
     },
 
     en: {
@@ -2542,6 +2544,8 @@
       "thread.openFile": "Open",
       "thread.pending": "Will be sent with the message",
       "notice.message": "A new message on your request",
+      "thread.open": "Conversation",
+      "thread.count": "Conversation · {n}",
     }
   };
 

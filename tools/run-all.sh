@@ -6,6 +6,10 @@
 #   sh tools/run-all.sh
 #
 # The database policies are separate and need Postgres; see supabase/rls-test*.sql.
+#
+# tools/live-e2e.mjs runs the site against a real PostgreSQL through
+# tools/fake-postgrest.mjs. It needs a local database and `su postgres`, so it
+# is not in the loop below:  node tools/live-e2e.mjs
 set -e
 echo '— headless —'
 for t in model-test money-test books-test rest-test columns-test store-contract remote-store-test; do
