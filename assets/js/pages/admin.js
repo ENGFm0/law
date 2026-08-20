@@ -305,6 +305,9 @@ Pages.define("admin", function (global) {
           '<div style="margin-top:var(--s-4)">' +
             line("adm.toLawyers", sar(b.toLawyers)) +
             line("adm.toTrainees", sar(b.toTrainees)) +
+            // What went back to clients. It used to be invisible here: a
+            // fully refunded order still read as revenue, commission and all.
+            (b.refunded ? line("adm.refunded", sar(b.refunded)) : "") +
             line("adm.gateway", sar(b.gateway)) +
             line("adm.costs", sar(b.costs)) +
           "</div>" +
@@ -542,6 +545,18 @@ Pages.define("admin", function (global) {
         '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="admin.vatNote"></p>' +
         '<div style="margin-top:var(--s-4);max-width:220px">' +
           num("admin.vatPct", "data-vatpct", s.vatPct, 0, 100) + "</div>" +
+      "</section>" +
+
+      '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+        '<h3 class="subtitle" data-i18n="adm.guarantee"></h3>' +
+        '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="adm.guaranteeLead"></p>' +
+        '<div class="grid grid-2" style="gap:var(--s-4);margin-top:var(--s-4)">' +
+          num("adm.guaranteeHours", "data-guar-hours", s.guaranteeHours, 0, 168) +
+          num("adm.minYears", "data-min-years", s.minYears, 0, 50) +
+        "</div>" +
+        '<label class="row gap-3" style="margin-top:var(--s-5)">' +
+          '<input type="checkbox" data-guar-open' + (s.guaranteeUnconditional ? " checked" : "") + ">" +
+          '<span data-i18n="adm.guaranteeOpen"></span></label>' +
       "</section>" +
 
       '<section class="card card--pad" style="margin-top:var(--s-6)">' +
@@ -851,7 +866,10 @@ Pages.define("admin", function (global) {
         madaPct: +val("[data-mada-pct]") || 0, madaFixed: +val("[data-mada-fixed]") || 0,
         cardPct: +val("[data-card-pct]") || 0, cardFixed: +val("[data-card-fixed]") || 0,
         madaSharePct: Math.max(0, Math.min(100, +val("[data-mada-share]") || 0)),
-        aiPrice: +val("[data-ai-price]") || 0
+        aiPrice: +val("[data-ai-price]") || 0,
+        guaranteeHours: Math.max(0, Math.min(168, +val("[data-guar-hours]") || 0)),
+        guaranteeUnconditional: !!$("[data-guar-open]", host).checked,
+        minYears: Math.max(0, +val("[data-min-years]") || 0)
       };
       var bands = $$("[data-band-min]", host).map(function (el) {
         var id = el.getAttribute("data-band-min");

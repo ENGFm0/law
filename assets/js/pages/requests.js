@@ -260,7 +260,29 @@ Pages.define("requests", function (global) {
         // expected next step.
         '<button class="btn btn--ghost btn--sm" type="button" data-argue="' + esc(r.id) + '">' +
           esc(I18N.t("accept.dispute")) + "</button>" +
-      "</div>");
+      "</div>" +
+      guaranteePanel(r));
+  }
+
+  /** The promise the platform makes on the home page, said again at the only
+      moment it matters — with the clock on it and the door in reach. Shown
+      only while it is true. */
+  function guaranteePanel(r) {
+    var g = M.guarantee(r);
+    if (!g.open) return "";
+    var hours = Math.floor(g.msLeft / 3600000);
+    return '<hr class="divider">' +
+      '<div class="row gap-3" style="align-items:flex-start">' +
+        '<span class="promise__icon">' + Icons.svg("shield-check", "icon-sm") + "</span>" +
+        '<div class="grow"><strong class="small">' + esc(I18N.t("guar.title")) + "</strong>" +
+        '<p class="tiny muted" style="margin-top:var(--s-1)">' +
+          esc(hours >= 1
+            ? I18N.t("guar.left", { n: I18N.num(hours) })
+            : I18N.t("guar.leftMin", { n: I18N.num(Math.max(1, Math.round(g.msLeft / 60000))) })) +
+          "</p>" +
+        '<button class="btn btn--outline btn--sm" style="margin-top:var(--s-3)" type="button" ' +
+          'data-guarantee="' + esc(r.id) + '">' + esc(I18N.t("guar.ask")) + "</button>" +
+      "</div></div>";
   }
 
   function card(rule, inner) {
@@ -716,6 +738,16 @@ Pages.define("requests", function (global) {
     if (bc) {
       Store.setQuote(bc, { status: "cancelled" });
       App.toast(I18N.t("quotes.cancelled"), "close");
+      return;
+    }
+
+    var gu = hit("data-guarantee");
+    if (gu) {
+      if (!global.confirm(I18N.t("guar.confirm"))) return;
+      Store.refundUnderGuarantee(gu, function (word) {
+        if (word === "refunded") { App.toast(I18N.t("guar.done"), "check"); App.rerender(); }
+        else App.toast(I18N.t("guar.failed", { why: String(word || "") }), "alert");
+      });
       return;
     }
 

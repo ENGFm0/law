@@ -100,6 +100,8 @@ Pages.define("home", function (global) {
         "</div>" +
       "</div></section>" +
 
+      promises() +
+
       '<section class="section section--tight"><div class="container reveal">' +
         C.sectionHead("home.pathsTitle", "home.pathsLead") + paths() +
       "</div></section>" +
@@ -130,6 +132,51 @@ Pages.define("home", function (global) {
           "</div></div>" +
       "</div></section>"
     );
+  }
+
+  /* ---------- what the platform is promising ----------
+     Four sentences a stranger needs before they will pay another stranger to
+     read their contract. Every one of them is something the site actually
+     does, and two of them are read from the settings rather than written into
+     the page — so the promise on the home page and the rule in the database
+     cannot drift apart. */
+  function promises() {
+    var cfg = M.platformSettings();
+    var from = M.cheapestStart();
+    var quick = M.typicalFirstOffer();
+
+    var card = function (icon, title, body) {
+      return '<article class="promise">' +
+        '<span class="promise__icon">' + Icons.svg(icon, "icon-lg") + "</span>" +
+        "<div><strong>" + esc(title) + "</strong>" +
+        '<p class="small muted">' + esc(body) + "</p></div></article>";
+    };
+
+    return '<section class="section section--tight"><div class="container reveal">' +
+      '<h2 class="headline center" style="margin-bottom:var(--s-8)">' +
+        esc(I18N.t("trust.heading")) + "</h2>" +
+      '<div class="promise-grid">' +
+        card("verified", I18N.t("trust.licensed"), I18N.t("trust.licensedBody")) +
+        (cfg.guaranteeUnconditional && cfg.guaranteeHours
+          ? card("shield-check",
+                 I18N.t("trust.guarantee", { n: I18N.num(cfg.guaranteeHours) }),
+                 I18N.t("trust.guaranteeBody"))
+          : "") +
+        card("wallet", I18N.t("trust.escrow"), I18N.t("trust.escrowBody")) +
+        card("lock", I18N.t("trust.private"), I18N.t("trust.privateBody")) +
+      "</div>" +
+      '<div class="row center wrap gap-4" style="margin-top:var(--s-8)">' +
+        (from ? '<span class="promise__line">' + Icons.svg("tag", "icon-sm") +
+          "<strong>" + esc(I18N.t("trust.from", { n: I18N.num(from) })) + "</strong>" +
+          '<span class="tiny muted">' + esc(I18N.t("trust.noHidden")) + "</span></span>" : "") +
+        // Only when it has actually been measured. A promise about speed that
+        // nobody has kept yet is just a number on a page.
+        (quick ? '<span class="promise__line">' + Icons.svg("clock", "icon-sm") +
+          "<strong>" + esc(I18N.t("trust.speed", { n: I18N.num(quick) })) + "</strong></span>" : "") +
+        (cfg.minYears ? '<span class="promise__line">' + Icons.svg("badge", "icon-sm") +
+          "<strong>" + esc(I18N.t("trust.years", { n: I18N.num(cfg.minYears) })) + "</strong></span>" : "") +
+      "</div>" +
+    "</div></section>";
   }
 
   /* ---------- lawyer ---------- */

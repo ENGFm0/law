@@ -512,6 +512,31 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .adm-tab { padding: var(--s-3) var(--s-3); font-size: .875rem; }
 }
 
+/* ---------- 11a08. What the platform promises ----------
+   Four cards a stranger reads before deciding to pay another stranger. Quiet
+   rather than loud: the claims are specific enough that they do not need
+   shouting, and two of them are read from the settings. */
+.promise-grid {
+  display: grid; gap: var(--s-4);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.promise {
+  display: flex; gap: var(--s-4); align-items: flex-start;
+  padding: var(--s-5); border: 1px solid var(--border);
+  border-radius: var(--r-lg); background: var(--surface);
+}
+.promise strong { display: block; margin-bottom: var(--s-2); }
+.promise__icon {
+  flex: none; width: 44px; height: 44px; border-radius: var(--r);
+  display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent-soft-text);
+}
+.promise__line {
+  display: inline-flex; align-items: center; gap: var(--s-2); flex-wrap: wrap;
+  padding: var(--s-2) var(--s-4); border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+
 /* ---------- 11a09. The conversation on a case ----------
    A thread, not a comment list: bubbles that lean to the side of whoever
    wrote them, a log that scrolls on its own, and a composer pinned under it.
@@ -547,6 +572,16 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .file-chip__thumb { display: block; width: 100%; max-width: 220px; border-radius: var(--r); margin-top: var(--s-2); }
 .file-chip:has(.file-chip__thumb:not([hidden])) { flex-wrap: wrap; }
 
+.file-chip--sound { padding: var(--s-2); }
+.file-chip--sound audio { height: 34px; max-width: 260px; }
+[data-thread-record].is-recording {
+  background: var(--danger); color: #fff; border-color: var(--danger);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) {
+  [data-thread-record].is-recording { animation: none; }
+}
 .thread__pending { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
 .thread__compose { display: flex; gap: var(--s-2); align-items: center; margin-top: var(--s-3); }
 .thread__compose .input { flex: 1 1 auto; min-width: 0; }
@@ -3013,6 +3048,40 @@ window.SANAD_CONFIG = {
       "notice.message": "رسالة جديدة على طلبك",
       "thread.open": "المحادثة",
       "thread.count": "المحادثة · {n}",
+
+      /* --- the promise the platform publishes --- */
+      "trust.licensed": "محامون مرخّصون",
+      "trust.licensedBody": "الرخصة تُراجَع قبل الظهور في الدليل — لا أحد يوثّق نفسه.",
+      "trust.guarantee": "ضمان استرداد خلال {n} ساعة",
+      "trust.guaranteeBody": "لم يكن التسليم كما اتُّفق؟ اطلب الاسترداد داخل النافذة ويُنفَّذ فوراً.",
+      "trust.escrow": "مالك محفوظ حتى تقبل",
+      "trust.escrowBody": "لا يصل المحامي شيء قبل أن تستلم وتقبل التسليم.",
+      "trust.private": "مستنداتك مغلقة",
+      "trust.privateBody": "الملفات في مساحة خاصة، وكل فتح برابط ينتهي — ولا تُقرأ إلا من أطراف الطلب.",
+      "trust.from": "يبدأ من {n} ر.س",
+      "trust.noHidden": "السعر معلن قبل البدء، بلا رسوم خفية.",
+      "trust.speed": "أول عرض خلال {n} دقيقة عادةً",
+      "trust.years": "خبرة {n}+ سنوات",
+      "trust.heading": "لماذا يطمئن الناس هنا",
+      "guar.title": "ضمان الرضا",
+      "guar.left": "أمامك {n} ساعة لطلب الاسترداد دون شروط.",
+      "guar.leftMin": "أمامك {n} دقيقة لطلب الاسترداد دون شروط.",
+      "guar.ask": "استرداد ضمن الضمان",
+      "guar.done": "تم الاسترداد — رجع المبلغ كاملاً.",
+      "guar.closed": "انتهت نافذة الضمان.",
+      "guar.confirm": "سيُغلق الطلب ويُسترد المبلغ كاملاً. متأكد؟",
+      "guar.failed": "تعذّر الاسترداد: {why}",
+      "adm.guarantee": "ضمان الرضا",
+      "adm.guaranteeLead": "كم ساعة بعد التسليم يحق للعميل طلب الاسترداد، وهل يقرّر وحده داخلها.",
+      "adm.guaranteeHours": "مدة الضمان (ساعة)",
+      "adm.guaranteeOpen": "استرداد دون شروط داخل النافذة",
+      "adm.minYears": "الحد الأدنى للخبرة (سنوات)",
+      "adm.refunded": "مُسترد للعملاء",
+      "status.refunded": "مُسترد",
+      "thread.record": "سجّل مقطعاً صوتياً",
+      "thread.recording": "يسجّل… اضغط الميكروفون للإيقاف.",
+      "thread.voiceName": "مقطع صوتي {n} ثانية",
+      "thread.noMic": "لا يمكن التسجيل — لم يُسمح بالميكروفون.",
     },
 
     en: {
@@ -4267,6 +4336,40 @@ window.SANAD_CONFIG = {
       "notice.message": "A new message on your request",
       "thread.open": "Conversation",
       "thread.count": "Conversation · {n}",
+
+      /* --- the promise the platform publishes --- */
+      "trust.licensed": "Licensed lawyers",
+      "trust.licensedBody": "Every licence is checked before anyone appears in the directory.",
+      "trust.guarantee": "Money back within {n} hours",
+      "trust.guaranteeBody": "Not what was agreed? Ask inside the window and it happens at once.",
+      "trust.escrow": "Your money waits until you accept",
+      "trust.escrowBody": "Nothing reaches the lawyer before you have the work and accept it.",
+      "trust.private": "Your documents are closed",
+      "trust.privateBody": "Files sit in a private space, opened through links that expire, and only by the parties.",
+      "trust.from": "From {n} SAR",
+      "trust.noHidden": "The price is shown before you start. No hidden fees.",
+      "trust.speed": "First offer usually within {n} minutes",
+      "trust.years": "{n}+ years",
+      "trust.heading": "Why people trust this",
+      "guar.title": "The guarantee",
+      "guar.left": "You have {n} hours to ask for your money back, no questions.",
+      "guar.leftMin": "You have {n} minutes to ask for your money back, no questions.",
+      "guar.ask": "Refund under the guarantee",
+      "guar.done": "Refunded — the whole amount is on its way back.",
+      "guar.closed": "The guarantee window has closed.",
+      "guar.confirm": "This closes the request and returns the whole amount. Sure?",
+      "guar.failed": "Could not refund: {why}",
+      "adm.guarantee": "The guarantee",
+      "adm.guaranteeLead": "How long after delivery a client may ask for their money back, and whether they decide alone inside it.",
+      "adm.guaranteeHours": "Guarantee window (hours)",
+      "adm.guaranteeOpen": "Unconditional inside the window",
+      "adm.minYears": "Experience the directory advertises (years)",
+      "adm.refunded": "Refunded to clients",
+      "status.refunded": "Refunded",
+      "thread.record": "Record a voice note",
+      "thread.recording": "Recording… press the microphone to stop.",
+      "thread.voiceName": "Voice note {n}s",
+      "thread.noMic": "Cannot record — the microphone was not allowed.",
     }
   };
 
@@ -4894,6 +4997,29 @@ window.SANAD_CONFIG = {
       notify();
     },
     removedTypes: function () { return work.removedTypes; },
+
+    /** The demo has no server to decide it, so the same rules are applied
+        here — and the outcome is recorded the same way: a dispute that was
+        already decided, which is what the promise is. */
+    refundUnderGuarantee: function (requestId, done) {
+      var say = function (word) { if (done) done(word); return Promise.resolve(word); };
+      var models = global.Models;
+      var r = models && models.request(requestId);
+      if (!r) return say("no such request");
+      var me = Store.currentId();
+      if (r.clientId !== me) return say("not yours");
+      var g = models.guarantee(r);
+      if (!g.unconditional) return say("not offered");
+      if (!g.open) return say("window closed");
+      if (Store.disputeFor(requestId)) return say("already disputed");
+
+      Store.openDispute({ requestId: requestId, byId: me, reason: "ضمان الرضا" });
+      var d = Store.disputeFor(requestId);
+      Store.resolveDispute(d.id, { outcome: "refund", lawyerPct: 0,
+                                   reason: "استرداد ضمن نافذة الضمان المعلنة", byId: null });
+      Store.setRequest(requestId, { status: "refunded" });
+      return say("refunded");
+    },
 
     /* ---------------- the conversation on a case ----------------
        Two threads per request. `parties` is the client and whoever is doing
@@ -6227,8 +6353,66 @@ window.SANAD_CONFIG = {
       madaPct: n(s.madaPct, 1.5), madaFixed: n(s.madaFixed, 1),
       cardPct: n(s.cardPct, 2.2), cardFixed: n(s.cardFixed, 1),
       madaSharePct: Math.max(0, Math.min(100, n(s.madaSharePct, 70))),
-      aiPrice: n(s.aiPrice, 199)
+      aiPrice: n(s.aiPrice, 199),
+      // The promise the platform publishes: how long after delivery a client
+      // may say it was not what they were told, and whether inside that
+      // window they decide alone.
+      guaranteeHours: Math.max(0, Math.min(168, n(s.guaranteeHours, 24))),
+      guaranteeUnconditional: s.guaranteeUnconditional !== false,
+      // The experience the directory says it lists. A standard, not a gate:
+      // it is shown and it is filterable, and nobody is thrown out by it.
+      minYears: Math.max(0, n(s.minYears, 5))
     };
+  }
+
+  /** What the promise means for one delivered request: how long is left of
+      it, and whether the client can still act on it alone. */
+  function guarantee(r) {
+    var cfg = platformSettings();
+    var out = { hours: cfg.guaranteeHours, unconditional: cfg.guaranteeUnconditional,
+                open: false, msLeft: 0 };
+    if (!r || !cfg.guaranteeUnconditional || !cfg.guaranteeHours) return out;
+    var st = requestState(r);
+    var at = st.deliveredAt || r.deliveredAt || null;
+    if (!at) return out;
+    if (st.status === "completed" || st.status === "refunded" || st.acceptedAt) return out;
+    if (disputeFor(r.id)) return out;
+    var until = at + cfg.guaranteeHours * 3600000;
+    out.msLeft = Math.max(0, until - Date.now());
+    out.open = out.msLeft > 0;
+    return out;
+  }
+
+  /** Whether this professional meets the experience the platform advertises. */
+  function seasoned(u) {
+    return !!u && (u.years || 0) >= platformSettings().minYears;
+  }
+
+  /** What a category costs at its cheapest, which is the number a price list
+      should lead with — "from 100" is a promise anybody can check. */
+  function startingPrice(typeId) { return priceBand(typeId).min; }
+  function cheapestStart() {
+    var all = serviceTypes().map(function (t) { return startingPrice(t.id); })
+      .filter(function (n) { return n > 0; });
+    return all.length ? Math.min.apply(null, all) : 0;
+  }
+
+  /** How long the first offer has actually taken, lately. Reported only when
+      there is enough of it to mean anything — a promise about speed that is
+      made up is worse than no promise. */
+  function typicalFirstOffer() {
+    var seen = [];
+    quotes().forEach(function (q) {
+      var first = null;
+      offersOn(q.id).forEach(function (o) {
+        if (first === null || o.at < first) first = o.at;
+      });
+      if (first !== null && q.at && first >= q.at) seen.push((first - q.at) / 60000);
+    });
+    if (seen.length < 3) return null;
+    seen.sort(function (a, b) { return a - b; });
+    var mid = seen[Math.floor(seen.length / 2)];
+    return Math.max(1, Math.round(mid));
   }
 
   /** Returns null when the two shares can live together, or why they cannot.
@@ -6480,7 +6664,9 @@ window.SANAD_CONFIG = {
   function earnedRequests() {
     return requests().filter(function (r) {
       var st = requestState(r).status;
-      return st === "delivered" || st === "completed";
+      // Refunded work was delivered and did happen: it belongs in the count
+      // of orders and in the ledger, at the amount that survived.
+      return st === "delivered" || st === "completed" || st === "refunded";
     });
   }
 
@@ -6490,20 +6676,28 @@ window.SANAD_CONFIG = {
     var m = months || 1;
     var out = {
       months: m, orders: 0,
-      clientPaid: 0, gross: 0, toLawyers: 0, toTrainees: 0,
+      clientPaid: 0, refunded: 0, gross: 0, toLawyers: 0, toTrainees: 0,
       commission: 0, commissionVat: 0, gateway: 0,
       subscriptions: 0, costs: costsInWindow(m), settings: cfg
     };
 
     earnedRequests().forEach(function (r) {
       var d = distribute(r);
+      // A decided dispute is what actually happened to the money. Reading the
+      // books from `distribute` alone counted a fully refunded order as
+      // revenue — commission taken, lawyer paid, client's money still gone —
+      // which is the one number on this page nobody should have to check.
+      var s = settlement(r);
       out.orders += 1;
-      out.clientPaid += d.client;
-      out.gross += d.gross;
-      out.toLawyers += d.lawyer;
-      out.toTrainees += d.intern;
-      out.commission += d.commission;
-      out.commissionVat += d.commissionVat;
+      out.clientPaid += d.client - (s ? s.refund : 0);
+      out.refunded += s ? s.refund : 0;
+      out.gross += s ? s.kept : d.gross;
+      out.toLawyers += s ? s.lawyer : d.lawyer;
+      out.toTrainees += s ? s.intern : d.intern;
+      out.commission += s ? s.commission : d.commission;
+      out.commissionVat += s ? s.commissionVat : d.commissionVat;
+      // The gateway took its cut of the original charge and does not give it
+      // back when the client does.
       out.gateway += gatewayFee(d.client, cfg);
     });
 
@@ -6615,6 +6809,9 @@ window.SANAD_CONFIG = {
     channels: channels, channel: channel, channelsFor: channelsFor,
     serviceChannels: serviceChannels, isLive: isLive,
     priceBand: priceBand, checkPrice: checkPrice,
+    guarantee: guarantee, seasoned: seasoned,
+    startingPrice: startingPrice, cheapestStart: cheapestStart,
+    typicalFirstOffer: typicalFirstOffer,
     serviceTitle: serviceTitle, serviceMeta: serviceMeta, serviceIcon: serviceIcon,
     MIN_SHARE: MIN_SHARE, DEFAULT_SHARE: DEFAULT_SHARE, clampShare: clampShare,
     agreementFor: agreementFor,
@@ -7605,6 +7802,14 @@ window.SANAD_CONFIG = {
       price: Number(r.price), status: r.status,
       ai: !!r.ai_assisted, hours: r.hours || 3, body: r.body || null,
       internShare: r.intern_share, rated: !!r.rated,
+      // The clock the acceptance window and the guarantee both run on. It was
+      // not carried across at all, so on the real backend there was no
+      // deadline, no automatic acceptance and no window to promise anything
+      // about — every one of them reads these three.
+      deliveredAt: r.delivered_at ? new Date(r.delivered_at).getTime() : null,
+      acceptedAt: r.accepted_at ? new Date(r.accepted_at).getTime() : null,
+      revisions: r.revisions || 0,
+      revisionNote: r.revision_note || null,
       title: pair(r.title), brief: pair(r.brief), ago: pair(""),
     };
   }
@@ -7667,7 +7872,10 @@ window.SANAD_CONFIG = {
       commissionPct: s.commission_pct, vatEnabled: !!s.vat_enabled, vatPct: s.vat_pct,
       madaPct: Number(s.mada_pct), madaFixed: Number(s.mada_fixed),
       cardPct: Number(s.card_pct), cardFixed: Number(s.card_fixed),
-      madaSharePct: s.mada_share_pct, aiPrice: Number(s.ai_price)
+      madaSharePct: s.mada_share_pct, aiPrice: Number(s.ai_price),
+      guaranteeHours: s.guarantee_hours == null ? 24 : Number(s.guarantee_hours),
+      guaranteeUnconditional: s.guarantee_unconditional !== false,
+      minYears: s.min_years == null ? 5 : Number(s.min_years)
     } : {};
   }
   function inAnnouncement(a) {
@@ -7949,7 +8157,9 @@ window.SANAD_CONFIG = {
       if (cache.requests[i].id === id) {
         var r = cache.requests[i];
         return { status: r.status, assignedTo: r.assignedTo, body: r.body,
-                 rated: r.rated, internShare: r.internShare };
+                 rated: r.rated, internShare: r.internShare,
+                 deliveredAt: r.deliveredAt, acceptedAt: r.acceptedAt,
+                 revisions: r.revisions, revisionNote: r.revisionNote };
       }
     }
     return {};
@@ -7987,6 +8197,11 @@ window.SANAD_CONFIG = {
     if ("internShare" in changes) row.intern_share = changes.internShare;
     if ("rated" in changes) row.rated = changes.rated;
     if ("channel" in changes) row.channel = changes.channel;
+    if ("revisions" in changes) row.revisions = changes.revisions;
+    if ("revisionNote" in changes) row.revision_note = changes.revisionNote;
+    // `delivered_at` and `accepted_at` are stamped by the database when the
+    // status moves, because they decide when money moves and a browser's
+    // clock is not something to settle that on.
     for (var i = 0; i < cache.requests.length; i++) {
       if (cache.requests[i].id === id) {
         Object.keys(changes).forEach(function (k) { cache.requests[i][k] = changes[k]; });
@@ -8516,6 +8731,30 @@ window.SANAD_CONFIG = {
         .map(function (a) { return a.id; }).join(",");
   }
 
+  /** The client's own door out, inside the window the platform published.
+      Decided by the database — every rule that makes it safe is there, and
+      none of them is something a browser should be trusted with. */
+  Store.refundUnderGuarantee = function (requestId, done) {
+    if (noSession()) return Promise.resolve("not signed in");
+    return SB.load().then(function (sb) {
+      return sb.rpc("refund_under_guarantee", { p_request: requestId });
+    }).then(function (res) {
+      if (res && res.error) { report(res); return "failed"; }
+      var answer = Array.isArray(res.data) ? res.data[0] : res.data;
+      var word = answer && typeof answer === "object"
+        ? answer.refund_under_guarantee : answer;
+      if (word === "refunded") {
+        cache.requests.forEach(function (r) {
+          if (r.id === requestId) r.status = "refunded";
+        });
+        Store.notifyAll();
+        Store.hydrate();               // the dispute row it wrote is worth having
+      }
+      if (done) done(word);
+      return word;
+    });
+  };
+
   Store.bands = function () { return cache.bands; };
   Store.setBand = function (typeId, band) {
     cache.bands[typeId] = { min: band.min, max: band.max };
@@ -8540,6 +8779,9 @@ window.SANAD_CONFIG = {
         mada_pct: c.madaPct, mada_fixed: c.madaFixed,
         card_pct: c.cardPct, card_fixed: c.cardFixed,
         mada_share_pct: c.madaSharePct, ai_price: c.aiPrice,
+        guarantee_hours: c.guaranteeHours,
+        guarantee_unconditional: !!c.guaranteeUnconditional,
+        min_years: c.minYears,
         updated_at: new Date().toISOString(),
       }).eq("id", 1);
     }).then(report);
@@ -10237,7 +10479,7 @@ window.SANAD_CONFIG = {
   var STATUS_STYLE = {
     new: "warn", quoting: "info", assigned: "info", scheduled: "info",
     drafted: "ok", open_to_interns: "warn", with_intern: "info", in_progress: "warn",
-    delivered: "ok", completed: "muted", cancelled: "muted",
+    delivered: "ok", completed: "muted", cancelled: "muted", refunded: "muted",
     pending: "warn", verified: "ok", rejected: "muted"
   };
 
@@ -10252,7 +10494,10 @@ window.SANAD_CONFIG = {
     assigned: "accepted", scheduled: "accepted",
     drafted: "working", with_intern: "working", open_to_interns: "working",
     in_progress: "working",
-    delivered: "delivered", completed: "settled", cancelled: "cancelled"
+    delivered: "delivered", completed: "settled", cancelled: "cancelled",
+    // Refunded work was delivered and then undone. It ends the track rather
+    // than sitting in it.
+    refunded: "settled"
   };
 
   /** Whose move it is. Saying this is most of what somebody wants from a
@@ -10377,10 +10622,20 @@ window.SANAD_CONFIG = {
 
   function fileChip(a) {
     var image = /^image\//.test(a.mime || "");
+    var sound = /^audio\//.test(a.mime || "");
     var pending = String(a.id || "").slice(0, 7) === "pending";
+    // A voice note is played where it was sent, not downloaded and opened
+    // somewhere else — which is the whole difference between a recording and
+    // an attachment that happens to be audio.
+    if (sound && !pending) {
+      return '<span class="file-chip file-chip--sound" data-file="' + App.esc(a.id) + '">' +
+        Icons.svg("mic", "icon-sm") +
+        '<audio controls preload="none" data-file-audio="' + App.esc(a.id) + '"></audio>' +
+        "</span>";
+    }
     return '<span class="file-chip' + (pending ? " is-pending" : "") + '" data-file="' +
       App.esc(a.id) + '">' +
-      Icons.svg(image ? "image" : "file-text", "icon-sm") +
+      Icons.svg(sound ? "mic" : image ? "image" : "file-text", "icon-sm") +
       '<span class="file-chip__name">' + App.esc(a.name) + "</span>" +
       '<span class="tiny faint">' + App.esc(pending ? I18N.t("thread.sending") : bytes(a.size)) +
         "</span>" +
@@ -10433,6 +10688,9 @@ window.SANAD_CONFIG = {
             '<label class="icon-btn" title="' + App.esc(I18N.t("thread.attach")) + '">' +
               Icons.svg("upload", "icon-sm") +
               '<input type="file" multiple hidden data-thread-file></label>' +
+            '<button class="icon-btn" type="button" data-thread-record ' +
+              'title="' + App.esc(I18N.t("thread.record")) + '">' +
+              Icons.svg("mic", "icon-sm") + "</button>" +
             '<input class="input" data-thread-body placeholder="' +
               App.esc(I18N.t("thread.placeholder")) + '">' +
             '<button class="btn btn--primary btn--sm" type="submit">' +
@@ -10457,6 +10715,8 @@ window.SANAD_CONFIG = {
         if (!url) return;
         var img = node.querySelector("[data-file-img]");
         if (img) { img.src = url; img.hidden = false; }
+        var sound = node.querySelector("[data-file-audio]");
+        if (sound) { sound.src = url; return; }   // played here, not opened away
         node.setAttribute("data-href", url);
         node.setAttribute("tabindex", "0");
         node.title = I18N.t("thread.openFile");
@@ -10534,6 +10794,9 @@ window.SANAD_CONFIG = {
     });
 
     host.addEventListener("click", function (ev) {
+      var rec = ev.target.closest("[data-thread-record]");
+      if (rec) { toggleRecording(host, rec); return; }
+
       var drop = ev.target.closest("[data-drop-file]");
       if (drop) {
         (pending[threadKey(host)] || []).splice(+drop.getAttribute("data-drop-file"), 1);
@@ -10587,6 +10850,50 @@ window.SANAD_CONFIG = {
       if (box) box.value = "";
       App.rerender();
     });
+  }
+
+  /* ---------- a voice note ----------
+     Said rather than typed, which for a legal question is often the only way
+     somebody will actually say it. It joins the queue like any other file, so
+     one message can carry a recording, a photo and a sentence.
+
+     Nothing is uploaded until the message is sent, and nothing is recorded
+     without the browser's own permission prompt. */
+  var recorder = null;
+  function toggleRecording(host, button) {
+    if (recorder) return stopRecording(host, button);
+    if (!global.navigator || !global.navigator.mediaDevices || !global.MediaRecorder) {
+      App.toast(I18N.t("thread.noMic"), "alert");
+      return;
+    }
+    global.navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      var chunks = [];
+      var mr = new global.MediaRecorder(stream);
+      recorder = { mr: mr, stream: stream, chunks: chunks, at: Date.now() };
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      mr.onstop = function () {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        var blob = new global.Blob(chunks, { type: mr.mimeType || "audio/webm" });
+        var seconds = Math.max(1, Math.round((Date.now() - recorder.at) / 1000));
+        recorder = null;
+        button.classList.remove("is-recording");
+        if (blob.size < 200) return;                  // a slip of the finger
+        var name = I18N.t("thread.voiceName", { n: I18N.num(seconds) }) + ".webm";
+        var file = new global.File([blob], name, { type: blob.type });
+        var key = threadKey(host);
+        pending[key] = pending[key] || [];
+        pending[key].push(file);
+        drawPending(host);
+      };
+      mr.start();
+      button.classList.add("is-recording");
+      App.toast(I18N.t("thread.recording"), "mic");
+    }).catch(function () { App.toast(I18N.t("thread.noMic"), "alert"); });
+  }
+  function stopRecording(host, button) {
+    if (!recorder) return;
+    try { recorder.mr.stop(); }
+    catch (e) { recorder = null; button.classList.remove("is-recording"); }
   }
 
   function sectionHead(titleKey, leadKey) {
@@ -10709,6 +11016,8 @@ Pages.define("home", function (global) {
         "</div>" +
       "</div></section>" +
 
+      promises() +
+
       '<section class="section section--tight"><div class="container reveal">' +
         C.sectionHead("home.pathsTitle", "home.pathsLead") + paths() +
       "</div></section>" +
@@ -10739,6 +11048,51 @@ Pages.define("home", function (global) {
           "</div></div>" +
       "</div></section>"
     );
+  }
+
+  /* ---------- what the platform is promising ----------
+     Four sentences a stranger needs before they will pay another stranger to
+     read their contract. Every one of them is something the site actually
+     does, and two of them are read from the settings rather than written into
+     the page — so the promise on the home page and the rule in the database
+     cannot drift apart. */
+  function promises() {
+    var cfg = M.platformSettings();
+    var from = M.cheapestStart();
+    var quick = M.typicalFirstOffer();
+
+    var card = function (icon, title, body) {
+      return '<article class="promise">' +
+        '<span class="promise__icon">' + Icons.svg(icon, "icon-lg") + "</span>" +
+        "<div><strong>" + esc(title) + "</strong>" +
+        '<p class="small muted">' + esc(body) + "</p></div></article>";
+    };
+
+    return '<section class="section section--tight"><div class="container reveal">' +
+      '<h2 class="headline center" style="margin-bottom:var(--s-8)">' +
+        esc(I18N.t("trust.heading")) + "</h2>" +
+      '<div class="promise-grid">' +
+        card("verified", I18N.t("trust.licensed"), I18N.t("trust.licensedBody")) +
+        (cfg.guaranteeUnconditional && cfg.guaranteeHours
+          ? card("shield-check",
+                 I18N.t("trust.guarantee", { n: I18N.num(cfg.guaranteeHours) }),
+                 I18N.t("trust.guaranteeBody"))
+          : "") +
+        card("wallet", I18N.t("trust.escrow"), I18N.t("trust.escrowBody")) +
+        card("lock", I18N.t("trust.private"), I18N.t("trust.privateBody")) +
+      "</div>" +
+      '<div class="row center wrap gap-4" style="margin-top:var(--s-8)">' +
+        (from ? '<span class="promise__line">' + Icons.svg("tag", "icon-sm") +
+          "<strong>" + esc(I18N.t("trust.from", { n: I18N.num(from) })) + "</strong>" +
+          '<span class="tiny muted">' + esc(I18N.t("trust.noHidden")) + "</span></span>" : "") +
+        // Only when it has actually been measured. A promise about speed that
+        // nobody has kept yet is just a number on a page.
+        (quick ? '<span class="promise__line">' + Icons.svg("clock", "icon-sm") +
+          "<strong>" + esc(I18N.t("trust.speed", { n: I18N.num(quick) })) + "</strong></span>" : "") +
+        (cfg.minYears ? '<span class="promise__line">' + Icons.svg("badge", "icon-sm") +
+          "<strong>" + esc(I18N.t("trust.years", { n: I18N.num(cfg.minYears) })) + "</strong></span>" : "") +
+      "</div>" +
+    "</div></section>";
   }
 
   /* ---------- lawyer ---------- */
@@ -11173,7 +11527,29 @@ Pages.define("requests", function (global) {
         // expected next step.
         '<button class="btn btn--ghost btn--sm" type="button" data-argue="' + esc(r.id) + '">' +
           esc(I18N.t("accept.dispute")) + "</button>" +
-      "</div>");
+      "</div>" +
+      guaranteePanel(r));
+  }
+
+  /** The promise the platform makes on the home page, said again at the only
+      moment it matters — with the clock on it and the door in reach. Shown
+      only while it is true. */
+  function guaranteePanel(r) {
+    var g = M.guarantee(r);
+    if (!g.open) return "";
+    var hours = Math.floor(g.msLeft / 3600000);
+    return '<hr class="divider">' +
+      '<div class="row gap-3" style="align-items:flex-start">' +
+        '<span class="promise__icon">' + Icons.svg("shield-check", "icon-sm") + "</span>" +
+        '<div class="grow"><strong class="small">' + esc(I18N.t("guar.title")) + "</strong>" +
+        '<p class="tiny muted" style="margin-top:var(--s-1)">' +
+          esc(hours >= 1
+            ? I18N.t("guar.left", { n: I18N.num(hours) })
+            : I18N.t("guar.leftMin", { n: I18N.num(Math.max(1, Math.round(g.msLeft / 60000))) })) +
+          "</p>" +
+        '<button class="btn btn--outline btn--sm" style="margin-top:var(--s-3)" type="button" ' +
+          'data-guarantee="' + esc(r.id) + '">' + esc(I18N.t("guar.ask")) + "</button>" +
+      "</div></div>";
   }
 
   function card(rule, inner) {
@@ -11629,6 +12005,16 @@ Pages.define("requests", function (global) {
     if (bc) {
       Store.setQuote(bc, { status: "cancelled" });
       App.toast(I18N.t("quotes.cancelled"), "close");
+      return;
+    }
+
+    var gu = hit("data-guarantee");
+    if (gu) {
+      if (!global.confirm(I18N.t("guar.confirm"))) return;
+      Store.refundUnderGuarantee(gu, function (word) {
+        if (word === "refunded") { App.toast(I18N.t("guar.done"), "check"); App.rerender(); }
+        else App.toast(I18N.t("guar.failed", { why: String(word || "") }), "alert");
+      });
       return;
     }
 
@@ -15587,6 +15973,9 @@ Pages.define("admin", function (global) {
           '<div style="margin-top:var(--s-4)">' +
             line("adm.toLawyers", sar(b.toLawyers)) +
             line("adm.toTrainees", sar(b.toTrainees)) +
+            // What went back to clients. It used to be invisible here: a
+            // fully refunded order still read as revenue, commission and all.
+            (b.refunded ? line("adm.refunded", sar(b.refunded)) : "") +
             line("adm.gateway", sar(b.gateway)) +
             line("adm.costs", sar(b.costs)) +
           "</div>" +
@@ -15824,6 +16213,18 @@ Pages.define("admin", function (global) {
         '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="admin.vatNote"></p>' +
         '<div style="margin-top:var(--s-4);max-width:220px">' +
           num("admin.vatPct", "data-vatpct", s.vatPct, 0, 100) + "</div>" +
+      "</section>" +
+
+      '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+        '<h3 class="subtitle" data-i18n="adm.guarantee"></h3>' +
+        '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="adm.guaranteeLead"></p>' +
+        '<div class="grid grid-2" style="gap:var(--s-4);margin-top:var(--s-4)">' +
+          num("adm.guaranteeHours", "data-guar-hours", s.guaranteeHours, 0, 168) +
+          num("adm.minYears", "data-min-years", s.minYears, 0, 50) +
+        "</div>" +
+        '<label class="row gap-3" style="margin-top:var(--s-5)">' +
+          '<input type="checkbox" data-guar-open' + (s.guaranteeUnconditional ? " checked" : "") + ">" +
+          '<span data-i18n="adm.guaranteeOpen"></span></label>' +
       "</section>" +
 
       '<section class="card card--pad" style="margin-top:var(--s-6)">' +
@@ -16133,7 +16534,10 @@ Pages.define("admin", function (global) {
         madaPct: +val("[data-mada-pct]") || 0, madaFixed: +val("[data-mada-fixed]") || 0,
         cardPct: +val("[data-card-pct]") || 0, cardFixed: +val("[data-card-fixed]") || 0,
         madaSharePct: Math.max(0, Math.min(100, +val("[data-mada-share]") || 0)),
-        aiPrice: +val("[data-ai-price]") || 0
+        aiPrice: +val("[data-ai-price]") || 0,
+        guaranteeHours: Math.max(0, Math.min(168, +val("[data-guar-hours]") || 0)),
+        guaranteeUnconditional: !!$("[data-guar-open]", host).checked,
+        minYears: Math.max(0, +val("[data-min-years]") || 0)
       };
       var bands = $$("[data-band-min]", host).map(function (el) {
         var id = el.getAttribute("data-band-min");

@@ -494,8 +494,66 @@
       madaPct: n(s.madaPct, 1.5), madaFixed: n(s.madaFixed, 1),
       cardPct: n(s.cardPct, 2.2), cardFixed: n(s.cardFixed, 1),
       madaSharePct: Math.max(0, Math.min(100, n(s.madaSharePct, 70))),
-      aiPrice: n(s.aiPrice, 199)
+      aiPrice: n(s.aiPrice, 199),
+      // The promise the platform publishes: how long after delivery a client
+      // may say it was not what they were told, and whether inside that
+      // window they decide alone.
+      guaranteeHours: Math.max(0, Math.min(168, n(s.guaranteeHours, 24))),
+      guaranteeUnconditional: s.guaranteeUnconditional !== false,
+      // The experience the directory says it lists. A standard, not a gate:
+      // it is shown and it is filterable, and nobody is thrown out by it.
+      minYears: Math.max(0, n(s.minYears, 5))
     };
+  }
+
+  /** What the promise means for one delivered request: how long is left of
+      it, and whether the client can still act on it alone. */
+  function guarantee(r) {
+    var cfg = platformSettings();
+    var out = { hours: cfg.guaranteeHours, unconditional: cfg.guaranteeUnconditional,
+                open: false, msLeft: 0 };
+    if (!r || !cfg.guaranteeUnconditional || !cfg.guaranteeHours) return out;
+    var st = requestState(r);
+    var at = st.deliveredAt || r.deliveredAt || null;
+    if (!at) return out;
+    if (st.status === "completed" || st.status === "refunded" || st.acceptedAt) return out;
+    if (disputeFor(r.id)) return out;
+    var until = at + cfg.guaranteeHours * 3600000;
+    out.msLeft = Math.max(0, until - Date.now());
+    out.open = out.msLeft > 0;
+    return out;
+  }
+
+  /** Whether this professional meets the experience the platform advertises. */
+  function seasoned(u) {
+    return !!u && (u.years || 0) >= platformSettings().minYears;
+  }
+
+  /** What a category costs at its cheapest, which is the number a price list
+      should lead with — "from 100" is a promise anybody can check. */
+  function startingPrice(typeId) { return priceBand(typeId).min; }
+  function cheapestStart() {
+    var all = serviceTypes().map(function (t) { return startingPrice(t.id); })
+      .filter(function (n) { return n > 0; });
+    return all.length ? Math.min.apply(null, all) : 0;
+  }
+
+  /** How long the first offer has actually taken, lately. Reported only when
+      there is enough of it to mean anything — a promise about speed that is
+      made up is worse than no promise. */
+  function typicalFirstOffer() {
+    var seen = [];
+    quotes().forEach(function (q) {
+      var first = null;
+      offersOn(q.id).forEach(function (o) {
+        if (first === null || o.at < first) first = o.at;
+      });
+      if (first !== null && q.at && first >= q.at) seen.push((first - q.at) / 60000);
+    });
+    if (seen.length < 3) return null;
+    seen.sort(function (a, b) { return a - b; });
+    var mid = seen[Math.floor(seen.length / 2)];
+    return Math.max(1, Math.round(mid));
   }
 
   /** Returns null when the two shares can live together, or why they cannot.
@@ -747,7 +805,9 @@
   function earnedRequests() {
     return requests().filter(function (r) {
       var st = requestState(r).status;
-      return st === "delivered" || st === "completed";
+      // Refunded work was delivered and did happen: it belongs in the count
+      // of orders and in the ledger, at the amount that survived.
+      return st === "delivered" || st === "completed" || st === "refunded";
     });
   }
 
@@ -757,20 +817,28 @@
     var m = months || 1;
     var out = {
       months: m, orders: 0,
-      clientPaid: 0, gross: 0, toLawyers: 0, toTrainees: 0,
+      clientPaid: 0, refunded: 0, gross: 0, toLawyers: 0, toTrainees: 0,
       commission: 0, commissionVat: 0, gateway: 0,
       subscriptions: 0, costs: costsInWindow(m), settings: cfg
     };
 
     earnedRequests().forEach(function (r) {
       var d = distribute(r);
+      // A decided dispute is what actually happened to the money. Reading the
+      // books from `distribute` alone counted a fully refunded order as
+      // revenue — commission taken, lawyer paid, client's money still gone —
+      // which is the one number on this page nobody should have to check.
+      var s = settlement(r);
       out.orders += 1;
-      out.clientPaid += d.client;
-      out.gross += d.gross;
-      out.toLawyers += d.lawyer;
-      out.toTrainees += d.intern;
-      out.commission += d.commission;
-      out.commissionVat += d.commissionVat;
+      out.clientPaid += d.client - (s ? s.refund : 0);
+      out.refunded += s ? s.refund : 0;
+      out.gross += s ? s.kept : d.gross;
+      out.toLawyers += s ? s.lawyer : d.lawyer;
+      out.toTrainees += s ? s.intern : d.intern;
+      out.commission += s ? s.commission : d.commission;
+      out.commissionVat += s ? s.commissionVat : d.commissionVat;
+      // The gateway took its cut of the original charge and does not give it
+      // back when the client does.
       out.gateway += gatewayFee(d.client, cfg);
     });
 
@@ -882,6 +950,9 @@
     channels: channels, channel: channel, channelsFor: channelsFor,
     serviceChannels: serviceChannels, isLive: isLive,
     priceBand: priceBand, checkPrice: checkPrice,
+    guarantee: guarantee, seasoned: seasoned,
+    startingPrice: startingPrice, cheapestStart: cheapestStart,
+    typicalFirstOffer: typicalFirstOffer,
     serviceTitle: serviceTitle, serviceMeta: serviceMeta, serviceIcon: serviceIcon,
     MIN_SHARE: MIN_SHARE, DEFAULT_SHARE: DEFAULT_SHARE, clampShare: clampShare,
     agreementFor: agreementFor,

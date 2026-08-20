@@ -495,6 +495,29 @@
     },
     removedTypes: function () { return work.removedTypes; },
 
+    /** The demo has no server to decide it, so the same rules are applied
+        here — and the outcome is recorded the same way: a dispute that was
+        already decided, which is what the promise is. */
+    refundUnderGuarantee: function (requestId, done) {
+      var say = function (word) { if (done) done(word); return Promise.resolve(word); };
+      var models = global.Models;
+      var r = models && models.request(requestId);
+      if (!r) return say("no such request");
+      var me = Store.currentId();
+      if (r.clientId !== me) return say("not yours");
+      var g = models.guarantee(r);
+      if (!g.unconditional) return say("not offered");
+      if (!g.open) return say("window closed");
+      if (Store.disputeFor(requestId)) return say("already disputed");
+
+      Store.openDispute({ requestId: requestId, byId: me, reason: "ضمان الرضا" });
+      var d = Store.disputeFor(requestId);
+      Store.resolveDispute(d.id, { outcome: "refund", lawyerPct: 0,
+                                   reason: "استرداد ضمن نافذة الضمان المعلنة", byId: null });
+      Store.setRequest(requestId, { status: "refunded" });
+      return say("refunded");
+    },
+
     /* ---------------- the conversation on a case ----------------
        Two threads per request. `parties` is the client and whoever is doing
        the work; `internal` is the lawyer and the trainee they routed it to,

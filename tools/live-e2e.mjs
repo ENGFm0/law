@@ -215,6 +215,31 @@ commit;`).trim().split('\n').pop();
 ok('a signed-out visitor reads none of it', Number(outsider) === 0, outsider);
 await stranger.ctx.close();
 
+section('THE GUARANTEE, ON A REAL DELIVERY');
+psql(`update public.requests set status = 'delivered', delivered_at = now(),
+      body = 'المذكرة' where id = '${rid}';`);
+await client.page.goto(SITE + 'requests.html');
+await client.page.waitForTimeout(1500);
+await client.page.click(`[data-detail="${rid}"]`);
+await client.page.waitForTimeout(600);
+const guar = await text(client.page);
+ok('the promise is on the delivered work', /ضمان الرضا/.test(guar), guar.slice(0, 140));
+client.page.on('dialog', (d) => d.accept());
+await client.page.click(`[data-guarantee="${rid}"]`);
+await client.page.waitForTimeout(2000);
+const after = JSON.parse(psql(
+  `select coalesce(json_agg(r)::text,'[]') from public.requests r where r.id = '${rid}';`).trim() || '[]');
+ok('the database closed it as refunded', after[0] && after[0].status === 'refunded',
+   after[0] && after[0].status);
+const decided = JSON.parse(psql(
+  `select coalesce(json_agg(d)::text,'[]') from public.disputes d;`).trim() || '[]');
+ok('with a decided dispute behind it',
+   decided.length === 1 && decided[0].outcome === 'refund' && Number(decided[0].lawyer_pct) === 0,
+   JSON.stringify(decided).slice(0, 140));
+ok('and the lawyer was told', JSON.parse(psql(
+  `select coalesce(json_agg(n)::text,'[]') from public.notifications n
+    where n.to_id = '${LAWYER}' and n.type = 'resolved';`).trim() || '[]').length === 1);
+
 section('NOTHING FAILED QUIETLY');
 const bar = await client.page.$('[data-datafail]');
 ok('no read came back as an error', bar === null,

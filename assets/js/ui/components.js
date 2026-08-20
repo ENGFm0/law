@@ -220,7 +220,7 @@
   var STATUS_STYLE = {
     new: "warn", quoting: "info", assigned: "info", scheduled: "info",
     drafted: "ok", open_to_interns: "warn", with_intern: "info", in_progress: "warn",
-    delivered: "ok", completed: "muted", cancelled: "muted",
+    delivered: "ok", completed: "muted", cancelled: "muted", refunded: "muted",
     pending: "warn", verified: "ok", rejected: "muted"
   };
 
@@ -235,7 +235,10 @@
     assigned: "accepted", scheduled: "accepted",
     drafted: "working", with_intern: "working", open_to_interns: "working",
     in_progress: "working",
-    delivered: "delivered", completed: "settled", cancelled: "cancelled"
+    delivered: "delivered", completed: "settled", cancelled: "cancelled",
+    // Refunded work was delivered and then undone. It ends the track rather
+    // than sitting in it.
+    refunded: "settled"
   };
 
   /** Whose move it is. Saying this is most of what somebody wants from a
@@ -360,10 +363,20 @@
 
   function fileChip(a) {
     var image = /^image\//.test(a.mime || "");
+    var sound = /^audio\//.test(a.mime || "");
     var pending = String(a.id || "").slice(0, 7) === "pending";
+    // A voice note is played where it was sent, not downloaded and opened
+    // somewhere else — which is the whole difference between a recording and
+    // an attachment that happens to be audio.
+    if (sound && !pending) {
+      return '<span class="file-chip file-chip--sound" data-file="' + App.esc(a.id) + '">' +
+        Icons.svg("mic", "icon-sm") +
+        '<audio controls preload="none" data-file-audio="' + App.esc(a.id) + '"></audio>' +
+        "</span>";
+    }
     return '<span class="file-chip' + (pending ? " is-pending" : "") + '" data-file="' +
       App.esc(a.id) + '">' +
-      Icons.svg(image ? "image" : "file-text", "icon-sm") +
+      Icons.svg(sound ? "mic" : image ? "image" : "file-text", "icon-sm") +
       '<span class="file-chip__name">' + App.esc(a.name) + "</span>" +
       '<span class="tiny faint">' + App.esc(pending ? I18N.t("thread.sending") : bytes(a.size)) +
         "</span>" +
@@ -416,6 +429,9 @@
             '<label class="icon-btn" title="' + App.esc(I18N.t("thread.attach")) + '">' +
               Icons.svg("upload", "icon-sm") +
               '<input type="file" multiple hidden data-thread-file></label>' +
+            '<button class="icon-btn" type="button" data-thread-record ' +
+              'title="' + App.esc(I18N.t("thread.record")) + '">' +
+              Icons.svg("mic", "icon-sm") + "</button>" +
             '<input class="input" data-thread-body placeholder="' +
               App.esc(I18N.t("thread.placeholder")) + '">' +
             '<button class="btn btn--primary btn--sm" type="submit">' +
@@ -440,6 +456,8 @@
         if (!url) return;
         var img = node.querySelector("[data-file-img]");
         if (img) { img.src = url; img.hidden = false; }
+        var sound = node.querySelector("[data-file-audio]");
+        if (sound) { sound.src = url; return; }   // played here, not opened away
         node.setAttribute("data-href", url);
         node.setAttribute("tabindex", "0");
         node.title = I18N.t("thread.openFile");
@@ -517,6 +535,9 @@
     });
 
     host.addEventListener("click", function (ev) {
+      var rec = ev.target.closest("[data-thread-record]");
+      if (rec) { toggleRecording(host, rec); return; }
+
       var drop = ev.target.closest("[data-drop-file]");
       if (drop) {
         (pending[threadKey(host)] || []).splice(+drop.getAttribute("data-drop-file"), 1);
@@ -570,6 +591,50 @@
       if (box) box.value = "";
       App.rerender();
     });
+  }
+
+  /* ---------- a voice note ----------
+     Said rather than typed, which for a legal question is often the only way
+     somebody will actually say it. It joins the queue like any other file, so
+     one message can carry a recording, a photo and a sentence.
+
+     Nothing is uploaded until the message is sent, and nothing is recorded
+     without the browser's own permission prompt. */
+  var recorder = null;
+  function toggleRecording(host, button) {
+    if (recorder) return stopRecording(host, button);
+    if (!global.navigator || !global.navigator.mediaDevices || !global.MediaRecorder) {
+      App.toast(I18N.t("thread.noMic"), "alert");
+      return;
+    }
+    global.navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      var chunks = [];
+      var mr = new global.MediaRecorder(stream);
+      recorder = { mr: mr, stream: stream, chunks: chunks, at: Date.now() };
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      mr.onstop = function () {
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        var blob = new global.Blob(chunks, { type: mr.mimeType || "audio/webm" });
+        var seconds = Math.max(1, Math.round((Date.now() - recorder.at) / 1000));
+        recorder = null;
+        button.classList.remove("is-recording");
+        if (blob.size < 200) return;                  // a slip of the finger
+        var name = I18N.t("thread.voiceName", { n: I18N.num(seconds) }) + ".webm";
+        var file = new global.File([blob], name, { type: blob.type });
+        var key = threadKey(host);
+        pending[key] = pending[key] || [];
+        pending[key].push(file);
+        drawPending(host);
+      };
+      mr.start();
+      button.classList.add("is-recording");
+      App.toast(I18N.t("thread.recording"), "mic");
+    }).catch(function () { App.toast(I18N.t("thread.noMic"), "alert"); });
+  }
+  function stopRecording(host, button) {
+    if (!recorder) return;
+    try { recorder.mr.stop(); }
+    catch (e) { recorder = null; button.classList.remove("is-recording"); }
   }
 
   function sectionHead(titleKey, leadKey) {

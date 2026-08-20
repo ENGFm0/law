@@ -33,6 +33,14 @@
       price: Number(r.price), status: r.status,
       ai: !!r.ai_assisted, hours: r.hours || 3, body: r.body || null,
       internShare: r.intern_share, rated: !!r.rated,
+      // The clock the acceptance window and the guarantee both run on. It was
+      // not carried across at all, so on the real backend there was no
+      // deadline, no automatic acceptance and no window to promise anything
+      // about — every one of them reads these three.
+      deliveredAt: r.delivered_at ? new Date(r.delivered_at).getTime() : null,
+      acceptedAt: r.accepted_at ? new Date(r.accepted_at).getTime() : null,
+      revisions: r.revisions || 0,
+      revisionNote: r.revision_note || null,
       title: pair(r.title), brief: pair(r.brief), ago: pair(""),
     };
   }
@@ -95,7 +103,10 @@
       commissionPct: s.commission_pct, vatEnabled: !!s.vat_enabled, vatPct: s.vat_pct,
       madaPct: Number(s.mada_pct), madaFixed: Number(s.mada_fixed),
       cardPct: Number(s.card_pct), cardFixed: Number(s.card_fixed),
-      madaSharePct: s.mada_share_pct, aiPrice: Number(s.ai_price)
+      madaSharePct: s.mada_share_pct, aiPrice: Number(s.ai_price),
+      guaranteeHours: s.guarantee_hours == null ? 24 : Number(s.guarantee_hours),
+      guaranteeUnconditional: s.guarantee_unconditional !== false,
+      minYears: s.min_years == null ? 5 : Number(s.min_years)
     } : {};
   }
   function inAnnouncement(a) {
@@ -377,7 +388,9 @@
       if (cache.requests[i].id === id) {
         var r = cache.requests[i];
         return { status: r.status, assignedTo: r.assignedTo, body: r.body,
-                 rated: r.rated, internShare: r.internShare };
+                 rated: r.rated, internShare: r.internShare,
+                 deliveredAt: r.deliveredAt, acceptedAt: r.acceptedAt,
+                 revisions: r.revisions, revisionNote: r.revisionNote };
       }
     }
     return {};
@@ -415,6 +428,11 @@
     if ("internShare" in changes) row.intern_share = changes.internShare;
     if ("rated" in changes) row.rated = changes.rated;
     if ("channel" in changes) row.channel = changes.channel;
+    if ("revisions" in changes) row.revisions = changes.revisions;
+    if ("revisionNote" in changes) row.revision_note = changes.revisionNote;
+    // `delivered_at` and `accepted_at` are stamped by the database when the
+    // status moves, because they decide when money moves and a browser's
+    // clock is not something to settle that on.
     for (var i = 0; i < cache.requests.length; i++) {
       if (cache.requests[i].id === id) {
         Object.keys(changes).forEach(function (k) { cache.requests[i][k] = changes[k]; });
@@ -944,6 +962,30 @@
         .map(function (a) { return a.id; }).join(",");
   }
 
+  /** The client's own door out, inside the window the platform published.
+      Decided by the database — every rule that makes it safe is there, and
+      none of them is something a browser should be trusted with. */
+  Store.refundUnderGuarantee = function (requestId, done) {
+    if (noSession()) return Promise.resolve("not signed in");
+    return SB.load().then(function (sb) {
+      return sb.rpc("refund_under_guarantee", { p_request: requestId });
+    }).then(function (res) {
+      if (res && res.error) { report(res); return "failed"; }
+      var answer = Array.isArray(res.data) ? res.data[0] : res.data;
+      var word = answer && typeof answer === "object"
+        ? answer.refund_under_guarantee : answer;
+      if (word === "refunded") {
+        cache.requests.forEach(function (r) {
+          if (r.id === requestId) r.status = "refunded";
+        });
+        Store.notifyAll();
+        Store.hydrate();               // the dispute row it wrote is worth having
+      }
+      if (done) done(word);
+      return word;
+    });
+  };
+
   Store.bands = function () { return cache.bands; };
   Store.setBand = function (typeId, band) {
     cache.bands[typeId] = { min: band.min, max: band.max };
@@ -968,6 +1010,9 @@
         mada_pct: c.madaPct, mada_fixed: c.madaFixed,
         card_pct: c.cardPct, card_fixed: c.cardFixed,
         mada_share_pct: c.madaSharePct, ai_price: c.aiPrice,
+        guarantee_hours: c.guaranteeHours,
+        guarantee_unconditional: !!c.guaranteeUnconditional,
+        min_years: c.minYears,
         updated_at: new Date().toISOString(),
       }).eq("id", 1);
     }).then(report);

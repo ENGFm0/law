@@ -503,6 +503,31 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .adm-tab { padding: var(--s-3) var(--s-3); font-size: .875rem; }
 }
 
+/* ---------- 11a08. What the platform promises ----------
+   Four cards a stranger reads before deciding to pay another stranger. Quiet
+   rather than loud: the claims are specific enough that they do not need
+   shouting, and two of them are read from the settings. */
+.promise-grid {
+  display: grid; gap: var(--s-4);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.promise {
+  display: flex; gap: var(--s-4); align-items: flex-start;
+  padding: var(--s-5); border: 1px solid var(--border);
+  border-radius: var(--r-lg); background: var(--surface);
+}
+.promise strong { display: block; margin-bottom: var(--s-2); }
+.promise__icon {
+  flex: none; width: 44px; height: 44px; border-radius: var(--r);
+  display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent-soft-text);
+}
+.promise__line {
+  display: inline-flex; align-items: center; gap: var(--s-2); flex-wrap: wrap;
+  padding: var(--s-2) var(--s-4); border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+
 /* ---------- 11a09. The conversation on a case ----------
    A thread, not a comment list: bubbles that lean to the side of whoever
    wrote them, a log that scrolls on its own, and a composer pinned under it.
@@ -538,6 +563,16 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .file-chip__thumb { display: block; width: 100%; max-width: 220px; border-radius: var(--r); margin-top: var(--s-2); }
 .file-chip:has(.file-chip__thumb:not([hidden])) { flex-wrap: wrap; }
 
+.file-chip--sound { padding: var(--s-2); }
+.file-chip--sound audio { height: 34px; max-width: 260px; }
+[data-thread-record].is-recording {
+  background: var(--danger); color: #fff; border-color: var(--danger);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) {
+  [data-thread-record].is-recording { animation: none; }
+}
 .thread__pending { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
 .thread__compose { display: flex; gap: var(--s-2); align-items: center; margin-top: var(--s-3); }
 .thread__compose .input { flex: 1 1 auto; min-width: 0; }
