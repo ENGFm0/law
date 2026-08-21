@@ -590,6 +590,58 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .bubble { max-width: 92%; }
 }
 
+/* ---------- 11a09b. The story of a request ----------
+   A dated list, not a table: what happened, when, and who did it. Internal
+   lines are tinted so a desk reading both threads can see at a glance which
+   half the client was never shown. */
+.tl { margin-top: var(--s-6); }
+.tl__list { list-style: none; margin-top: var(--s-4); padding: 0; }
+.tl__item {
+  display: flex; gap: var(--s-4); padding: var(--s-3) 0;
+  border-inline-start: 2px solid var(--border); padding-inline-start: var(--s-5);
+  margin-inline-start: 5px; position: relative;
+}
+.tl__item--internal { background: var(--surface-2); border-radius: var(--r); }
+.tl__dot {
+  position: absolute; inset-inline-start: -6px; top: var(--s-5);
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--surface);
+}
+.tl__item--internal .tl__dot { background: var(--text-muted); }
+
+/* Counts that are doors. A dashboard's first job is to say what to open, so
+   each of these is a link with the number on it — and nought is shown rather
+   than hidden, because "no objections open" is worth reading. */
+.queue-row {
+  display: grid; gap: var(--s-3); margin-top: var(--s-5);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.queue {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4); border-radius: var(--r);
+  border: 1px solid var(--border); background: var(--surface); color: inherit;
+}
+.queue:hover { border-color: var(--accent); }
+.queue strong { font-size: 1.125rem; }
+.queue--live { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-soft-text); }
+
+/* A name that opens a file. It is a button because it does something rather
+   than goes somewhere, and it reads as a link because that is what it is for. */
+.linklike {
+  background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+  color: var(--brand-navy); text-align: start;
+}
+.linklike:hover { text-decoration: underline; }
+
+/* A case file opened at the desk: set apart from the row it belongs to, so
+   what the client wrote and what the trainee wrote cannot be mistaken for
+   each other or for the console's own furniture. */
+.admin-case {
+  margin-top: var(--s-5); padding: var(--s-5);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  background: var(--surface-2);
+}
+
 /* ---------- 11a0a. How a request is going ---------- */
 .track {
   padding: var(--s-5); border-radius: var(--r-lg);
@@ -3082,6 +3134,52 @@ window.SANAD_CONFIG = {
       "thread.recording": "يسجّل… اضغط الميكروفون للإيقاف.",
       "thread.voiceName": "مقطع صوتي {n} ثانية",
       "thread.noMic": "لا يمكن التسجيل — لم يُسمح بالميكروفون.",
+
+      /* --- the story of a request --- */
+      "tl.title": "مسار الطلب",
+      "tl.placed": "أُنشئ الطلب",
+      "tl.lawyer_set": "أُسند إلى المحامي",
+      "tl.assigned": "وُجّه إلى المتدرب",
+      "tl.unassigned": "سُحب التوجيه",
+      "tl.revision": "طُلب تعديل",
+      "tl.disputed": "فُتح اعتراض",
+      "tl.decided": "صدر القرار",
+      "tl.message": "رسالة",
+      "tl.file": "مرفق",
+      "tl.internal": "داخلي",
+      "tl.by": "بواسطة",
+      "tl.empty": "لا شيء بعد.",
+      "tl.ref": "رقم الطلب",
+      "tl.parties": "أطراف الطلب",
+      "tl.roleClient": "العميل",
+      "tl.roleLawyer": "المحامي",
+      "tl.roleIntern": "المتدرب",
+      "tl.everything": "كل ما دار على هذا الطلب",
+      "tl.fromClient": "ما أرسله العميل",
+      "tl.readOnly": "للاطلاع — الردّ على العميل من المحامي.",
+      "adm.openCase": "افتح الملف كاملاً",
+      "adm.hideCase": "أغلق الملف",
+      "adm.backToPeople": "رجوع إلى الأشخاص",
+      "adm.filesTotal": "طلبات",
+      "adm.filesDisputed": "اعتراضات",
+      "adm.filesRating": "التقييم",
+      "adm.filesBriefs": "مزايدات وعروض",
+      "adm.filesRequests": "كل الطلبات التي له فيها يد",
+      "adm.filesComplaints": "الاعتراضات",
+      "adm.filesReviews": "التقييمات المكتوبة",
+      "adm.filesNone": "لا طلبات بعد.",
+      "adm.disputeOpen": "مفتوح",
+      "adm.disputeDone": "مقرَّر",
+      "dash.earnedNet": "صافي ما وصلك",
+      "dash.qNeedsYou": "ينتظر عملك",
+      "dash.qWithClient": "عند العميل للقبول",
+      "dash.qBoard": "طلبات تصلح لك",
+      "dash.qDisputed": "اعتراضات مفتوحة",
+      "dash.qRefunded": "طلبات مستردة",
+      "dash.qToWrite": "مهام عليك",
+      "dash.qPool": "مهام مفتوحة",
+      "dash.qHoursLeft": "ساعة للشهادة",
+      "dash.qCerts": "شهادات",
     },
 
     en: {
@@ -4370,6 +4468,52 @@ window.SANAD_CONFIG = {
       "thread.recording": "Recording… press the microphone to stop.",
       "thread.voiceName": "Voice note {n}s",
       "thread.noMic": "Cannot record — the microphone was not allowed.",
+
+      /* --- the story of a request --- */
+      "tl.title": "What happened",
+      "tl.placed": "Request placed",
+      "tl.lawyer_set": "Lawyer taken on",
+      "tl.assigned": "Routed to a trainee",
+      "tl.unassigned": "Routing withdrawn",
+      "tl.revision": "A revision was asked for",
+      "tl.disputed": "An objection was raised",
+      "tl.decided": "Decided",
+      "tl.message": "Message",
+      "tl.file": "File",
+      "tl.internal": "Internal",
+      "tl.by": "by",
+      "tl.empty": "Nothing yet.",
+      "tl.ref": "Reference",
+      "tl.parties": "Who is on it",
+      "tl.roleClient": "Client",
+      "tl.roleLawyer": "Lawyer",
+      "tl.roleIntern": "Trainee",
+      "tl.everything": "Everything on this request",
+      "tl.fromClient": "What the client sent",
+      "tl.readOnly": "Read-only — the lawyer is the one who answers the client.",
+      "adm.openCase": "Open the whole file",
+      "adm.hideCase": "Close the file",
+      "adm.backToPeople": "Back to people",
+      "adm.filesTotal": "Requests",
+      "adm.filesDisputed": "Objections",
+      "adm.filesRating": "Rating",
+      "adm.filesBriefs": "Briefs and bids",
+      "adm.filesRequests": "Every request they had a hand in",
+      "adm.filesComplaints": "Objections",
+      "adm.filesReviews": "Written reviews",
+      "adm.filesNone": "No requests yet.",
+      "adm.disputeOpen": "Open",
+      "adm.disputeDone": "Decided",
+      "dash.earnedNet": "Yours, after everything",
+      "dash.qNeedsYou": "Waiting on you",
+      "dash.qWithClient": "With the client",
+      "dash.qBoard": "Briefs you could take",
+      "dash.qDisputed": "Objections open",
+      "dash.qRefunded": "Refunded",
+      "dash.qToWrite": "Tasks to write",
+      "dash.qPool": "Open tasks",
+      "dash.qHoursLeft": "Hours to the certificate",
+      "dash.qCerts": "Certificates",
     }
   };
 
@@ -4536,7 +4680,7 @@ window.SANAD_CONFIG = {
     "articles", "articleStates", "comments", "endorsements", "applications",
     "agreements", "disputes", "audit", "profiles", "notices",
     "announcements", "subscriptions", "costs", "partners", "bands",
-    "types", "removedTypes", "quotes", "offers", "messages", "attachments"
+    "types", "removedTypes", "quotes", "offers", "messages", "attachments", "events"
   ].forEach(function (k) {
     if (!work[k]) {
       work[k] = (k.indexOf("States") !== -1 || k === "applications" ||
@@ -4701,8 +4845,14 @@ window.SANAD_CONFIG = {
        down anywhere else. */
     addRequest: function (r, done) {
       r.id = r.id || uid("r");
+      r.ref = r.ref || ("SND-" + new Date().getFullYear().toString().slice(2) + "-" +
+                        String(100000 + work.requests.length + 1).slice(1));
       r.createdAt = Date.now();
       work.requests.push(r);
+      Store.logEvent({ requestId: r.id, kind: "placed", byId: r.clientId });
+      if (r.lawyerId) {
+        Store.logEvent({ requestId: r.id, kind: "lawyer_set", byId: r.clientId, detail: r.lawyerId });
+      }
       notify();
       if (done) done(r);
       return r;
@@ -4710,12 +4860,32 @@ window.SANAD_CONFIG = {
     requestState: function (id) { return work.requestStates[id] || {}; },
     setRequest: function (id, patch) {
       var cur = work.requestStates[id] || {};
+      var was = { status: cur.status, assignedTo: cur.assignedTo,
+                  revisions: cur.revisions || 0 };
       Object.keys(patch).forEach(function (k) { cur[k] = patch[k]; });
       // Delivery starts the acceptance window, so the moment is stamped where
       // delivery happens rather than at each of the several callers that
       // cause it — one of them would eventually be written without it.
       if (patch.status === "delivered" && !cur.deliveredAt) cur.deliveredAt = Date.now();
+      if (patch.status === "completed" && !cur.acceptedAt) cur.acceptedAt = Date.now();
       work.requestStates[id] = cur;
+
+      // The same lines the database trigger writes on the real backend, so a
+      // timeline reads the same either way.
+      var by = Store.currentId();
+      if (patch.status && patch.status !== was.status) {
+        Store.logEvent({ requestId: id, kind: "status:" + patch.status,
+                         byId: by, detail: was.status || null });
+      }
+      if ("assignedTo" in patch && patch.assignedTo !== was.assignedTo) {
+        Store.logEvent({ requestId: id,
+                         kind: patch.assignedTo ? "assigned" : "unassigned",
+                         byId: by, detail: patch.assignedTo || was.assignedTo || null });
+      }
+      if ((patch.revisions || 0) > was.revisions) {
+        Store.logEvent({ requestId: id, kind: "revision", byId: by,
+                         detail: patch.revisionNote || null });
+      }
       notify();
     },
 
@@ -4904,7 +5074,11 @@ window.SANAD_CONFIG = {
     openDispute: function (d) {
       if (Store.disputeFor(d.requestId)) return null;   // one per request
       d.id = uid("d");
+      d.ref = "OBJ-" + new Date().getFullYear().toString().slice(2) + "-" +
+              String(100000 + work.disputes.length + 1).slice(1);
       d.at = Date.now();
+      Store.logEvent({ requestId: d.requestId, kind: "disputed",
+                       byId: d.byId, detail: d.reason });
       d.status = "open";
       d.resolution = null;
       work.disputes.push(d);
@@ -4923,6 +5097,9 @@ window.SANAD_CONFIG = {
         byId: decision.byId || null,
         at: Date.now()
       };
+      Store.logEvent({ requestId: d.requestId, kind: "decided", byId: decision.byId || null,
+                       detail: decision.outcome +
+                         (decision.reason ? " · " + decision.reason : "") });
       notify();
       return d;
     },
@@ -5019,6 +5196,22 @@ window.SANAD_CONFIG = {
                                    reason: "استرداد ضمن نافذة الضمان المعلنة", byId: null });
       Store.setRequest(requestId, { status: "refunded" });
       return say("refunded");
+    },
+
+    /* ---------------- what happened to a case ----------------
+       The remote backend writes this from a trigger, where it cannot be
+       forgotten. Here the callers append it, which is the same record by a
+       weaker means — good enough for a demo, and it keeps every screen that
+       reads a timeline working without a backend. */
+    events: function (requestId) {
+      return work.events.filter(function (e) { return e.requestId === requestId; })
+        .sort(function (a, b) { return a.at - b.at; });
+    },
+    logEvent: function (e) {
+      e.id = e.id || uid("ev");
+      e.at = e.at || Date.now();
+      work.events.push(e);
+      return e;
     },
 
     /* ---------------- the conversation on a case ----------------
@@ -5140,7 +5333,7 @@ window.SANAD_CONFIG = {
                audit: [], profiles: {}, notices: [],
                announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
                types: [], removedTypes: [], quotes: [], offers: [],
-               messages: [], attachments: [] };
+               messages: [], attachments: [], events: [] };
       notify();
     },
     resetAll: function () {
@@ -6136,6 +6329,73 @@ window.SANAD_CONFIG = {
     return null;
   }
 
+  /* ---------- what happened to a case, in order ----------
+     The record the database keeps, the conversation, and the files, merged
+     and sorted. One story rather than three lists — which is what somebody
+     deciding an objection actually needs to read.
+
+     Every line carries who did it and when, to the minute. `audience` is kept
+     on the message lines so a screen can leave the internal ones out when the
+     person reading is not entitled to them. */
+  function timeline(r, opts) {
+    var o = opts || {};
+    var id = r && r.id;
+    if (!id) return [];
+    var out = [];
+
+    ((Store.events && Store.events(id)) || []).forEach(function (e) {
+      out.push({ at: e.at, kind: e.kind, byId: e.byId, detail: e.detail, sort: 0 });
+    });
+
+    if (o.messages !== false) {
+      ["parties", "internal"].forEach(function (side) {
+        if (side === "internal" && o.internal === false) return;
+        ((Store.messages && Store.messages(id, side)) || []).forEach(function (m) {
+          out.push({ at: m.at, kind: "message", byId: m.authorId, audience: side,
+                     detail: m.body, files: (Store.attachmentsOn &&
+                                             Store.attachmentsOn(m.id)) || [], sort: 1 });
+        });
+      });
+    }
+
+    // A file sent without a message of its own still belongs in the story.
+    if (o.messages !== false) {
+      ["parties", "internal"].forEach(function (side) {
+        if (side === "internal" && o.internal === false) return;
+        ((Store.filesOf && Store.filesOf(id, side)) || []).forEach(function (a) {
+          if (a.messageId) return;
+          out.push({ at: a.at, kind: "file", byId: a.authorId, audience: side,
+                     files: [a], sort: 1 });
+        });
+      });
+    }
+
+    return out.sort(function (a, b) { return (a.at - b.at) || (a.sort - b.sort); });
+  }
+
+  /** The reference somebody can say out loud. Falls back to the tail of the
+      id so a screen never shows an empty column while a migration is pending. */
+  function refOf(row) {
+    if (!row) return "";
+    if (row.ref) return row.ref;
+    return "#" + String(row.id || "").slice(-6);
+  }
+
+  /** Everyone with a part in a request, in the order they joined it. */
+  function partyList(r) {
+    if (!r) return [];
+    var st = requestState(r);
+    var out = [];
+    var add = function (id, role) {
+      if (!id) return;
+      out.push({ id: id, role: role, user: user(id) });
+    };
+    add(r.clientId, "client");
+    add(r.lawyerId, "lawyer");
+    add(st.assignedTo, "intern");
+    return out;
+  }
+
   /* ---------- the reverse auction ----------
      A brief is posted once and answered by whoever can take it. What a lawyer
      is shown is decided here rather than in the page, because it is the same
@@ -6802,6 +7062,7 @@ window.SANAD_CONFIG = {
     scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard, ranked: ranked,
     serviceTypes: serviceTypes, allServiceTypes: allServiceTypes,
     serviceType: serviceType, servicesOf: servicesOf, services: services,
+    timeline: timeline, refOf: refOf, partyList: partyList,
     quotes: quotes, quote: quote, offersOn: offersOn, quoteLive: quoteLive,
     myQuote: myQuote, openQuotesFor: openQuotesFor, quotePrice: quotePrice,
     quotesForClient: quotesForClient, quoteState: quoteState,
@@ -7704,7 +7965,7 @@ window.SANAD_CONFIG = {
     REST: ["requests", "articles", "comments", "endorsements", "agreements",
            "disputes", "notifications", "audit_log", "subscriptions",
            "operating_costs", "partners", "quotes", "offers", "contacts",
-           "messages", "attachments"],
+           "messages", "attachments", "request_events"],
 
     hydrate: function (names) {
       return load().then(function (sb) {
@@ -7739,6 +8000,9 @@ window.SANAD_CONFIG = {
           // policy decides that, not this query.
           messages:         function () { return sb.from("messages").select("*").order("created_at").limit(1000); },
           attachments:      function () { return sb.from("attachments").select("*").order("created_at").limit(1000); },
+          // What happened to a case, in order. Read by whoever may see the
+          // case, which is the same rule the case itself is under.
+          request_events:   function () { return sb.from("request_events").select("*").order("at").limit(2000); },
         };
 
         return Promise.all(want.map(function (name) { return query[name](); }))
@@ -7797,7 +8061,8 @@ window.SANAD_CONFIG = {
 
   function inRequest(r) {
     return {
-      id: r.id, clientId: r.client_id, lawyerId: r.lawyer_id, assignedTo: r.assigned_to,
+      id: r.id, ref: r.ref || null,
+      clientId: r.client_id, lawyerId: r.lawyer_id, assignedTo: r.assigned_to,
       typeId: r.type_id, channel: r.channel || "text",
       price: Number(r.price), status: r.status,
       ai: !!r.ai_assisted, hours: r.hours || 3, body: r.body || null,
@@ -7851,7 +8116,8 @@ window.SANAD_CONFIG = {
   }
   function inDispute(d) {
     return {
-      id: d.id, requestId: d.request_id, byId: d.by_id, reason: d.reason,
+      id: d.id, ref: d.ref || null,
+      requestId: d.request_id, byId: d.by_id, reason: d.reason,
       at: new Date(d.created_at).getTime(), status: d.status,
       resolution: d.status === "resolved" ? {
         outcome: d.outcome, lawyerPct: d.lawyer_pct, reason: d.resolution_reason,
@@ -7949,6 +8215,12 @@ window.SANAD_CONFIG = {
       eta: o.eta == null ? 24 : o.eta, auto: !!o.auto, note: o.note || "",
       at: new Date(o.created_at).getTime(),
     };
+  }
+
+  function inEvent(e) {
+    return { id: e.id, requestId: e.request_id, kind: e.kind,
+             byId: e.by_id, detail: e.detail || null,
+             at: new Date(e.at).getTime() };
   }
 
   function inMessage(m) {
@@ -8051,7 +8323,7 @@ window.SANAD_CONFIG = {
     reviews: [], comments: [], endorsements: [], agreements: [], applications: {},
     disputes: [], notices: [], audit: [], settings: {},
     announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
-    types: [], quotes: [], offers: [], messages: [], attachments: [],
+    types: [], quotes: [], offers: [], messages: [], attachments: [], events: [],
   };
   var ready = false;
 
@@ -8615,6 +8887,10 @@ window.SANAD_CONFIG = {
     }).sort(function (a, b) { return a.at - b.at; });
   };
   Store.attachments = function () { return cache.attachments; };
+  Store.events = function (requestId) {
+    return cache.events.filter(function (e) { return e.requestId === requestId; })
+      .sort(function (a, b) { return a.at - b.at; });
+  };
   Store.attachmentsOn = function (messageId) {
     return cache.attachments.filter(function (a) { return a.messageId === messageId; });
   };
@@ -8928,6 +9204,7 @@ window.SANAD_CONFIG = {
     cache.offers = take("offers", inOffer, cache.offers);
     cache.messages = take("messages", inMessage, cache.messages);
     cache.attachments = take("attachments", inAttachment, cache.attachments);
+    cache.events = take("request_events", inEvent, cache.events);
 
     if (had("platform_settings")) cache.settings = inSettings(rows.platform_settings);
     if (had("price_bands") && rows.price_bands) {
@@ -10567,8 +10844,10 @@ window.SANAD_CONFIG = {
       '<div class="grow" style="min-width:0">' +
         '<div class="row gap-2 wrap"><strong class="small">' + esc(tx(r.title)) + "</strong>" +
           (type ? '<span class="tag">' + esc(tx(type.title)) + "</span>" : "") + "</div>" +
-        '<p class="tiny muted">' + (other ? esc(tx(other.name)) + ' <span class="dot"></span> ' : "") +
-          esc(tx(r.ago)) + "</p>" +
+        '<p class="tiny muted">' +
+          '<span class="num" dir="ltr">' + esc(M.refOf(r)) + "</span>" +
+          (other ? ' <span class="dot"></span> ' + esc(tx(other.name)) : "") +
+          (tx(r.ago) ? ' <span class="dot"></span> ' + esc(tx(r.ago)) : "") + "</p>" +
         (r.brief ? '<p class="tiny faint">' + esc(tx(r.brief)) + "</p>" : "") +
       "</div>" +
       '<div class="req-row__side">' + statusPill(shown) +
@@ -10722,6 +11001,88 @@ window.SANAD_CONFIG = {
         node.title = I18N.t("thread.openFile");
       });
     });
+  }
+
+  /* ---------- the story of a request ----------
+     Every line dated to the minute, named by who did it. The same component
+     serves the client watching their own case, the trainee being handed one,
+     and the desk deciding an objection — the difference between them is one
+     option, `internal`, and it is the only thing any of them may not see. */
+  function stamp(ms) {
+    if (!ms) return "";
+    var d = new Date(ms);
+    var two = function (n) { return (n < 10 ? "0" : "") + n; };
+    return I18N.date(ms) + " · " + two(d.getHours()) + ":" + two(d.getMinutes());
+  }
+
+  function timelineLine(e) {
+    var who = M.user(e.byId);
+    var label = I18N.t("tl." + String(e.kind).split(":")[0]);
+    // A status change carries the status it moved to, which already has a
+    // word of its own everywhere else on the site.
+    if (String(e.kind).slice(0, 7) === "status:") {
+      label = I18N.t("status." + e.kind.slice(7));
+    }
+    var body = "";
+    if (e.kind === "assigned" || e.kind === "unassigned" || e.kind === "lawyer_set") {
+      var target = M.user(e.detail);
+      body = target ? App.tx(target.name) : "";
+    } else if (e.detail && e.kind !== "message") {
+      body = e.detail;
+    } else if (e.detail) {
+      body = e.detail;
+    }
+
+    return '<li class="tl__item' + (e.audience === "internal" ? " tl__item--internal" : "") + '">' +
+      '<span class="tl__dot"></span>' +
+      '<div class="grow" style="min-width:0">' +
+        '<div class="row gap-2 wrap">' +
+          "<strong class=\"small\">" + App.esc(label) + "</strong>" +
+          (e.audience === "internal"
+            ? '<span class="tag">' + App.esc(I18N.t("tl.internal")) + "</span>" : "") +
+          '<span class="tiny faint">' + App.esc(stamp(e.at)) + "</span>" +
+          (who ? '<span class="tiny muted">' + App.esc(I18N.t("tl.by")) + " " +
+            App.esc(App.tx(who.name)) + "</span>" : "") +
+        "</div>" +
+        (body ? '<p class="small" style="margin-top:var(--s-1)">' + App.esc(body) + "</p>" : "") +
+        (e.files && e.files.length
+          ? '<div class="bubble__files">' + e.files.map(fileChip).join("") + "</div>"
+          : "") +
+      "</div></li>";
+  }
+
+  function timeline(r, opts) {
+    var o = opts || {};
+    var lines = M.timeline(r, o);
+    return '<section class="tl">' +
+      '<div class="row between wrap gap-3">' +
+        '<h3 class="subtitle">' + App.esc(I18N.t(o.titleKey || "tl.title")) + "</h3>" +
+        '<span class="tiny muted num" dir="ltr">' + App.esc(M.refOf(r)) + "</span>" +
+      "</div>" +
+      (lines.length
+        ? '<ol class="tl__list">' + lines.map(timelineLine).join("") + "</ol>"
+        : '<p class="small muted" style="margin-top:var(--s-3)">' +
+          App.esc(I18N.t("tl.empty")) + "</p>") +
+    "</section>";
+  }
+
+  /** Who is on a request, said plainly. Names link to their profile, and for
+      staff that is a file rather than a card. */
+  function parties(r, opts) {
+    var o = opts || {};
+    var list = M.partyList(r);
+    if (!list.length) return "";
+    var key = { client: "tl.roleClient", lawyer: "tl.roleLawyer", intern: "tl.roleIntern" };
+    return '<div class="row gap-6 wrap" style="margin-top:var(--s-3)">' +
+      list.map(function (p) {
+        var name = p.user ? App.tx(p.user.name) : "";
+        return '<span class="small"><span class="tiny muted">' +
+          App.esc(I18N.t(key[p.role])) + ":</span> " +
+          (o.asFile
+            ? '<a href="admin.html?tab=people&who=' + App.esc(p.id) + '">' + App.esc(name) + "</a>"
+            : App.esc(name)) + "</span>";
+      }).join("") +
+    "</div>";
   }
 
   /* ---------- making the thread work ----------
@@ -10910,6 +11271,7 @@ window.SANAD_CONFIG = {
     requestRow: requestRow, empty: empty, sectionHead: sectionHead,
     thread: thread, bubble: bubble, fileChip: fileChip, linkFiles: linkFiles,
     bytes: bytes, wireThread: wireThread, threadDraw: threadDraw,
+    timeline: timeline, parties: parties, stamp: stamp,
     googleButton: googleButton
   };
 })(window);
@@ -11050,6 +11412,17 @@ Pages.define("home", function (global) {
     );
   }
 
+  /** A row of counts that are also doors. Nought is shown as nought rather
+      than hidden: "no objections open" is worth reading. */
+  function queue(items) {
+    return '<div class="queue-row">' + items.map(function (q) {
+      return '<a class="queue' + (q.n ? " queue--live" : "") + '" href="' + q.href + '">' +
+        Icons.svg(q.icon, "icon-sm") +
+        '<strong class="num">' + I18N.num(q.n) + "</strong>" +
+        '<span class="tiny">' + esc(I18N.t(q.key)) + "</span></a>";
+    }).join("") + "</div>";
+  }
+
   /* ---------- what the platform is promising ----------
      Four sentences a stranger needs before they will pay another stranger to
      read their contract. Every one of them is something the site actually
@@ -11107,7 +11480,16 @@ Pages.define("home", function (global) {
       var st = M.requestState(r);
       return !st.assignedTo && (st.status === "new" || st.status === "drafted" || st.status === "assigned");
     });
-    var revenue = mine.reduce(function (t, r) { return t + (r.price || 0); }, 0);
+    // What actually reaches them, not what the client paid: commission and a
+    // trainee's share come out first, and a refunded case brings nothing.
+    var earned = 0, refunded = 0;
+    mine.forEach(function (r) {
+      var st = M.requestState(r).status;
+      if (st !== "delivered" && st !== "completed" && st !== "refunded") return;
+      var s = M.settlement(r);
+      earned += s ? s.lawyer : M.distribute(r).lawyer;
+      if (s && s.refund) refunded += 1;
+    });
     var rating = M.ratingOf(u.id);
     // What has gone out to trainees is part of reading the month honestly.
     var toInterns = mine.reduce(function (t, r) {
@@ -11115,16 +11497,35 @@ Pages.define("home", function (global) {
       return t + (pay && pay.kind === "share" ? pay.amount : 0);
     }, 0);
 
+    // The list that decides what to open first: work waiting on them, a
+    // client waiting on an answer, a decision waiting on the desk.
+    var waiting = M.openQuotesFor(u.id).length;
+    var disputed = mine.filter(function (r) {
+      var d = M.disputeFor(r.id);
+      return d && d.status === "open";
+    });
+    var awaitingClient = mine.filter(function (r) {
+      var a = M.acceptance(r);
+      return a.delivered && !a.settled && !a.dispute;
+    });
+
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       greeting("dash.lawyerLead") +
       (Session.isVerified() ? "" : pendingNotice()) +
       '<div class="grid grid-5">' +
         stat("inbox", "dash.awaitingYou", I18N.num(needsMe.length), "gold") +
         stat("file-text", "dash.activeRequests", I18N.num(live.length)) +
-        stat("wallet", "dash.revenue", I18N.num(revenue)) +
+        stat("wallet", "dash.earnedNet", I18N.num(Math.round(earned / 100))) +
         stat("graduation", "pay.paidOut", I18N.num(toInterns)) +
         stat("star", "dash.overallRating", rating.avg.toFixed(1)) +
       "</div>" +
+      queue([
+        { n: needsMe.length, key: "dash.qNeedsYou", href: "requests.html", icon: "inbox" },
+        { n: awaitingClient.length, key: "dash.qWithClient", href: "requests.html", icon: "clock" },
+        { n: waiting, key: "dash.qBoard", href: "quotes.html", icon: "gavel" },
+        { n: disputed.length, key: "dash.qDisputed", href: "requests.html", icon: "bell" },
+        { n: refunded, key: "dash.qRefunded", href: "requests.html", icon: "wallet" },
+      ]) +
 
       '<div class="grid dash-split" style="margin-top:var(--s-10)">' +
         '<section class="card card--pad">' +
@@ -11171,6 +11572,17 @@ Pages.define("home", function (global) {
         stat("clock", "dash.hoursLogged", I18N.num(prog.hours)) +
         stat("wallet", "pay.earned", I18N.num(M.earnedBy(u.id))) +
       "</div>" +
+      queue([
+        { n: mine.filter(function (r) {
+            var st = M.requestState(r).status;
+            return st !== "delivered" && st !== "completed" && st !== "cancelled";
+          }).length, key: "dash.qToWrite", href: "requests.html", icon: "file-text" },
+        { n: M.openInternTasks().length, key: "dash.qPool", href: "requests.html", icon: "gavel" },
+        { n: Math.max(0, prog.needed - prog.hours), key: "dash.qHoursLeft",
+          href: "account.html", icon: "clock" },
+        { n: M.endorsementsFor ? M.endorsementsFor(u.id).length : 0,
+          key: "dash.qCerts", href: "account.html", icon: "badge" },
+      ]) +
 
       '<div class="grid dash-split" style="margin-top:var(--s-10)">' +
         '<section class="card card--pad">' +
@@ -11447,6 +11859,9 @@ Pages.define("requests", function (global) {
       (rating[r.id] !== undefined ? rateForm(r) : "") +
       // Everything the two of them said and sent, on the case it belongs to.
       C.thread(r, "parties", { closed: st.status === "completed" }) +
+      // And what happened to it, dated. The client is not shown the internal
+      // half — the same rule the database applies.
+      C.timeline(r, { internal: false }) +
     "</div>";
   }
 
@@ -11801,6 +12216,8 @@ Pages.define("requests", function (global) {
           : "") +
         C.thread(r, M.requestState(r).assignedTo ? side : "parties",
                  { closed: M.requestState(r).status === "completed" }) +
+        // The lawyer is on both threads, so their record shows both.
+        C.timeline(r, { internal: true }) +
       "</div></section>";
   }
 
@@ -11937,6 +12354,25 @@ Pages.define("requests", function (global) {
                 'data-i18n="dash.saveDraft"></button>' +
               '<button class="btn btn--accent btn--sm" type="button" data-task-deliver="' + esc(r.id) + '">' +
                 Icons.svg("send", "icon-sm") + esc(I18N.t("task.deliver")) + "</button></div>" +
+
+            // A trainee handed a case used to be handed a title and a
+            // deadline. Everything that decides how to write the thing — what
+            // the client actually asked for, what they sent, what the lawyer
+            // has already told them — was on the other side of a wall built
+            // for the client's privacy from strangers, which a trainee on
+            // their own case is not.
+            '<div class="admin-case" style="margin-top:var(--s-5)">' +
+              '<div class="row between wrap gap-3">' +
+                '<h3 class="subtitle">' + esc(I18N.t("tl.fromClient")) + "</h3>" +
+                '<span class="tiny muted num" dir="ltr">' + esc(M.refOf(r)) + "</span></div>" +
+              (tx(r.brief) ? '<p class="small" style="margin-top:var(--s-3)">' +
+                esc(tx(r.brief)) + "</p>" : "") +
+              C.parties(r) +
+              '<p class="tiny faint" style="margin-top:var(--s-4)">' +
+                esc(I18N.t("tl.readOnly")) + "</p>" +
+              C.timeline(r, { internal: false, titleKey: "tl.everything" }) +
+            "</div>" +
+
             // The supervising lawyer, and nobody else: the client is not in
             // this one and cannot be.
             C.thread(r, "internal", { closed: false }) + "</div>"
@@ -15704,6 +16140,8 @@ Pages.define("admin", function (global) {
   var filter = "all";
   var query = "";
   var rejecting = null;
+  var openCase = null;      // the request whose whole file is on screen
+  var whoFile = null;       // the person whose file is on screen
   var outcome = {};
 
   var sar = function (halalas) {
@@ -15795,6 +16233,10 @@ Pages.define("admin", function (global) {
   }
 
   function people() {
+    // One name asked about beats a list scrolled through: everything that
+    // person has done, in one place, with every request they touched.
+    if (whoFile) return personFile(whoFile);
+
     var all = M.users().filter(function (u) {
       return u.roles.indexOf("staff") === -1;
     }).filter(matches);
@@ -15812,6 +16254,112 @@ Pages.define("admin", function (global) {
       (all.length ? all.map(personRow).join("") : '<p class="small muted" data-i18n="adm.noPeople"></p>');
   }
 
+  /* Everything one person has done here. The question the desk actually asks
+     is never "what is their status" — it is "what happened with them", and
+     that answer was spread across four tabs and a database. */
+  function personFile(id) {
+    var u = M.user(id);
+    if (!u) return head("adm.people") + '<p class="small muted" data-i18n="adm.noPeople"></p>';
+
+    var asClient = M.requests().filter(function (r) { return r.clientId === id; });
+    var asLawyer = M.requests().filter(function (r) { return r.lawyerId === id; });
+    var asIntern = M.requests().filter(function (r) {
+      return M.requestState(r).assignedTo === id;
+    });
+    var theirs = asClient.concat(asLawyer).concat(asIntern);
+    var raised = Store.disputes().filter(function (d) { return d.byId === id; });
+    var against = theirs.map(function (r) { return M.disputeFor(r.id); })
+      .filter(function (d) { return d && d.byId !== id; });
+    var reviews = M.reviewsFor(id);
+    var briefs = M.quotesForClient(id);
+    var bids = (Store.offers ? Store.offers() : []).filter(function (o) { return o.lawyer === id; });
+    var rating = M.ratingOf(id);
+
+    var row = function (r) {
+      var st = M.requestState(r);
+      var d = M.disputeFor(r.id);
+      var role = r.clientId === id ? "tl.roleClient"
+               : r.lawyerId === id ? "tl.roleLawyer" : "tl.roleIntern";
+      return '<div class="row between wrap gap-3 admin-line">' +
+        '<span><span class="tiny muted num" dir="ltr">' + esc(M.refOf(r)) + "</span> " +
+          "<strong class=\"small\">" + esc(tx(r.title || {})) + "</strong> " +
+          '<span class="tag">' + esc(I18N.t(role)) + "</span>" +
+          (d ? ' <span class="status status--warn">' + esc(M.refOf(d)) + "</span>" : "") +
+        "</span>" +
+        '<span class="row gap-3">' + C.statusPill(st.status) + sar(M.distribute(r).client) +
+          '<button class="btn btn--ghost btn--sm" type="button" data-case="' + esc(r.id) + '">' +
+            esc(I18N.t("adm.openCase")) + "</button></span>" +
+      "</div>" +
+      (openCase === r.id ? caseFile(r) : "");
+    };
+
+    var stat = function (labelKey, value) {
+      return '<div class="kpi"><span class="kpi__label">' + esc(I18N.t(labelKey)) + "</span>" +
+        '<strong class="kpi__value">' + value + "</strong></div>";
+    };
+
+    return '<button class="btn btn--ghost btn--sm" style="margin-bottom:var(--s-4)" ' +
+        'type="button" data-back-people>' + esc(I18N.t("adm.backToPeople")) + "</button>" +
+
+      '<section class="card card--pad">' +
+        '<div class="row between wrap gap-4">' +
+          '<div class="row gap-4">' + C.avatar(u, "md") +
+            "<div><h2 class=\"subtitle\">" + esc(tx(u.name)) + "</h2>" +
+              '<p class="tiny muted num" dir="ltr">' + esc(u.email || "") +
+                (u.phone ? " · " + esc(u.phone) : "") + "</p>" +
+              '<p class="tiny muted">' + esc(u.roles.map(function (rr) {
+                return I18N.t("role." + rr);
+              }).join(" · ")) + "</p></div></div>" +
+          C.statusPill(u.status) +
+        "</div>" +
+        '<div class="kpi-row" style="margin-top:var(--s-5)">' +
+          stat("adm.filesTotal", C.num(theirs.length)) +
+          stat("adm.filesDisputed", C.num(raised.length + against.length)) +
+          stat("adm.filesRating", rating.count ? C.num(rating.avg.toFixed(1)) : "—") +
+          stat("adm.filesBriefs", C.num(briefs.length + bids.length)) +
+        "</div>" +
+      "</section>" +
+
+      '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+        '<h3 class="subtitle">' + esc(I18N.t("adm.filesRequests")) + "</h3>" +
+        (theirs.length
+          ? '<div style="margin-top:var(--s-4)">' + theirs.map(row).join("") + "</div>"
+          : '<p class="small muted" style="margin-top:var(--s-3)">' +
+            esc(I18N.t("adm.filesNone")) + "</p>") +
+      "</section>" +
+
+      (raised.length || against.length
+        ? '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+            '<h3 class="subtitle">' + esc(I18N.t("adm.filesComplaints")) + "</h3>" +
+            '<div style="margin-top:var(--s-4)">' +
+            raised.concat(against).map(function (d) {
+              var r = M.request(d.requestId);
+              return '<div class="row between wrap gap-3 admin-line">' +
+                '<span><span class="tiny muted num" dir="ltr">' + esc(M.refOf(d)) + "</span> " +
+                  '<span class="small">' + esc(d.reason || "") + "</span></span>" +
+                '<span class="row gap-3"><span class="tiny muted">' + esc(C.stamp(d.at)) + "</span>" +
+                  '<span class="status status--' + (d.status === "open" ? "warn" : "muted") + '">' +
+                    esc(I18N.t(d.status === "open" ? "adm.disputeOpen" : "adm.disputeDone")) +
+                  "</span>" +
+                  (r ? '<button class="btn btn--ghost btn--sm" type="button" data-case="' +
+                    esc(r.id) + '">' + esc(I18N.t("adm.openCase")) + "</button>" : "") +
+                "</span></div>" +
+                (r && openCase === r.id ? caseFile(r) : "");
+            }).join("") + "</div>" +
+          "</section>"
+        : "") +
+
+      (reviews.length
+        ? '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+            '<h3 class="subtitle">' + esc(I18N.t("adm.filesReviews")) + "</h3>" +
+            '<div style="margin-top:var(--s-4)">' + reviews.map(function (rv) {
+              return '<div class="admin-line"><div class="row gap-3">' +
+                C.stars(rv.rating) + '<span class="small">' + esc(tx(rv.body || {})) + "</span>" +
+              "</div></div>";
+            }).join("") + "</div></section>"
+        : "");
+  }
+
   function personRow(u) {
     var lawyer = u.roles.indexOf("lawyer") !== -1;
     var intern = u.roles.indexOf("intern") !== -1;
@@ -15823,7 +16371,8 @@ Pages.define("admin", function (global) {
     return '<div class="card card--pad admin-card">' +
       '<div class="row between wrap gap-3">' +
         '<div class="row gap-3">' + C.avatar(u, "sm") +
-          "<div><strong>" + esc(tx(u.name)) + "</strong>" +
+          '<div><button class="linklike" type="button" data-person="' + esc(u.id) + '">' +
+            "<strong>" + esc(tx(u.name)) + "</strong></button>" +
             '<div class="tiny muted num" dir="ltr">' + esc(u.email || "") + "</div></div></div>" +
         '<div class="row gap-2 wrap">' +
           (placed ? '<span class="status status--ok">' +
@@ -15885,18 +16434,24 @@ Pages.define("admin", function (global) {
         var d = M.distribute(r);
         var client = M.user(r.clientId), lawyer = M.user(r.lawyerId);
         var dis = M.disputeFor(r.id);
+        var showing = openCase === r.id;
         return '<div class="card card--pad admin-card' +
           (dis && dis.status === "open" ? " card--rule-gold" : "") + '">' +
           '<div class="row between wrap gap-3">' +
             "<strong>" + esc(tx(r.title || {})) + "</strong>" +
-            '<span class="row gap-2">' + C.statusPill(st.status) +
+            '<span class="row gap-2">' +
+              '<span class="tiny muted num" dir="ltr">' + esc(M.refOf(r)) + "</span>" +
+              C.statusPill(st.status) +
               "<strong>" + sar(d.client) + "</strong></span>" +
           "</div>" +
-          '<div class="row gap-6 wrap tiny muted" style="margin-top:var(--s-3)">' +
-            '<span><span data-i18n="adm.client"></span>: ' + esc(client ? tx(client.name) : "—") + "</span>" +
-            '<span><span data-i18n="adm.lawyer"></span>: ' + esc(lawyer ? tx(lawyer.name) : "—") + "</span>" +
-          "</div>" +
+          // Everyone with a part in it, each name a way into their file.
+          C.parties(r, { asFile: true }) +
+          '<div class="row gap-2 wrap" style="margin-top:var(--s-3)">' +
+            '<button class="btn btn--outline btn--sm" type="button" data-case="' + esc(r.id) + '">' +
+              Icons.svg("eye", "icon-sm") + esc(I18N.t(showing ? "adm.hideCase" : "adm.openCase")) +
+            "</button></div>" +
           (dis && dis.status === "open" ? disputePanel(dis, r, d) : "") +
+          (showing ? caseFile(r) : "") +
         "</div>";
       }).join("");
   }
@@ -15907,11 +16462,41 @@ Pages.define("admin", function (global) {
       esc(I18N.t(key)) + "</button>";
   }
 
+  /* Everything that was said and sent on a case, both threads and the record,
+     with nothing left out. This is what deciding an objection needs: not a
+     summary of the complaint, but the whole file — including the half the
+     client never saw, because the lawyer and the trainee arguing about the
+     forum is often exactly where the answer is. */
+  function caseFile(r) {
+    var st = M.requestState(r);
+    return '<div class="admin-case">' +
+      '<div class="row between wrap gap-3">' +
+        '<h4 class="subtitle">' + esc(I18N.t("tl.everything")) + "</h4>" +
+        '<span class="tiny muted num" dir="ltr">' + esc(M.refOf(r)) + "</span>" +
+      "</div>" +
+      C.parties(r, { asFile: true }) +
+      (r.brief && tx(r.brief)
+        ? '<p class="tiny muted" style="margin-top:var(--s-4)">' +
+          esc(I18N.t("tl.fromClient")) + "</p>" +
+          '<p class="small">' + esc(tx(r.brief)) + "</p>"
+        : "") +
+      (st.body
+        ? '<p class="tiny muted" style="margin-top:var(--s-4)" data-i18n="admin.delivered"></p>' +
+          '<pre class="draft-text" style="min-height:auto" readonly>' + esc(st.body) + "</pre>"
+        : "") +
+      C.timeline(r, { internal: true }) +
+    "</div>";
+  }
+
   function disputePanel(d, r, split) {
     var st = M.requestState(r);
     var who = M.user(d.byId), pick = outcome[d.id] || "";
     return '<div style="margin-top:var(--s-5);border-top:1px solid var(--border);padding-top:var(--s-5)">' +
-      '<p class="tiny muted">' + esc(I18N.t("admin.raisedBy")) + ": " +
+      '<div class="row between wrap gap-3">' +
+        '<strong class="small num" dir="ltr">' + esc(M.refOf(d)) + "</strong>" +
+        '<span class="tiny muted">' + esc(C.stamp(d.at)) + "</span></div>" +
+      C.parties(r, { asFile: true }) +
+      '<p class="tiny muted" style="margin-top:var(--s-3)">' + esc(I18N.t("admin.raisedBy")) + ": " +
         esc(who ? tx(who.name) : d.byId) + "</p>" +
       '<p class="tiny muted" style="margin-top:var(--s-3)" data-i18n="admin.claim"></p>' +
       '<p class="small">' + esc(d.reason) + "</p>" +
@@ -15925,6 +16510,9 @@ Pages.define("admin", function (global) {
             '<p class="small" style="margin-top:var(--s-2)"><strong>' +
               esc(I18N.t("admin.internOwed")) + ": " + sar(split.intern) + "</strong></p></div>"
         : "") +
+      // The whole file, opened where the decision is made rather than a click
+      // away from it.
+      caseFile(r) +
       '<h4 class="subtitle" style="margin-top:var(--s-5)" data-i18n="admin.decide"></h4>' +
       '<div class="row gap-3 wrap" style="margin-top:var(--s-3)">' +
         choice(d.id, "release", "admin.forLawyer", pick) +
@@ -16342,7 +16930,14 @@ Pages.define("admin", function (global) {
     if (!me || !Session.is("staff")) return;
 
     var tb = hit("data-tab");
-    if (tb) { tab = tb; rejecting = null; App.rerender(); return; }
+    if (tb) { tab = tb; rejecting = null; whoFile = null; openCase = null; App.rerender(); return; }
+
+    var pf = hit("data-person");
+    if (pf) { whoFile = pf; tab = "people"; openCase = null; App.rerender(); return; }
+    if (t.closest("[data-back-people]")) { whoFile = null; App.rerender(); return; }
+
+    var cs = hit("data-case");
+    if (cs) { openCase = openCase === cs ? null : cs; App.rerender(); return; }
 
     var mo = hit("data-months");
     if (mo) { months = +mo; App.rerender(); return; }

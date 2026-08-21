@@ -180,6 +180,9 @@ Pages.define("requests", function (global) {
       (rating[r.id] !== undefined ? rateForm(r) : "") +
       // Everything the two of them said and sent, on the case it belongs to.
       C.thread(r, "parties", { closed: st.status === "completed" }) +
+      // And what happened to it, dated. The client is not shown the internal
+      // half — the same rule the database applies.
+      C.timeline(r, { internal: false }) +
     "</div>";
   }
 
@@ -534,6 +537,8 @@ Pages.define("requests", function (global) {
           : "") +
         C.thread(r, M.requestState(r).assignedTo ? side : "parties",
                  { closed: M.requestState(r).status === "completed" }) +
+        // The lawyer is on both threads, so their record shows both.
+        C.timeline(r, { internal: true }) +
       "</div></section>";
   }
 
@@ -670,6 +675,25 @@ Pages.define("requests", function (global) {
                 'data-i18n="dash.saveDraft"></button>' +
               '<button class="btn btn--accent btn--sm" type="button" data-task-deliver="' + esc(r.id) + '">' +
                 Icons.svg("send", "icon-sm") + esc(I18N.t("task.deliver")) + "</button></div>" +
+
+            // A trainee handed a case used to be handed a title and a
+            // deadline. Everything that decides how to write the thing — what
+            // the client actually asked for, what they sent, what the lawyer
+            // has already told them — was on the other side of a wall built
+            // for the client's privacy from strangers, which a trainee on
+            // their own case is not.
+            '<div class="admin-case" style="margin-top:var(--s-5)">' +
+              '<div class="row between wrap gap-3">' +
+                '<h3 class="subtitle">' + esc(I18N.t("tl.fromClient")) + "</h3>" +
+                '<span class="tiny muted num" dir="ltr">' + esc(M.refOf(r)) + "</span></div>" +
+              (tx(r.brief) ? '<p class="small" style="margin-top:var(--s-3)">' +
+                esc(tx(r.brief)) + "</p>" : "") +
+              C.parties(r) +
+              '<p class="tiny faint" style="margin-top:var(--s-4)">' +
+                esc(I18N.t("tl.readOnly")) + "</p>" +
+              C.timeline(r, { internal: false, titleKey: "tl.everything" }) +
+            "</div>" +
+
             // The supervising lawyer, and nobody else: the client is not in
             // this one and cannot be.
             C.thread(r, "internal", { closed: false }) + "</div>"

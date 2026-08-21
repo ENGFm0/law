@@ -581,6 +581,58 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .bubble { max-width: 92%; }
 }
 
+/* ---------- 11a09b. The story of a request ----------
+   A dated list, not a table: what happened, when, and who did it. Internal
+   lines are tinted so a desk reading both threads can see at a glance which
+   half the client was never shown. */
+.tl { margin-top: var(--s-6); }
+.tl__list { list-style: none; margin-top: var(--s-4); padding: 0; }
+.tl__item {
+  display: flex; gap: var(--s-4); padding: var(--s-3) 0;
+  border-inline-start: 2px solid var(--border); padding-inline-start: var(--s-5);
+  margin-inline-start: 5px; position: relative;
+}
+.tl__item--internal { background: var(--surface-2); border-radius: var(--r); }
+.tl__dot {
+  position: absolute; inset-inline-start: -6px; top: var(--s-5);
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent); border: 2px solid var(--surface);
+}
+.tl__item--internal .tl__dot { background: var(--text-muted); }
+
+/* Counts that are doors. A dashboard's first job is to say what to open, so
+   each of these is a link with the number on it — and nought is shown rather
+   than hidden, because "no objections open" is worth reading. */
+.queue-row {
+  display: grid; gap: var(--s-3); margin-top: var(--s-5);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.queue {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4); border-radius: var(--r);
+  border: 1px solid var(--border); background: var(--surface); color: inherit;
+}
+.queue:hover { border-color: var(--accent); }
+.queue strong { font-size: 1.125rem; }
+.queue--live { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-soft-text); }
+
+/* A name that opens a file. It is a button because it does something rather
+   than goes somewhere, and it reads as a link because that is what it is for. */
+.linklike {
+  background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+  color: var(--brand-navy); text-align: start;
+}
+.linklike:hover { text-decoration: underline; }
+
+/* A case file opened at the desk: set apart from the row it belongs to, so
+   what the client wrote and what the trainee wrote cannot be mistaken for
+   each other or for the console's own furniture. */
+.admin-case {
+  margin-top: var(--s-5); padding: var(--s-5);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  background: var(--surface-2);
+}
+
 /* ---------- 11a0a. How a request is going ---------- */
 .track {
   padding: var(--s-5); border-radius: var(--r-lg);

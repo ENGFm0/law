@@ -85,7 +85,13 @@ await open('requests.html', 'u-jaid');
 await p.click(`[data-task-open="${rid}"]`); await p.waitForTimeout(500);
 const t3 = await body();
 ok('the trainee reads the supervisor’s note', /راجع الاختصاص/.test(t3), t3.slice(0,120));
-ok('and the client’s brief is not in that thread', !/البند الخامس/.test(t3));
+// Handed a case, they are handed the case: what the client asked for and
+// what has already been said to them, read-only, so they can write the thing
+// they were asked to write.
+ok('and what the client actually sent', /البند الخامس/.test(t3), t3.slice(0,160));
+ok('marked as theirs to read, not to answer', /للاطلاع/.test(t3));
+ok('with the reference on it', /SND-/.test(t3), t3.match(/SND-[^\s]*/));
+ok('and who is on the case', /العميل:/.test(t3) && /المحامي:/.test(t3));
 
 console.log('— THE CLIENT NEVER SEES THE INTERNAL ONE —');
 await open('requests.html', 'u-fahad');

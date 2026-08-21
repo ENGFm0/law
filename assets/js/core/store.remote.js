@@ -28,7 +28,8 @@
 
   function inRequest(r) {
     return {
-      id: r.id, clientId: r.client_id, lawyerId: r.lawyer_id, assignedTo: r.assigned_to,
+      id: r.id, ref: r.ref || null,
+      clientId: r.client_id, lawyerId: r.lawyer_id, assignedTo: r.assigned_to,
       typeId: r.type_id, channel: r.channel || "text",
       price: Number(r.price), status: r.status,
       ai: !!r.ai_assisted, hours: r.hours || 3, body: r.body || null,
@@ -82,7 +83,8 @@
   }
   function inDispute(d) {
     return {
-      id: d.id, requestId: d.request_id, byId: d.by_id, reason: d.reason,
+      id: d.id, ref: d.ref || null,
+      requestId: d.request_id, byId: d.by_id, reason: d.reason,
       at: new Date(d.created_at).getTime(), status: d.status,
       resolution: d.status === "resolved" ? {
         outcome: d.outcome, lawyerPct: d.lawyer_pct, reason: d.resolution_reason,
@@ -180,6 +182,12 @@
       eta: o.eta == null ? 24 : o.eta, auto: !!o.auto, note: o.note || "",
       at: new Date(o.created_at).getTime(),
     };
+  }
+
+  function inEvent(e) {
+    return { id: e.id, requestId: e.request_id, kind: e.kind,
+             byId: e.by_id, detail: e.detail || null,
+             at: new Date(e.at).getTime() };
   }
 
   function inMessage(m) {
@@ -282,7 +290,7 @@
     reviews: [], comments: [], endorsements: [], agreements: [], applications: {},
     disputes: [], notices: [], audit: [], settings: {},
     announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
-    types: [], quotes: [], offers: [], messages: [], attachments: [],
+    types: [], quotes: [], offers: [], messages: [], attachments: [], events: [],
   };
   var ready = false;
 
@@ -846,6 +854,10 @@
     }).sort(function (a, b) { return a.at - b.at; });
   };
   Store.attachments = function () { return cache.attachments; };
+  Store.events = function (requestId) {
+    return cache.events.filter(function (e) { return e.requestId === requestId; })
+      .sort(function (a, b) { return a.at - b.at; });
+  };
   Store.attachmentsOn = function (messageId) {
     return cache.attachments.filter(function (a) { return a.messageId === messageId; });
   };
@@ -1159,6 +1171,7 @@
     cache.offers = take("offers", inOffer, cache.offers);
     cache.messages = take("messages", inMessage, cache.messages);
     cache.attachments = take("attachments", inAttachment, cache.attachments);
+    cache.events = take("request_events", inEvent, cache.events);
 
     if (had("platform_settings")) cache.settings = inSettings(rows.platform_settings);
     if (had("price_bands") && rows.price_bands) {

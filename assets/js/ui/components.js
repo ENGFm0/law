@@ -308,8 +308,10 @@
       '<div class="grow" style="min-width:0">' +
         '<div class="row gap-2 wrap"><strong class="small">' + esc(tx(r.title)) + "</strong>" +
           (type ? '<span class="tag">' + esc(tx(type.title)) + "</span>" : "") + "</div>" +
-        '<p class="tiny muted">' + (other ? esc(tx(other.name)) + ' <span class="dot"></span> ' : "") +
-          esc(tx(r.ago)) + "</p>" +
+        '<p class="tiny muted">' +
+          '<span class="num" dir="ltr">' + esc(M.refOf(r)) + "</span>" +
+          (other ? ' <span class="dot"></span> ' + esc(tx(other.name)) : "") +
+          (tx(r.ago) ? ' <span class="dot"></span> ' + esc(tx(r.ago)) : "") + "</p>" +
         (r.brief ? '<p class="tiny faint">' + esc(tx(r.brief)) + "</p>" : "") +
       "</div>" +
       '<div class="req-row__side">' + statusPill(shown) +
@@ -463,6 +465,88 @@
         node.title = I18N.t("thread.openFile");
       });
     });
+  }
+
+  /* ---------- the story of a request ----------
+     Every line dated to the minute, named by who did it. The same component
+     serves the client watching their own case, the trainee being handed one,
+     and the desk deciding an objection — the difference between them is one
+     option, `internal`, and it is the only thing any of them may not see. */
+  function stamp(ms) {
+    if (!ms) return "";
+    var d = new Date(ms);
+    var two = function (n) { return (n < 10 ? "0" : "") + n; };
+    return I18N.date(ms) + " · " + two(d.getHours()) + ":" + two(d.getMinutes());
+  }
+
+  function timelineLine(e) {
+    var who = M.user(e.byId);
+    var label = I18N.t("tl." + String(e.kind).split(":")[0]);
+    // A status change carries the status it moved to, which already has a
+    // word of its own everywhere else on the site.
+    if (String(e.kind).slice(0, 7) === "status:") {
+      label = I18N.t("status." + e.kind.slice(7));
+    }
+    var body = "";
+    if (e.kind === "assigned" || e.kind === "unassigned" || e.kind === "lawyer_set") {
+      var target = M.user(e.detail);
+      body = target ? App.tx(target.name) : "";
+    } else if (e.detail && e.kind !== "message") {
+      body = e.detail;
+    } else if (e.detail) {
+      body = e.detail;
+    }
+
+    return '<li class="tl__item' + (e.audience === "internal" ? " tl__item--internal" : "") + '">' +
+      '<span class="tl__dot"></span>' +
+      '<div class="grow" style="min-width:0">' +
+        '<div class="row gap-2 wrap">' +
+          "<strong class=\"small\">" + App.esc(label) + "</strong>" +
+          (e.audience === "internal"
+            ? '<span class="tag">' + App.esc(I18N.t("tl.internal")) + "</span>" : "") +
+          '<span class="tiny faint">' + App.esc(stamp(e.at)) + "</span>" +
+          (who ? '<span class="tiny muted">' + App.esc(I18N.t("tl.by")) + " " +
+            App.esc(App.tx(who.name)) + "</span>" : "") +
+        "</div>" +
+        (body ? '<p class="small" style="margin-top:var(--s-1)">' + App.esc(body) + "</p>" : "") +
+        (e.files && e.files.length
+          ? '<div class="bubble__files">' + e.files.map(fileChip).join("") + "</div>"
+          : "") +
+      "</div></li>";
+  }
+
+  function timeline(r, opts) {
+    var o = opts || {};
+    var lines = M.timeline(r, o);
+    return '<section class="tl">' +
+      '<div class="row between wrap gap-3">' +
+        '<h3 class="subtitle">' + App.esc(I18N.t(o.titleKey || "tl.title")) + "</h3>" +
+        '<span class="tiny muted num" dir="ltr">' + App.esc(M.refOf(r)) + "</span>" +
+      "</div>" +
+      (lines.length
+        ? '<ol class="tl__list">' + lines.map(timelineLine).join("") + "</ol>"
+        : '<p class="small muted" style="margin-top:var(--s-3)">' +
+          App.esc(I18N.t("tl.empty")) + "</p>") +
+    "</section>";
+  }
+
+  /** Who is on a request, said plainly. Names link to their profile, and for
+      staff that is a file rather than a card. */
+  function parties(r, opts) {
+    var o = opts || {};
+    var list = M.partyList(r);
+    if (!list.length) return "";
+    var key = { client: "tl.roleClient", lawyer: "tl.roleLawyer", intern: "tl.roleIntern" };
+    return '<div class="row gap-6 wrap" style="margin-top:var(--s-3)">' +
+      list.map(function (p) {
+        var name = p.user ? App.tx(p.user.name) : "";
+        return '<span class="small"><span class="tiny muted">' +
+          App.esc(I18N.t(key[p.role])) + ":</span> " +
+          (o.asFile
+            ? '<a href="admin.html?tab=people&who=' + App.esc(p.id) + '">' + App.esc(name) + "</a>"
+            : App.esc(name)) + "</span>";
+      }).join("") +
+    "</div>";
   }
 
   /* ---------- making the thread work ----------
@@ -651,6 +735,7 @@
     requestRow: requestRow, empty: empty, sectionHead: sectionHead,
     thread: thread, bubble: bubble, fileChip: fileChip, linkFiles: linkFiles,
     bytes: bytes, wireThread: wireThread, threadDraw: threadDraw,
+    timeline: timeline, parties: parties, stamp: stamp,
     googleButton: googleButton
   };
 })(window);

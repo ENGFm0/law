@@ -422,7 +422,7 @@
     REST: ["requests", "articles", "comments", "endorsements", "agreements",
            "disputes", "notifications", "audit_log", "subscriptions",
            "operating_costs", "partners", "quotes", "offers", "contacts",
-           "messages", "attachments"],
+           "messages", "attachments", "request_events"],
 
     hydrate: function (names) {
       return load().then(function (sb) {
@@ -457,6 +457,9 @@
           // policy decides that, not this query.
           messages:         function () { return sb.from("messages").select("*").order("created_at").limit(1000); },
           attachments:      function () { return sb.from("attachments").select("*").order("created_at").limit(1000); },
+          // What happened to a case, in order. Read by whoever may see the
+          // case, which is the same rule the case itself is under.
+          request_events:   function () { return sb.from("request_events").select("*").order("at").limit(2000); },
         };
 
         return Promise.all(want.map(function (name) { return query[name](); }))

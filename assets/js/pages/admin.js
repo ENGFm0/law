@@ -36,6 +36,8 @@ Pages.define("admin", function (global) {
   var filter = "all";
   var query = "";
   var rejecting = null;
+  var openCase = null;      // the request whose whole file is on screen
+  var whoFile = null;       // the person whose file is on screen
   var outcome = {};
 
   var sar = function (halalas) {
@@ -127,6 +129,10 @@ Pages.define("admin", function (global) {
   }
 
   function people() {
+    // One name asked about beats a list scrolled through: everything that
+    // person has done, in one place, with every request they touched.
+    if (whoFile) return personFile(whoFile);
+
     var all = M.users().filter(function (u) {
       return u.roles.indexOf("staff") === -1;
     }).filter(matches);
@@ -144,6 +150,112 @@ Pages.define("admin", function (global) {
       (all.length ? all.map(personRow).join("") : '<p class="small muted" data-i18n="adm.noPeople"></p>');
   }
 
+  /* Everything one person has done here. The question the desk actually asks
+     is never "what is their status" — it is "what happened with them", and
+     that answer was spread across four tabs and a database. */
+  function personFile(id) {
+    var u = M.user(id);
+    if (!u) return head("adm.people") + '<p class="small muted" data-i18n="adm.noPeople"></p>';
+
+    var asClient = M.requests().filter(function (r) { return r.clientId === id; });
+    var asLawyer = M.requests().filter(function (r) { return r.lawyerId === id; });
+    var asIntern = M.requests().filter(function (r) {
+      return M.requestState(r).assignedTo === id;
+    });
+    var theirs = asClient.concat(asLawyer).concat(asIntern);
+    var raised = Store.disputes().filter(function (d) { return d.byId === id; });
+    var against = theirs.map(function (r) { return M.disputeFor(r.id); })
+      .filter(function (d) { return d && d.byId !== id; });
+    var reviews = M.reviewsFor(id);
+    var briefs = M.quotesForClient(id);
+    var bids = (Store.offers ? Store.offers() : []).filter(function (o) { return o.lawyer === id; });
+    var rating = M.ratingOf(id);
+
+    var row = function (r) {
+      var st = M.requestState(r);
+      var d = M.disputeFor(r.id);
+      var role = r.clientId === id ? "tl.roleClient"
+               : r.lawyerId === id ? "tl.roleLawyer" : "tl.roleIntern";
+      return '<div class="row between wrap gap-3 admin-line">' +
+        '<span><span class="tiny muted num" dir="ltr">' + esc(M.refOf(r)) + "</span> " +
+          "<strong class=\"small\">" + esc(tx(r.title || {})) + "</strong> " +
+          '<span class="tag">' + esc(I18N.t(role)) + "</span>" +
+          (d ? ' <span class="status status--warn">' + esc(M.refOf(d)) + "</span>" : "") +
+        "</span>" +
+        '<span class="row gap-3">' + C.statusPill(st.status) + sar(M.distribute(r).client) +
+          '<button class="btn btn--ghost btn--sm" type="button" data-case="' + esc(r.id) + '">' +
+            esc(I18N.t("adm.openCase")) + "</button></span>" +
+      "</div>" +
+      (openCase === r.id ? caseFile(r) : "");
+    };
+
+    var stat = function (labelKey, value) {
+      return '<div class="kpi"><span class="kpi__label">' + esc(I18N.t(labelKey)) + "</span>" +
+        '<strong class="kpi__value">' + value + "</strong></div>";
+    };
+
+    return '<button class="btn btn--ghost btn--sm" style="margin-bottom:var(--s-4)" ' +
+        'type="button" data-back-people>' + esc(I18N.t("adm.backToPeople")) + "</button>" +
+
+      '<section class="card card--pad">' +
+        '<div class="row between wrap gap-4">' +
+          '<div class="row gap-4">' + C.avatar(u, "md") +
+            "<div><h2 class=\"subtitle\">" + esc(tx(u.name)) + "</h2>" +
+              '<p class="tiny muted num" dir="ltr">' + esc(u.email || "") +
+                (u.phone ? " · " + esc(u.phone) : "") + "</p>" +
+              '<p class="tiny muted">' + esc(u.roles.map(function (rr) {
+                return I18N.t("role." + rr);
+              }).join(" · ")) + "</p></div></div>" +
+          C.statusPill(u.status) +
+        "</div>" +
+        '<div class="kpi-row" style="margin-top:var(--s-5)">' +
+          stat("adm.filesTotal", C.num(theirs.length)) +
+          stat("adm.filesDisputed", C.num(raised.length + against.length)) +
+          stat("adm.filesRating", rating.count ? C.num(rating.avg.toFixed(1)) : "—") +
+          stat("adm.filesBriefs", C.num(briefs.length + bids.length)) +
+        "</div>" +
+      "</section>" +
+
+      '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+        '<h3 class="subtitle">' + esc(I18N.t("adm.filesRequests")) + "</h3>" +
+        (theirs.length
+          ? '<div style="margin-top:var(--s-4)">' + theirs.map(row).join("") + "</div>"
+          : '<p class="small muted" style="margin-top:var(--s-3)">' +
+            esc(I18N.t("adm.filesNone")) + "</p>") +
+      "</section>" +
+
+      (raised.length || against.length
+        ? '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+            '<h3 class="subtitle">' + esc(I18N.t("adm.filesComplaints")) + "</h3>" +
+            '<div style="margin-top:var(--s-4)">' +
+            raised.concat(against).map(function (d) {
+              var r = M.request(d.requestId);
+              return '<div class="row between wrap gap-3 admin-line">' +
+                '<span><span class="tiny muted num" dir="ltr">' + esc(M.refOf(d)) + "</span> " +
+                  '<span class="small">' + esc(d.reason || "") + "</span></span>" +
+                '<span class="row gap-3"><span class="tiny muted">' + esc(C.stamp(d.at)) + "</span>" +
+                  '<span class="status status--' + (d.status === "open" ? "warn" : "muted") + '">' +
+                    esc(I18N.t(d.status === "open" ? "adm.disputeOpen" : "adm.disputeDone")) +
+                  "</span>" +
+                  (r ? '<button class="btn btn--ghost btn--sm" type="button" data-case="' +
+                    esc(r.id) + '">' + esc(I18N.t("adm.openCase")) + "</button>" : "") +
+                "</span></div>" +
+                (r && openCase === r.id ? caseFile(r) : "");
+            }).join("") + "</div>" +
+          "</section>"
+        : "") +
+
+      (reviews.length
+        ? '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+            '<h3 class="subtitle">' + esc(I18N.t("adm.filesReviews")) + "</h3>" +
+            '<div style="margin-top:var(--s-4)">' + reviews.map(function (rv) {
+              return '<div class="admin-line"><div class="row gap-3">' +
+                C.stars(rv.rating) + '<span class="small">' + esc(tx(rv.body || {})) + "</span>" +
+              "</div></div>";
+            }).join("") + "</div></section>"
+        : "");
+  }
+
   function personRow(u) {
     var lawyer = u.roles.indexOf("lawyer") !== -1;
     var intern = u.roles.indexOf("intern") !== -1;
@@ -155,7 +267,8 @@ Pages.define("admin", function (global) {
     return '<div class="card card--pad admin-card">' +
       '<div class="row between wrap gap-3">' +
         '<div class="row gap-3">' + C.avatar(u, "sm") +
-          "<div><strong>" + esc(tx(u.name)) + "</strong>" +
+          '<div><button class="linklike" type="button" data-person="' + esc(u.id) + '">' +
+            "<strong>" + esc(tx(u.name)) + "</strong></button>" +
             '<div class="tiny muted num" dir="ltr">' + esc(u.email || "") + "</div></div></div>" +
         '<div class="row gap-2 wrap">' +
           (placed ? '<span class="status status--ok">' +
@@ -217,18 +330,24 @@ Pages.define("admin", function (global) {
         var d = M.distribute(r);
         var client = M.user(r.clientId), lawyer = M.user(r.lawyerId);
         var dis = M.disputeFor(r.id);
+        var showing = openCase === r.id;
         return '<div class="card card--pad admin-card' +
           (dis && dis.status === "open" ? " card--rule-gold" : "") + '">' +
           '<div class="row between wrap gap-3">' +
             "<strong>" + esc(tx(r.title || {})) + "</strong>" +
-            '<span class="row gap-2">' + C.statusPill(st.status) +
+            '<span class="row gap-2">' +
+              '<span class="tiny muted num" dir="ltr">' + esc(M.refOf(r)) + "</span>" +
+              C.statusPill(st.status) +
               "<strong>" + sar(d.client) + "</strong></span>" +
           "</div>" +
-          '<div class="row gap-6 wrap tiny muted" style="margin-top:var(--s-3)">' +
-            '<span><span data-i18n="adm.client"></span>: ' + esc(client ? tx(client.name) : "—") + "</span>" +
-            '<span><span data-i18n="adm.lawyer"></span>: ' + esc(lawyer ? tx(lawyer.name) : "—") + "</span>" +
-          "</div>" +
+          // Everyone with a part in it, each name a way into their file.
+          C.parties(r, { asFile: true }) +
+          '<div class="row gap-2 wrap" style="margin-top:var(--s-3)">' +
+            '<button class="btn btn--outline btn--sm" type="button" data-case="' + esc(r.id) + '">' +
+              Icons.svg("eye", "icon-sm") + esc(I18N.t(showing ? "adm.hideCase" : "adm.openCase")) +
+            "</button></div>" +
           (dis && dis.status === "open" ? disputePanel(dis, r, d) : "") +
+          (showing ? caseFile(r) : "") +
         "</div>";
       }).join("");
   }
@@ -239,11 +358,41 @@ Pages.define("admin", function (global) {
       esc(I18N.t(key)) + "</button>";
   }
 
+  /* Everything that was said and sent on a case, both threads and the record,
+     with nothing left out. This is what deciding an objection needs: not a
+     summary of the complaint, but the whole file — including the half the
+     client never saw, because the lawyer and the trainee arguing about the
+     forum is often exactly where the answer is. */
+  function caseFile(r) {
+    var st = M.requestState(r);
+    return '<div class="admin-case">' +
+      '<div class="row between wrap gap-3">' +
+        '<h4 class="subtitle">' + esc(I18N.t("tl.everything")) + "</h4>" +
+        '<span class="tiny muted num" dir="ltr">' + esc(M.refOf(r)) + "</span>" +
+      "</div>" +
+      C.parties(r, { asFile: true }) +
+      (r.brief && tx(r.brief)
+        ? '<p class="tiny muted" style="margin-top:var(--s-4)">' +
+          esc(I18N.t("tl.fromClient")) + "</p>" +
+          '<p class="small">' + esc(tx(r.brief)) + "</p>"
+        : "") +
+      (st.body
+        ? '<p class="tiny muted" style="margin-top:var(--s-4)" data-i18n="admin.delivered"></p>' +
+          '<pre class="draft-text" style="min-height:auto" readonly>' + esc(st.body) + "</pre>"
+        : "") +
+      C.timeline(r, { internal: true }) +
+    "</div>";
+  }
+
   function disputePanel(d, r, split) {
     var st = M.requestState(r);
     var who = M.user(d.byId), pick = outcome[d.id] || "";
     return '<div style="margin-top:var(--s-5);border-top:1px solid var(--border);padding-top:var(--s-5)">' +
-      '<p class="tiny muted">' + esc(I18N.t("admin.raisedBy")) + ": " +
+      '<div class="row between wrap gap-3">' +
+        '<strong class="small num" dir="ltr">' + esc(M.refOf(d)) + "</strong>" +
+        '<span class="tiny muted">' + esc(C.stamp(d.at)) + "</span></div>" +
+      C.parties(r, { asFile: true }) +
+      '<p class="tiny muted" style="margin-top:var(--s-3)">' + esc(I18N.t("admin.raisedBy")) + ": " +
         esc(who ? tx(who.name) : d.byId) + "</p>" +
       '<p class="tiny muted" style="margin-top:var(--s-3)" data-i18n="admin.claim"></p>' +
       '<p class="small">' + esc(d.reason) + "</p>" +
@@ -257,6 +406,9 @@ Pages.define("admin", function (global) {
             '<p class="small" style="margin-top:var(--s-2)"><strong>' +
               esc(I18N.t("admin.internOwed")) + ": " + sar(split.intern) + "</strong></p></div>"
         : "") +
+      // The whole file, opened where the decision is made rather than a click
+      // away from it.
+      caseFile(r) +
       '<h4 class="subtitle" style="margin-top:var(--s-5)" data-i18n="admin.decide"></h4>' +
       '<div class="row gap-3 wrap" style="margin-top:var(--s-3)">' +
         choice(d.id, "release", "admin.forLawyer", pick) +
@@ -674,7 +826,14 @@ Pages.define("admin", function (global) {
     if (!me || !Session.is("staff")) return;
 
     var tb = hit("data-tab");
-    if (tb) { tab = tb; rejecting = null; App.rerender(); return; }
+    if (tb) { tab = tb; rejecting = null; whoFile = null; openCase = null; App.rerender(); return; }
+
+    var pf = hit("data-person");
+    if (pf) { whoFile = pf; tab = "people"; openCase = null; App.rerender(); return; }
+    if (t.closest("[data-back-people]")) { whoFile = null; App.rerender(); return; }
+
+    var cs = hit("data-case");
+    if (cs) { openCase = openCase === cs ? null : cs; App.rerender(); return; }
 
     var mo = hit("data-months");
     if (mo) { months = +mo; App.rerender(); return; }

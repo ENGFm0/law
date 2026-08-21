@@ -277,6 +277,73 @@
     return null;
   }
 
+  /* ---------- what happened to a case, in order ----------
+     The record the database keeps, the conversation, and the files, merged
+     and sorted. One story rather than three lists — which is what somebody
+     deciding an objection actually needs to read.
+
+     Every line carries who did it and when, to the minute. `audience` is kept
+     on the message lines so a screen can leave the internal ones out when the
+     person reading is not entitled to them. */
+  function timeline(r, opts) {
+    var o = opts || {};
+    var id = r && r.id;
+    if (!id) return [];
+    var out = [];
+
+    ((Store.events && Store.events(id)) || []).forEach(function (e) {
+      out.push({ at: e.at, kind: e.kind, byId: e.byId, detail: e.detail, sort: 0 });
+    });
+
+    if (o.messages !== false) {
+      ["parties", "internal"].forEach(function (side) {
+        if (side === "internal" && o.internal === false) return;
+        ((Store.messages && Store.messages(id, side)) || []).forEach(function (m) {
+          out.push({ at: m.at, kind: "message", byId: m.authorId, audience: side,
+                     detail: m.body, files: (Store.attachmentsOn &&
+                                             Store.attachmentsOn(m.id)) || [], sort: 1 });
+        });
+      });
+    }
+
+    // A file sent without a message of its own still belongs in the story.
+    if (o.messages !== false) {
+      ["parties", "internal"].forEach(function (side) {
+        if (side === "internal" && o.internal === false) return;
+        ((Store.filesOf && Store.filesOf(id, side)) || []).forEach(function (a) {
+          if (a.messageId) return;
+          out.push({ at: a.at, kind: "file", byId: a.authorId, audience: side,
+                     files: [a], sort: 1 });
+        });
+      });
+    }
+
+    return out.sort(function (a, b) { return (a.at - b.at) || (a.sort - b.sort); });
+  }
+
+  /** The reference somebody can say out loud. Falls back to the tail of the
+      id so a screen never shows an empty column while a migration is pending. */
+  function refOf(row) {
+    if (!row) return "";
+    if (row.ref) return row.ref;
+    return "#" + String(row.id || "").slice(-6);
+  }
+
+  /** Everyone with a part in a request, in the order they joined it. */
+  function partyList(r) {
+    if (!r) return [];
+    var st = requestState(r);
+    var out = [];
+    var add = function (id, role) {
+      if (!id) return;
+      out.push({ id: id, role: role, user: user(id) });
+    };
+    add(r.clientId, "client");
+    add(r.lawyerId, "lawyer");
+    add(st.assignedTo, "intern");
+    return out;
+  }
+
   /* ---------- the reverse auction ----------
      A brief is posted once and answered by whoever can take it. What a lawyer
      is shown is decided here rather than in the page, because it is the same
@@ -943,6 +1010,7 @@
     scoreOf: scoreOf, rankOf: rankOf, leaderboard: leaderboard, ranked: ranked,
     serviceTypes: serviceTypes, allServiceTypes: allServiceTypes,
     serviceType: serviceType, servicesOf: servicesOf, services: services,
+    timeline: timeline, refOf: refOf, partyList: partyList,
     quotes: quotes, quote: quote, offersOn: offersOn, quoteLive: quoteLive,
     myQuote: myQuote, openQuotesFor: openQuotesFor, quotePrice: quotePrice,
     quotesForClient: quotesForClient, quoteState: quoteState,

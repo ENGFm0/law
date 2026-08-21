@@ -33,7 +33,7 @@
     "articles", "articleStates", "comments", "endorsements", "applications",
     "agreements", "disputes", "audit", "profiles", "notices",
     "announcements", "subscriptions", "costs", "partners", "bands",
-    "types", "removedTypes", "quotes", "offers", "messages", "attachments"
+    "types", "removedTypes", "quotes", "offers", "messages", "attachments", "events"
   ].forEach(function (k) {
     if (!work[k]) {
       work[k] = (k.indexOf("States") !== -1 || k === "applications" ||
@@ -198,8 +198,14 @@
        down anywhere else. */
     addRequest: function (r, done) {
       r.id = r.id || uid("r");
+      r.ref = r.ref || ("SND-" + new Date().getFullYear().toString().slice(2) + "-" +
+                        String(100000 + work.requests.length + 1).slice(1));
       r.createdAt = Date.now();
       work.requests.push(r);
+      Store.logEvent({ requestId: r.id, kind: "placed", byId: r.clientId });
+      if (r.lawyerId) {
+        Store.logEvent({ requestId: r.id, kind: "lawyer_set", byId: r.clientId, detail: r.lawyerId });
+      }
       notify();
       if (done) done(r);
       return r;
@@ -207,12 +213,32 @@
     requestState: function (id) { return work.requestStates[id] || {}; },
     setRequest: function (id, patch) {
       var cur = work.requestStates[id] || {};
+      var was = { status: cur.status, assignedTo: cur.assignedTo,
+                  revisions: cur.revisions || 0 };
       Object.keys(patch).forEach(function (k) { cur[k] = patch[k]; });
       // Delivery starts the acceptance window, so the moment is stamped where
       // delivery happens rather than at each of the several callers that
       // cause it — one of them would eventually be written without it.
       if (patch.status === "delivered" && !cur.deliveredAt) cur.deliveredAt = Date.now();
+      if (patch.status === "completed" && !cur.acceptedAt) cur.acceptedAt = Date.now();
       work.requestStates[id] = cur;
+
+      // The same lines the database trigger writes on the real backend, so a
+      // timeline reads the same either way.
+      var by = Store.currentId();
+      if (patch.status && patch.status !== was.status) {
+        Store.logEvent({ requestId: id, kind: "status:" + patch.status,
+                         byId: by, detail: was.status || null });
+      }
+      if ("assignedTo" in patch && patch.assignedTo !== was.assignedTo) {
+        Store.logEvent({ requestId: id,
+                         kind: patch.assignedTo ? "assigned" : "unassigned",
+                         byId: by, detail: patch.assignedTo || was.assignedTo || null });
+      }
+      if ((patch.revisions || 0) > was.revisions) {
+        Store.logEvent({ requestId: id, kind: "revision", byId: by,
+                         detail: patch.revisionNote || null });
+      }
       notify();
     },
 
@@ -401,7 +427,11 @@
     openDispute: function (d) {
       if (Store.disputeFor(d.requestId)) return null;   // one per request
       d.id = uid("d");
+      d.ref = "OBJ-" + new Date().getFullYear().toString().slice(2) + "-" +
+              String(100000 + work.disputes.length + 1).slice(1);
       d.at = Date.now();
+      Store.logEvent({ requestId: d.requestId, kind: "disputed",
+                       byId: d.byId, detail: d.reason });
       d.status = "open";
       d.resolution = null;
       work.disputes.push(d);
@@ -420,6 +450,9 @@
         byId: decision.byId || null,
         at: Date.now()
       };
+      Store.logEvent({ requestId: d.requestId, kind: "decided", byId: decision.byId || null,
+                       detail: decision.outcome +
+                         (decision.reason ? " · " + decision.reason : "") });
       notify();
       return d;
     },
@@ -516,6 +549,22 @@
                                    reason: "استرداد ضمن نافذة الضمان المعلنة", byId: null });
       Store.setRequest(requestId, { status: "refunded" });
       return say("refunded");
+    },
+
+    /* ---------------- what happened to a case ----------------
+       The remote backend writes this from a trigger, where it cannot be
+       forgotten. Here the callers append it, which is the same record by a
+       weaker means — good enough for a demo, and it keeps every screen that
+       reads a timeline working without a backend. */
+    events: function (requestId) {
+      return work.events.filter(function (e) { return e.requestId === requestId; })
+        .sort(function (a, b) { return a.at - b.at; });
+    },
+    logEvent: function (e) {
+      e.id = e.id || uid("ev");
+      e.at = e.at || Date.now();
+      work.events.push(e);
+      return e;
     },
 
     /* ---------------- the conversation on a case ----------------
@@ -637,7 +686,7 @@
                audit: [], profiles: {}, notices: [],
                announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
                types: [], removedTypes: [], quotes: [], offers: [],
-               messages: [], attachments: [] };
+               messages: [], attachments: [], events: [] };
       notify();
     },
     resetAll: function () {

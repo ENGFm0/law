@@ -240,6 +240,19 @@ ok('and the lawyer was told', JSON.parse(psql(
   `select coalesce(json_agg(n)::text,'[]') from public.notifications n
     where n.to_id = '${LAWYER}' and n.type = 'resolved';`).trim() || '[]').length === 1);
 
+section('THE RECORD THE DATABASE KEEPS');
+const record = JSON.parse(psql(
+  `select coalesce(json_agg(e order by e.id)::text,'[]') from public.request_events e
+    where e.request_id = '${rid}';`).trim() || '[]');
+ok('every change wrote itself down', record.length >= 4, record.map((e) => e.kind).join(', '));
+ok('starting with the request being placed', record[0] && record[0].kind === 'placed');
+ok('and ending with the refund being decided',
+   record.some((e) => e.kind === 'decided'), record.map((e) => e.kind).join(', '));
+const refRow = JSON.parse(psql(
+  `select coalesce(json_agg(r)::text,'[]') from public.requests r where r.id = '${rid}';`).trim() || '[]');
+ok('the request carries a reference', /^SND-\d\d-\d{5}$/.test(refRow[0] && refRow[0].ref || ''),
+   refRow[0] && refRow[0].ref);
+
 section('NOTHING FAILED QUIETLY');
 const bar = await client.page.$('[data-datafail]');
 ok('no read came back as an error', bar === null,

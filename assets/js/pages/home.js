@@ -134,6 +134,17 @@ Pages.define("home", function (global) {
     );
   }
 
+  /** A row of counts that are also doors. Nought is shown as nought rather
+      than hidden: "no objections open" is worth reading. */
+  function queue(items) {
+    return '<div class="queue-row">' + items.map(function (q) {
+      return '<a class="queue' + (q.n ? " queue--live" : "") + '" href="' + q.href + '">' +
+        Icons.svg(q.icon, "icon-sm") +
+        '<strong class="num">' + I18N.num(q.n) + "</strong>" +
+        '<span class="tiny">' + esc(I18N.t(q.key)) + "</span></a>";
+    }).join("") + "</div>";
+  }
+
   /* ---------- what the platform is promising ----------
      Four sentences a stranger needs before they will pay another stranger to
      read their contract. Every one of them is something the site actually
@@ -191,7 +202,16 @@ Pages.define("home", function (global) {
       var st = M.requestState(r);
       return !st.assignedTo && (st.status === "new" || st.status === "drafted" || st.status === "assigned");
     });
-    var revenue = mine.reduce(function (t, r) { return t + (r.price || 0); }, 0);
+    // What actually reaches them, not what the client paid: commission and a
+    // trainee's share come out first, and a refunded case brings nothing.
+    var earned = 0, refunded = 0;
+    mine.forEach(function (r) {
+      var st = M.requestState(r).status;
+      if (st !== "delivered" && st !== "completed" && st !== "refunded") return;
+      var s = M.settlement(r);
+      earned += s ? s.lawyer : M.distribute(r).lawyer;
+      if (s && s.refund) refunded += 1;
+    });
     var rating = M.ratingOf(u.id);
     // What has gone out to trainees is part of reading the month honestly.
     var toInterns = mine.reduce(function (t, r) {
@@ -199,16 +219,35 @@ Pages.define("home", function (global) {
       return t + (pay && pay.kind === "share" ? pay.amount : 0);
     }, 0);
 
+    // The list that decides what to open first: work waiting on them, a
+    // client waiting on an answer, a decision waiting on the desk.
+    var waiting = M.openQuotesFor(u.id).length;
+    var disputed = mine.filter(function (r) {
+      var d = M.disputeFor(r.id);
+      return d && d.status === "open";
+    });
+    var awaitingClient = mine.filter(function (r) {
+      var a = M.acceptance(r);
+      return a.delivered && !a.settled && !a.dispute;
+    });
+
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       greeting("dash.lawyerLead") +
       (Session.isVerified() ? "" : pendingNotice()) +
       '<div class="grid grid-5">' +
         stat("inbox", "dash.awaitingYou", I18N.num(needsMe.length), "gold") +
         stat("file-text", "dash.activeRequests", I18N.num(live.length)) +
-        stat("wallet", "dash.revenue", I18N.num(revenue)) +
+        stat("wallet", "dash.earnedNet", I18N.num(Math.round(earned / 100))) +
         stat("graduation", "pay.paidOut", I18N.num(toInterns)) +
         stat("star", "dash.overallRating", rating.avg.toFixed(1)) +
       "</div>" +
+      queue([
+        { n: needsMe.length, key: "dash.qNeedsYou", href: "requests.html", icon: "inbox" },
+        { n: awaitingClient.length, key: "dash.qWithClient", href: "requests.html", icon: "clock" },
+        { n: waiting, key: "dash.qBoard", href: "quotes.html", icon: "gavel" },
+        { n: disputed.length, key: "dash.qDisputed", href: "requests.html", icon: "bell" },
+        { n: refunded, key: "dash.qRefunded", href: "requests.html", icon: "wallet" },
+      ]) +
 
       '<div class="grid dash-split" style="margin-top:var(--s-10)">' +
         '<section class="card card--pad">' +
@@ -255,6 +294,17 @@ Pages.define("home", function (global) {
         stat("clock", "dash.hoursLogged", I18N.num(prog.hours)) +
         stat("wallet", "pay.earned", I18N.num(M.earnedBy(u.id))) +
       "</div>" +
+      queue([
+        { n: mine.filter(function (r) {
+            var st = M.requestState(r).status;
+            return st !== "delivered" && st !== "completed" && st !== "cancelled";
+          }).length, key: "dash.qToWrite", href: "requests.html", icon: "file-text" },
+        { n: M.openInternTasks().length, key: "dash.qPool", href: "requests.html", icon: "gavel" },
+        { n: Math.max(0, prog.needed - prog.hours), key: "dash.qHoursLeft",
+          href: "account.html", icon: "clock" },
+        { n: M.endorsementsFor ? M.endorsementsFor(u.id).length : 0,
+          key: "dash.qCerts", href: "account.html", icon: "badge" },
+      ]) +
 
       '<div class="grid dash-split" style="margin-top:var(--s-10)">' +
         '<section class="card card--pad">' +
