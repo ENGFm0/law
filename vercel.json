@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "echo 'static site — pages and assets are served as they are'",
+  "installCommand": "echo 'no runtime dependencies — playwright is test-only'",
+  "outputDirectory": ".",
+  "cleanUrls": false,
+  "trailingSlash": false
+}

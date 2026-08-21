@@ -1,0 +1,8 @@
+# Everything the site does not serve. The pages load only assets/ and each
+# other; the rest is tests, schema and prose that has no business on a CDN.
+tools/
+supabase/
+docs/
+user-stories/
+.github/
+README.md
