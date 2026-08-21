@@ -150,6 +150,24 @@ ok('pointed at the recording itself',
 await p.click('[data-seat="u-munira"]'); await p.waitForTimeout(400);
 ok('and the client’s seat has no sign of it', !/هذا تسجيل المكالمة/.test(await body()));
 
+console.log('— AND A FILE AT THE DESK OPENS —');
+// Opening a file is not a property of being able to write one: the desk reads
+// somebody else's case and has no composer anywhere on the page.
+await p.evaluate(() => {
+  const file = new File([new Uint8Array([37,80,68,70])], 'العقد.pdf', { type:'application/pdf' });
+  const m = Store.sendMessage({ requestId:'r-11', authorId:'u-munira', audience:'parties',
+                                body:'مرفق العقد' });
+  Store.attachFile({ requestId:'r-11', messageId:m.id, audience:'parties', authorId:'u-munira',
+                     name:'العقد.pdf', size:file.size, mime:'application/pdf', file:file });
+});
+await p.waitForTimeout(500);
+ok('the file is on the client’s side of the case', /العقد\.pdf/.test(await body()));
+ok('and it carries the link it opens through',
+   /^blob:/.test(await p.$eval('.file-chip[data-file]', e => e.getAttribute('data-href') || '')),
+   await p.$eval('.file-chip[data-file]', e => e.outerHTML.slice(0, 160)));
+ok('with the page listening for the click',
+   (await p.$('[data-files-wired]')) !== null);
+
 console.log('\nerrors: ' + (errs.length ? errs.join(' | ') : 'none'));
 console.log(`${pass} passed, ${fail} failed`);
 await b.close();

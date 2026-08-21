@@ -640,9 +640,27 @@
   }
 
   /** The side tabs, wired once wherever a timeline is drawn. */
+  /** Opening a file that was attached to anything.
+
+      This used to live inside the thread's wiring, which meant a page that
+      showed files without a composer — the desk, reading somebody else's
+      case — drew a chip nobody could click. Opening a file is not a property
+      of being able to write one. */
+  function wireFiles(host) {
+    if (!host || host.getAttribute("data-files-wired")) return;
+    host.setAttribute("data-files-wired", "1");
+    host.addEventListener("click", function (ev) {
+      // A file in a private bucket is opened through the link signed for it,
+      // which is put on the chip once it comes back.
+      var chip = ev.target.closest("[data-href]");
+      if (chip) global.open(chip.getAttribute("data-href"), "_blank", "noopener");
+    });
+  }
+
   function wireTimeline(host) {
     if (!host || host.getAttribute("data-tl-wired")) return;
     host.setAttribute("data-tl-wired", "1");
+    wireFiles(host);
     host.addEventListener("click", function (ev) {
       var tab = ev.target.closest("[data-tl-side]");
       if (!tab) return;
@@ -726,6 +744,7 @@
   function wireThread(host) {
     if (!host || host.getAttribute("data-thread-wired")) return;
     host.setAttribute("data-thread-wired", "1");
+    wireFiles(host);
 
     host.addEventListener("change", function (ev) {
       if (!ev.target.matches("[data-thread-file]")) return;
@@ -749,10 +768,6 @@
         drawPending(host);
         return;
       }
-      // A file in a private bucket is opened through the link signed for it,
-      // which is put on the chip once it comes back.
-      var chip = ev.target.closest("[data-href]");
-      if (chip) global.open(chip.getAttribute("data-href"), "_blank", "noopener");
     });
 
     host.addEventListener("submit", function (ev) {
@@ -962,6 +977,7 @@
     requestRow: requestRow, empty: empty, sectionHead: sectionHead,
     thread: thread, bubble: bubble, fileChip: fileChip, linkFiles: linkFiles,
     bytes: bytes, wireThread: wireThread, threadDraw: threadDraw,
+    wireFiles: wireFiles,
     timeline: timeline, parties: parties, stamp: stamp,
     wireTimeline: wireTimeline,
     chartBars: chartBars, chartDonut: chartDonut, chartKeys: chartKeys,
