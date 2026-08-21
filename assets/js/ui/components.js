@@ -402,19 +402,44 @@
       "</span>";
   }
 
-  function bubble(m, meId) {
+  /** One turn in a conversation.
+
+      Laid out as a conversation is laid out: the reader's own turns on the
+      side the page ends on, everyone else's on the side it starts from with
+      their face beside them, and the clock on the line rather than the whole
+      date — the date belongs to the day divider above the group, said once. */
+  function bubble(m, meId, opts) {
+    var o = opts || {};
     var who = M.user(m.authorId);
     var mine = m.authorId === meId;
     var files = Store.attachmentsOn(m.id);
-    return '<article class="bubble' + (mine ? " bubble--mine" : "") + '">' +
-      '<div class="bubble__who">' +
-        (mine ? "" : avatar(who, "sm")) +
-        "<strong class=\"tiny\">" + App.esc(mine ? I18N.t("thread.you") : (who ? App.tx(who.name) : "")) +
-          "</strong>" +
-        '<span class="tiny faint">' + App.esc(I18N.date(m.at)) + "</span></div>" +
-      (m.body ? '<p class="bubble__body">' + App.esc(m.body) + "</p>" : "") +
-      (files.length ? '<div class="bubble__files">' + files.map(fileChip).join("") + "</div>" : "") +
-    "</article>";
+    return '<div class="bubble-row' + (mine ? " bubble-row--mine" : "") + '">' +
+      (mine || o.sameAsBefore ? '<span class="bubble-row__gap"></span>' : avatar(who, "sm")) +
+      '<article class="bubble' + (mine ? " bubble--mine" : "") + '">' +
+        (mine || o.sameAsBefore ? ""
+          : '<strong class="bubble__who">' +
+            App.esc(who ? App.tx(who.name) : "") + "</strong>") +
+        (m.body ? '<p class="bubble__body">' + App.esc(m.body) + "</p>" : "") +
+        (files.length ? '<div class="bubble__files">' + files.map(fileChip).join("") + "</div>" : "") +
+        '<time class="bubble__at tiny">' + App.esc(clockOf(m.at)) + "</time>" +
+      "</article></div>";
+  }
+
+  /** The log, with a day said once above the turns that belong to it and a
+      name said once above a run by the same person. */
+  function bubbles(log, seat) {
+    var day = null, last = null;
+    return log.map(function (m) {
+      var head = "";
+      var mine = dayOf(m.at);
+      if (mine !== day) {
+        day = mine; last = null;
+        head = '<div class="thread__day"><span>' + App.esc(dayLabel(m.at)) + "</span></div>";
+      }
+      var same = last === m.authorId;
+      last = m.authorId;
+      return head + bubble(m, seat, { sameAsBefore: same });
+    }).join("");
   }
 
   /** One conversation, drawn.
@@ -445,7 +470,7 @@
         : "") +
       '<div class="thread__log">' +
         (log.length
-          ? log.map(function (m) { return bubble(m, seat); }).join("")
+          ? bubbles(log, seat)
           : '<p class="small muted center">' + App.esc(I18N.t("thread.empty")) + "</p>") +
       "</div>" +
       (closed

@@ -544,6 +544,9 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   background: var(--surface-2); color: var(--text-muted); text-align: center;
 }
 .pill-tab.is-active .pill-tab__n { background: rgba(255,255,255,.22); color: #fff; }
+/* An objection waiting on a decision is not one more pile. */
+.pill-tab--warn { border-color: var(--warning); color: var(--warning); }
+.pill-tab--warn.is-active { background: var(--warning); border-color: var(--warning); color: #fff; }
 
 .case-list { display: flex; flex-direction: column; gap: var(--s-5); }
 .case {
@@ -637,22 +640,48 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
    "here is the contract" and the contract are one message. */
 .thread { margin-top: var(--s-6); padding-top: var(--s-5); border-top: 1px solid var(--border); }
 .thread__log {
-  display: flex; flex-direction: column; gap: var(--s-3);
-  max-height: 420px; overflow-y: auto; padding: var(--s-4) var(--s-1);
-  background: var(--surface-2); border-radius: var(--r-lg); margin-top: var(--s-4);
+  display: flex; flex-direction: column; gap: var(--s-2);
+  max-height: 460px; overflow-y: auto; margin-top: var(--s-4);
+  padding: var(--s-5) var(--s-4);
+  background: var(--surface-2); border-radius: var(--r-lg);
 }
+/* The day, said once above the turns that belong to it. */
+.thread__day {
+  display: flex; align-items: center; gap: var(--s-3);
+  margin: var(--s-4) 0 var(--s-2); color: var(--text-faint); font-size: .75rem;
+}
+.thread__day::before, .thread__day::after {
+  content: ""; flex: 1; height: 1px; background: var(--border);
+}
+.thread__log > .thread__day:first-child { margin-top: 0; }
+
+.bubble-row { display: flex; align-items: flex-end; gap: var(--s-2); }
+.bubble-row--mine { flex-direction: row-reverse; }
+.bubble-row__gap { flex: 0 0 32px; }
 .bubble {
-  align-self: flex-start; max-width: min(84%, 560px);
+  position: relative; max-width: min(78%, 560px);
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r-lg); padding: var(--s-3) var(--s-4);
-  border-start-start-radius: var(--s-1);
+  /* Logical corners, so the tail stays on the speaker's side whichever way
+     the page reads. */
+  border-radius: var(--r-lg);
+  border-end-start-radius: var(--s-1);
+  padding: var(--s-3) var(--s-4) var(--s-2);
+  box-shadow: 0 1px 1px rgb(15 23 42 / .04);
 }
 .bubble--mine {
-  align-self: flex-end; background: var(--accent-soft); border-color: var(--accent-soft);
-  border-start-start-radius: var(--r-lg); border-start-end-radius: var(--s-1);
+  background: var(--accent-soft); border-color: transparent;
+  border-end-start-radius: var(--r-lg);
+  border-end-end-radius: var(--s-1);
 }
-.bubble__who { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-2); }
-.bubble__body { white-space: pre-wrap; word-break: break-word; font-size: .9375rem; }
+.bubble__who {
+  display: block; font-size: .75rem; font-weight: 600; color: var(--text-muted);
+  margin-bottom: var(--s-1);
+}
+.bubble__body { white-space: pre-wrap; word-break: break-word; font-size: .9375rem; line-height: 1.7; }
+.bubble__at {
+  display: block; margin-top: var(--s-1); color: var(--text-faint);
+  text-align: end; font-variant-numeric: tabular-nums;
+}
 .bubble__files { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
 
 .file-chip {
@@ -685,8 +714,8 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .thread__compose { display: flex; gap: var(--s-2); align-items: center; margin-top: var(--s-3); }
 .thread__compose .input { flex: 1 1 auto; min-width: 0; }
 @media (max-width: 720px) {
-  .thread__log { max-height: 320px; }
-  .bubble { max-width: 92%; }
+  .thread__log { max-height: 340px; padding: var(--s-4) var(--s-3); }
+  .bubble { max-width: 86%; }
 }
 
 /* ---------- 11a09b. The story of a request ----------
@@ -1298,35 +1327,6 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .task-card.is-taken { opacity: .82; }
 @media (max-width: 480px) { .task-card__meta { grid-template-columns: 1fr 1fr; } }
 
-/* ---------- assistant chat ---------- */
-.chat {
-  padding: var(--s-5); min-height: 300px; max-height: 460px; overflow-y: auto;
-  display: flex; flex-direction: column; gap: var(--s-4);
-  background: var(--surface-2); border-block: 1px solid var(--border);
-}
-.bubble {
-  max-width: min(72ch, 88%); align-self: flex-start;
-  padding: var(--s-4) var(--s-5); border-radius: var(--r-lg);
-  background: var(--surface); border: 1px solid var(--border);
-  box-shadow: var(--shadow-1);
-}
-/* The reader's own turn sits on the side the page reads from. */
-.bubble--user {
-  align-self: flex-end;
-  background: var(--primary); color: var(--on-primary); border-color: var(--primary);
-}
-.bubble__who {
-  display: block; font-size: .6875rem; font-weight: 700;
-  letter-spacing: .04em; opacity: .6; margin-bottom: var(--s-2);
-}
-.bubble p { line-height: 1.75; font-size: .9375rem; }
-
-.chat-composer { display: flex; gap: var(--s-3); padding: var(--s-4) var(--s-5); }
-.chat-composer .input { flex: 1; }
-@media (max-width: 520px) {
-  .chat-composer { flex-direction: column; }
-  .chat-composer .btn { width: 100%; }
-}
 
 .disclaimer {
   display: flex; align-items: flex-start; gap: var(--s-3);
@@ -1850,27 +1850,4 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 }
 
 
-/* ---- the four piles of requests, at the desk and on a client's page ---- */
-.pile-tabs {
-  display: flex; gap: var(--s-2); flex-wrap: wrap;
-  margin: var(--s-5) 0; padding-bottom: var(--s-3);
-  border-bottom: 1px solid var(--border);
-}
-.pile-tab {
-  display: inline-flex; align-items: center; gap: var(--s-2);
-  padding: var(--s-2) var(--s-4); border-radius: var(--r-full);
-  border: 1px solid var(--border-strong); background: var(--surface);
-  color: var(--text-muted); font: inherit; font-size: .875rem; cursor: pointer;
-  transition: background .15s ease, color .15s ease, border-color .15s ease;
-}
-.pile-tab:hover { border-color: var(--primary); color: var(--text); }
-.pile-tab.is-active {
-  background: var(--primary); border-color: var(--primary); color: var(--on-primary);
-}
-.pile-tab__n {
-  min-width: 20px; padding: 0 6px; border-radius: var(--r-full);
-  background: var(--surface-2); color: var(--text-muted); font-size: .75rem;
-}
-.pile-tab.is-active .pile-tab__n { background: rgba(255, 255, 255, .18); color: inherit; }
-.pile-tab--warn { border-color: var(--warning); color: var(--warning); }
-.pile-tab--warn.is-active { background: var(--warning); border-color: var(--warning); color: #fff; }
+

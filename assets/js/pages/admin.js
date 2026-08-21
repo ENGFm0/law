@@ -427,15 +427,19 @@ Pages.define("admin", function (global) {
   function pileTabs(piles) {
     var of = { live: piles.live, booked: piles.booked,
                past: piles.past, disputed: piles.disputed };
-    return '<div class="pile-tabs" role="tablist">' +
+    // The same component the client's own page uses. Two piles of requests
+    // sorted the same way should not be two different-looking things.
+    return '<nav class="pill-tabs" role="tablist">' +
       [["live", "adm.pileLive"], ["booked", "adm.pileBooked"],
        ["past", "adm.pilePast"], ["disputed", "adm.pileDisputed"]].map(function (t) {
         var n = of[t[0]].length;
-        return '<button class="pile-tab' + (pile === t[0] ? " is-active" : "") +
-          (t[0] === "disputed" && n ? " pile-tab--warn" : "") +
+        return '<button class="pill-tab' + (pile === t[0] ? " is-active" : "") +
+          (t[0] === "disputed" && n ? " pill-tab--warn" : "") +
           '" type="button" role="tab" data-pile="' + t[0] + '">' +
-          esc(I18N.t(t[1])) + '<span class="pile-tab__n num">' + I18N.num(n) + "</span></button>";
-      }).join("") + "</div>";
+          esc(I18N.t(t[1])) +
+          (n ? '<span class="pill-tab__n num">' + I18N.num(n) + "</span>" : "") +
+          "</button>";
+      }).join("") + "</nav>";
   }
 
   function requestCard(r) {

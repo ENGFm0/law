@@ -1200,7 +1200,7 @@
       "ord.channel": "الطريقة",
 
       /* --- a shared progress track on a request --- */
-      "prog.title": "مسار الطلب",
+      "prog.title": "أين وصل طلبك",
       "prog.placed": "الطلب مُرسَل",
       "prog.accepted": "قبله المحامي",
       "prog.working": "قيد التنفيذ",
@@ -1328,7 +1328,7 @@
       "thread.noMic": "لا يمكن التسجيل — لم يُسمح بالميكروفون.",
 
       /* --- the story of a request --- */
-      "tl.title": "مسار الطلب",
+      "tl.title": "ما جرى على الطلب",
       "tl.placed": "أُنشئ الطلب",
       "tl.lawyer_set": "أُسند إلى المحامي",
       "tl.assigned": "وُجّه إلى المتدرب",
@@ -1383,8 +1383,8 @@
       "tl.all": "كل شيء",
       "tl.withClient": "مع العميل",
       "tl.onlyInternal": "الداخلية",
-      "tl.open": "المسار",
-      "tl.close": "أغلق المسار",
+      "tl.open": "ما جرى",
+      "tl.close": "إخفاء",
       "tl.priceWas": "بـ {n} ر.س",
 
       /* --- the requests page, sorted --- */
@@ -2797,7 +2797,7 @@
       "tl.all": "Everything",
       "tl.withClient": "With the client",
       "tl.onlyInternal": "Internal only",
-      "tl.open": "The path",
+      "tl.open": "What happened",
       "tl.close": "Close",
       "tl.priceWas": "at {n} SAR",
 

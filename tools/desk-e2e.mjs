@@ -62,7 +62,7 @@ const counted = async pile => {
 const live = await counted('live'), booked = await counted('booked'), past = await counted('past');
 ok('each pile has its own cases', live > 0 && booked > 0 && past > 0,
    JSON.stringify({live, booked, past}));
-const shown = await p.$eval('[data-pile="past"] .pile-tab__n', e=>e.innerText);
+const shown = await p.$eval('[data-pile="past"] .pill-tab__n', e=>e.innerText);
 ok('and the tab says how many before you open it',
    String(past) === shown.replace(/[^\d]/g,''), shown + ' vs ' + past);
 const ids = async pile => {

@@ -83,7 +83,7 @@ console.log('— THE LAWYER READS BOTH SIDES, APART OR TOGETHER —');
 await open('requests.html', 'u-ahmed');
 await p.click(`[data-path="${rid}"]`); await p.waitForTimeout(500);
 t = await body();
-ok('the lawyer sees the record too', /ماذا حدث ومتى|مسار الطلب/.test(t));
+ok('the lawyer sees the record too', /ما جرى على الطلب/.test(t), t.slice(0, 120));
 ok('with the client’s side in it', /رسالة/.test(t));
 ok('and a way to read the two apart', /مع العميل/.test(t) && /الداخلية/.test(t));
 await p.click(`[data-tl-side="internal"][data-tl-for="${rid}"]`); await p.waitForTimeout(400);
