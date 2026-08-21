@@ -247,3 +247,39 @@ select case when count(*) = 1 then 'PASS' else 'FAIL' end
 delete from public.audit_log;
 select case when count(*) = 1 then 'PASS' else 'FAIL' end
   || '  nor deleted' from public.audit_log;
+
+\echo '── a decided dispute, and who may still touch it ──'
+reset role;
+set request.jwt.claim.sub = '';
+delete from public.disputes where reason = 'guard test';
+delete from public.requests where title = 'guard test';
+insert into public.requests (id, client_id, lawyer_id, type_id, title, price, status, delivered_at)
+  values ('dddd9999-0000-0000-0000-00000000dddd','11111111-1111-1111-1111-111111111111',
+          '22222222-2222-2222-2222-222222222222','consult','guard test', 250,
+          'delivered', now());
+insert into public.disputes (request_id, by_id, reason, status, outcome, lawyer_pct,
+                             resolution_reason, resolved_at)
+  values ('dddd9999-0000-0000-0000-00000000dddd','11111111-1111-1111-1111-111111111111',
+          'guard test','resolved','split',60,'قُسم', now());
+
+set role authenticated;
+set request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
+update public.disputes set outcome = 'release', resolution_reason = 'غيّرت رأيي'
+  where reason = 'guard test';
+reset role;
+select case when outcome = 'split' then 'PASS' else 'FAIL' end
+  || '  a decided dispute is not re-decided by anybody signed in'
+  from public.disputes where reason = 'guard test';
+
+-- The trusted path — a migration, a seeding script, the service key — is not
+-- somebody re-deciding a case, and the database has to be maintainable. This
+-- is the same door every other guard in this schema leaves open, and it is
+-- shut to the browser twice over: `anon` holds no write privilege at all, and
+-- a session makes auth.uid() non-null.
+update public.disputes set resolution_reason = resolution_reason where reason = 'guard test';
+select case when count(*) = 1 then 'PASS' else 'FAIL' end
+  || '  but maintenance with no session goes through'
+  from public.disputes where reason = 'guard test';
+
+reset role;
+set request.jwt.claim.sub = '';

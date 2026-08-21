@@ -51,6 +51,33 @@ drop trigger if exists disputes_stamp_ref on public.disputes;
 create trigger disputes_stamp_ref before insert on public.disputes
   for each row execute function public.stamp_ref();
 
+-- Giving an existing dispute its number is an update, and a decided dispute
+-- refuses updates: "a dispute is decided once". That rule is right, and it was
+-- written without a trusted path — unlike every other guard in this schema,
+-- which lets `auth.uid() is null` through precisely because a migration, a
+-- seeding script or the service key is not somebody re-deciding a case.
+--
+-- Nothing is loosened by saying so here. A browser holding the publishable key
+-- and no session is `anon`, and migration 009 took every write privilege on
+-- every table away from `anon`; with a session, `auth.uid()` is not null and
+-- the rule applies as before. What changes is that the database can be
+-- maintained without disabling its own safeguards.
+create or replace function public.guard_dispute() returns trigger
+language plpgsql as $$
+begin
+  if old.status = 'resolved' and auth.uid() is not null then
+    raise exception 'a dispute is decided once';
+  end if;
+  -- Whoever decides must not be a party to it.
+  if new.resolved_by is not null and exists (
+      select 1 from public.requests r
+      where r.id = new.request_id
+        and new.resolved_by in (r.client_id, r.lawyer_id, r.assigned_to)) then
+    raise exception 'a party cannot decide their own dispute';
+  end if;
+  return new;
+end $$;
+
 -- Everything already here gets one too, oldest first, so the numbers run in
 -- the order the work did.
 do $$

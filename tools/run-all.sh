@@ -5,7 +5,9 @@
 #   python3 -m http.server 8099 &   # the site under test
 #   sh tools/run-all.sh
 #
-# The database policies are separate and need Postgres; see supabase/rls-test*.sql.
+# The database policies are separate and need Postgres:
+#   sh tools/migrate-test.sh          # every migration, against a database with rows
+#   psql -f supabase/rls-test*.sql    # every policy
 #
 # tools/live-e2e.mjs runs the site against a real PostgreSQL through
 # tools/fake-postgrest.mjs. It needs a local database and `su postgres`, so it

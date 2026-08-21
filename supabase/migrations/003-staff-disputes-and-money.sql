@@ -23,7 +23,7 @@ alter table public.profiles add column if not exists vat_registered boolean not 
 alter table public.profiles add column if not exists vat_number text;
 alter table public.profiles add column if not exists rejected_reason text;
 
-create function public.is_staff() returns boolean language sql stable as $$
+create or replace function public.is_staff() returns boolean language sql stable as $$
   select exists (
     select 1 from public.profiles p
     where p.id = auth.uid() and 'staff' = any(p.roles)
@@ -47,19 +47,21 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists profiles_guard_roles on public.profiles;
 create trigger profiles_guard_roles before update on public.profiles
   for each row execute function public.guard_roles();
 
 -- Staff may set an account's status; nobody else may, including its owner.
 -- The existing keep_status trigger pins it on the ordinary update path, so
 -- this policy is what lets the desk work at all.
+drop policy if exists "staff may set account status" on public.profiles;
 create policy "staff may set account status" on public.profiles for update
   using (public.is_staff()) with check (public.is_staff());
 
 -- -------------------------------------------------------- platform settings
 -- One row. Commission is capped in the database, not only in the form, and
 -- VAT ships off so a platform below the registration threshold charges none.
-create table public.platform_settings (
+create table if not exists public.platform_settings (
   id             int primary key default 1,
   commission_pct int  not null default 10,
   vat_enabled    boolean not null default false,
@@ -72,7 +74,9 @@ create table public.platform_settings (
 insert into public.platform_settings (id) values (1) on conflict do nothing;
 alter table public.platform_settings enable row level security;
 
+drop policy if exists "settings are readable" on public.platform_settings;
 create policy "settings are readable" on public.platform_settings for select using (true);
+drop policy if exists "only staff change settings" on public.platform_settings;
 create policy "only staff change settings" on public.platform_settings for update
   using (public.is_staff()) with check (public.is_staff());
 
@@ -86,7 +90,7 @@ alter table public.requests add column if not exists revision_note text;
 alter table public.requests add column if not exists intern_share int;
 
 -- One revision, and the count only ever goes up.
-create function public.guard_revisions() returns trigger language plpgsql as $$
+create or replace function public.guard_revisions() returns trigger language plpgsql as $$
 begin
   if new.revisions < old.revisions then
     raise exception 'a revision cannot be taken back';
@@ -96,11 +100,12 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists requests_guard_revisions on public.requests;
 create trigger requests_guard_revisions before update on public.requests
   for each row execute function public.guard_revisions();
 
 -- ---------------------------------------------------------------- disputes
-create table public.disputes (
+create table if not exists public.disputes (
   id          uuid primary key default gen_random_uuid(),
   request_id  uuid not null references public.requests on delete restrict,
   by_id       uuid not null references public.profiles,
@@ -122,11 +127,13 @@ create table public.disputes (
 alter table public.disputes enable row level security;
 
 -- The parties to the request and the staff who decide — nobody else.
+drop policy if exists "parties and staff read disputes" on public.disputes;
 create policy "parties and staff read disputes" on public.disputes for select
   using (public.is_staff() or exists (
     select 1 from public.requests r where r.id = request_id and public.is_party(r)));
 
 -- Only the client may refuse a delivery, and only one that was delivered.
+drop policy if exists "the client may refuse a delivery" on public.disputes;
 create policy "the client may refuse a delivery" on public.disputes for insert
   with check (
     auth.uid() = by_id and exists (
@@ -134,11 +141,12 @@ create policy "the client may refuse a delivery" on public.disputes for insert
       where r.id = request_id and r.client_id = auth.uid()
         and r.delivered_at is not null and r.accepted_at is null));
 
+drop policy if exists "only staff decide" on public.disputes;
 create policy "only staff decide" on public.disputes for update
   using (public.is_staff()) with check (public.is_staff());
 
 -- Not even staff delete one. A dispute closes by changing state.
-create function public.guard_dispute() returns trigger language plpgsql as $$
+create or replace function public.guard_dispute() returns trigger language plpgsql as $$
 begin
   if old.status = 'resolved' then
     raise exception 'a dispute is decided once';
@@ -152,6 +160,7 @@ begin
   end if;
   return new;
 end $$;
+drop trigger if exists disputes_guard on public.disputes;
 create trigger disputes_guard before update on public.disputes
   for each row execute function public.guard_dispute();
 
@@ -159,7 +168,7 @@ create trigger disputes_guard before update on public.disputes
 -- Held, then released — never transferred on the strength of a promise. The
 -- gateway reference is unique so the same notification cannot be acted on
 -- twice, whichever gateway is in front of it.
-create table public.payments (
+create table if not exists public.payments (
   id           uuid primary key default gen_random_uuid(),
   request_id   uuid not null references public.requests on delete restrict,
   client_id    uuid not null references public.profiles,
@@ -177,7 +186,7 @@ alter table public.payments enable row level security;
 
 -- Every share of every release, kept as its own row so the parts can always
 -- be added back up to the whole and shown to the person they belong to.
-create table public.payouts (
+create table if not exists public.payouts (
   id          uuid primary key default gen_random_uuid(),
   payment_id  uuid not null references public.payments on delete restrict,
   party       text not null check (party in ('platform','lawyer','intern','client')),
@@ -189,9 +198,11 @@ create table public.payouts (
 );
 alter table public.payouts enable row level security;
 
+drop policy if exists "you see your own money" on public.payments;
 create policy "you see your own money" on public.payments for select
   using (public.is_staff() or exists (
     select 1 from public.requests r where r.id = request_id and public.is_party(r)));
+drop policy if exists "you see your own share" on public.payouts;
 create policy "you see your own share" on public.payouts for select
   using (public.is_staff() or auth.uid() = profile_id);
 
@@ -202,7 +213,7 @@ create policy "you see your own share" on public.payouts for select
 -- ------------------------------------------------------------------- audit
 -- Append only, and readable by staff alone. A decision nobody can be asked
 -- about later is not a decision.
-create table public.audit_log (
+create table if not exists public.audit_log (
   id         uuid primary key default gen_random_uuid(),
   action     text not null,
   by_id      uuid not null references public.profiles,
@@ -213,14 +224,17 @@ create table public.audit_log (
 );
 alter table public.audit_log enable row level security;
 
+drop policy if exists "staff read the record" on public.audit_log;
 create policy "staff read the record" on public.audit_log for select
   using (public.is_staff());
+drop policy if exists "staff write to the record" on public.audit_log;
 create policy "staff write to the record" on public.audit_log for insert
   with check (public.is_staff() and auth.uid() = by_id);
 
-create function public.audit_is_final() returns trigger language plpgsql as $$
+create or replace function public.audit_is_final() returns trigger language plpgsql as $$
 begin
   raise exception 'the record is appended to, never changed';
 end $$;
+drop trigger if exists audit_no_update on public.audit_log;
 create trigger audit_no_update before update or delete on public.audit_log
   for each row execute function public.audit_is_final();
