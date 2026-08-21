@@ -229,6 +229,12 @@ Pages.define("intern", function (global) {
 
     host.innerHTML = '<div class="container" style="padding-block:var(--s-8) var(--s-20);max-width:940px">' +
       head(u) +
+      // The other end of the same relationship the lawyer's page offers: a
+      // mentor looking at a trainee can invite them, at the fee they publish.
+      (Session.is("lawyer") && Session.user() && Session.user().isMentor
+        ? C.mentorCard(Session.user(), Session.user(),
+                       { side: "mentor", internId: u.id, link: "requests.html" })
+        : "") +
       '<div class="tabs" role="tablist">' + tabsFor(u).map(function (t) {
         return '<button class="tab' + (tab === t[0] ? " is-active" : "") + '" type="button" ' +
           'role="tab" data-tab="' + t[0] + '" data-i18n="' + t[1] + '"></button>';
@@ -242,6 +248,15 @@ Pages.define("intern", function (global) {
   host.addEventListener("click", function (ev) {
     var t = ev.target.closest("[data-tab]");
     if (t) { tab = t.getAttribute("data-tab"); App.rerender(); return; }
+
+    var inv = ev.target.closest("[data-mentor-invite]");
+    if (inv) {
+      var word = Store.inviteToMentorship(inv.getAttribute("data-mentor-invite"));
+      App.toast(I18N.t(word === "sent" ? "men.invited" : "men.haveOne"),
+                word === "sent" ? "check" : "alert");
+      App.rerender();
+      return;
+    }
 
     if (ev.target.closest("[data-make-deal]")) {
       var u2 = M.user(id);

@@ -612,6 +612,7 @@ Pages.define("requests", function (global) {
                 : "") + "</div>";
           }).join("")
         : '<p class="muted center" style="padding:var(--s-8)">' + esc(I18N.t("inbox.empty")) + "</p>") +
+      mentorshipPanel(me) +
     "</div>";
   }
 
@@ -739,6 +740,181 @@ Pages.define("requests", function (global) {
   }
 
   /* ====================================================== intern ========== */
+  /* ---------- supervision ----------
+     One panel, drawn for both sides of it. A trainee sees who is teaching
+     them, what it costs and what it has earned them in hours; a lawyer sees
+     everyone they have taken on and what the sponsorships come to. Neither
+     sees a screen written for the other, and both are looking at the same
+     rows — which is the only way the hours on a certificate can be trusted. */
+  function menState(m, mine) {
+    if (m.status === "pending") {
+      // The side that asked cannot also answer. Said here so the button is
+      // not drawn, and in the database so it cannot be called around.
+      var theirs = (m.openedBy === "intern" ? m.internId : m.mentorId) === mine;
+      return theirs
+        ? '<span class="tiny muted">' + esc(I18N.t("men.pending")) + "</span>"
+        : '<span class="row gap-2">' +
+            '<button class="btn btn--primary btn--sm" type="button" data-men-yes="' +
+              esc(m.id) + '">' + esc(I18N.t("men.accept")) + "</button>" +
+            '<button class="btn btn--ghost btn--sm" type="button" data-men-no="' +
+              esc(m.id) + '">' + esc(I18N.t("men.decline")) + "</button></span>";
+    }
+    if (m.status === "active") {
+      return '<button class="btn btn--ghost btn--sm" type="button" data-men-end="' +
+        esc(m.id) + '">' + esc(I18N.t("men.end")) + "</button>";
+    }
+    return '<span class="tiny muted">' +
+      esc(I18N.t(m.status === "ended" ? "men.ended" : "men.declined")) + "</span>";
+  }
+
+  function menRoom(m, me) {
+    var log = Store.roomMessages(m.id);
+    var mentor = me.id === m.mentorId;
+    return '<section class="thread" data-room="' + esc(m.id) + '">' +
+      '<h3 class="subtitle">' + esc(I18N.t("men.roomTitle")) + "</h3>" +
+      '<div class="thread__log">' +
+        (log.length
+          ? log.map(function (x) {
+              var who = M.user(x.authorId);
+              return '<div class="bubble-row' + (x.authorId === me.id ? " bubble-row--mine" : "") + '">' +
+                '<span class="bubble-row__gap"></span>' +
+                '<article class="bubble' + (x.authorId === me.id ? " bubble--mine" : "") + '">' +
+                  (x.authorId === me.id ? ""
+                    : '<strong class="bubble__who">' + esc(who ? tx(who.name) : "") + "</strong>") +
+                  '<p class="bubble__body">' + esc(x.body) + "</p>" +
+                  '<time class="bubble__at tiny">' + esc(C.stamp(x.at)) + "</time>" +
+                "</article></div>";
+            }).join("")
+          : '<p class="small muted center">' +
+            esc(I18N.t(mentor ? "men.roomEmptyMentor" : "men.roomEmpty")) + "</p>") +
+      "</div>" +
+      '<form class="thread__compose" data-room-form="' + esc(m.id) + '">' +
+        '<input class="input" data-room-body placeholder="' +
+          esc(I18N.t("men.say")) + '">' +
+        '<button class="btn btn--primary btn--sm" type="submit">' +
+          esc(I18N.t("thread.send")) + "</button>" +
+      "</form></section>";
+  }
+
+  function menSessions(m, me) {
+    var mentor = me.id === m.mentorId;
+    var list = Store.sessions().filter(function (x) { return x.mentorshipId === m.id; })
+      .sort(function (a, b) {
+        return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
+      });
+
+    return '<section style="margin-top:var(--s-6)">' +
+      '<h3 class="subtitle">' + esc(I18N.t("men.calendar")) + "</h3>" +
+      (list.length
+        ? '<div class="stack gap-2" style="margin-top:var(--s-3)">' + list.map(function (x) {
+            return '<div class="row between wrap gap-3 admin-line">' +
+              "<span><strong class=\"small\">" + esc(x.title) + "</strong>" +
+              '<span class="tiny muted" style="display:block">' +
+                esc(C.stamp(new Date(x.startsAt).getTime())) + " · " +
+                esc(I18N.t("men.sessionHours")) + " " + I18N.num(x.hours || 1) + "</span></span>" +
+              (x.attended
+                ? '<span class="status status--ok">' + esc(I18N.t("men.attended")) + "</span>"
+                : (mentor
+                    ? '<button class="btn btn--outline btn--sm" type="button" data-men-attended="' +
+                      esc(x.id) + '">' + esc(I18N.t("men.markAttended")) + "</button>"
+                    : "")) +
+            "</div>";
+          }).join("") + "</div>"
+        : '<p class="small muted" style="margin-top:var(--s-3)">' +
+          esc(I18N.t("men.noSessions")) + "</p>") +
+      // Only the mentor writes the calendar, and only the mentor marks
+      // attendance — a trainee who could tick their own hours is a trainee
+      // writing their own certificate.
+      (mentor
+        ? '<form class="row gap-2 wrap" style="margin-top:var(--s-4)" data-session-form="' +
+            esc(m.id) + '">' +
+            '<input class="input" data-session-title style="flex:2 1 180px" placeholder="' +
+              esc(I18N.t("men.sessionTitle")) + '">' +
+            '<input class="input" type="datetime-local" dir="ltr" data-session-when ' +
+              'style="flex:1 1 180px">' +
+            '<input class="input" type="number" min="0" max="12" value="2" ' +
+              'data-session-hours style="flex:0 1 90px">' +
+            '<button class="btn btn--outline btn--sm" type="submit">' +
+              esc(I18N.t("men.addSession")) + "</button></form>"
+        : "") +
+    "</section>";
+  }
+
+  function menCard(m, me) {
+    var mentor = me.id === m.mentorId;
+    var them = M.user(mentor ? m.internId : m.mentorId);
+    var split = M.sponsorship(m);
+    var prog = M.certProgress(m.internId);
+
+    return '<article class="card card--pad" style="margin-bottom:var(--s-4)">' +
+      '<div class="row between wrap gap-3">' +
+        '<span class="row gap-3">' + C.avatar(them, "sm") +
+          "<span><strong>" + esc(them ? tx(them.name) : "") + "</strong>" +
+          '<span class="tiny muted" style="display:block">' +
+            esc(I18N.t(mentor ? "men.activeBy" : "men.active")) + "</span></span></span>" +
+        menState(m, me.id) +
+      "</div>" +
+
+      (m.status === "active"
+        ? '<div class="meta-row" style="margin-top:var(--s-4)">' +
+            '<span class="tiny muted">' + esc(I18N.t("men.monthly")) + ": " +
+              C.sar(split.gross) + "</span>" +
+            (mentor
+              ? '<span class="dot"></span><span class="tiny muted">' +
+                esc(I18N.t("men.netToYou")) + ": <strong>" + C.sar(split.lawyer) +
+                "</strong></span>"
+              : "") +
+            '<span class="dot"></span>' +
+            '<span class="tiny muted">' + esc(I18N.t("men.hoursTitle")) + ": " +
+              esc(I18N.t("men.hoursOf", { n: I18N.num(prog.hours),
+                                          t: I18N.num(prog.needed) })) + "</span>" +
+          "</div>" +
+          // The trainee is the one who pays, so the trainee is the one shown
+          // the state of it — and shown it plainly rather than by a button
+          // going missing.
+          (!mentor && split.gross
+            ? (split.current
+                ? '<p class="tiny faint" style="margin-top:var(--s-3)">' +
+                  esc(I18N.t("men.paidUntil", { d: I18N.date(m.paidUntil) })) + "</p>"
+                : '<div class="row gap-3 wrap" style="margin-top:var(--s-3)">' +
+                  '<span class="tiny" style="color:var(--warning);align-self:center">' +
+                    esc(I18N.t("men.unpaid")) + "</span>" +
+                  '<button class="btn btn--accent btn--sm" type="button" data-men-pay="' +
+                    esc(m.id) + '">' + esc(I18N.t("men.pay")) + "</button></div>")
+            : "") +
+          menRoom(m, me) +
+          menSessions(m, me)
+        : "") +
+    "</article>";
+  }
+
+  function mentorshipPanel(me) {
+    var mine = Store.mentorships().filter(function (m) {
+      return m.mentorId === me.id || m.internId === me.id;
+    });
+    var live = mine.filter(function (m) { return m.status !== "declined" && m.status !== "ended"; });
+    var isIntern = Session.is("intern");
+
+    if (!live.length) {
+      return isIntern
+        ? '<section style="margin-top:var(--s-12)">' +
+            '<h2 class="headline">' + esc(I18N.t("men.title")) + "</h2>" +
+            '<p class="lead" style="margin-bottom:var(--s-4)">' +
+              esc(I18N.t("men.mentorNone")) + "</p>" +
+            '<a class="btn btn--primary btn--sm" href="lawyers.html">' +
+              esc(I18N.t("men.findMentor")) + "</a></section>"
+        : "";
+    }
+
+    return '<section style="margin-top:var(--s-12)">' +
+      '<h2 class="headline">' +
+        esc(I18N.t(isIntern ? "men.title" : "men.myTrainees")) + "</h2>" +
+      '<p class="lead" style="margin-bottom:var(--s-6)">' +
+        esc(I18N.t(isIntern ? "men.applyHint" : "men.applications")) + "</p>" +
+      live.map(function (m) { return menCard(m, me); }).join("") +
+    "</section>";
+  }
+
   function internView() {
     var me = Session.user();
     var mine = M.requestsForIntern(me.id);
@@ -761,7 +937,8 @@ Pages.define("requests", function (global) {
         (pool.length
           ? pool.map(function (r) { return openTaskRow(r, me); }).join("")
           : C.empty("gavel", "task.noOpen")) +
-      "</section></div>";
+      "</section>" +
+      mentorshipPanel(me) + "</div>";
   }
 
   /** An opened task: every trainee sees it, applies, and the lawyer picks. */
@@ -894,6 +1071,37 @@ Pages.define("requests", function (global) {
   C.wireThread(host);
   C.wireTimeline(host);
 
+  /* The supervision room and its calendar. Their own listener: the case
+     thread's wiring belongs to the case thread, and borrowing it would tie
+     two things together that only look alike. */
+  host.addEventListener("submit", function (ev) {
+    var room = ev.target.closest("[data-room-form]");
+    if (room) {
+      ev.preventDefault();
+      var box = $("[data-room-body]", room);
+      var said = box ? box.value.trim() : "";
+      if (!said) return;
+      Store.sayInRoom({ mentorshipId: room.getAttribute("data-room-form"),
+                        authorId: Session.user().id, body: said });
+      if (box) box.value = "";
+      App.rerender();
+      return;
+    }
+
+    var cal = ev.target.closest("[data-session-form]");
+    if (!cal) return;
+    ev.preventDefault();
+    var title = ($("[data-session-title]", cal) || {}).value || "";
+    var when = ($("[data-session-when]", cal) || {}).value || "";
+    var hours = +(($("[data-session-hours]", cal) || {}).value || 1);
+    if (!title.trim() || !when) return;
+    var m = Store.mentorship(cal.getAttribute("data-session-form"));
+    Store.addSession({ mentorshipId: m.id, mentorId: m.mentorId, title: title.trim(),
+                       startsAt: new Date(when).toISOString(), hours: hours,
+                       kind: "training", attended: false });
+    App.rerender();
+  });
+
   /** Put the conversation where the eye is, and the cursor in it. */
   function goToThread() {
     var el = $("[data-thread]", host);
@@ -913,6 +1121,25 @@ Pages.define("requests", function (global) {
 
     var f = t.closest("[data-filter]");
     if (f) { filter = f.getAttribute("data-filter"); App.rerender(); return; }
+
+    /* --- supervision --- */
+    var my = hit("data-men-yes");
+    if (my) { Store.setMentorship(my, { status: "active" }); App.rerender(); return; }
+    var mn = hit("data-men-no");
+    if (mn) { Store.setMentorship(mn, { status: "declined" }); App.rerender(); return; }
+    var men = hit("data-men-end");
+    if (men) { Store.setMentorship(men, { status: "ended" }); App.rerender(); return; }
+    var mp = hit("data-men-pay");
+    if (mp) {
+      Store.chargeSponsorship(mp, function (word) {
+        App.toast(I18N.t(word === "paid" ? "men.paid" : "men.unpaid"),
+                  word === "paid" ? "check" : "alert");
+        App.rerender();
+      });
+      return;
+    }
+    var ma = hit("data-men-attended");
+    if (ma) { Store.setSession(ma, { attended: true }); App.rerender(); return; }
 
     /* --- a discount code --- */
     var pa = hit("data-promo-apply");

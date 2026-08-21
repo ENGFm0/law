@@ -440,7 +440,9 @@
     REST: ["requests", "articles", "comments", "endorsements", "agreements",
            "disputes", "notifications", "audit_log", "subscriptions",
            "operating_costs", "partners", "quotes", "offers", "contacts",
-           "messages", "attachments", "request_events"],
+           "messages", "attachments", "request_events",
+           "mentorships", "mentorship_sessions", "mentorship_messages",
+           "promo_codes", "promo_redemptions"],
 
     hydrate: function (names) {
       return load().then(function (sb) {
@@ -450,6 +452,15 @@
           services:         function () { return sb.from("services").select("*"); },
           service_types:    function () { return sb.from("service_types").select("*").order("sort"); },
           price_bands:      function () { return sb.from("price_bands").select("*"); },
+          mentorships:      function () { return sb.from("mentorships").select("*"); },
+          mentorship_sessions: function () {
+            return sb.from("mentorship_sessions").select("*").order("starts_at");
+          },
+          mentorship_messages: function () {
+            return sb.from("mentorship_messages").select("*").order("created_at");
+          },
+          promo_codes:      function () { return sb.from("promo_codes").select("*"); },
+          promo_redemptions: function () { return sb.from("promo_redemptions").select("*"); },
           platform_settings:function () { return sb.from("platform_settings").select("*").eq("id", 1).maybeSingle(); },
           reviews:          function () { return sb.from("reviews").select("*").limit(500); },
           announcements:    function () { return sb.from("announcements").select("*").order("created_at", { ascending: false }).limit(50); },

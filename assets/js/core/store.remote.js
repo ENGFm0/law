@@ -299,6 +299,7 @@
     disputes: [], notices: [], audit: [], settings: {},
     announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
     types: [], quotes: [], offers: [], messages: [], attachments: [], events: [],
+    mentorships: [], sessions: [], rooms: [], promos: [], redemptions: [],
   };
   var ready = false;
 
@@ -1022,6 +1023,155 @@
     });
   };
 
+  /* ---------------- supervision ----------------
+     Reads come from the hydrated cache like everything else; writes go to the
+     table and let the policies decide. Nothing here re-checks what the
+     database checks — guard_mentorship() refuses an application answered by
+     the side that made it, and a second opinion in a browser would only ever
+     be a way to disagree with it. */
+  function inMentorship(m) {
+    return { id: m.id, mentorId: m.mentor_id, internId: m.intern_id,
+             openedBy: m.opened_by, status: m.status, fee: Number(m.fee || 0),
+             note: m.note || null,
+             startedAt: m.started_at ? new Date(m.started_at).getTime() : null,
+             endedAt: m.ended_at ? new Date(m.ended_at).getTime() : null,
+             paidUntil: m.paid_until ? new Date(m.paid_until).getTime() : null,
+             at: new Date(m.created_at).getTime() };
+  }
+  function inSession(x) {
+    return { id: x.id, mentorshipId: x.mentorship_id, mentorId: x.mentor_id,
+             kind: x.kind, title: x.title, note: x.note || null,
+             startsAt: x.starts_at, minutes: x.minutes || 60,
+             hours: x.hours || 1, attended: !!x.attended };
+  }
+  function inRoomSaid(x) {
+    return { id: x.id, mentorshipId: x.mentorship_id, authorId: x.author_id,
+             body: x.body, at: new Date(x.created_at).getTime() };
+  }
+  function inPromo(p) {
+    return { id: p.id, code: p.code, label: p.label || null,
+             discountPct: p.discount_pct, maxDiscount: p.max_discount,
+             usageLimit: p.usage_limit, usedCount: p.used_count || 0,
+             clientId: p.client_id || null, typeId: p.type_id || null,
+             expiresAt: p.expires_at ? new Date(p.expires_at).getTime() : null,
+             active: p.active !== false, at: new Date(p.created_at).getTime() };
+  }
+  function inRedemption(r) {
+    return { id: r.id, promoId: r.promo_id, clientId: r.client_id,
+             requestId: r.request_id || null, amount: r.amount || 0,
+             at: new Date(r.at).getTime() };
+  }
+  Store.promos = function () { return cache.promos || []; };
+  Store.promoByCode = function (code) {
+    var want = String(code || "").trim().toUpperCase(), out = null;
+    (cache.promos || []).forEach(function (p) { if (p.code === want) out = p; });
+    return out;
+  };
+  Store.redemptions = function () { return cache.redemptions || []; };
+  Store.redemptionOf = function (promoId, clientId) {
+    var out = null;
+    (cache.redemptions || []).forEach(function (r) {
+      if (r.promoId === promoId && r.clientId === clientId) out = r;
+    });
+    return out;
+  };
+
+  Store.mentorships = function () { return cache.mentorships || []; };
+  Store.mentorship = function (id) {
+    var out = null;
+    (cache.mentorships || []).forEach(function (m) { if (m.id === id) out = m; });
+    return out;
+  };
+  Store.mentorshipOf = function (internId) {
+    var out = null;
+    (cache.mentorships || []).forEach(function (m) {
+      if (m.internId === internId && m.status === "active") out = m;
+    });
+    return out;
+  };
+  Store.sessions = function () { return cache.sessions || []; };
+  Store.roomMessages = function (mentorshipId) {
+    return (cache.rooms || []).filter(function (x) {
+      return x.mentorshipId === mentorshipId;
+    }).sort(function (a, b) { return a.at - b.at; });
+  };
+
+  function openMentorship(mentorId, internId, openedBy) {
+    if (noSession()) return "not signed in";
+    push("mentorships", { mentor_id: mentorId, intern_id: internId,
+                          opened_by: openedBy }).then(function (res) {
+      report(res);
+      if (res && res.data) Store.hydrate();
+    });
+    return "sent";
+  }
+  Store.applyForMentorship = function (mentorId) {
+    var me = Store.currentId();
+    if (!me) return "not signed in";
+    if (Store.mentorshipOf(me)) return "already";
+    return openMentorship(mentorId, me, "intern");
+  };
+  Store.inviteToMentorship = function (internId) {
+    var me = Store.currentId();
+    if (!me) return "not signed in";
+    if (Store.mentorshipOf(internId)) return "already";
+    return openMentorship(me, internId, "mentor");
+  };
+  Store.setMentorship = function (id, patch) {
+    var row = {};
+    if ("status" in patch) row.status = patch.status;
+    (cache.mentorships || []).forEach(function (m) {
+      if (m.id === id) Object.keys(patch).forEach(function (k) { m[k] = patch[k]; });
+    });
+    Store.notifyAll();
+    patch("mentorships", id, row);
+    return Store.mentorship(id);
+  };
+  Store.addSession = function (x) {
+    if (noSession()) return x;
+    push("mentorship_sessions", {
+      mentorship_id: x.mentorshipId, mentor_id: x.mentorId, kind: x.kind || "training",
+      title: x.title, starts_at: x.startsAt, hours: x.hours || 1
+    }).then(function (res) { report(res); if (res && res.data) Store.hydrate(); });
+    return local(cache.sessions, x);
+  };
+  Store.setSession = function (id, patch) {
+    var row = {};
+    if ("attended" in patch) row.attended = !!patch.attended;
+    (cache.sessions || []).forEach(function (x) {
+      if (x.id === id) Object.keys(patch).forEach(function (k) { x[k] = patch[k]; });
+    });
+    Store.notifyAll();
+    patch("mentorship_sessions", id, row);
+  };
+  Store.sayInRoom = function (m) {
+    if (noSession()) return m;
+    push("mentorship_messages", { mentorship_id: m.mentorshipId,
+                                  author_id: m.authorId, body: m.body })
+      .then(function (res) { report(res); if (res && res.data) Store.hydrate(); });
+    m.at = Date.now();
+    return local(cache.rooms, m);
+  };
+
+  /* The charge writes a payment and two payouts, and neither table takes an
+     insert from a browser. So it is one call, and the checks travel with it. */
+  Store.chargeSponsorship = function (mentorshipId, done) {
+    if (noSession()) { if (done) done("not signed in"); return Promise.resolve("not signed in"); }
+    return SB.load().then(function (sb) {
+      return sb.rpc("charge_sponsorship", {
+        p_mentorship: mentorshipId, p_gateway: "demo",
+        p_gateway_ref: mentorshipId + "-" + Date.now(), p_months: 1
+      });
+    }).then(function (res) {
+      if (res && res.error) { report(res); if (done) done("failed"); return "failed"; }
+      var word = Array.isArray(res.data) ? res.data[0] : res.data;
+      if (word && typeof word === "object") word = word.charge_sponsorship;
+      if (word === "paid") Store.hydrate();
+      if (done) done(word);
+      return word;
+    });
+  };
+
   /* ---------------- discount codes ----------------
      Validating and spending are two calls because they are two questions: one
      is "what is this worth" and is asked while somebody types, the other is
@@ -1240,6 +1390,11 @@
     cache.messages = take("messages", inMessage, cache.messages);
     cache.attachments = take("attachments", inAttachment, cache.attachments);
     cache.events = take("request_events", inEvent, cache.events);
+    cache.mentorships = take("mentorships", inMentorship, cache.mentorships);
+    cache.sessions = take("mentorship_sessions", inSession, cache.sessions);
+    cache.rooms = take("mentorship_messages", inRoomSaid, cache.rooms);
+    cache.promos = take("promo_codes", inPromo, cache.promos);
+    cache.redemptions = take("promo_redemptions", inRedemption, cache.redemptions);
 
     if (had("platform_settings")) cache.settings = inSettings(rows.platform_settings);
     if (had("price_bands") && rows.price_bands) {

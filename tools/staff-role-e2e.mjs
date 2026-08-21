@@ -23,7 +23,8 @@ await p.goto(U+'admin.html'); await p.waitForTimeout(600);
 const t = await p.$eval('#main', e=>e.innerText);
 ok('the desk opens', /مكتب الإدارة/.test(t), t.slice(0,70));
 ok('rather than turning them away', !/هذه الصفحة لإدارة المنصة/.test(t));
-ok('the sections are there', (await p.$$('.adm-tab')).length === 7);
+ok('the sections are there', (await p.$$('.adm-tab')).length >= 7,
+   (await p.$$('.adm-tab')).length);
 ok('and the stale key is cleared, not just ignored',
    await p.evaluate(()=>localStorage.getItem('sanad.activeRole')) === null);
 

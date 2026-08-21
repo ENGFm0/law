@@ -132,8 +132,17 @@ Pages.define("lawyer", function (global) {
         : '<p class="small muted" style="margin-top:var(--s-4)" data-i18n="profile.noServices"></p>') +
       '<p class="disclaimer" style="margin-top:var(--s-5)">' + Icons.svg("lock", "icon-sm") +
         '<span data-i18n="profile.securePay"></span></p>' +
-    "</aside>";
+    "</aside>" +
+    // Supervision is not a service on the price list — it is a standing
+    // relationship with a trainee — so it sits beside the booking card rather
+    // than inside it, and only a trainee is shown it.
+    (Session.is("intern") ? C.mentorCard(u, Session.user(),
+       { side: "trainee", link: "requests.html" }) : "");
   }
+
+  /* What the store answers with, said in words the person can act on. */
+  var MENTOR_SAID = { sent: "men.sent", "already": "men.haveOne",
+                      "not offered": "men.notOffered", "not signed in": "men.signIn" };
 
   App.onRender(function () {
     var u = id ? M.user(id) : null;
@@ -166,6 +175,15 @@ Pages.define("lawyer", function (global) {
   host.addEventListener("click", function (ev) {
     var t = ev.target.closest("[data-tab]");
     if (t) { tab = t.getAttribute("data-tab"); App.rerender(); return; }
+
+    var ap = ev.target.closest("[data-mentor-apply]");
+    if (ap) {
+      var word = Store.applyForMentorship(ap.getAttribute("data-mentor-apply"));
+      App.toast(I18N.t(MENTOR_SAID[word] || "men.sent"),
+                word === "sent" ? "check" : "alert");
+      App.rerender();
+      return;
+    }
 
     var ord = ev.target.closest("[data-order]");
     if (!ord) return;

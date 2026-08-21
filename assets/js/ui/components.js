@@ -1044,13 +1044,79 @@
     }).join("") + "</ul>";
   }
 
+  /* ---------- the supervision offer ----------
+     Drawn on a lawyer's page for a trainee, and on a trainee's page for a
+     mentor lawyer — the same relationship approached from either end, so the
+     same card with the sides swapped rather than two cards that will drift.
+
+     What it must never do is show a button that cannot work: somebody already
+     supervised is told they are, somebody who applied is told it is with the
+     other side, and a guest is told to sign in rather than being handed a
+     button that fails. */
+  function mentorCard(mentor, viewer, opts) {
+    var o = opts || {};
+    if (!mentor || !mentor.isMentor) return "";
+    var fee = mentor.mentorshipFee || 0;
+    var side = o.side || "trainee";      // whose page this is being drawn on
+    var link = o.link || null;           // where the workspace lives
+
+    var pair = null;
+    ((Store.mentorships && Store.mentorships()) || []).forEach(function (m) {
+      if (m.mentorId === mentor.id && m.internId === (o.internId ||
+          (viewer ? viewer.id : null))) pair = m;
+    });
+
+    var state = "";
+    if (pair && pair.status === "active") {
+      state = '<p class="small">' + Icons.svg("check", "icon-sm") + " " +
+        App.esc(I18N.t(side === "trainee" ? "men.active" : "men.activeBy")) + "</p>" +
+        (link ? '<a class="btn btn--outline btn--sm" style="margin-top:var(--s-3)" href="' +
+          App.esc(link) + '">' + App.esc(I18N.t("men.open")) + "</a>" : "");
+    } else if (pair && pair.status === "pending") {
+      // `side` is whose page this is; `openedBy` is who moved first, and it
+      // says "intern" where this says "trainee". Comparing the two words
+      // directly told the person who applied that somebody had applied to
+      // them.
+      var mineToWait = pair.openedBy === (side === "trainee" ? "intern" : "mentor");
+      state = '<p class="small muted">' + Icons.svg("clock", "icon-sm") + " " +
+        App.esc(I18N.t(mineToWait ? "men.pending" : "men.pendingIn")) + "</p>";
+    } else if (pair && pair.status === "declined") {
+      state = '<p class="small muted">' + App.esc(I18N.t("men.declined")) + "</p>";
+    } else if (pair && pair.status === "ended") {
+      state = '<p class="small muted">' + App.esc(I18N.t("men.ended")) + "</p>";
+    } else {
+      var act = side === "trainee"
+        ? '<button class="btn btn--primary btn--sm" type="button" data-mentor-apply="' +
+          App.esc(mentor.id) + '">' + Icons.svg("graduation", "icon-sm") +
+          App.esc(I18N.t("men.apply")) + "</button>"
+        : '<button class="btn btn--primary btn--sm" type="button" data-mentor-invite="' +
+          App.esc(o.internId || "") + '">' + Icons.svg("send", "icon-sm") +
+          App.esc(I18N.t("men.invite")) + "</button>";
+      state = act +
+        '<p class="tiny faint" style="margin-top:var(--s-2)">' +
+          App.esc(I18N.t(side === "trainee" ? "men.applyHint" : "men.inviteHint")) + "</p>";
+    }
+
+    return '<section class="card card--pad" style="margin-top:var(--s-5)" data-mentor-card>' +
+      '<div class="row between wrap gap-3">' +
+        '<h2 class="subtitle">' + App.esc(I18N.t("men.title")) + "</h2>" +
+        '<span class="tag">' + App.esc(I18N.t("men.takes")) + "</span>" +
+      "</div>" +
+      (fee
+        ? '<p class="small" style="margin-top:var(--s-2)"><strong>' +
+          App.esc(I18N.t("men.fee", { n: I18N.num(fee) })) + "</strong></p>"
+        : "") +
+      '<div style="margin-top:var(--s-4)">' + state + "</div>" +
+    "</section>";
+  }
+
   global.C = {
     sar: sar, num: num, avatar: avatar, personLink: personLink, stars: stars,
     ratingLine: ratingLine, verifiedMark: verifiedMark, progressBar: progressBar,
     starPicker: starPicker, ratingSummary: ratingSummary, reviewCard: reviewCard,
     lawyerCard: lawyerCard, internCard: internCard, articleCard: articleCard,
     statusPill: statusPill, progress: progress, stepper: stepper,
-    promoBox: promoBox,
+    promoBox: promoBox, mentorCard: mentorCard,
     requestRow: requestRow, empty: empty, sectionHead: sectionHead,
     thread: thread, bubble: bubble, fileChip: fileChip, linkFiles: linkFiles,
     bytes: bytes, wireThread: wireThread, threadDraw: threadDraw,

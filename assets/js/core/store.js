@@ -759,6 +759,29 @@
       return m;
     },
 
+    /** A trainee asking a lawyer to supervise them. Answers with a word: the
+        page has to say why, and "nothing happened" is not a reason. */
+    applyForMentorship: function (mentorId) {
+      var me = Store.currentId();
+      if (!me) return "not signed in";
+      var mentor = global.Models.user(mentorId);
+      if (!mentor || !mentor.isMentor || mentor.status !== "verified") return "not offered";
+      if (Store.mentorshipOf(me)) return "already";
+      Store.openMentorship({ mentorId: mentorId, internId: me, openedBy: "intern",
+                             fee: mentor.mentorshipFee || 0 });
+      return "sent";
+    },
+    /** The same relationship from the other end. */
+    inviteToMentorship: function (internId) {
+      var me = Store.currentId();
+      if (!me) return "not signed in";
+      if (Store.mentorshipOf(internId)) return "already";
+      var mentor = global.Models.user(me);
+      Store.openMentorship({ mentorId: me, internId: internId, openedBy: "mentor",
+                             fee: (mentor && mentor.mentorshipFee) || 0 });
+      return "sent";
+    },
+
     sessions: function () { return work.sessions; },
     addSession: function (s) {
       s.id = s.id || uid("ses");
@@ -773,6 +796,26 @@
       Object.keys(patch).forEach(function (k) { s[k] = patch[k]; });
       notify();
       return s;
+    },
+
+    /** This month's sponsorship. The real backend does this inside a definer
+        function that writes the payment and both payouts; here it is the same
+        arithmetic against the same settings, so the demo shows the figures
+        somebody would actually be charged. */
+    chargeSponsorship: function (mentorshipId, done) {
+      var say = function (word) { if (done) done(word); return word; };
+      var m = byId(work.mentorships, mentorshipId);
+      if (!m) return say("no such mentorship");
+      if (Store.currentId() !== m.internId) return say("not yours");
+      if (m.status !== "active") return say("not active");
+      if (!m.fee) return say("nothing to pay");
+
+      var from = Math.max(m.paidUntil || 0, Date.now());
+      var until = new Date(from);
+      until.setMonth(until.getMonth() + 1);
+      m.paidUntil = until.getTime();
+      notify();
+      return say("paid");
     },
 
     /** The supervision room. Its own list, for the same reason it is its own

@@ -17,8 +17,15 @@ await p.goto(U+'index.html');
 await p.evaluate(()=>localStorage.setItem('sanad.session.user','u-staff'));
 await p.goto(U+'admin.html'); await p.waitForTimeout(600);
 
-console.log('— SEVEN SECTIONS, NOT ONE LONG PAGE —');
-ok('the tabs are there', (await p.$$('.adm-tab')).length === 7);
+console.log('— SECTIONS, NOT ONE LONG PAGE —');
+// Named rather than counted: a bare number breaks every time the desk grows
+// a section, and says nothing about which one is missing when it does.
+const SECTIONS = ['نظرة عامة','الأشخاص','الطلبات','المالية','الإعلانات',
+                  'أكواد الخصم','الخدمات','الإعدادات'];
+const tabs = await p.$$eval('.adm-tab', ns => ns.map(n => n.textContent.trim()));
+ok('every section is on the bar', SECTIONS.every(x => tabs.indexOf(x) !== -1),
+   SECTIONS.filter(x => tabs.indexOf(x) === -1).join(','));
+ok('and nothing else is', tabs.length === SECTIONS.length, tabs.join(','));
 ok('overview opens first', await p.$eval('.adm-tab.is-active span', e=>e.textContent.trim()) === 'نظرة عامة');
 ok('with figures on it', (await p.$$('.kpi')).length === 6);
 ok('and what is waiting on you', /يحتاج قرارك/.test(await body()));
