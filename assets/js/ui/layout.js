@@ -43,9 +43,16 @@
     var people   = { key: "nav.lawyers",  tab: "tab.lawyers",  href: "lawyers.html", id: "lawyers",  icon: "scale" };
     var drafting = { key: "nav.assistant",tab: "tab.assistant",href: "assistant.html",id: "assistant",icon: "sparkle" };
 
+    var webinars = { key: "nav.webinars", tab: "tab.webinars",
+                     href: "webinars.html", id: "webinars", icon: "calendar" };
+
     if (role === "intern") {
       // A trainee sells no services; the slot carries their skills instead.
       services = { key: "nav.skills", tab: "tab.skills", href: "services.html", id: "services", icon: "graduation" };
+      // Workshops are training, which is what a trainee is here for. They get
+      // a slot; a lawyer reaches them from the footer, because hosting one is
+      // an occasional act rather than a daily tool.
+      return [home, requests, webinars, services, blog, people];
     }
     if (role === "guest") {
       return [home, people, services, blog];
@@ -221,6 +228,7 @@
           { href: "lawyers.html",  key: "nav.lawyers" },
           { href: "services.html", key: "nav.services" },
           { href: "quotes.html",   key: "nav.quotes" },
+          { href: "webinars.html", key: "nav.webinars" },
           { href: "blog.html",     key: "nav.blog" }
         ]) +
         col("footer.legal", [

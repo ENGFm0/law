@@ -6,7 +6,8 @@ const __cfg = readFileSync('assets/js/config.js','utf8').replace('backend: "supa
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const PAGES = ['index.html','requests.html','services.html','lawyers.html','blog.html','editor.html',
   'article.html?id=a-1','lawyer.html?id=u-ahmed','intern.html?id=u-layan','quotes.html',
-  'assistant.html','account.html','about.html','login.html','signup.html'];
+  'assistant.html','account.html','about.html','login.html','signup.html',
+  'webinars.html'];
 const USERS = [null,'u-fahad','u-ahmed','u-jaid'];
 const bad = [];
 let n = 0;
