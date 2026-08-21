@@ -226,6 +226,14 @@
       // The same lines the database trigger writes on the real backend, so a
       // timeline reads the same either way.
       var by = Store.currentId();
+      // The first thing the lawyer on a request does to it is them taking it
+      // on — the one moment nothing else records.
+      var req = null;
+      work.requests.forEach(function (x) { if (x.id === id) req = x; });
+      if (by && req && by === req.lawyerId &&
+          !work.events.some(function (e) { return e.requestId === id && e.kind === "taken"; })) {
+        Store.logEvent({ requestId: id, kind: "taken", byId: by });
+      }
       if (patch.status && patch.status !== was.status) {
         Store.logEvent({ requestId: id, kind: "status:" + patch.status,
                          byId: by, detail: was.status || null });

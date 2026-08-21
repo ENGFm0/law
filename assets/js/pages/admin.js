@@ -775,6 +775,8 @@ Pages.define("admin", function (global) {
   var VIEWS = { overview: overview, people: people, requests: requests,
                 money: money, ads: ads, catalogue: catalogue, settings: settings };
 
+  C.wireTimeline(host);
+
   App.onRender(function () {
     if (!Session.is("staff")) { host.innerHTML = denied(); I18N.apply(host); return; }
     var view = VIEWS[tab] || overview;
@@ -795,6 +797,9 @@ Pages.define("admin", function (global) {
     "</div>";
 
     I18N.apply(host);
+    // Private files carry links that expire, so they are filled in after the
+    // draw rather than written into it.
+    C.linkFiles(host);
     var s = $("[data-search]", host);
     if (s) { s.value = query; if (query) { s.focus(); s.setSelectionRange(query.length, query.length); } }
   });

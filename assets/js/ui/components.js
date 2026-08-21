@@ -479,6 +479,26 @@
     return I18N.date(ms) + " · " + two(d.getHours()) + ":" + two(d.getMinutes());
   }
 
+  /** A day heading, so a list of times reads as a day rather than as a
+      column of numbers repeating the same date. */
+  function dayOf(ms) {
+    var d = new Date(ms);
+    return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
+  }
+  function dayLabel(ms) {
+    var today = dayOf(Date.now());
+    var yesterday = dayOf(Date.now() - 86400000);
+    var mine = dayOf(ms);
+    if (mine === today) return I18N.t("tl.today");
+    if (mine === yesterday) return I18N.t("tl.yesterday");
+    return I18N.date(ms);
+  }
+  function clockOf(ms) {
+    var d = new Date(ms);
+    var two = function (n) { return (n < 10 ? "0" : "") + n; };
+    return two(d.getHours()) + ":" + two(d.getMinutes());
+  }
+
   function timelineLine(e) {
     var who = M.user(e.byId);
     var label = I18N.t("tl." + String(e.kind).split(":")[0]);
@@ -497,14 +517,16 @@
       body = e.detail;
     }
 
+    if (e.price) body = I18N.t("tl.priceWas", { n: I18N.num(e.price) });
+
     return '<li class="tl__item' + (e.audience === "internal" ? " tl__item--internal" : "") + '">' +
       '<span class="tl__dot"></span>' +
+      '<span class="tl__time num" dir="ltr">' + App.esc(clockOf(e.at)) + "</span>" +
       '<div class="grow" style="min-width:0">' +
         '<div class="row gap-2 wrap">' +
           "<strong class=\"small\">" + App.esc(label) + "</strong>" +
           (e.audience === "internal"
             ? '<span class="tag">' + App.esc(I18N.t("tl.internal")) + "</span>" : "") +
-          '<span class="tiny faint">' + App.esc(stamp(e.at)) + "</span>" +
           (who ? '<span class="tiny muted">' + App.esc(I18N.t("tl.by")) + " " +
             App.esc(App.tx(who.name)) + "</span>" : "") +
         "</div>" +
@@ -515,19 +537,67 @@
       "</div></li>";
   }
 
+  /* Which half of the story is on screen. Only ever offered to somebody who
+     may read both — the client is never shown the choice, because for them
+     there is only one. */
+  var tlSide = {};
   function timeline(r, opts) {
     var o = opts || {};
-    var lines = M.timeline(r, o);
-    return '<section class="tl">' +
+    var both = o.internal === true;
+    var side = both ? (tlSide[r.id] || "all") : "all";
+    var lines = M.timeline(r, o).filter(function (e) {
+      if (!both || side === "all") return true;
+      var isInternal = e.audience === "internal";
+      return side === "internal" ? isInternal : !isInternal;
+    });
+
+    // Grouped by day: a heading, then the times under it. Twenty lines each
+    // repeating the same date is a table pretending to be a story.
+    var html = "", lastDay = null;
+    lines.forEach(function (e) {
+      var day = dayOf(e.at);
+      if (day !== lastDay) {
+        if (lastDay !== null) html += "</ol>";
+        html += '<p class="tl__day">' + App.esc(dayLabel(e.at)) + '</p><ol class="tl__list">';
+        lastDay = day;
+      }
+      html += timelineLine(e);
+    });
+    if (lastDay !== null) html += "</ol>";
+
+    var tab = function (id, key) {
+      return '<button type="button" class="chip' + (side === id ? " is-active" : "") +
+        '" data-tl-side="' + id + '" data-tl-for="' + App.esc(r.id) + '">' +
+        App.esc(I18N.t(key)) + "</button>";
+    };
+
+    return '<section class="tl" data-tl="' + App.esc(r.id) + '">' +
       '<div class="row between wrap gap-3">' +
         '<h3 class="subtitle">' + App.esc(I18N.t(o.titleKey || "tl.title")) + "</h3>" +
         '<span class="tiny muted num" dir="ltr">' + App.esc(M.refOf(r)) + "</span>" +
       "</div>" +
+      (both
+        ? '<div class="row gap-2 wrap" style="margin-top:var(--s-3)">' +
+            tab("all", "tl.all") + tab("parties", "tl.withClient") +
+            tab("internal", "tl.onlyInternal") + "</div>"
+        : "") +
       (lines.length
-        ? '<ol class="tl__list">' + lines.map(timelineLine).join("") + "</ol>"
+        ? html
         : '<p class="small muted" style="margin-top:var(--s-3)">' +
           App.esc(I18N.t("tl.empty")) + "</p>") +
     "</section>";
+  }
+
+  /** The side tabs, wired once wherever a timeline is drawn. */
+  function wireTimeline(host) {
+    if (!host || host.getAttribute("data-tl-wired")) return;
+    host.setAttribute("data-tl-wired", "1");
+    host.addEventListener("click", function (ev) {
+      var tab = ev.target.closest("[data-tl-side]");
+      if (!tab) return;
+      tlSide[tab.getAttribute("data-tl-for")] = tab.getAttribute("data-tl-side");
+      App.rerender();
+    });
   }
 
   /** Who is on a request, said plainly. Names link to their profile, and for
@@ -736,6 +806,7 @@
     thread: thread, bubble: bubble, fileChip: fileChip, linkFiles: linkFiles,
     bytes: bytes, wireThread: wireThread, threadDraw: threadDraw,
     timeline: timeline, parties: parties, stamp: stamp,
+    wireTimeline: wireTimeline,
     googleButton: googleButton
   };
 })(window);

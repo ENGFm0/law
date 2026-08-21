@@ -595,11 +595,20 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
    lines are tinted so a desk reading both threads can see at a glance which
    half the client was never shown. */
 .tl { margin-top: var(--s-6); }
-.tl__list { list-style: none; margin-top: var(--s-4); padding: 0; }
+.tl__day {
+  font-size: .75rem; font-weight: 600; color: var(--text-muted);
+  margin: var(--s-5) 0 var(--s-2); padding-inline-start: var(--s-1);
+}
+.tl__day:first-of-type { margin-top: var(--s-4); }
+.tl__list { list-style: none; padding: 0; }
 .tl__item {
-  display: flex; gap: var(--s-4); padding: var(--s-3) 0;
+  display: flex; gap: var(--s-3); padding: var(--s-3) 0;
   border-inline-start: 2px solid var(--border); padding-inline-start: var(--s-5);
   margin-inline-start: 5px; position: relative;
+}
+.tl__time {
+  flex: none; font-size: .75rem; color: var(--text-muted);
+  padding-top: 1px; min-width: 40px;
 }
 .tl__item--internal { background: var(--surface-2); border-radius: var(--r); }
 .tl__dot {
@@ -3180,6 +3189,20 @@ window.SANAD_CONFIG = {
       "dash.qPool": "مهام مفتوحة",
       "dash.qHoursLeft": "ساعة للشهادة",
       "dash.qCerts": "شهادات",
+      "tl.brief_posted": "نشر العميل طلبه للمزايدة",
+      "tl.offer_made": "قدّم المحامي عرضه",
+      "tl.offer_auto": "قُدّم عرض المحامي تلقائياً",
+      "tl.offer_taken": "قَبِل العميل العرض وبدأ الطلب",
+      "tl.taken": "استلم المحامي الطلب",
+      "tl.said": "رسالة",
+      "tl.today": "اليوم",
+      "tl.yesterday": "أمس",
+      "tl.all": "كل شيء",
+      "tl.withClient": "مع العميل",
+      "tl.onlyInternal": "الداخلية",
+      "tl.open": "المسار",
+      "tl.close": "أغلق المسار",
+      "tl.priceWas": "بـ {n} ر.س",
     },
 
     en: {
@@ -4514,6 +4537,20 @@ window.SANAD_CONFIG = {
       "dash.qPool": "Open tasks",
       "dash.qHoursLeft": "Hours to the certificate",
       "dash.qCerts": "Certificates",
+      "tl.brief_posted": "The client posted the brief",
+      "tl.offer_made": "The lawyer made an offer",
+      "tl.offer_auto": "An automatic offer was made",
+      "tl.offer_taken": "The client took the offer",
+      "tl.taken": "The lawyer took it on",
+      "tl.said": "Message",
+      "tl.today": "Today",
+      "tl.yesterday": "Yesterday",
+      "tl.all": "Everything",
+      "tl.withClient": "With the client",
+      "tl.onlyInternal": "Internal only",
+      "tl.open": "The path",
+      "tl.close": "Close",
+      "tl.priceWas": "at {n} SAR",
     }
   };
 
@@ -4873,6 +4910,14 @@ window.SANAD_CONFIG = {
       // The same lines the database trigger writes on the real backend, so a
       // timeline reads the same either way.
       var by = Store.currentId();
+      // The first thing the lawyer on a request does to it is them taking it
+      // on — the one moment nothing else records.
+      var req = null;
+      work.requests.forEach(function (x) { if (x.id === id) req = x; });
+      if (by && req && by === req.lawyerId &&
+          !work.events.some(function (e) { return e.requestId === id && e.kind === "taken"; })) {
+        Store.logEvent({ requestId: id, kind: "taken", byId: by });
+      }
       if (patch.status && patch.status !== was.status) {
         Store.logEvent({ requestId: id, kind: "status:" + patch.status,
                          byId: by, detail: was.status || null });
@@ -6343,8 +6388,27 @@ window.SANAD_CONFIG = {
     if (!id) return [];
     var out = [];
 
+    // Where a request came from an auction, the story starts before the
+    // request exists: the brief the client posted, the offer that won it, and
+    // the moment they took it. All three are already rows — the quote, the
+    // offer, and the request's own creation — so none of them needs recording
+    // twice, only reading in order.
+    var q = quotes().filter(function (x) { return x.requestId === id; })[0];
+    if (q) {
+      out.push({ at: q.at, kind: "brief_posted", byId: q.clientId, sort: -1 });
+      var won = offersOn(q.id).filter(function (x) { return x.lawyer === q.acceptedBy; })[0];
+      if (won) {
+        out.push({ at: won.at, kind: won.auto ? "offer_auto" : "offer_made",
+                   byId: won.lawyer, price: won.price, sort: -1 });
+      }
+    }
+
     ((Store.events && Store.events(id)) || []).forEach(function (e) {
-      out.push({ at: e.at, kind: e.kind, byId: e.byId, detail: e.detail, sort: 0 });
+      // A request born of an accepted offer was "placed" at the moment the
+      // client took that offer, which is a different sentence.
+      var kind = (q && e.kind === "placed") ? "offer_taken" : e.kind;
+      if (q && kind === "lawyer_set") return;      // said by the offer above
+      out.push({ at: e.at, kind: kind, byId: e.byId, detail: e.detail, sort: 0 });
     });
 
     if (o.messages !== false) {
@@ -11057,6 +11121,26 @@ window.SANAD_CONFIG = {
     return I18N.date(ms) + " · " + two(d.getHours()) + ":" + two(d.getMinutes());
   }
 
+  /** A day heading, so a list of times reads as a day rather than as a
+      column of numbers repeating the same date. */
+  function dayOf(ms) {
+    var d = new Date(ms);
+    return d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
+  }
+  function dayLabel(ms) {
+    var today = dayOf(Date.now());
+    var yesterday = dayOf(Date.now() - 86400000);
+    var mine = dayOf(ms);
+    if (mine === today) return I18N.t("tl.today");
+    if (mine === yesterday) return I18N.t("tl.yesterday");
+    return I18N.date(ms);
+  }
+  function clockOf(ms) {
+    var d = new Date(ms);
+    var two = function (n) { return (n < 10 ? "0" : "") + n; };
+    return two(d.getHours()) + ":" + two(d.getMinutes());
+  }
+
   function timelineLine(e) {
     var who = M.user(e.byId);
     var label = I18N.t("tl." + String(e.kind).split(":")[0]);
@@ -11075,14 +11159,16 @@ window.SANAD_CONFIG = {
       body = e.detail;
     }
 
+    if (e.price) body = I18N.t("tl.priceWas", { n: I18N.num(e.price) });
+
     return '<li class="tl__item' + (e.audience === "internal" ? " tl__item--internal" : "") + '">' +
       '<span class="tl__dot"></span>' +
+      '<span class="tl__time num" dir="ltr">' + App.esc(clockOf(e.at)) + "</span>" +
       '<div class="grow" style="min-width:0">' +
         '<div class="row gap-2 wrap">' +
           "<strong class=\"small\">" + App.esc(label) + "</strong>" +
           (e.audience === "internal"
             ? '<span class="tag">' + App.esc(I18N.t("tl.internal")) + "</span>" : "") +
-          '<span class="tiny faint">' + App.esc(stamp(e.at)) + "</span>" +
           (who ? '<span class="tiny muted">' + App.esc(I18N.t("tl.by")) + " " +
             App.esc(App.tx(who.name)) + "</span>" : "") +
         "</div>" +
@@ -11093,19 +11179,67 @@ window.SANAD_CONFIG = {
       "</div></li>";
   }
 
+  /* Which half of the story is on screen. Only ever offered to somebody who
+     may read both — the client is never shown the choice, because for them
+     there is only one. */
+  var tlSide = {};
   function timeline(r, opts) {
     var o = opts || {};
-    var lines = M.timeline(r, o);
-    return '<section class="tl">' +
+    var both = o.internal === true;
+    var side = both ? (tlSide[r.id] || "all") : "all";
+    var lines = M.timeline(r, o).filter(function (e) {
+      if (!both || side === "all") return true;
+      var isInternal = e.audience === "internal";
+      return side === "internal" ? isInternal : !isInternal;
+    });
+
+    // Grouped by day: a heading, then the times under it. Twenty lines each
+    // repeating the same date is a table pretending to be a story.
+    var html = "", lastDay = null;
+    lines.forEach(function (e) {
+      var day = dayOf(e.at);
+      if (day !== lastDay) {
+        if (lastDay !== null) html += "</ol>";
+        html += '<p class="tl__day">' + App.esc(dayLabel(e.at)) + '</p><ol class="tl__list">';
+        lastDay = day;
+      }
+      html += timelineLine(e);
+    });
+    if (lastDay !== null) html += "</ol>";
+
+    var tab = function (id, key) {
+      return '<button type="button" class="chip' + (side === id ? " is-active" : "") +
+        '" data-tl-side="' + id + '" data-tl-for="' + App.esc(r.id) + '">' +
+        App.esc(I18N.t(key)) + "</button>";
+    };
+
+    return '<section class="tl" data-tl="' + App.esc(r.id) + '">' +
       '<div class="row between wrap gap-3">' +
         '<h3 class="subtitle">' + App.esc(I18N.t(o.titleKey || "tl.title")) + "</h3>" +
         '<span class="tiny muted num" dir="ltr">' + App.esc(M.refOf(r)) + "</span>" +
       "</div>" +
+      (both
+        ? '<div class="row gap-2 wrap" style="margin-top:var(--s-3)">' +
+            tab("all", "tl.all") + tab("parties", "tl.withClient") +
+            tab("internal", "tl.onlyInternal") + "</div>"
+        : "") +
       (lines.length
-        ? '<ol class="tl__list">' + lines.map(timelineLine).join("") + "</ol>"
+        ? html
         : '<p class="small muted" style="margin-top:var(--s-3)">' +
           App.esc(I18N.t("tl.empty")) + "</p>") +
     "</section>";
+  }
+
+  /** The side tabs, wired once wherever a timeline is drawn. */
+  function wireTimeline(host) {
+    if (!host || host.getAttribute("data-tl-wired")) return;
+    host.setAttribute("data-tl-wired", "1");
+    host.addEventListener("click", function (ev) {
+      var tab = ev.target.closest("[data-tl-side]");
+      if (!tab) return;
+      tlSide[tab.getAttribute("data-tl-for")] = tab.getAttribute("data-tl-side");
+      App.rerender();
+    });
   }
 
   /** Who is on a request, said plainly. Names link to their profile, and for
@@ -11314,6 +11448,7 @@ window.SANAD_CONFIG = {
     thread: thread, bubble: bubble, fileChip: fileChip, linkFiles: linkFiles,
     bytes: bytes, wireThread: wireThread, threadDraw: threadDraw,
     timeline: timeline, parties: parties, stamp: stamp,
+    wireTimeline: wireTimeline,
     googleButton: googleButton
   };
 })(window);
@@ -11741,6 +11876,8 @@ Pages.define("requests", function (global) {
   var open = null;      // request id whose editor/detail panel is expanded
   // Which of the two conversations the lawyer is looking at.
   var side = "parties";
+  // Which request has its path open on the list, if any.
+  var path = null;
   var rating = {};      // requestId -> stars picked but not yet sent
   var arguing = null;   // requestId whose refusal form is open
   var revising = null;  // requestId whose revision form is open
@@ -11857,7 +11994,10 @@ Pages.define("requests", function (global) {
         var live = M.isLive(r) &&
           ["delivered", "completed", "cancelled"].indexOf(st.status) === -1;
         var said = Store.messages(r.id, "parties").length;
-        return (live
+        return '<button class="btn btn--ghost btn--sm" type="button" data-path="' + esc(r.id) + '">' +
+            Icons.svg("clock", "icon-sm") +
+            esc(I18N.t(path === r.id ? "tl.close" : "tl.open")) + "</button>" +
+          (live
             ? '<a class="btn btn--primary btn--sm" href="call.html?id=' + esc(r.id) + '">' +
               Icons.svg(chan.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>"
             : "") +
@@ -11882,6 +12022,7 @@ Pages.define("requests", function (global) {
     // question about an agreed piece of work — where has it got to — and
     // answering it should not require finding a button first.
     '<div class="track-slot">' + C.progress(r, "client") + "</div>" +
+    (path === r.id ? '<div class="admin-case">' + C.timeline(r, { internal: false }) + "</div>" : "") +
     (open === r.id ? clientDetail(r, st, lawyer) : "") + "</div>";
   }
 
@@ -12172,9 +12313,16 @@ Pages.define("requests", function (global) {
                   '<span class="status status--' + st.cls + '">' + esc(I18N.t(st.key)) + "</span>" +
                   '<strong class="tiny"><span class="num">' + I18N.num(r.price) + "</span> " +
                     esc(I18N.t("common.sar")) + "</strong>" +
-                  '<div class="inbox-row__actions">' + lawyerActions(r) + "</div>" +
+                  '<div class="inbox-row__actions">' +
+                    '<button class="btn btn--ghost btn--sm" type="button" data-path="' +
+                      esc(r.id) + '">' + Icons.svg("clock", "icon-sm") +
+                      esc(I18N.t(path === r.id ? "tl.close" : "tl.open")) + "</button>" +
+                    lawyerActions(r) + "</div>" +
                 "</div></div>" +
               '<div class="track-slot">' + C.progress(r, "lawyer") + "</div>" +
+              (path === r.id
+                ? '<div class="admin-case">' + C.timeline(r, { internal: true }) + "</div>"
+                : "") +
               (open === r.id
                 ? (M.requestState(r).status === "open_to_interns" && !M.requestState(r).assignedTo
                     ? applicantsPanel(r)
@@ -12457,6 +12605,7 @@ Pages.define("requests", function (global) {
     C.threadDraw(host);
   });
   C.wireThread(host);
+  C.wireTimeline(host);
 
   /** Put the conversation where the eye is, and the cursor in it. */
   function goToThread() {
@@ -12495,6 +12644,9 @@ Pages.define("requests", function (global) {
       });
       return;
     }
+
+    var ph = hit("data-path");
+    if (ph) { path = path === ph ? null : ph; App.rerender(); return; }
 
     var det = hit("data-detail");
     if (det) {
@@ -16921,6 +17073,8 @@ Pages.define("admin", function (global) {
   var VIEWS = { overview: overview, people: people, requests: requests,
                 money: money, ads: ads, catalogue: catalogue, settings: settings };
 
+  C.wireTimeline(host);
+
   App.onRender(function () {
     if (!Session.is("staff")) { host.innerHTML = denied(); I18N.apply(host); return; }
     var view = VIEWS[tab] || overview;
@@ -16941,6 +17095,9 @@ Pages.define("admin", function (global) {
     "</div>";
 
     I18N.apply(host);
+    // Private files carry links that expire, so they are filled in after the
+    // draw rather than written into it.
+    C.linkFiles(host);
     var s = $("[data-search]", host);
     if (s) { s.value = query; if (query) { s.focus(); s.setSelectionRange(query.length, query.length); } }
   });

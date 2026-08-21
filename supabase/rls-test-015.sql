@@ -99,5 +99,38 @@ select case when count(*) = 1 then 'PASS' else 'FAIL' end
   || '  and the record says when it was raised' from public.request_events
   where kind = 'disputed' and request_id = 'aaaa2222-0000-0000-0000-00000000aaaa';
 
+\echo '── and when the lawyer took it on ──'
+reset role;
+delete from public.request_events where request_id = 'bbbb3333-0000-0000-0000-00000000bbbb';
+delete from public.requests where id = 'bbbb3333-0000-0000-0000-00000000bbbb';
+insert into public.requests (id, client_id, lawyer_id, type_id, title, price)
+  values ('bbbb3333-0000-0000-0000-00000000bbbb','11111111-0000-0000-0000-000000000001',
+          '22222222-0000-0000-0000-000000000002','consult','taken test', 250);
+
+set role authenticated;
+set request.jwt.claim.sub = '11111111-0000-0000-0000-000000000001';
+update public.requests set status = 'in_progress' where id = 'bbbb3333-0000-0000-0000-00000000bbbb';
+reset role;
+select case when count(*) = 0 then 'PASS' else 'FAIL' end
+  || '  the client touching it is not the lawyer taking it on'
+  from public.request_events
+ where kind = 'taken' and request_id = 'bbbb3333-0000-0000-0000-00000000bbbb';
+
+set role authenticated;
+set request.jwt.claim.sub = '22222222-0000-0000-0000-000000000002';
+update public.requests set status = 'drafted' where id = 'bbbb3333-0000-0000-0000-00000000bbbb';
+update public.requests set status = 'delivered' where id = 'bbbb3333-0000-0000-0000-00000000bbbb';
+reset role;
+select case when count(*) = 1 then 'PASS' else 'FAIL' end
+  || '  their first act on it is recorded, once' from public.request_events
+ where kind = 'taken' and request_id = 'bbbb3333-0000-0000-0000-00000000bbbb';
+select case when by_id = '22222222-0000-0000-0000-000000000002' then 'PASS' else 'FAIL' end
+  || '  naming them' from public.request_events
+ where kind = 'taken' and request_id = 'bbbb3333-0000-0000-0000-00000000bbbb';
+
+select case when count(*) = 0 then 'PASS' else 'FAIL' end
+  || '  and nothing said in a thread is copied into the record'
+  from public.request_events where kind like 'said%';
+
 reset role;
 set request.jwt.claim.sub = '';

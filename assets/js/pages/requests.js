@@ -20,6 +20,8 @@ Pages.define("requests", function (global) {
   var open = null;      // request id whose editor/detail panel is expanded
   // Which of the two conversations the lawyer is looking at.
   var side = "parties";
+  // Which request has its path open on the list, if any.
+  var path = null;
   var rating = {};      // requestId -> stars picked but not yet sent
   var arguing = null;   // requestId whose refusal form is open
   var revising = null;  // requestId whose revision form is open
@@ -136,7 +138,10 @@ Pages.define("requests", function (global) {
         var live = M.isLive(r) &&
           ["delivered", "completed", "cancelled"].indexOf(st.status) === -1;
         var said = Store.messages(r.id, "parties").length;
-        return (live
+        return '<button class="btn btn--ghost btn--sm" type="button" data-path="' + esc(r.id) + '">' +
+            Icons.svg("clock", "icon-sm") +
+            esc(I18N.t(path === r.id ? "tl.close" : "tl.open")) + "</button>" +
+          (live
             ? '<a class="btn btn--primary btn--sm" href="call.html?id=' + esc(r.id) + '">' +
               Icons.svg(chan.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>"
             : "") +
@@ -161,6 +166,7 @@ Pages.define("requests", function (global) {
     // question about an agreed piece of work — where has it got to — and
     // answering it should not require finding a button first.
     '<div class="track-slot">' + C.progress(r, "client") + "</div>" +
+    (path === r.id ? '<div class="admin-case">' + C.timeline(r, { internal: false }) + "</div>" : "") +
     (open === r.id ? clientDetail(r, st, lawyer) : "") + "</div>";
   }
 
@@ -451,9 +457,16 @@ Pages.define("requests", function (global) {
                   '<span class="status status--' + st.cls + '">' + esc(I18N.t(st.key)) + "</span>" +
                   '<strong class="tiny"><span class="num">' + I18N.num(r.price) + "</span> " +
                     esc(I18N.t("common.sar")) + "</strong>" +
-                  '<div class="inbox-row__actions">' + lawyerActions(r) + "</div>" +
+                  '<div class="inbox-row__actions">' +
+                    '<button class="btn btn--ghost btn--sm" type="button" data-path="' +
+                      esc(r.id) + '">' + Icons.svg("clock", "icon-sm") +
+                      esc(I18N.t(path === r.id ? "tl.close" : "tl.open")) + "</button>" +
+                    lawyerActions(r) + "</div>" +
                 "</div></div>" +
               '<div class="track-slot">' + C.progress(r, "lawyer") + "</div>" +
+              (path === r.id
+                ? '<div class="admin-case">' + C.timeline(r, { internal: true }) + "</div>"
+                : "") +
               (open === r.id
                 ? (M.requestState(r).status === "open_to_interns" && !M.requestState(r).assignedTo
                     ? applicantsPanel(r)
@@ -736,6 +749,7 @@ Pages.define("requests", function (global) {
     C.threadDraw(host);
   });
   C.wireThread(host);
+  C.wireTimeline(host);
 
   /** Put the conversation where the eye is, and the cursor in it. */
   function goToThread() {
@@ -774,6 +788,9 @@ Pages.define("requests", function (global) {
       });
       return;
     }
+
+    var ph = hit("data-path");
+    if (ph) { path = path === ph ? null : ph; App.rerender(); return; }
 
     var det = hit("data-detail");
     if (det) {

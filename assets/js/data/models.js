@@ -291,8 +291,27 @@
     if (!id) return [];
     var out = [];
 
+    // Where a request came from an auction, the story starts before the
+    // request exists: the brief the client posted, the offer that won it, and
+    // the moment they took it. All three are already rows — the quote, the
+    // offer, and the request's own creation — so none of them needs recording
+    // twice, only reading in order.
+    var q = quotes().filter(function (x) { return x.requestId === id; })[0];
+    if (q) {
+      out.push({ at: q.at, kind: "brief_posted", byId: q.clientId, sort: -1 });
+      var won = offersOn(q.id).filter(function (x) { return x.lawyer === q.acceptedBy; })[0];
+      if (won) {
+        out.push({ at: won.at, kind: won.auto ? "offer_auto" : "offer_made",
+                   byId: won.lawyer, price: won.price, sort: -1 });
+      }
+    }
+
     ((Store.events && Store.events(id)) || []).forEach(function (e) {
-      out.push({ at: e.at, kind: e.kind, byId: e.byId, detail: e.detail, sort: 0 });
+      // A request born of an accepted offer was "placed" at the moment the
+      // client took that offer, which is a different sentence.
+      var kind = (q && e.kind === "placed") ? "offer_taken" : e.kind;
+      if (q && kind === "lawyer_set") return;      // said by the offer above
+      out.push({ at: e.at, kind: kind, byId: e.byId, detail: e.detail, sort: 0 });
     });
 
     if (o.messages !== false) {

@@ -34,12 +34,18 @@ await p.goto(U+'index.html');
    talked about on both sides, then objected to. */
 await p.evaluate(() => {
   Store.resetWork();
+  // Acted out in the order it really happens, and by whoever really does it:
+  // the record names the person who made each change, so a setup that does
+  // everything as one account records a story that never happened.
+  localStorage.setItem('sanad.session.user', 'u-fahad');
   const r = Store.addRequest({ clientId:'u-fahad', lawyerId:'u-ahmed', typeId:'consult',
     channel:'text', title:{ar:'مذكرة اعتراض',en:'Memo'},
     brief:{ar:'العقد فيه بند جزائي غير نظامي',en:'An unlawful penalty clause'},
     price:250, status:'in_progress', hours:4 });
   localStorage.setItem('rid', r.id);
   Store.sendMessage({ requestId:r.id, authorId:'u-fahad', body:'مرفق العقد كاملاً' });
+
+  localStorage.setItem('sanad.session.user', 'u-ahmed');
   Store.setRequest(r.id, { assignedTo:'u-jaid', status:'with_intern', internShare:40 });
   Store.sendMessage({ requestId:r.id, authorId:'u-ahmed', audience:'internal',
                       body:'ركّز على المادة 74' });
@@ -61,6 +67,35 @@ ok('and that it went to a trainee', /وُجّه إلى المتدرب/.test(t), 
 ok('every line is dated to the minute', /\d{1,2}:\d\d/.test(t), t.match(/[^\n]*\d{1,2}:\d\d[^\n]*/));
 ok('the client is not shown the internal note', !/المادة 74/.test(t));
 
+console.log('— THE PATH IS ON THE LIST, NOT BEHIND A PANEL —');
+await open('requests.html', 'u-fahad');
+await p.click(`[data-path="${rid}"]`); await p.waitForTimeout(500);
+t = await body();
+ok('a button opens the path from the row', /مسار الطلب|كل ما دار/.test(t));
+ok('grouped under a day', /اليوم|أمس|\d{4}/.test(t));
+ok('with a clock on every line', /\d\d:\d\d/.test(t), t.match(/\d\d:\d\d/g));
+ok('and it closes again', true);
+await p.click(`[data-path="${rid}"]`); await p.waitForTimeout(400);
+
+console.log('— THE LAWYER READS BOTH SIDES, APART OR TOGETHER —');
+await open('requests.html', 'u-ahmed');
+await p.click(`[data-path="${rid}"]`); await p.waitForTimeout(500);
+t = await body();
+ok('the lawyer sees the path too', /مسار الطلب/.test(t));
+ok('with the client’s side in it', /رسالة/.test(t));
+ok('and a way to read the two apart', /مع العميل/.test(t) && /الداخلية/.test(t));
+await p.click(`[data-tl-side="internal"][data-tl-for="${rid}"]`); await p.waitForTimeout(400);
+t = await body();
+ok('the internal side alone leaves the client out', !/أُنشئ الطلب/.test(t), t.slice(0,140));
+await p.click(`[data-tl-side="parties"][data-tl-for="${rid}"]`); await p.waitForTimeout(400);
+t = await body();
+ok('and the client side leaves the internal out', !/المادة 74/.test(t));
+await p.click(`[data-tl-side="all"][data-tl-for="${rid}"]`); await p.waitForTimeout(400);
+
+console.log('— WHEN THE LAWYER TOOK IT ON —');
+ok('the moment is on the record', /استلم المحامي الطلب/.test(await body()),
+   (await body()).slice(0,200));
+
 console.log('— THE TRAINEE IS HANDED THE CASE, NOT A TITLE —');
 await open('requests.html', 'u-jaid');
 await p.click(`[data-task-open="${rid}"]`).catch(()=>{});
@@ -76,7 +111,9 @@ console.log('— AN OBJECTION REACHES THE DESK WITH EVERYTHING —');
 // Now the work is delivered, revised, and objected to.
 await p.evaluate(() => {
   const id = localStorage.getItem('rid');
+  localStorage.setItem('sanad.session.user', 'u-ahmed');
   Store.setRequest(id, { status:'delivered', body:'المذكرة الجاهزة' });
+  localStorage.setItem('sanad.session.user', 'u-fahad');
   Store.setRequest(id, { revisions:1, revisionNote:'ناقص الإشارة للائحة' });
   Store.openDispute({ requestId:id, byId:'u-fahad', reason:'المذكرة لا تعالج البند الجزائي' });
 });
