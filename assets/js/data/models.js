@@ -535,6 +535,19 @@
     });
   }
 
+  /** Screenings nobody has picked up. Not the same pool as the one above: a
+      routed task belongs to a lawyer already and pays a share of a price,
+      while a screening belongs to nobody yet, pays nothing, and is claimed by
+      the trainee rather than handed to them. */
+  function openScreenings() {
+    return requests().filter(function (r) {
+      if (r.typeId !== SCREENING) return false;
+      var st = requestState(r);
+      return !st.assignedTo &&
+        ["new", "quoting", "in_progress"].indexOf(st.status) !== -1;
+    });
+  }
+
   /* ---------- what a trainee is paid ----------
      Two ways, and the standing one wins. Without an agreement each routed task
      carries its own percentage of what the client paid; with one, the pair have
@@ -1498,6 +1511,7 @@
     requests: requests, request: request, requestState: requestState,
     requestsForClient: requestsForClient, requestsForLawyer: requestsForLawyer,
     requestsForIntern: requestsForIntern, openInternTasks: openInternTasks,
+    openScreenings: openScreenings,
     CERT_HOURS: CERT_HOURS, hoursOf: hoursOf, certProgress: certProgress,
     endorsementsFor: endorsementsFor,
     articles: articles, allArticles: allArticles, article: article, articlesBy: articlesBy,

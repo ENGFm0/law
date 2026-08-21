@@ -247,6 +247,20 @@
       if (patch.status && patch.status !== was.status) {
         Store.logEvent({ requestId: id, kind: "status:" + patch.status,
                          byId: by, detail: was.status || null });
+
+        // A screening that ends with "yes, you have a case" is the one moment
+        // the client is ready to hear what the full thing costs. The offer is
+        // a real code cut for that person — one use, thirty days — mirroring
+        // offer_conversion() in migration 020 rather than being a banner.
+        if (patch.status === "completed" && req && req.typeId === "free_screening" &&
+            req.lawyerId) {
+          var offer = "SND" + String(id).replace(/-/g, "").slice(0, 8).toUpperCase();
+          if (!Store.promoByCode(offer)) {
+            Store.addPromo({ code: offer, discountPct: 10, clientId: req.clientId,
+                             usageLimit: 1, createdBy: req.lawyerId,
+                             expiresAt: Date.now() + 30 * 86400000 });
+          }
+        }
       }
       if ("assignedTo" in patch && patch.assignedTo !== was.assignedTo) {
         Store.logEvent({ requestId: id,
@@ -757,6 +771,23 @@
                      type: "mentorship", ref: m.id });
       notify();
       return m;
+    },
+
+    /** A trainee claiming a screening. The mentor goes on the request with
+        them, because the person who answers is the person answerable for the
+        answer — the same rule guard_screening() enforces on the real backend. */
+    takeScreening: function (requestId) {
+      var me = Store.currentId();
+      if (!me) return "not signed in";
+      var m = Store.mentorshipOf(me);
+      if (!m) return "no mentor";
+      var r = byId(work.requests, requestId);
+      if (!r || r.typeId !== "free_screening") return "not a screening";
+      var st = work.requestStates[requestId] || {};
+      if (st.assignedTo) return "taken";
+      r.lawyerId = m.mentorId;
+      Store.setRequest(requestId, { assignedTo: me, status: "with_intern" });
+      return "yours";
     },
 
     /** A trainee asking a lawyer to supervise them. Answers with a word: the

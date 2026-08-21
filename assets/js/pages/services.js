@@ -127,9 +127,44 @@ Pages.define("services", function (global) {
       '<header style="margin-bottom:var(--s-8)">' +
         '<h1 class="headline" data-i18n="svc.routeTitle"></h1>' +
         '<p class="lead" data-i18n="svc.routeLead"></p></header>' +
+      screeningCard() +
       routeCards() +
       (filters.type ? lawyersForType() : typePicker()) +
     "</div>";
+  }
+
+  /* The free first look. It sits above the price list rather than inside it,
+     because somebody who does not yet know whether they have a case cannot
+     choose from a list of things to buy — and because a category priced at
+     zero in a row of priced ones reads as a mistake. */
+  function screeningCard() {
+    var me = Session.user();
+    var open = me && M.requests().filter(function (r) {
+      return r.clientId === me.id && M.isScreening(r) &&
+        ["completed", "cancelled", "refunded"].indexOf(M.requestState(r).status) === -1;
+    })[0];
+
+    return '<section class="card card--pad card--rule-gold" ' +
+        'style="margin-bottom:var(--s-8)" data-screening>' +
+      '<div class="row between wrap gap-3">' +
+        '<h2 class="subtitle">' + esc(I18N.t("scr.title")) + "</h2>" +
+        '<span class="tag">' + esc(I18N.t("scr.free")) + "</span>" +
+      "</div>" +
+      '<p class="small muted" style="margin-top:var(--s-3);max-width:60ch">' +
+        esc(I18N.t("scr.lead")) + "</p>" +
+      (open
+        ? '<p class="small" style="margin-top:var(--s-4)">' +
+          Icons.svg("clock", "icon-sm") + " " + esc(I18N.t("scr.oneOpen")) +
+          ' <a href="requests.html">' + esc(I18N.t("nav.requests")) + "</a></p>"
+        : '<div style="margin-top:var(--s-4)">' +
+            '<textarea class="input" rows="2" data-screening-brief placeholder="' +
+              esc(I18N.t("scr.what")) + '"></textarea>' +
+            '<p class="tiny" data-screening-error hidden ' +
+              'style="margin-top:var(--s-2);color:var(--danger)"></p>' +
+            '<button class="btn btn--accent btn--sm" style="margin-top:var(--s-3)" ' +
+              'type="button" data-screening-ask>' + Icons.svg("send", "icon-sm") +
+              esc(I18N.t("scr.ask")) + "</button></div>") +
+    "</section>";
   }
 
   function select(name, items, value, anyKey) {
@@ -405,6 +440,30 @@ Pages.define("services", function (global) {
 
   host.addEventListener("click", function (ev) {
     var t = ev.target;
+
+    if (t.closest("[data-screening-ask]")) {
+      var box = $("[data-screening-brief]", host);
+      var said = box ? box.value.trim() : "";
+      var err = $("[data-screening-error]", host);
+      if (said.length < 10) {
+        if (err) { err.textContent = I18N.t("scr.needBrief"); err.hidden = false; }
+        return;
+      }
+      if (Session.isGuest()) {
+        App.toast(I18N.t("svc.orderSignIn"), "lock");
+        setTimeout(function () { App.go("login.html"); }, 900);
+        return;
+      }
+      Store.addRequest({
+        clientId: Session.user().id, lawyerId: null, typeId: M.SCREENING,
+        channel: "text", price: 0, status: "new", hours: 1,
+        title: { ar: I18N.t("scr.title"), en: "Case screening" },
+        brief: { ar: said, en: said }
+      });
+      App.toast(I18N.t("scr.sent"), "check");
+      App.rerender();
+      return;
+    }
 
     var pt = t.closest("[data-pick-type]");
     if (pt) { filters.type = pt.getAttribute("data-pick-type"); App.rerender(); return; }

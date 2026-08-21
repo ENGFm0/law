@@ -248,6 +248,23 @@ Pages.define("requests", function (global) {
   var EARLY = ["new", "quoting", "assigned", "scheduled"];
   var promoTried = {};          // the last answer per request, so it can be said
 
+  function convertOffer(r) {
+    var code = M.conversionOffer(r.clientId);
+    if (!code) return "";
+    var lawyer = M.user(r.lawyerId);
+    return '<div class="promo is-on" style="display:block" data-convert>' +
+      "<strong>" + esc(I18N.t("scr.convert")) + "</strong>" +
+      '<p class="small" style="margin-top:var(--s-2)">' +
+        esc(I18N.t("scr.convertBody", {
+          name: lawyer ? tx(lawyer.name) : "",
+          code: code.code
+        })) + "</p>" +
+      '<a class="btn btn--primary btn--sm" style="margin-top:var(--s-3)" ' +
+        'href="lawyer.html?id=' + esc(r.lawyerId || "") + '">' +
+        esc(I18N.t("scr.convertGo")) + "</a>" +
+    "</div>";
+  }
+
   function clientDetail(r, st, lawyer) {
     return '<div class="case__panel">' +
       '<div class="row between wrap gap-3">' +
@@ -260,6 +277,10 @@ Pages.define("requests", function (global) {
       (st.body
         ? '<pre class="draft-text" style="min-height:auto" readonly>' + esc(st.body) + "</pre>"
         : '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="req.noDeliverable"></p>') +
+      // The one moment somebody is ready to hear what the full thing costs.
+      // A real code in their name, not a banner — so it can be checked, it
+      // runs out, and it cannot be passed around.
+      (M.isScreening(r) && st.status === "completed" ? convertOffer(r) : "") +
       // A discount can only be taken before the work starts: after that the
       // price is what the lawyer agreed to be paid against, and moving it is
       // moving the terms of a job already under way.
@@ -451,6 +472,21 @@ Pages.define("requests", function (global) {
     var st = M.requestState(r);
     var t = M.serviceType(r.typeId) || {};
     if (st.status === "delivered" || st.status === "completed") return "";
+
+    // A screening written by the trainee this lawyer supervises. One button,
+    // because the lawyer's job here is to read it and stand behind it — and
+    // whose work it is is said on the row rather than left to be worked out.
+    if (M.isScreening(r) && st.assignedTo && st.status === "drafted") {
+      var who = M.user(st.assignedTo);
+      return '<span class="tiny muted">' +
+          esc(I18N.t("scr.byIntern", { name: who ? tx(who.name) : "" })) + "</span>" +
+        threadButton(r) +
+        '<button class="btn btn--outline btn--sm" type="button" data-open="' + esc(r.id) + '">' +
+          esc(I18N.t("req.openDetails")) + "</button>" +
+        '<button class="btn btn--accent btn--sm" type="button" data-scr-approve="' +
+          esc(r.id) + '">' + Icons.svg("check", "icon-sm") +
+          esc(I18N.t("scr.approve")) + "</button>";
+    }
 
     if (st.status === "open_to_interns" && !st.assignedTo) {
       var n = Store.applicants(r.id).length;
@@ -931,6 +967,8 @@ Pages.define("requests", function (global) {
         ? mine.map(internRow).join("")
         : C.empty("inbox", "task.none")) +
 
+      screeningPool(me) +
+
       '<section style="margin-top:var(--s-12)">' +
         '<h2 class="headline" data-i18n="task.openPool"></h2>' +
         '<p class="lead" style="margin-bottom:var(--s-6)" data-i18n="task.openPoolLead"></p>' +
@@ -939,6 +977,42 @@ Pages.define("requests", function (global) {
           : C.empty("gavel", "task.noOpen")) +
       "</section>" +
       mentorshipPanel(me) + "</div>";
+  }
+
+  /* Free screenings nobody has picked up. Shown to every trainee, claimable
+     only by one with a supervisor — and the reason why is written on the card
+     rather than left to a disabled button. */
+  function screeningPool(me) {
+    var list = M.openScreenings();
+    if (!list.length) return "";
+    var supervised = M.canScreen(me.id);
+
+    return '<section style="margin-top:var(--s-12)" data-screening-pool>' +
+      '<h2 class="headline">' + esc(I18N.t("scr.pool")) + "</h2>" +
+      '<p class="lead" style="margin-bottom:var(--s-6)">' +
+        esc(I18N.t("scr.poolLead")) + "</p>" +
+      (supervised ? "" :
+        '<p class="small" style="margin-bottom:var(--s-4);color:var(--warning)">' +
+        Icons.svg("lock", "icon-sm") + " " + esc(I18N.t("scr.needMentor")) +
+        ' <a href="lawyers.html">' + esc(I18N.t("men.findMentor")) + "</a></p>") +
+      list.map(function (r) {
+        return '<article class="card card--pad card--rule-gold" style="margin-bottom:var(--s-4)">' +
+          '<div class="row between wrap gap-4">' +
+            '<div class="grow" style="min-width:0">' +
+              '<div class="row gap-2 wrap"><h3 class="subtitle">' + esc(tx(r.title)) + "</h3>" +
+                '<span class="tag">' + esc(I18N.t("scr.free")) + "</span></div>" +
+              '<p class="small muted" style="margin-top:var(--s-2)">' + esc(tx(r.brief)) + "</p>" +
+              '<p class="tiny faint" style="margin-top:var(--s-2)">' +
+                esc(C.stamp(M.whenOf(r))) + "</p>" +
+            "</div>" +
+            (supervised
+              ? '<button class="btn btn--accent btn--sm" type="button" data-scr-take="' +
+                esc(r.id) + '">' + Icons.svg("check", "icon-sm") +
+                esc(I18N.t("scr.take")) + "</button>"
+              : "") +
+          "</div></article>";
+      }).join("") +
+    "</section>";
   }
 
   /** An opened task: every trainee sees it, applies, and the lawyer picks. */
@@ -977,8 +1051,13 @@ Pages.define("requests", function (global) {
     var lawyer = M.user(r.lawyerId);
     var t = M.serviceType(r.typeId) || {};
     var done = st.status === "delivered" || st.status === "completed";
+    var waiting = M.isScreening(r) && st.status === "drafted";
 
     return '<article class="card card--pad" style="margin-bottom:var(--s-4)">' +
+      (waiting
+        ? '<p class="small" style="margin-bottom:var(--s-3);color:var(--warning)">' +
+          Icons.svg("clock", "icon-sm") + " " + esc(I18N.t("scr.forApproval")) + "</p>"
+        : "") +
       '<div class="row between wrap gap-4">' +
         '<div class="grow" style="min-width:0">' +
           '<div class="row gap-2 wrap"><h2 class="subtitle">' + esc(tx(r.title)) + "</h2>" +
@@ -1006,8 +1085,16 @@ Pages.define("requests", function (global) {
             '<div class="row gap-2" style="margin-top:var(--s-3)">' +
               '<button class="btn btn--ghost btn--sm" type="button" data-task-save="' + esc(r.id) + '" ' +
                 'data-i18n="dash.saveDraft"></button>' +
-              '<button class="btn btn--accent btn--sm" type="button" data-task-deliver="' + esc(r.id) + '">' +
-                Icons.svg("send", "icon-sm") + esc(I18N.t("task.deliver")) + "</button></div>" +
+              // A screening goes UP, not out. The trainee wrote it; the lawyer
+              // supervising them is the one who answers for it, so the lawyer
+              // is the one who delivers it.
+              (M.isScreening(r)
+                ? '<button class="btn btn--accent btn--sm" type="button" data-scr-submit="' +
+                  esc(r.id) + '">' + Icons.svg("send", "icon-sm") +
+                  esc(I18N.t("scr.submit")) + "</button>"
+                : '<button class="btn btn--accent btn--sm" type="button" data-task-deliver="' +
+                  esc(r.id) + '">' + Icons.svg("send", "icon-sm") +
+                  esc(I18N.t("task.deliver")) + "</button>") + "</div>" +
 
             // A trainee handed a case used to be handed a title and a
             // deadline. Everything that decides how to write the thing — what
@@ -1114,6 +1201,7 @@ Pages.define("requests", function (global) {
   /* ====================================================== events ========== */
   host.addEventListener("click", function (ev) {
     var t = ev.target;
+    var me = Session.user();
     var hit = function (attr) {
       var el = t.closest("[" + attr + "]");
       return el ? el.getAttribute(attr) : null;
@@ -1121,6 +1209,34 @@ Pages.define("requests", function (global) {
 
     var f = t.closest("[data-filter]");
     if (f) { filter = f.getAttribute("data-filter"); App.rerender(); return; }
+
+    /* --- a free screening --- */
+    var st2 = hit("data-scr-take");
+    if (st2) {
+      var word = Store.takeScreening(st2);
+      App.toast(I18N.t(word === "yours" ? "scr.took" : "scr.needMentor"),
+                word === "yours" ? "check" : "alert");
+      App.rerender();
+      return;
+    }
+    var ss = hit("data-scr-submit");
+    if (ss) {
+      // Up to the supervisor, not out to the client: a screening is delivered
+      // by the lawyer who answers for it, never by the trainee who wrote it.
+      Store.setRequest(ss, { status: "drafted" });
+      Store.sendMessage({ requestId: ss, authorId: me.id, audience: "internal",
+                          body: I18N.t("scr.submitted") });
+      App.toast(I18N.t("scr.submitted"), "check");
+      App.rerender();
+      return;
+    }
+    var sa = hit("data-scr-approve");
+    if (sa) {
+      Store.setRequest(sa, { status: "delivered" });
+      App.toast(I18N.t("scr.approved"), "check");
+      App.rerender();
+      return;
+    }
 
     /* --- supervision --- */
     var my = hit("data-men-yes");

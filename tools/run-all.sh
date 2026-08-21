@@ -18,7 +18,7 @@ for t in model-test money-test books-test growth-test rest-test columns-test sto
   printf '  %-26s ' "$t"; node "tools/$t.mjs" | tail -1
 done
 echo '— in a browser —'
-for t in speed thread promise record call desk stepper mentorship webinars work-and-channels auction promo console first-paint account view-as staff-role auth-ui onboarding onboarding-late-session \
+for t in speed thread promise record call desk stepper mentorship webinars screening work-and-channels auction promo console first-paint account view-as staff-role auth-ui onboarding onboarding-late-session \
          offline auth-failure header signal accept admin notices flows pay mobile wide sweep; do
   printf '  %-26s ' "$t"; node "tools/$t-e2e.mjs" | tail -1
 done
