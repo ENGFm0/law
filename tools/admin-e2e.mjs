@@ -79,6 +79,10 @@ await tab.evaluate(() => {
 });
 await tab.goto(U + 'admin.html?tab=requests'); await tab.waitForTimeout(400);
 let txt = await body();
+// The desk lands on the objections when there are any: they are the only
+// pile with somebody waiting on a decision.
+ok('the desk opens on the objections',
+   await tab.$eval('[data-pile="disputed"]', e=>e.classList.contains('is-active')));
 ok('the dispute reaches the desk', txt.includes('ناقص بند الإنهاء'));
 ok('with what was actually delivered beside it', txt.includes('النص المسلَّم'));
 ok('and the trainee’s position is put in front of the decider',

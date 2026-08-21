@@ -345,6 +345,15 @@
   function refOf(row) {
     if (!row) return "";
     if (row.ref) return row.ref;
+    // A demo fixture predates the sequence that hands these out, and "#r-11"
+    // is not something anybody can read down a phone. One is made from its
+    // own number and its own date, in the shape a real one has.
+    var seq = String(row.id || "").match(/^r-(\d+)$/);
+    if (seq) {
+      var when = new Date(whenOf(row) || Date.now());
+      return "SND-" + String(when.getFullYear()).slice(2) + "-" +
+             ("00000" + seq[1]).slice(-5);
+    }
     return "#" + String(row.id || "").slice(-6);
   }
 
@@ -926,6 +935,32 @@
   }
 
   /** Every request whose money is real: delivered, accepted or settled. */
+  /** When a request happened. Stored rows carry the moment; the demo's
+      fixtures carry an age in days, which is the same fact written for a
+      person to read. Zero means unknown, and unknown is never used to exclude
+      something from a window — a date nobody wrote is not evidence that the
+      work is old. */
+  function whenOf(r) {
+    if (!r) return 0;
+    if (r.createdAt) return r.createdAt;
+    var st = requestState(r);
+    if (st.deliveredAt) return st.deliveredAt;
+    if (typeof r.daysAgo === "number") return Date.now() - r.daysAgo * 86400000;
+    return 0;
+  }
+
+  /** The start of a window of `months`, counted back from now. */
+  function windowFrom(months) {
+    var m = months || 1;
+    var d = new Date();
+    return new Date(d.getFullYear(), d.getMonth() - m, d.getDate()).getTime();
+  }
+
+  function inWindow(r, months) {
+    var when = whenOf(r);
+    return !when || when >= windowFrom(months);
+  }
+
   function earnedRequests() {
     return requests().filter(function (r) {
       var st = requestState(r).status;
@@ -933,6 +968,56 @@
       // of orders and in the ledger, at the amount that survived.
       return st === "delivered" || st === "completed" || st === "refunded";
     });
+  }
+
+  /** The same trading, cut into buckets over time. The ledger says what the
+      window came to; this says what it did on the way — which is the whole
+      difference between a number and a shape.
+
+      Weeks for a single month, months beyond it: twelve bars can be read at a
+      glance and fifty-two cannot. Labelling is left to the view, which is the
+      only part of this that knows what language it is in. */
+  function series(months) {
+    var m = months || 1;
+    var now = new Date();
+    var week = 7 * 86400000;
+    var buckets = [];
+
+    if (m <= 1) {
+      var end = now.getTime();
+      for (var w = 3; w >= 0; w--) {
+        buckets.push({ from: end - (w + 1) * week, to: end - w * week,
+                       at: end - w * week - week / 2, step: "week" });
+      }
+    } else {
+      for (var i = m - 1; i >= 0; i--) {
+        var start = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        var next = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+        buckets.push({ from: start.getTime(), to: next.getTime(),
+                       at: start.getTime(), step: "month" });
+      }
+    }
+
+    buckets.forEach(function (b) {
+      b.orders = 0; b.paid = 0; b.commission = 0; b.refunded = 0;
+    });
+
+    earnedRequests().forEach(function (r) {
+      var when = whenOf(r);
+      if (!when) return;
+      var d = distribute(r), st = settlement(r);
+      for (var i = 0; i < buckets.length; i++) {
+        var b = buckets[i];
+        if (when < b.from || when >= b.to) continue;
+        b.orders += 1;
+        b.paid += d.client - (st ? st.refund : 0);
+        b.commission += st ? st.commission : d.commission;
+        b.refunded += st ? st.refund : 0;
+        return;
+      }
+    });
+
+    return buckets;
   }
 
   /** The whole picture, over a window of `months`. */
@@ -947,6 +1032,10 @@
     };
 
     earnedRequests().forEach(function (r) {
+      // The window is a window. Counting every order the platform ever took
+      // against one month of costs is how a page reports a loss that is not
+      // there — or a profit that is not either.
+      if (!inWindow(r, m)) return;
       var d = distribute(r);
       // A decided dispute is what actually happened to the money. Reading the
       // books from `distribute` alone counted a fully refunded order as
@@ -1091,6 +1180,7 @@
     announcementsFor: announcementsFor,
     monthlyCost: monthlyCost, costsInWindow: costsInWindow,
     gatewayFee: gatewayFee, earnedRequests: earnedRequests, books: books,
+    series: series, whenOf: whenOf, inWindow: inWindow,
     ACCEPT_DAYS: ACCEPT_DAYS, MAX_REVISIONS: MAX_REVISIONS,
     addWorkingDays: addWorkingDays, acceptance: acceptance, settlement: settlement,
     disputeFor: disputeFor, openDisputes: openDisputes,

@@ -1418,6 +1418,23 @@
       "call.recVideoName": "مكالمة فيديو {n} ثانية",
       "call.recNote": "هذا تسجيل المكالمة.",
       "call.noTape": "تعذّر تسجيل هذه المكالمة — لا نسخة منها، لا لكم ولا للمنصة.",
+      "adm.chartFlow": "حركة الفترة",
+      "adm.chartFlowLead": "ارتفاع العمود ما دفعه العملاء، والجزء الغامق منه عمولة المنصة. الرقم أعلى العمود عدد الطلبات.",
+      "adm.chartMoney": "إلى أين ذهب المال",
+      "adm.chartCases": "الطلبات الآن",
+      "adm.chartTop": "الأكثر تسليماً",
+      "adm.pileLive": "جارية",
+      "adm.pileBooked": "محجوزة",
+      "adm.pilePast": "منتهية",
+      "adm.pileDisputed": "اعتراضات",
+      "adm.noFlow": "لا حركة في هذه المدة.",
+      "adm.ordersIn": "طلب",
+      "adm.ofOrders": "من {n} طلب",
+      "adm.seat": "اقرأ المحادثة بعين",
+      "adm.seatPlatform": "نسخة المنصة",
+      "adm.seatPlatformNote": "ما تحتفظ به المنصة وحدها — تسجيلات المكالمات. لا يراه العميل ولا المحامي ولا المتدرب.",
+      "adm.emptyPile": "لا شيء هنا.",
+      "adm.seatNote": "هذه هي المحادثة نفسها كما يراها صاحبها، لا نسخة عنها.",
     },
 
     en: {
@@ -2798,6 +2815,23 @@
       "call.recVideoName": "Video call {n}s",
       "call.recNote": "The recording of this call.",
       "call.noTape": "This call could not be recorded — there is no copy of it, for you or for the platform.",
+      "adm.chartFlow": "How the period went",
+      "adm.chartFlowLead": "The height is what clients paid; the darker part inside it is the platform’s cut. The number above each bar is the orders in it.",
+      "adm.chartMoney": "Where the money went",
+      "adm.chartCases": "The caseload right now",
+      "adm.chartTop": "Who delivers the most",
+      "adm.pileLive": "Running",
+      "adm.pileBooked": "Booked",
+      "adm.pilePast": "Finished",
+      "adm.pileDisputed": "Objections",
+      "adm.noFlow": "Nothing moved in this period.",
+      "adm.ordersIn": "orders",
+      "adm.ofOrders": "of {n} orders",
+      "adm.seat": "Read the conversation as",
+      "adm.seatPlatform": "The platform’s copy",
+      "adm.seatPlatformNote": "What the platform keeps on its own: the call recordings. The client, the lawyer and the trainee see none of this.",
+      "adm.emptyPile": "Nothing here.",
+      "adm.seatNote": "This is the conversation itself, laid out as its owner sees it — not a copy of it.",
     }
   };
 
@@ -2855,6 +2889,16 @@
       return new Intl.DateTimeFormat(
         current === "ar" ? "ar-SA-u-nu-latn-ca-gregory" : "en-GB",
         { day: "numeric", month: "short", year: "numeric" }
+      ).format(new Date(ms));
+    },
+
+    /** Just the month, for an axis: a bar chart labelled with full dates is
+        a bar chart nobody reads. */
+    month: function (ms) {
+      if (!ms) return "";
+      return new Intl.DateTimeFormat(
+        current === "ar" ? "ar-SA-u-nu-latn-ca-gregory" : "en-GB",
+        { month: "short" }
       ).format(new Date(ms));
     },
 

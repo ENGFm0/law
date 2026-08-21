@@ -38,6 +38,12 @@ Pages.define("admin", function (global) {
   var rejecting = null;
   var openCase = null;      // the request whose whole file is on screen
   var whoFile = null;       // the person whose file is on screen
+  // Which pile of requests is showing. Left unset until the first draw, which
+  // is the first moment there is anything to count: the desk should open on
+  // the objections when there are any, because those are the ones with a
+  // person waiting on a decision.
+  var pile = App.param("pile") || null;
+  var seat = null;          // whose eyes the open conversation is read with
   var outcome = {};
 
   var sar = function (halalas) {
@@ -74,6 +80,95 @@ Pages.define("admin", function (global) {
       }).join("") + "</div>";
   }
 
+  /** A card with a chart in it. The heading and the lead sit above the
+      drawing, because a chart that has to be interpreted has already failed
+      and the sentence is cheaper than the guess. */
+  function chartCard(titleKey, leadKey, body) {
+    return '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+      '<h3 class="subtitle" data-i18n="' + titleKey + '"></h3>' +
+      (leadKey ? '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="' +
+        leadKey + '"></p>' : "") +
+      '<div style="margin-top:var(--s-5)">' + body + "</div></section>";
+  }
+
+  /** The trading, drawn. Bars are what clients paid in each bucket with the
+      platform's cut shaded inside them, so the two numbers that are actually
+      being compared share one axis instead of two. */
+  function flowChart() {
+    var buckets = M.series(months);
+    var any = buckets.some(function (b) { return b.paid > 0; });
+    if (!any) return '<p class="small muted" data-i18n="adm.noFlow"></p>';
+    return C.chartBars(buckets.map(function (b) {
+      return {
+        key: String(b.from),
+        label: b.step === "month" ? I18N.month(b.at) : I18N.date(b.at),
+        cap: b.orders ? C.num(b.orders) : "",
+        value: b.paid, inner: b.commission,
+      };
+    }), {
+      label: I18N.t("adm.chartFlow"),
+      // The tallest bar named, so the bars are a measurement rather than a
+      // shape that could be any size at all.
+      top: sar(buckets.reduce(function (t, b) { return Math.max(t, b.paid); }, 0)),
+      topLabel: I18N.t("adm.kpiVolume"),
+    });
+  }
+
+  /** Every riyal a client paid, and which pocket it ended in. The parts add
+      up to what was paid — anything that does not is a rounding error being
+      hidden, which is the one thing a money chart must never do. */
+  function moneyChart(b) {
+    var parts = [
+      { label: I18N.t("adm.toLawyers"), value: b.toLawyers },
+      { label: I18N.t("adm.toTrainees"), value: b.toTrainees },
+      { label: I18N.t("adm.commission"), value: b.commission },
+      { label: I18N.t("adm.gateway"), value: b.gateway },
+      { label: I18N.t("adm.refunded"), value: b.refunded },
+    ].filter(function (p) { return p.value > 0; });
+    if (!parts.length) return '<p class="small muted" data-i18n="adm.noFlow"></p>';
+    parts.forEach(function (p) { p.text = sar(p.value); });
+    return '<div class="chart-card__body">' +
+      C.chartDonut(parts, { middle: sar(b.clientPaid + b.refunded),
+                            under: I18N.t("adm.kpiVolume") }) +
+      C.chartKeys(parts) + "</div>";
+  }
+
+  /** The caseload as a shape: how much of the platform is running, waiting,
+      finished, or being argued about. */
+  function casesChart() {
+    var piles = M.requestPiles(M.requests());
+    var parts = [
+      { label: I18N.t("adm.pileLive"), value: piles.live.length },
+      { label: I18N.t("adm.pileBooked"), value: piles.booked.length },
+      { label: I18N.t("adm.pilePast"), value: piles.past.length },
+      { label: I18N.t("adm.pileDisputed"), value: piles.disputed.length },
+    ];
+    var total = parts.reduce(function (t, p) { return t + p.value; }, 0);
+    if (!total) return '<p class="small muted" data-i18n="adm.noRequests"></p>';
+    parts.forEach(function (p) { p.text = C.num(p.value); });
+    return C.chartSplit(parts) +
+      '<div style="margin-top:var(--s-4)">' + C.chartKeys(parts) + "</div>";
+  }
+
+  /** Who is actually carrying the platform. Delivered work, not sign-ups. */
+  function topChart() {
+    var done = {};
+    M.earnedRequests().forEach(function (r) {
+      if (!r.lawyerId) return;
+      done[r.lawyerId] = (done[r.lawyerId] || 0) + 1;
+    });
+    var rows = Object.keys(done).map(function (id) {
+      var u = M.user(id);
+      // The name is a way into their file, the same as everywhere else at the
+      // desk: a chart you cannot click through is a chart you have to leave.
+      return { id: id, value: done[id], text: C.num(done[id]),
+               name: u ? '<a href="admin.html?tab=people&who=' + esc(id) + '">' +
+                          esc(tx(u.name)) + "</a>" : esc(id) };
+    }).sort(function (a, b) { return b.value - a.value; }).slice(0, 6);
+    if (!rows.length) return '<p class="small muted" data-i18n="adm.noRequests"></p>';
+    return C.chartRows(rows);
+  }
+
   function overview() {
     var b = M.books(months);
     var waiting = M.pendingVerification();
@@ -88,6 +183,11 @@ Pages.define("admin", function (global) {
         stat("adm.kpiPending", C.num(waiting.length), waiting.length ? "warn" : "") +
         stat("adm.kpiDisputes", C.num(open.length), open.length ? "warn" : "") +
       "</div>" +
+
+      chartCard("adm.chartFlow", "adm.chartFlowLead", flowChart()) +
+      chartCard("adm.chartMoney", null, moneyChart(b)) +
+      chartCard("adm.chartCases", null, casesChart()) +
+      chartCard("adm.chartTop", null, topChart()) +
 
       '<section class="card card--pad" style="margin-top:var(--s-6)">' +
         head("adm.needsYou") +
@@ -108,7 +208,7 @@ Pages.define("admin", function (global) {
                 return '<div class="row between wrap gap-3 admin-line">' +
                   "<span><strong>" + esc(r ? tx(r.title) : d.requestId) + "</strong>" +
                   '<span class="tiny muted" style="display:block">' + esc(d.reason) + "</span></span>" +
-                  '<a class="btn btn--outline btn--sm" href="admin.html?tab=requests">' +
+                  '<a class="btn btn--outline btn--sm" href="admin.html?tab=requests&pile=disputed">' +
                     esc(I18N.t("admin.decide")) + "</a></div>";
               }).join("") +
             "</div>"
@@ -319,43 +419,134 @@ Pages.define("admin", function (global) {
   }
 
   /* ================================================================ requests */
+  /** Four piles, and a request is in exactly one of them: what is running,
+      what is booked for later, what is finished, and what is being argued
+      about. One long list sorted by date is a list nobody can act on — the
+      objections, which are the only ones with a deadline attached, were
+      scattered through it. */
+  function pileTabs(piles) {
+    var of = { live: piles.live, booked: piles.booked,
+               past: piles.past, disputed: piles.disputed };
+    return '<div class="pile-tabs" role="tablist">' +
+      [["live", "adm.pileLive"], ["booked", "adm.pileBooked"],
+       ["past", "adm.pilePast"], ["disputed", "adm.pileDisputed"]].map(function (t) {
+        var n = of[t[0]].length;
+        return '<button class="pile-tab' + (pile === t[0] ? " is-active" : "") +
+          (t[0] === "disputed" && n ? " pile-tab--warn" : "") +
+          '" type="button" role="tab" data-pile="' + t[0] + '">' +
+          esc(I18N.t(t[1])) + '<span class="pile-tab__n num">' + I18N.num(n) + "</span></button>";
+      }).join("") + "</div>";
+  }
+
+  function requestCard(r) {
+    var st = M.requestState(r);
+    var d = M.distribute(r);
+    var dis = M.disputeFor(r.id);
+    var showing = openCase === r.id;
+    return '<div class="card card--pad admin-card' +
+      (dis && dis.status === "open" ? " card--rule-gold" : "") + '">' +
+      '<div class="row between wrap gap-3">' +
+        "<strong>" + esc(tx(r.title || {})) + "</strong>" +
+        '<span class="row gap-2">' +
+          '<span class="tiny muted num" dir="ltr">' + esc(M.refOf(r)) + "</span>" +
+          C.statusPill(st.status) +
+          "<strong>" + sar(d.client) + "</strong></span>" +
+      "</div>" +
+      // Everyone with a part in it, each name a way into their file.
+      C.parties(r, { asFile: true }) +
+      '<div class="row gap-2 wrap" style="margin-top:var(--s-3)">' +
+        '<span class="tiny faint">' + esc(C.stamp(M.whenOf(r))) + "</span>" +
+        '<button class="btn btn--outline btn--sm" type="button" data-case="' + esc(r.id) + '">' +
+          Icons.svg("eye", "icon-sm") + esc(I18N.t(showing ? "adm.hideCase" : "adm.openCase")) +
+        "</button></div>" +
+      // An open objection already opens the whole file where the decision is
+      // made. Drawing it again below would put two of everything on screen —
+      // two seat pickers, two of each conversation.
+      (dis && dis.status === "open" ? disputePanel(dis, r, d) : "") +
+      (showing && !(dis && dis.status === "open") ? caseFile(r) : "") +
+    "</div>";
+  }
+
   function requests() {
     var all = M.requests().slice().reverse();
     if (!all.length) return head("adm.requests", "adm.requestsLead") +
       '<p class="small muted" data-i18n="adm.noRequests"></p>';
 
+    var piles = M.requestPiles(all);
+    if (!pile) pile = piles.disputed.length ? "disputed" : "live";
+    var list = piles[pile] || [];
     return head("adm.requests", "adm.requestsLead") +
-      all.map(function (r) {
-        var st = M.requestState(r);
-        var d = M.distribute(r);
-        var client = M.user(r.clientId), lawyer = M.user(r.lawyerId);
-        var dis = M.disputeFor(r.id);
-        var showing = openCase === r.id;
-        return '<div class="card card--pad admin-card' +
-          (dis && dis.status === "open" ? " card--rule-gold" : "") + '">' +
-          '<div class="row between wrap gap-3">' +
-            "<strong>" + esc(tx(r.title || {})) + "</strong>" +
-            '<span class="row gap-2">' +
-              '<span class="tiny muted num" dir="ltr">' + esc(M.refOf(r)) + "</span>" +
-              C.statusPill(st.status) +
-              "<strong>" + sar(d.client) + "</strong></span>" +
-          "</div>" +
-          // Everyone with a part in it, each name a way into their file.
-          C.parties(r, { asFile: true }) +
-          '<div class="row gap-2 wrap" style="margin-top:var(--s-3)">' +
-            '<button class="btn btn--outline btn--sm" type="button" data-case="' + esc(r.id) + '">' +
-              Icons.svg("eye", "icon-sm") + esc(I18N.t(showing ? "adm.hideCase" : "adm.openCase")) +
-            "</button></div>" +
-          (dis && dis.status === "open" ? disputePanel(dis, r, d) : "") +
-          (showing ? caseFile(r) : "") +
-        "</div>";
-      }).join("");
+      pileTabs(piles) +
+      (list.length
+        ? list.map(requestCard).join("")
+        : '<p class="small muted" data-i18n="adm.emptyPile"></p>');
   }
 
   function choice(id, value, key, pick) {
     return '<button class="btn btn--sm ' + (pick === value ? "btn--primary" : "btn--outline") +
       '" type="button" data-outcome="' + esc(value) + '" data-for="' + esc(id) + '">' +
       esc(I18N.t(key)) + "</button>";
+  }
+
+  /* Everything that was said and sent on a case, both threads and the record,
+     with nothing left out. This is what deciding an objection needs: not a
+     summary of the complaint, but the whole file — including the half the
+     client never saw, because the lawyer and the trainee arguing about the
+     forum is often exactly where the answer is. */
+  /** Which seat the conversation is being read from. Not a list of roles —
+      a list of the actual people on this request, because "the trainee" is a
+      name when there is one and nothing at all when there is not. */
+  function seats(r) {
+    var st = M.requestState(r);
+    var out = [];
+    [["client", r.clientId], ["lawyer", r.lawyerId], ["intern", st.assignedTo]]
+      .forEach(function (pair) {
+        if (!pair[1]) return;
+        var u = M.user(pair[1]);
+        out.push({ id: pair[1], role: pair[0], name: u ? tx(u.name) : pair[1] });
+      });
+    out.push({ id: "platform", role: "platform", name: I18N.t("adm.seatPlatform") });
+    return out;
+  }
+
+  function seatPicker(r) {
+    var list = seats(r);
+    var picked = seat || list[0].id;
+    return '<div class="row gap-2 wrap" style="margin-top:var(--s-4)">' +
+      '<span class="tiny muted" style="align-self:center" data-i18n="adm.seat"></span>' +
+      list.map(function (p) {
+        return '<button class="btn btn--sm ' +
+          (picked === p.id ? "btn--primary" : "btn--outline") +
+          '" type="button" data-seat="' + esc(p.id) + '">' + esc(p.name) + "</button>";
+      }).join("") + "</div>";
+  }
+
+  /** The conversation as that person has it in front of them. The client's
+      seat is the client's thread and nothing else; the lawyer's and the
+      trainee's are both of theirs, because the note about the forum is half
+      of what they were reading. */
+  function seatThreads(r) {
+    var st = M.requestState(r);
+    var list = seats(r);
+    var picked = seat || list[0].id;
+
+    if (picked === "platform") {
+      return '<p class="tiny muted" style="margin-top:var(--s-4)" ' +
+          'data-i18n="adm.seatPlatformNote"></p>' +
+        C.thread(r, "staff", { closed: true, as: "platform",
+                               title: I18N.t("adm.seatPlatform") });
+    }
+
+    var out = '<p class="tiny faint" style="margin-top:var(--s-4)" ' +
+      'data-i18n="adm.seatNote"></p>' +
+      C.thread(r, "parties", { closed: true, as: picked,
+                               title: I18N.t(picked === r.clientId
+                                 ? "thread.withLawyer" : "thread.withClient") });
+    if (picked !== r.clientId) {
+      out += C.thread(r, "internal", { closed: true, as: picked,
+        title: I18N.t(picked === r.lawyerId ? "thread.withIntern" : "thread.withLawyer") });
+    }
+    return out;
   }
 
   /* Everything that was said and sent on a case, both threads and the record,
@@ -380,6 +571,8 @@ Pages.define("admin", function (global) {
         ? '<p class="tiny muted" style="margin-top:var(--s-4)" data-i18n="admin.delivered"></p>' +
           '<pre class="draft-text" style="min-height:auto" readonly>' + esc(st.body) + "</pre>"
         : "") +
+      seatPicker(r) +
+      seatThreads(r) +
       C.timeline(r, { internal: true }) +
     "</div>";
   }
@@ -831,14 +1024,26 @@ Pages.define("admin", function (global) {
     if (!me || !Session.is("staff")) return;
 
     var tb = hit("data-tab");
-    if (tb) { tab = tb; rejecting = null; whoFile = null; openCase = null; App.rerender(); return; }
+    if (tb) { tab = tb; rejecting = null; whoFile = null; openCase = null; seat = null;
+              App.rerender(); return; }
 
     var pf = hit("data-person");
     if (pf) { whoFile = pf; tab = "people"; openCase = null; App.rerender(); return; }
     if (t.closest("[data-back-people]")) { whoFile = null; App.rerender(); return; }
 
     var cs = hit("data-case");
-    if (cs) { openCase = openCase === cs ? null : cs; App.rerender(); return; }
+    if (cs) {
+      openCase = openCase === cs ? null : cs;
+      seat = null;              // a new file opens on its own client's seat
+      App.rerender();
+      return;
+    }
+
+    var pl = hit("data-pile");
+    if (pl) { pile = pl; openCase = null; App.rerender(); return; }
+
+    var se = hit("data-seat");
+    if (se) { seat = se; App.rerender(); return; }
 
     var mo = hit("data-months");
     if (mo) { months = +mo; App.rerender(); return; }

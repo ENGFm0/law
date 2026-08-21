@@ -417,17 +417,26 @@
     "</article>";
   }
 
+  /** One conversation, drawn.
+
+      `o.as` is whose seat it is read from — normally the person looking, but
+      the desk deciding an objection has to see what the lawyer saw, laid out
+      the way the lawyer saw it. That is one id, not a second component: a
+      "copy for the desk" would be a second thing to keep in step with this
+      one, and it would drift. */
   function thread(r, audience, opts) {
     var o = opts || {};
     var me = global.Session.user();
+    var seat = o.as || (me ? me.id : null);
     var kind = audience || "parties";
     var log = Store.messages(r.id, kind);
     var closed = !!o.closed;
 
     return '<section class="thread" data-thread="' + App.esc(r.id) +
-        '" data-audience="' + App.esc(kind) + '">' +
+        '" data-audience="' + App.esc(kind) + '"' +
+        (o.as ? ' data-as="' + App.esc(o.as) + '"' : "") + ">" +
       '<div class="row between wrap gap-3">' +
-        '<h3 class="subtitle">' + App.esc(I18N.t("thread.title")) + "</h3>" +
+        '<h3 class="subtitle">' + App.esc(o.title || I18N.t("thread.title")) + "</h3>" +
         (o.tabs || "") +
       "</div>" +
       (kind === "internal"
@@ -436,7 +445,7 @@
         : "") +
       '<div class="thread__log">' +
         (log.length
-          ? log.map(function (m) { return bubble(m, me ? me.id : null); }).join("")
+          ? log.map(function (m) { return bubble(m, seat); }).join("")
           : '<p class="small muted center">' + App.esc(I18N.t("thread.empty")) + "</p>") +
       "</div>" +
       (closed
@@ -813,6 +822,112 @@
       (leadKey ? '<p class="lead" data-i18n="' + leadKey + '"></p>' : "") + "</div>";
   }
 
+  /* ---------- charts ----------
+     Hand-drawn, because a charting library is 200KB to say what a div with a
+     height can say, and because the only two things these have to get right
+     are the arithmetic and the theme — both of which are easier without one.
+
+     Everything below takes numbers that are already in halalas and labels
+     that are already translated. None of it invents a scale: an empty period
+     draws an empty chart rather than a flat line at one. */
+
+  /** Vertical bars over time. Each bar may carry a darker inner segment — the
+      platform's cut inside the money that moved — so two numbers share one
+      bar instead of competing for the same axis. */
+  function chartBars(rows, opts) {
+    var o = opts || {};
+    var top = 0;
+    rows.forEach(function (r) { if (r.value > top) top = r.value; });
+    return '<div class="chart">' +
+      (o.top ? '<div class="chart__top tiny faint"><span>' + o.top + "</span>" +
+               "<span>" + App.esc(o.topLabel || "") + "</span></div>" : "") +
+      '<div class="chart__plot" role="img" aria-label="' + App.esc(o.label || "") + '">' +
+        rows.map(function (r) {
+          var h = top ? Math.round((r.value / top) * 100) : 0;
+          var inner = r.value && r.inner ? Math.round((r.inner / r.value) * 100) : 0;
+          return '<div class="chart__col" data-bar="' + App.esc(r.key || r.label) + '">' +
+            // `cap` arrives as markup: a number is wrapped so its digits stay
+            // Latin whichever way the page is running.
+            '<span class="chart__cap tiny">' + (r.cap || "") + "</span>" +
+            '<span class="chart__bar" style="height:' + Math.max(h, r.value ? 2 : 0) + '%">' +
+              (inner ? '<span class="chart__bar-in" style="height:' + inner + '%"></span>' : "") +
+            "</span>" +
+            '<span class="chart__x tiny faint">' + App.esc(r.label) + "</span>" +
+          "</div>";
+        }).join("") +
+      "</div></div>";
+  }
+
+  /** A ring, for a whole cut into parts. Drawn with one circle per part and a
+      dash offset, which is a lot less arithmetic than arcs and cannot produce
+      a wedge that does not close. */
+  function chartDonut(parts, opts) {
+    var o = opts || {};
+    var total = parts.reduce(function (t, p) { return t + Math.max(0, p.value); }, 0);
+    var r = 54, c = 2 * Math.PI * r, at = 0;
+    return '<div class="chart-donut">' +
+      '<svg viewBox="0 0 140 140" class="chart-donut__ring" aria-hidden="true">' +
+        '<circle cx="70" cy="70" r="' + r + '" class="chart-donut__track"></circle>' +
+        (total ? parts.map(function (p, i) {
+          var len = (Math.max(0, p.value) / total) * c;
+          var dash = '<circle cx="70" cy="70" r="' + r + '" class="chart-donut__arc" ' +
+            'style="stroke:var(--chart-' + ((i % 5) + 1) + ');stroke-dasharray:' +
+            len.toFixed(2) + " " + (c - len).toFixed(2) + ";stroke-dashoffset:" +
+            (-at).toFixed(2) + '"></circle>';
+          at += len;
+          return dash;
+        }).join("") : "") +
+      "</svg>" +
+      '<div class="chart-donut__mid">' +
+        // Already markup by the time it gets here — sar() returns a number in
+        // a span so the digits stay Latin in an Arabic sentence.
+        '<strong class="small">' + (o.middle || "") + "</strong>" +
+        '<span class="tiny faint">' + App.esc(o.under || "") + "</span>" +
+      "</div></div>";
+  }
+
+  /** The names beside the colours. A chart without one is a decoration. */
+  function chartKeys(parts) {
+    return '<ul class="chart-keys">' + parts.map(function (p, i) {
+      return '<li class="chart-keys__item">' +
+        '<span class="chart-keys__dot" style="background:var(--chart-' +
+          ((i % 5) + 1) + ')"></span>' +
+        '<span class="small">' + App.esc(p.label) + "</span>" +
+        '<span class="tiny num" style="margin-inline-start:auto">' + (p.text || "") + "</span>" +
+      "</li>";
+    }).join("") + "</ul>";
+  }
+
+  /** One horizontal bar cut into parts — the shape of a caseload, where the
+      question is proportion rather than magnitude. */
+  function chartSplit(parts) {
+    var total = parts.reduce(function (t, p) { return t + Math.max(0, p.value); }, 0);
+    if (!total) return "";
+    return '<div class="chart-split">' + parts.map(function (p, i) {
+      var pct = (Math.max(0, p.value) / total) * 100;
+      if (!pct) return "";
+      return '<span class="chart-split__part" title="' + App.esc(p.label) +
+        '" style="width:' + pct.toFixed(2) + "%;background:var(--chart-" +
+        ((i % 5) + 1) + ')"></span>';
+    }).join("") + "</div>";
+  }
+
+  /** A ranked list where the bar is the row, not an ornament beside it. */
+  function chartRows(rows) {
+    var top = 0;
+    rows.forEach(function (r) { if (r.value > top) top = r.value; });
+    return '<ul class="chart-rows">' + rows.map(function (r) {
+      return '<li class="chart-rows__row">' +
+        '<span class="chart-rows__name small">' + (r.name || "") + "</span>" +
+        '<span class="chart-rows__track">' +
+          '<span class="chart-rows__fill" style="width:' +
+            (top ? Math.max(2, (r.value / top) * 100) : 0).toFixed(1) + '%"></span>' +
+        "</span>" +
+        '<span class="chart-rows__num tiny num">' + (r.text || "") + "</span>" +
+      "</li>";
+    }).join("") + "</ul>";
+  }
+
   global.C = {
     sar: sar, num: num, avatar: avatar, personLink: personLink, stars: stars,
     ratingLine: ratingLine, verifiedMark: verifiedMark, progressBar: progressBar,
@@ -824,6 +939,8 @@
     bytes: bytes, wireThread: wireThread, threadDraw: threadDraw,
     timeline: timeline, parties: parties, stamp: stamp,
     wireTimeline: wireTimeline,
+    chartBars: chartBars, chartDonut: chartDonut, chartKeys: chartKeys,
+    chartSplit: chartSplit, chartRows: chartRows,
     googleButton: googleButton
   };
 })(window);
