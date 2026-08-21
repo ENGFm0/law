@@ -646,6 +646,9 @@ Pages.define("admin", function (global) {
           '<div style="margin-top:var(--s-4)">' +
             line("adm.kpiVolume", sar(b.clientPaid), true) +
             line("adm.commission", sar(b.commission)) +
+            // Beside the commission it came out of, so the two are read
+            // together rather than one explaining the other's absence.
+            (b.discounts ? line("adm.discounts", "−" + sar(b.discounts)) : "") +
             line("adm.subs", sar(b.subscriptions)) +
             line("adm.kpiRevenue", sar(b.revenue), true) +
           "</div></section>" +

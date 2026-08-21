@@ -1024,24 +1024,44 @@
     var out = d.resolution.outcome;
     var lawyerPct = out === "release" ? 100 : out === "refund" ? 0 : d.resolution.lawyerPct;
     var kept = pct(base.gross, lawyerPct);            // of the price, before shares
-    var refund = base.client - kept;
 
-    var commission = pct(kept, base.commissionPct);
+    // The commission the platform would earn on what was kept — and the
+    // discount comes out of THAT, on the same rule it came out of the full
+    // commission when it was granted: a platform cannot give away more of its
+    // cut than the ruling leaves it. A refunded order earns nothing, so it
+    // funds nothing.
+    var grossCommission = pct(kept, base.commissionPct);
+    var discount = Math.min(base.discount || 0, grossCommission);
+    var commission = grossCommission - discount;
     var commissionVat = base.vatEnabled ? pct(commission, base.vatPct) : 0;
+
+    // What goes back: what the client actually PAID, less what the ruling
+    // retains, plus the discount the platform had funded and no longer earns.
+    //
+    // Reading it as `client - kept` was wrong in both directions. On a ruling
+    // for the lawyer it produced a NEGATIVE refund — money appearing out of
+    // nowhere on the ledger — and it let the platform book a commission it
+    // had already given away, so the books showed revenue nobody paid.
+    var refund = base.client - kept + discount;
 
     return {
       outcome: out,
       lawyerPct: lawyerPct,
       refund: refund,
       kept: kept,
+      discount: discount,
       commission: commission,
+      commissionGross: grossCommission,
       commissionVat: commissionVat,
       intern: base.intern,
       internPct: base.internPct,
       internId: base.internId,
       // Owed by the lawyer whatever the client got back — never netted off.
-      internBorneByLawyer: base.intern > 0 && kept - commission - commissionVat < base.intern,
-      lawyer: kept - commission - commissionVat - base.intern,
+      internBorneByLawyer: base.intern > 0 &&
+        kept - grossCommission - commissionVat < base.intern,
+      // Off the FULL commission, not the discounted one: the discount is the
+      // platform's to give and never a windfall for the lawyer.
+      lawyer: kept - grossCommission - commissionVat - base.intern,
       reason: d.resolution.reason,
       at: d.resolution.at
     };
@@ -1343,7 +1363,7 @@
     var m = months || 1;
     var out = {
       months: m, orders: 0,
-      clientPaid: 0, refunded: 0, gross: 0, toLawyers: 0, toTrainees: 0,
+      clientPaid: 0, refunded: 0, discounts: 0, gross: 0, toLawyers: 0, toTrainees: 0,
       commission: 0, commissionVat: 0, gateway: 0,
       subscriptions: 0, costs: costsInWindow(m), settings: cfg
     };
@@ -1366,6 +1386,10 @@
       out.toLawyers += s ? s.lawyer : d.lawyer;
       out.toTrainees += s ? s.intern : d.intern;
       out.commission += s ? s.commission : d.commission;
+      // What the platform gave away. It comes out of the commission above and
+      // out of nothing else, so the ledger has to name it or the drop in
+      // revenue looks like work that was never done.
+      out.discounts += s ? s.discount : d.discount;
       out.commissionVat += s ? s.commissionVat : d.commissionVat;
       // The gateway took its cut of the original charge and does not give it
       // back when the client does.

@@ -1644,6 +1644,7 @@
       "ai.queueLead": "ما وصلك من عمل ومعه مسودة أولى. لا شيء يصل العميل قبل أن تعتمده أنت.",
       "ai.autoNote": "تُكتب المسودة تلقائياً حين يصلك الطلب — لأنك مشترك في الأداة.",
       "notice.draft_ready": "مسودة جاهزة لمراجعتك",
+      "adm.discounts": "خصومات مُنحت",
     },
 
     en: {
@@ -3250,6 +3251,7 @@
       "ai.queueLead": "Work that has arrived, with a first draft on it. Nothing reaches the client before you approve it.",
       "ai.autoNote": "A draft is written the moment work arrives, because you subscribe to the tool.",
       "notice.draft_ready": "A draft is ready for you",
+      "adm.discounts": "Discounts given",
     }
   };
 

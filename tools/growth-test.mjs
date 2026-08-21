@@ -63,6 +63,59 @@ const back = d1.commission + d1.commissionVat + d1.intern + d1.lawyer + d1.disco
 ok(`${R(back)} back to the ${R(d1.gross)} that was priced`, back === d1.gross,
    { back, gross: d1.gross });
 
+console.log('— AND A RULING ABSORBS IT THE SAME WAY —');
+// The decision that shapes this: the discount comes out of the platform's cut
+// and out of nothing else, so a ruling that leaves the platform less
+// commission leaves it less discount to have funded — and it can never leave
+// the platform owing money it did not take.
+function ruled(price, discount, outcome, pctFor) {
+  St.resetWork();
+  const r = mk(price);
+  const row = M.request(r.id);
+  row.promoCode = 'X'; row.promoDiscount = discount;
+  const paid = M.distribute(row).client;
+  St.setRequest(r.id, { status: 'delivered', body: 'x' });
+  St.openDispute({ requestId: r.id, byId: 'u-fahad', reason: 'ن' });
+  const d = St.disputeFor(r.id);
+  St.resolveDispute(d.id, { outcome, lawyerPct: pctFor, reason: 'س', byId: 'u-staff' });
+  const s = M.settlement(M.request(r.id));
+  return { paid, s, out: s.refund + s.commission + s.commissionVat + s.intern + s.lawyer };
+}
+
+const rel = ruled(1000, 5000, 'release', 100);
+ok('a ruling for the lawyer refunds nothing, not a negative amount',
+   rel.s.refund === 0, rel.s.refund);
+ok('the platform keeps only what it had not given away',
+   rel.s.commission === 5000, rel.s.commission);
+ok('the lawyer is paid off the full commission, not the discounted one',
+   rel.s.lawyer === 90000, rel.s.lawyer);
+ok(`and the ${R(rel.out)} out is the ${R(rel.paid)} that came in`,
+   rel.out === rel.paid, rel);
+
+const ref = ruled(1000, 5000, 'refund', 0);
+ok('a ruling for the client returns what they PAID, not the list price',
+   ref.s.refund === 95000, ref.s.refund);
+ok('a refunded order funds no discount at all', ref.s.discount === 0, ref.s.discount);
+ok('the platform earns nothing on it', ref.s.commission === 0);
+ok('and it balances', ref.out === ref.paid, ref);
+
+const half = ruled(1000, 5000, 'split', 60);
+ok('a split leaves the platform the part of its cut it still earns',
+   half.s.commission === 1000, half.s.commission);
+ok('the client gets back what they paid less what was retained',
+   half.s.refund === 40000, half.s.refund);
+ok('the lawyer keeps their 60 per cent less the full commission',
+   half.s.lawyer === 54000, half.s.lawyer);
+ok('and that balances too', half.out === half.paid, half);
+
+const tiny = ruled(1000, 5000, 'split', 10);
+ok('a ruling that earns less than the discount caps it there',
+   tiny.s.discount === 1000 && tiny.s.commission === 0, tiny.s);
+ok('the platform never ends up owing money it did not take',
+   tiny.s.commission >= 0 && tiny.out === tiny.paid, tiny);
+
+St.resetWork();
+
 console.log('— A CODE IS WORTH WHAT IT SAYS, OR SAYS WHY NOT —');
 St.addPromo({ code: 'sanad10', discountPct: 10 });        // typed in lower case
 St.addPromo({ code: 'BIGCUT', discountPct: 50 });

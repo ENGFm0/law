@@ -468,14 +468,23 @@ lawyer       = gross − commission − commissionVat − intern
 ### التسوية بعد قرار (`Models.settlement`)
 
 ```
-lawyerPct = release ? 100 : refund ? 0 : القرار
-kept      = gross × lawyerPct
-refund    = client − kept
-commission= kept × commission_pct
-lawyer    = kept − commission − commissionVat − intern
+lawyerPct       = release ? 100 : refund ? 0 : القرار
+kept            = gross × lawyerPct
+grossCommission = kept × commission_pct
+discount        = min(الخصم الممنوح, grossCommission)   ← لا تُعطي أكثر مما تكسب
+commission      = grossCommission − discount
+refund          = client − kept + discount              ← ما دفعه فعلاً، لا سعر القائمة
+lawyer          = kept − grossCommission − commissionVat − intern
 ```
 
 **نصيب المتدرب يتحمّله المحامي مهما كان القرار — لا يُخصم من المتدرب.**
+
+**والخصم يُحسب على العمولة بعد القرار أيضاً.** قراءته `client − kept` كانت خاطئة في
+الاتجاهين: على قرار لصالح المحامي تُنتج **استرداداً سالباً** — مال يظهر من العدم في
+الدفتر — وتترك المنصة تقيّد عمولة سبق أن تنازلت عنها، أي إيراداً لم يدفعه أحد.
+والقاعدة بعد القرار هي القاعدة عند المنح نفسها: **لا تمنح المنصة من عمولتها أكثر مما
+يتركه لها القرار**، وطلب مُسترد بالكامل لا يموّل خصماً إطلاقاً. و`books()` تسمّي
+«خصومات مُنحت» بجوار العمولة التي خرجت منها.
 
 ### الدفاتر
 `Models.books(months)` تجمع الطلبات المحتسَبة **داخل المدة المختارة**، وتقرأ
