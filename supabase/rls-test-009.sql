@@ -44,6 +44,10 @@ select case when count(*) = 0 then 'PASS' else 'FAIL' end
   || '  nor a profile edited' from public.profiles where full_name = 'changed';
 
 \echo '── while a signed-in account still works ──'
+-- One open request at a time (migration 017), so the client's slate is
+-- cleared before each fixture that needs to open another.
+reset role;
+delete from public.requests where client_id = '11111111-0000-0000-0000-000000000001';
 set role authenticated;
 set request.jwt.claim.sub = '11111111-0000-0000-0000-000000000001';
 insert into public.quotes (client_id, type_id, brief, expires_at)

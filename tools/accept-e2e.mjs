@@ -76,8 +76,10 @@ const d = await tab.evaluate(() => window.Store.disputes()[0]);
 ok('the dispute is recorded with its reason', d && d.reason === 'لم يُعدَّل البند المطلوب');
 ok('opened by the client', d && d.byId === 'u-fahad');
 ok('and it is open', d && d.status === 'open');
-await tab.click('[data-detail="r-1"]'); await tab.waitForTimeout(150);
-await tab.click('[data-detail="r-1"]'); await tab.waitForTimeout(250);
+// An objection moves the case to its own pile — that is the point of the
+// piles — so it is opened from there.
+await tab.click('[data-pile="disputed"]'); await tab.waitForTimeout(250);
+await tab.click('[data-detail="r-1"]'); await tab.waitForTimeout(300);
 const panel = await tab.$$eval('.card--rule-gold', c => c.map(x => x.textContent).join(' '));
 ok('the client is told the money is frozen', /مجمَّد/.test(panel || ''), (panel||'').slice(0,80));
 ok('no accept button survives an open dispute', !(await seen('[data-accept="r-1"]')));

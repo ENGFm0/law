@@ -105,8 +105,10 @@ console.log('— THE WAY IN IS ON THE ROW —');
 await open('requests.html', 'u-fahad');
 const row = await body();
 ok('the conversation has its own button', /المحادثة/.test(row), row.slice(0, 120));
-ok('saying how much is in it', /المحادثة · [٠-٩0-9]/.test(row), row.match(/المحادثة[^\n]*/));
-await p.click(`[data-detail="${rid}"][data-go-thread]`); await p.waitForTimeout(500);
+ok('saying how much is in it', /المحادثة\s*[٠-٩0-9]/.test(row), row.match(/المحادثة[^\n]*/));
+// The card's own button — the notice at the top of the page points at the
+// same request and would be the first match.
+await p.click(`.case__actions [data-detail="${rid}"]`); await p.waitForTimeout(500);
 ok('and it opens straight onto the thread', (await p.$('[data-thread]')) !== null);
 ok('with the cursor in it',
    await p.evaluate(() => document.activeElement && document.activeElement.hasAttribute('data-thread-body')));

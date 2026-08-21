@@ -22,7 +22,10 @@ update public.profiles set roles = '{lawyer}', status = 'verified'
   where id in ('22222222-0000-0000-0000-000000000002','33333333-0000-0000-0000-000000000003');
 update public.platform_settings set guarantee_hours = 24, guarantee_unconditional = true where id = 1;
 
-delete from public.disputes; delete from public.requests where title = 'guarantee test';
+-- One open request at a time (migration 017), so the client's slate is
+-- cleared before each fixture that needs to open another.
+delete from public.disputes;
+delete from public.requests where client_id = '11111111-0000-0000-0000-000000000001';
 insert into public.requests (id, client_id, lawyer_id, type_id, title, price, status, delivered_at)
   values ('eeee0000-0000-0000-0000-00000000eeee','11111111-0000-0000-0000-000000000001',
           '22222222-0000-0000-0000-000000000002','consult','guarantee test', 250,
@@ -68,7 +71,8 @@ select case when status = 'refunded' then 'PASS' else 'FAIL' end
 
 \echo '── outside the window it does not ──'
 reset role;
-delete from public.disputes; delete from public.requests where title = 'guarantee test';
+delete from public.disputes;
+delete from public.requests where client_id = '11111111-0000-0000-0000-000000000001';
 insert into public.requests (id, client_id, lawyer_id, type_id, title, price, status, delivered_at)
   values ('eeee0000-0000-0000-0000-00000000eeee','11111111-0000-0000-0000-000000000001',
           '22222222-0000-0000-0000-000000000002','consult','guarantee test', 250,

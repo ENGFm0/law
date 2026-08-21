@@ -92,13 +92,20 @@ await open('requests.html', 'u-sara');
 ok('no trace of it', !/نهاية الخدمة/.test(await body()));
 
 console.log('— A BRIEF NOBODY HAS TAKEN IS STILL SOMEWHERE —');
+// One at a time: the work just agreed has to be finished and rated before
+// another brief can go out. That is the rule, so the test lives by it.
+await p.evaluate(() => {
+  const r = Store.requests()[0];
+  Store.setRequest(r.id, { status: 'completed', rated: true });
+});
 await open('quotes.html', 'u-fahad');
 await p.click('[data-type="memo"]'); await p.waitForTimeout(200);
 await p.fill('#q-brief','مذكرة جوابية على دعوى مقامة ضدي أمام المحكمة التجارية');
 await p.click('[data-quote-form] button[type=submit]'); await p.waitForTimeout(500);
 await p.goto(U+'requests.html'); await p.waitForTimeout(500);
+await p.click('[data-pile="briefs"]'); await p.waitForTimeout(400);
 let t2 = await body();
-ok('it is in the requests list while the clock runs', /بانتظار العروض/.test(t2));
+ok('it is in the requests list while the clock runs', /مذكرة جوابية/.test(t2), t2.slice(0,120));
 ok('with the brief on it', /مذكرة جوابية/.test(t2));
 ok('and it says how long is left', /يُغلق خلال/.test(t2));
 
@@ -108,10 +115,11 @@ await p.evaluate(() => {
   Store.setQuote(q.id, { expiresAt: Date.now() - 1000 });
 });
 await p.goto(U+'requests.html'); await p.waitForTimeout(500);
+await p.click('[data-pile="past"]'); await p.waitForTimeout(400);
 t2 = await body();
 ok('when the window closes it drops to the finished list', /انتهت المهلة/.test(t2));
 ok('carrying the date it was posted', /\d{4}/.test(t2));
-ok('and it is no longer waiting', !/بانتظار العروض/.test(t2));
+ok('and it is no longer waiting', !/يُغلق خلال/.test(t2));
 const againLink = await p.$('[href*="again="]');
 ok('with a way to post it again', !!againLink);
 await againLink.click(); await p.waitForTimeout(600);

@@ -225,7 +225,10 @@ delete from public.services where owner_id in
 insert into public.services (owner_id, type_id, price, channels) values
   ('33333333-0000-0000-0000-000000000003','consult', 250, '{text,voice}'),
   ('22222222-0000-0000-0000-000000000002','consult', 300, '{text}');
+-- One open request at a time (migration 017), so the client's slate is
+-- cleared before each fixture that needs to open another.
 delete from public.offers; delete from public.quotes;
+delete from public.requests where client_id = '11111111-0000-0000-0000-000000000001';
 
 set role authenticated;
 set request.jwt.claim.sub = '11111111-0000-0000-0000-000000000001';

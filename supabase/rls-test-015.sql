@@ -102,7 +102,11 @@ select case when count(*) = 1 then 'PASS' else 'FAIL' end
 \echo '── and when the lawyer took it on ──'
 reset role;
 delete from public.request_events where request_id = 'bbbb3333-0000-0000-0000-00000000bbbb';
-delete from public.requests where id = 'bbbb3333-0000-0000-0000-00000000bbbb';
+-- One open request at a time (migration 017): the earlier fixtures have to go
+-- before this one can be opened — and a dispute holds a request down, so it
+-- goes first.
+delete from public.disputes;
+delete from public.requests where client_id = '11111111-0000-0000-0000-000000000001';
 insert into public.requests (id, client_id, lawyer_id, type_id, title, price)
   values ('bbbb3333-0000-0000-0000-00000000bbbb','11111111-0000-0000-0000-000000000001',
           '22222222-0000-0000-0000-000000000002','consult','taken test', 250);

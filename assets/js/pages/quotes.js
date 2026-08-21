@@ -492,6 +492,14 @@ Pages.define("quotes", function (global) {
       settle();
       if (!draft.typeId) { App.toast(I18N.t("quotes.needType"), "tag"); return; }
       if (!me()) { App.go("login.html"); return; }
+      // One at a time, said before the brief is written rather than refused
+      // by the database after it.
+      var blocking = M.blockingRequest(me().id);
+      if (blocking) {
+        App.toast(I18N.t("req.oneAtATimeBody"), "lock");
+        App.go("requests.html");
+        return;
+      }
 
       var cur = Store.openQuote({
         brief: brief, city: draft.city, specialty: draft.specialty,

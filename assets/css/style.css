@@ -503,6 +503,83 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .adm-tab { padding: var(--s-3) var(--s-3); font-size: .875rem; }
 }
 
+/* ---------- 11a07b. A case, as a card ----------
+   Files, not table rows. Each one is a small document: its number, what it
+   is, where it has got to, and the two doors anybody wants — the
+   conversation and the record. Space between them rather than a hairline,
+   because a hairline says "more of the same" and these are separate matters. */
+.pill-tabs {
+  display: flex; gap: var(--s-2); flex-wrap: wrap; margin-bottom: var(--s-6);
+  padding-bottom: var(--s-1);
+}
+.pill-tab {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  padding: var(--s-2) var(--s-5); border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text-muted); font: inherit; font-size: .875rem;
+}
+.pill-tab:hover { border-color: var(--accent); color: var(--text); }
+.pill-tab.is-active {
+  background: var(--brand-navy); border-color: var(--brand-navy); color: #fff;
+}
+.pill-tab__n {
+  min-width: 20px; padding: 0 var(--s-1); border-radius: 999px; font-size: .75rem;
+  background: var(--surface-2); color: var(--text-muted); text-align: center;
+}
+.pill-tab.is-active .pill-tab__n { background: rgba(255,255,255,.22); color: #fff; }
+
+.case-list { display: flex; flex-direction: column; gap: var(--s-5); }
+.case {
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  background: var(--surface); overflow: hidden;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.case:hover { border-color: var(--border-strong, var(--accent)); }
+.case.is-open { border-color: var(--accent); box-shadow: 0 6px 24px rgb(15 23 42 / .07); }
+.case__head { display: flex; gap: var(--s-4); align-items: flex-start; padding: var(--s-5); }
+.case__icon {
+  width: 40px; height: 40px; flex: none; border-radius: var(--r);
+  display: grid; place-items: center; background: var(--surface-2); color: var(--text-muted);
+}
+.case__ref {
+  font-size: .75rem; color: var(--text-muted); letter-spacing: .04em;
+  padding: 2px var(--s-2); border-radius: var(--r-sm, 6px); background: var(--surface-2);
+}
+.case__end { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s-2); flex: none; }
+.case__price { white-space: nowrap; }
+.case__flag {
+  display: flex; gap: var(--s-3); align-items: baseline; flex-wrap: wrap;
+  margin: 0 var(--s-5) var(--s-3); padding: var(--s-3) var(--s-4);
+  border-radius: var(--r); background: var(--warning-soft); color: var(--warning-text, inherit);
+  border: 1px solid var(--warning);
+}
+.case__track { padding: 0 var(--s-5); }
+.case__actions {
+  display: flex; gap: var(--s-2); flex-wrap: wrap; align-items: center;
+  padding: var(--s-4) var(--s-5); border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.case__panel { padding: var(--s-5); border-top: 1px solid var(--border); }
+.case__net { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.35; }
+.btn__n {
+  margin-inline-start: var(--s-2); padding: 0 var(--s-2); border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent-soft-text); font-size: .75rem;
+}
+
+/* Something the reader has to know before they go looking for a button. */
+.note-card {
+  display: flex; gap: var(--s-4); align-items: flex-start; margin-bottom: var(--s-6);
+  padding: var(--s-5); border-radius: var(--r-lg);
+  border: 1px solid var(--accent); background: var(--accent-soft);
+  color: var(--accent-soft-text);
+}
+.note-card__icon { flex: none; padding-top: 2px; }
+
+@media (max-width: 720px) {
+  .case__head { flex-wrap: wrap; }
+  .case__end { flex-direction: row; align-items: center; width: 100%; justify-content: space-between; }
+}
+
 /* ---------- 11a08. What the platform promises ----------
    Four cards a stranger reads before deciding to pay another stranger. Quiet
    rather than loud: the claims are specific enough that they do not need

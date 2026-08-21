@@ -1386,6 +1386,26 @@
       "tl.open": "المسار",
       "tl.close": "أغلق المسار",
       "tl.priceWas": "بـ {n} ر.س",
+
+      /* --- the requests page, sorted --- */
+      "req.tabLive": "الحالية",
+      "req.tabBooked": "المحجوزة",
+      "req.tabPast": "السابقة",
+      "req.tabDisputed": "الاعتراضات",
+      "req.tabBriefs": "بانتظار العروض",
+      "req.noneBooked": "لا مواعيد محجوزة.",
+      "req.noneDisputed": "لا اعتراضات — وهذا هو المطلوب.",
+      "req.details": "التفاصيل",
+      "req.hideDetails": "إخفاء",
+      "req.whatHappened": "ماذا حدث ومتى",
+      "req.talk": "المحادثة",
+      "req.talkCount": "{n} رسالة",
+      "req.oneAtATime": "طلب واحد في كل مرة",
+      "req.oneAtATimeBody": "لديك طلب مفتوح — أغلقه بقبول التسليم وقيّم المحامي، ثم افتح التالي.",
+      "req.finishFirst": "أنهِ طلبك المفتوح",
+      "req.rateToClose": "قيّم المحامي لإغلاق الطلب",
+      "req.yourShare": "لك بعد الخصم",
+      "req.clientPays": "يدفع العميل",
     },
 
     en: {
@@ -2734,6 +2754,26 @@
       "tl.open": "The path",
       "tl.close": "Close",
       "tl.priceWas": "at {n} SAR",
+
+      /* --- the requests page, sorted --- */
+      "req.tabLive": "Current",
+      "req.tabBooked": "Booked",
+      "req.tabPast": "Finished",
+      "req.tabDisputed": "Objections",
+      "req.tabBriefs": "Awaiting offers",
+      "req.noneBooked": "Nothing booked.",
+      "req.noneDisputed": "No objections, which is the point.",
+      "req.details": "Details",
+      "req.hideDetails": "Hide",
+      "req.whatHappened": "What happened, and when",
+      "req.talk": "Conversation",
+      "req.talkCount": "{n} messages",
+      "req.oneAtATime": "One request at a time",
+      "req.oneAtATimeBody": "You have an open request. Accept the delivery and rate the lawyer, then open the next one.",
+      "req.finishFirst": "Finish your open request",
+      "req.rateToClose": "Rate the lawyer to close it",
+      "req.yourShare": "Yours after deductions",
+      "req.clientPays": "The client pays",
     }
   };
 

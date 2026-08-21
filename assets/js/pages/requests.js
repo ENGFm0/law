@@ -20,8 +20,10 @@ Pages.define("requests", function (global) {
   var open = null;      // request id whose editor/detail panel is expanded
   // Which of the two conversations the lawyer is looking at.
   var side = "parties";
-  // Which request has its path open on the list, if any.
+  // Which request has its record open on the list, if any.
   var path = null;
+  // Which pile is on screen.
+  var pile = "live";
   var rating = {};      // requestId -> stars picked but not yet sent
   var arguing = null;   // requestId whose refusal form is open
   var revising = null;  // requestId whose revision form is open
@@ -84,38 +86,76 @@ Pages.define("requests", function (global) {
   }
 
   /* ====================================================== client ========== */
+  /** Four piles, one on screen at a time. A list that mixes a call booked for
+      Tuesday with an objection from March and a finished consultation is a
+      list nobody reads — they scan it for the one thing they came for. */
+  function tabs(counts) {
+    var of = function (id, key) {
+      var n = counts[id] || 0;
+      return '<button type="button" class="pill-tab' + (pile === id ? " is-active" : "") +
+        '" data-pile="' + id + '">' + esc(I18N.t(key)) +
+        (n ? '<span class="pill-tab__n">' + I18N.num(n) + "</span>" : "") + "</button>";
+    };
+    return '<nav class="pill-tabs">' +
+      of("live", "req.tabLive") + of("booked", "req.tabBooked") +
+      of("briefs", "req.tabBriefs") + of("past", "req.tabPast") +
+      of("disputed", "req.tabDisputed") + "</nav>";
+  }
+
   function clientView() {
     var me = Session.user();
-    var live = M.requestsForClient(me.id, "open");
-    var past = M.requestsForClient(me.id, "past");
+    var mine = M.requests().filter(function (r) { return r.clientId === me.id; });
+    var piles = M.requestPiles(mine);
     var waiting = briefs(me, "open");
-    var closed = briefs(me, "past");
+    var doneBriefs = briefs(me, "past");
+
+    var counts = { live: piles.live.length, booked: piles.booked.length,
+                   past: piles.past.length + doneBriefs.length,
+                   disputed: piles.disputed.length, briefs: waiting.length };
+
+    var shown = pile === "briefs" ? waiting
+              : pile === "past" ? piles.past
+              : piles[pile] || piles.live;
+    var rows = pile === "briefs"
+      ? waiting.map(briefRow).join("")
+      : shown.map(clientRow).join("") +
+        (pile === "past" ? doneBriefs.map(briefRow).join("") : "");
+    var emptyKey = { live: "req.noneCurrent", booked: "req.noneBooked",
+                     past: "req.nonePast", disputed: "req.noneDisputed",
+                     briefs: "brief.waiting" }[pile];
 
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
-      '<header style="margin-bottom:var(--s-8)">' +
+      '<header style="margin-bottom:var(--s-6)">' +
         '<h1 class="headline" data-i18n="req.heading"></h1>' +
         '<p class="lead" data-i18n="req.leadClient"></p></header>' +
 
-      (waiting.length
-        ? '<section class="card card--pad" style="margin-bottom:var(--s-6)">' +
-            '<h2 class="subtitle" style="margin-bottom:var(--s-5)" data-i18n="brief.waiting"></h2>' +
-            '<div class="req-list">' + waiting.map(briefRow).join("") + "</div></section>"
-        : "") +
+      // One at a time, said before they go looking for the button.
+      openLimit(me) +
+      tabs(counts) +
+      '<div class="case-list">' +
+        (rows || '<div class="card empty"><p class="subtitle">' +
+          esc(I18N.t(emptyKey)) + "</p></div>") +
+      "</div></div>";
+  }
 
-      '<section class="card card--pad" style="margin-bottom:var(--s-6)">' +
-        '<h2 class="subtitle" style="margin-bottom:var(--s-5)" data-i18n="req.current"></h2>' +
-        (live.length
-          ? '<div class="req-list">' + live.map(clientRow).join("") + "</div>"
-          : '<p class="small muted" data-i18n="req.noneCurrent"></p>') +
-      "</section>" +
-
-      '<section class="card card--pad">' +
-        '<h2 class="subtitle" style="margin-bottom:var(--s-5)" data-i18n="req.past"></h2>' +
-        (past.length || closed.length
-          ? '<div class="req-list">' + past.map(clientRow).join("") +
-            closed.map(briefRow).join("") + "</div>"
-          : '<p class="small muted" data-i18n="req.nonePast"></p>') +
-      "</section></div>";
+  /** The rule, and what is owed to satisfy it. Shown rather than enforced
+      silently: a button that does nothing teaches nobody anything. */
+  function openLimit(me) {
+    var blocking = M.blockingRequest(me.id);
+    if (!blocking) return "";
+    var st = M.requestState(blocking);
+    var needsRating = st.status === "completed" && !st.rated;
+    return '<div class="note-card">' +
+      '<span class="note-card__icon">' + Icons.svg("lock", "icon-sm") + "</span>" +
+      "<div><strong>" + esc(I18N.t("req.oneAtATime")) + "</strong>" +
+      '<p class="small muted">' + esc(I18N.t("req.oneAtATimeBody")) + "</p>" +
+      '<p class="tiny" style="margin-top:var(--s-2)">' +
+        '<span class="num" dir="ltr">' + esc(M.refOf(blocking)) + "</span> · " +
+        esc(tx(blocking.title || {})) + "</p>" +
+      '<button class="btn btn--outline btn--sm" style="margin-top:var(--s-3)" type="button" ' +
+        'data-detail="' + esc(blocking.id) + '" data-go-thread>' +
+        esc(I18N.t(needsRating ? "req.rateToClose" : "req.finishFirst")) + "</button>" +
+      "</div></div>";
   }
 
   /* What the client is allowed to see. Drafting, assistant queues and trainee
@@ -126,52 +166,84 @@ Pages.define("requests", function (global) {
     open_to_interns: "in_progress"
   };
 
+  /* A case as a card, not a table row: the number, what it is, who it is
+     with, where it has got to, and the two things anybody wants next — the
+     conversation and the record. Separated from its neighbour by space rather
+     than by a hairline, because these are files, not rows. */
   function clientRow(r) {
     var st = M.requestState(r);
     var lawyer = M.user(r.lawyerId);
     var canRate = (st.status === "delivered" || st.status === "completed") && !st.rated;
+    var said = Store.messages(r.id, "parties").length;
+    var chan = M.channel(r.channel);
+    var liveNow = M.isLive(r) &&
+      ["delivered", "completed", "cancelled", "refunded"].indexOf(st.status) === -1;
+    var type = M.serviceType(r.typeId);
+    var showing = open === r.id;
 
-    return '<div>' + C.requestRow(r, {
-      status: CLIENT_STATUS[st.status] || st.status,
-      actions: function () {
-        var chan = M.channel(r.channel);
-        var live = M.isLive(r) &&
-          ["delivered", "completed", "cancelled"].indexOf(st.status) === -1;
-        var said = Store.messages(r.id, "parties").length;
-        return '<button class="btn btn--ghost btn--sm" type="button" data-path="' + esc(r.id) + '">' +
-            Icons.svg("clock", "icon-sm") +
-            esc(I18N.t(path === r.id ? "tl.close" : "tl.open")) + "</button>" +
-          (live
-            ? '<a class="btn btn--primary btn--sm" href="call.html?id=' + esc(r.id) + '">' +
-              Icons.svg(chan.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>"
+    return '<article class="case' + (showing ? " is-open" : "") + '">' +
+      '<div class="case__head">' +
+        '<span class="case__icon">' + Icons.svg(type ? type.icon : "file-text", "icon-sm") + "</span>" +
+        '<div class="grow" style="min-width:0">' +
+          '<div class="row gap-2 wrap">' +
+            '<span class="case__ref num" dir="ltr">' + esc(M.refOf(r)) + "</span>" +
+            "<strong>" + esc(tx(r.title)) + "</strong>" +
+            (type ? '<span class="tag">' + esc(tx(type.title)) + "</span>" : "") +
+          "</div>" +
+          '<p class="tiny muted" style="margin-top:var(--s-1)">' +
+            (lawyer ? esc(tx(lawyer.name)) : "") +
+            (chan ? ' <span class="dot"></span> ' + esc(tx(chan.title)) : "") +
+          "</p>" +
+        "</div>" +
+        '<div class="case__end">' +
+          C.statusPill(CLIENT_STATUS[st.status] || st.status) +
+          '<strong class="case__price">' + C.num(r.price) + " " + C.sar() + "</strong>" +
+        "</div>" +
+      "</div>" +
+
+      // An objection is the reason this case is in the pile it is in, so it
+      // says so on the card rather than only inside the panel.
+      (function () {
+        var d = M.disputeFor(r.id);
+        if (!d || d.status !== "open") return "";
+        return '<div class="case__flag">' +
+          Icons.svg("bell", "icon-sm") +
+          '<span class="num" dir="ltr">' + esc(M.refOf(d)) + "</span>" +
+          '<span class="small">' + esc(d.reason || "") + "</span></div>";
+      })() +
+
+      '<div class="case__track">' + C.progress(r, "client") + "</div>" +
+
+      '<div class="case__actions">' +
+        (liveNow
+          ? '<a class="btn btn--primary btn--sm" href="call.html?id=' + esc(r.id) + '">' +
+            Icons.svg(chan.icon, "icon-sm") + esc(I18N.t("inbox.join")) + "</a>"
+          : "") +
+        '<button class="btn btn--outline btn--sm" type="button" data-detail="' + esc(r.id) + '" ' +
+          'data-go-thread>' +
+          Icons.svg("comment", "icon-sm") + esc(I18N.t("req.talk")) +
+          (said ? '<span class="btn__n">' + I18N.num(said) + "</span>" : "") + "</button>" +
+        '<button class="btn btn--ghost btn--sm" type="button" data-path="' + esc(r.id) + '">' +
+          Icons.svg("clock", "icon-sm") +
+          esc(I18N.t(path === r.id ? "req.hideDetails" : "req.details")) + "</button>" +
+        (canRate
+          ? '<button class="btn btn--accent btn--sm" type="button" data-rate="' + esc(r.id) + '">' +
+            Icons.svg("star", "icon-sm") + esc(I18N.t("rate.cta")) + "</button>"
+          : st.rated
+            ? '<span class="tiny muted">' + esc(I18N.t("rate.already")) + "</span>"
             : "") +
-          // The conversation was behind "open details", which is a place
-          // nobody looks for a conversation. It gets its own way in, and says
-          // how much is in it.
-          '<button class="btn btn--outline btn--sm" type="button" data-detail="' + esc(r.id) + '" ' +
-            'data-go-thread>' + Icons.svg("comment", "icon-sm") +
-            esc(said ? I18N.t("thread.count", { n: I18N.num(said) }) : I18N.t("thread.open")) +
-            "</button>" +
-          '<button class="btn btn--ghost btn--sm" type="button" data-detail="' + esc(r.id) + '">' +
-            esc(I18N.t("req.openDetails")) + "</button>" +
-          (canRate
-            ? '<button class="btn btn--outline btn--sm" type="button" data-rate="' + esc(r.id) + '">' +
-              Icons.svg("star", "icon-sm") + esc(I18N.t("rate.cta")) + "</button>"
-            : st.rated
-              ? '<span class="tiny muted">' + esc(I18N.t("rate.already")) + "</span>"
-              : "");
-      }
-    }) +
-    // On the row itself, not behind "open details". Both sides asked the same
-    // question about an agreed piece of work — where has it got to — and
-    // answering it should not require finding a button first.
-    '<div class="track-slot">' + C.progress(r, "client") + "</div>" +
-    (path === r.id ? '<div class="admin-case">' + C.timeline(r, { internal: false }) + "</div>" : "") +
-    (open === r.id ? clientDetail(r, st, lawyer) : "") + "</div>";
+      "</div>" +
+
+      (path === r.id
+        ? '<div class="case__panel">' +
+          C.timeline(r, { internal: false, titleKey: "req.whatHappened" }) + "</div>"
+        : "") +
+      (showing ? clientDetail(r, st, lawyer) : "") +
+    "</article>";
   }
 
   function clientDetail(r, st, lawyer) {
-    return '<div class="card card--pad" style="margin:var(--s-2) 0 var(--s-4)">' +
+    return '<div class="case__panel">' +
       '<div class="row between wrap gap-3">' +
         '<div class="row gap-3">' + C.avatar(lawyer, "sm") +
           '<div><span class="tiny muted" data-i18n="req.byLawyer"></span>' +
@@ -186,9 +258,6 @@ Pages.define("requests", function (global) {
       (rating[r.id] !== undefined ? rateForm(r) : "") +
       // Everything the two of them said and sent, on the case it belongs to.
       C.thread(r, "parties", { closed: st.status === "completed" }) +
-      // And what happened to it, dated. The client is not shown the internal
-      // half — the same rule the database applies.
-      C.timeline(r, { internal: false }) +
     "</div>";
   }
 
@@ -455,8 +524,13 @@ Pages.define("requests", function (global) {
                 "</div>" +
                 '<div class="inbox-row__side">' +
                   '<span class="status status--' + st.cls + '">' + esc(I18N.t(st.key)) + "</span>" +
-                  '<strong class="tiny"><span class="num">' + I18N.num(r.price) + "</span> " +
-                    esc(I18N.t("common.sar")) + "</strong>" +
+                  // What reaches them, not what the client pays. The two are
+                  // different numbers and only one of them is theirs.
+                  '<span class="case__net"><span class="tiny muted">' +
+                    esc(I18N.t("req.yourShare")) + "</span>" +
+                    '<strong class="tiny">' + C.sar(M.distribute(r).lawyer) + "</strong>" +
+                    '<span class="tiny faint">' + esc(I18N.t("req.clientPays")) + " " +
+                      C.sar(M.distribute(r).client) + "</span></span>" +
                   '<div class="inbox-row__actions">' +
                     '<button class="btn btn--ghost btn--sm" type="button" data-path="' +
                       esc(r.id) + '">' + Icons.svg("clock", "icon-sm") +
@@ -528,9 +602,11 @@ Pages.define("requests", function (global) {
         "<span>" + esc(I18N.t("inbox.aiHidden")) + "</span></p>" : "") +
       '<textarea class="draft-text" data-draft-body spellcheck="false">' + esc(body) + "</textarea>" +
       '<div class="draft-foot">' +
-        '<div><span class="tiny muted">' + esc(I18N.t("inbox.revenue")) + "</span>" +
-          '<strong style="display:block;color:var(--accent)"><span class="num">' +
-            I18N.num(r.price) + "</span> " + esc(I18N.t("common.sar")) + "</strong></div>" +
+        '<div><span class="tiny muted">' + esc(I18N.t("req.yourShare")) + "</span>" +
+          '<strong style="display:block;color:var(--accent)">' +
+            C.sar(M.distribute(r).lawyer) + "</strong>" +
+          '<span class="tiny faint">' + esc(I18N.t("req.clientPays")) + " " +
+            C.sar(M.distribute(r).client) + "</span></div>" +
         '<span class="grow"></span>' +
         '<button class="btn btn--ghost btn--sm" type="button" data-assign="' + esc(r.id) + '">' +
           Icons.svg("graduation", "icon-sm") + esc(I18N.t("inbox.assign")) + "</button>" +
@@ -788,6 +864,9 @@ Pages.define("requests", function (global) {
       });
       return;
     }
+
+    var pl = hit("data-pile");
+    if (pl) { pile = pl; open = null; path = null; App.rerender(); return; }
 
     var ph = hit("data-path");
     if (ph) { path = path === ph ? null : ph; App.rerender(); return; }

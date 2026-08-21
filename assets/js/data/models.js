@@ -463,6 +463,44 @@
   var OPEN_STATES = ["new", "quoting", "assigned", "scheduled", "drafted",
                      "open_to_interns", "with_intern", "in_progress"];
 
+  /** A client's work sorted into the four piles anybody actually thinks in:
+      what is happening now, what is booked for later, what is finished, and
+      what is being argued about. Nothing appears in two of them. */
+  function requestPiles(list) {
+    var out = { live: [], booked: [], past: [], disputed: [] };
+    (list || []).forEach(function (r) {
+      var st = requestState(r).status;
+      var d = disputeFor(r.id);
+      if (d && d.status === "open") { out.disputed.push(r); return; }
+      if (st === "completed" || st === "cancelled" || st === "refunded") {
+        out.past.push(r); return;
+      }
+      // Booked means a time was agreed and has not come yet: a call waiting
+      // to happen is not work in progress.
+      if (st === "scheduled" || (isLive(r) && st === "new")) { out.booked.push(r); return; }
+      out.live.push(r);
+    });
+    return out;
+  }
+
+  /** What stops a client opening a second request: one that is still running,
+      or one that was delivered and never rated. Returns the request in the
+      way, or null. */
+  function blockingRequest(clientId) {
+    // Only work this person actually opened. In production that is every
+    // request there is — the seed is empty — and in the demo it leaves the
+    // fixtures out, which are an illustration of a busy platform rather than
+    // one visitor's own commitments.
+    var mine = Store.requests().filter(function (r) { return r.clientId === clientId; });
+    for (var i = 0; i < mine.length; i++) {
+      var st = requestState(mine[i]);
+      if (["completed", "cancelled", "refunded"].indexOf(st.status) === -1) return mine[i];
+      // Closed, but the lawyer was never rated — the last thing owed.
+      if (st.status === "completed" && !st.rated) return mine[i];
+    }
+    return null;
+  }
+
   function requestsForClient(clientId, which) {
     return requests().filter(function (r) {
       if (r.clientId !== clientId) return false;
@@ -1030,6 +1068,7 @@
     serviceTypes: serviceTypes, allServiceTypes: allServiceTypes,
     serviceType: serviceType, servicesOf: servicesOf, services: services,
     timeline: timeline, refOf: refOf, partyList: partyList,
+    requestPiles: requestPiles, blockingRequest: blockingRequest,
     quotes: quotes, quote: quote, offersOn: offersOn, quoteLive: quoteLive,
     myQuote: myQuote, openQuotesFor: openQuotesFor, quotePrice: quotePrice,
     quotesForClient: quotesForClient, quoteState: quoteState,

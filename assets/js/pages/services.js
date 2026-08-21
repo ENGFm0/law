@@ -426,6 +426,14 @@ Pages.define("services", function (global) {
       for (var i = 0; i < all.length; i++) if (all[i].svc.id === ord.getAttribute("data-order")) pick = all[i];
       if (!pick) return;
       var chosen = ordering[pick.svc.id] || M.serviceChannels(pick.svc)[0];
+      // One at a time. The database refuses a second one anyway; this is so
+      // the person is told why rather than shown an error about a row.
+      var blocking = M.blockingRequest(Session.user().id);
+      if (blocking) {
+        App.toast(I18N.t("req.oneAtATimeBody"), "lock");
+        App.go("requests.html");
+        return;
+      }
       Store.addRequest({
         clientId: Session.user().id, lawyerId: pick.owner.id, typeId: pick.svc.typeId,
         channel: chosen,

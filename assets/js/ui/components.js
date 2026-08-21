@@ -9,7 +9,13 @@
   var I18N = global.I18N, Icons = global.Icons, M = global.Models, App = global.App;
   var esc = App.esc, tx = App.tx;
 
-  function sar() { return esc(I18N.t("common.sar")); }
+  /** With no argument, the word. With halalas, the amount and the word —
+      money is stored in halalas everywhere and printed in riyals once. */
+  function sar(halalas) {
+    var word = esc(I18N.t("common.sar"));
+    if (halalas === undefined || halalas === null) return word;
+    return '<span class="num">' + I18N.num(Math.round(halalas / 100)) + "</span> " + word;
+  }
   function num(n) { return '<span class="num">' + I18N.num(n) + "</span>"; }
 
   /* ---------- people ---------- */

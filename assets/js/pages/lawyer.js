@@ -178,6 +178,14 @@ Pages.define("lawyer", function (global) {
     var svc = M.servicesOf(u.id).filter(function (s) { return s.id === ord.getAttribute("data-order"); })[0];
     if (!svc) return;
     var type = M.serviceType(svc.typeId) || {};
+    // One at a time. The database refuses a second one anyway; this is so the
+    // person is told why rather than shown an error about a row.
+    var blocking = M.blockingRequest(Session.user().id);
+    if (blocking) {
+      App.toast(I18N.t("req.oneAtATimeBody"), "lock");
+      App.go("requests.html");
+      return;
+    }
     Store.addRequest({
       clientId: Session.user().id, lawyerId: u.id, typeId: svc.typeId, price: svc.price,
       status: "new", ai: type.tier === "quick", hours: 3,

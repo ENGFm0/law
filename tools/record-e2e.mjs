@@ -59,19 +59,21 @@ ok('the reference is on the row', /SND-\d\d-\d{5}/.test(t), t.match(/SND-[^\s]*/
 const ref = (t.match(/SND-\d\d-\d{5}/) || [])[0];
 
 console.log('— AND A DATED RECORD OF WHAT HAPPENED —');
-await p.click(`[data-detail="${rid}"]`); await p.waitForTimeout(500);
+// The record is its own door on the card now; the other one opens the
+// conversation.
+await p.click(`[data-path="${rid}"]`); await p.waitForTimeout(500);
 t = await body();
-ok('the record is on the case', /مسار الطلب|كل ما دار/.test(t));
+ok('the record is on the case', /ماذا حدث ومتى|كل ما دار/.test(t));
 ok('it says the request was placed', /أُنشئ الطلب/.test(t));
 ok('and that it went to a trainee', /وُجّه إلى المتدرب/.test(t), t.slice(0,200));
 ok('every line is dated to the minute', /\d{1,2}:\d\d/.test(t), t.match(/[^\n]*\d{1,2}:\d\d[^\n]*/));
 ok('the client is not shown the internal note', !/المادة 74/.test(t));
 
-console.log('— THE PATH IS ON THE LIST, NOT BEHIND A PANEL —');
+console.log('— THE RECORD IS ON THE CARD, NOT BEHIND A PANEL —');
 await open('requests.html', 'u-fahad');
 await p.click(`[data-path="${rid}"]`); await p.waitForTimeout(500);
 t = await body();
-ok('a button opens the path from the row', /مسار الطلب|كل ما دار/.test(t));
+ok('a button opens the record from the row', /ماذا حدث ومتى|كل ما دار/.test(t));
 ok('grouped under a day', /اليوم|أمس|\d{4}/.test(t));
 ok('with a clock on every line', /\d\d:\d\d/.test(t), t.match(/\d\d:\d\d/g));
 ok('and it closes again', true);
@@ -81,7 +83,7 @@ console.log('— THE LAWYER READS BOTH SIDES, APART OR TOGETHER —');
 await open('requests.html', 'u-ahmed');
 await p.click(`[data-path="${rid}"]`); await p.waitForTimeout(500);
 t = await body();
-ok('the lawyer sees the path too', /مسار الطلب/.test(t));
+ok('the lawyer sees the record too', /ماذا حدث ومتى|مسار الطلب/.test(t));
 ok('with the client’s side in it', /رسالة/.test(t));
 ok('and a way to read the two apart', /مع العميل/.test(t) && /الداخلية/.test(t));
 await p.click(`[data-tl-side="internal"][data-tl-for="${rid}"]`); await p.waitForTimeout(400);
@@ -154,6 +156,39 @@ await open('index.html', 'u-jaid');
 t = await body();
 ok('the trainee is told what to write', /مهام عليك/.test(t));
 ok('and how far from a certificate', /ساعة للشهادة/.test(t));
+
+console.log('— FOUR PILES, ONE AT A TIME —');
+await open('requests.html', 'u-fahad');
+t = await body();
+ok('the piles are named', /الحالية/.test(t) && /السابقة/.test(t) && /الاعتراضات/.test(t));
+ok('and the objection is not in the current pile', !/لا تعالج البند/.test(t));
+await p.click('[data-pile="disputed"]'); await p.waitForTimeout(400);
+ok('it is in its own', /لا تعالج البند/.test(await body()));
+
+console.log('— AND A SECOND REQUEST WAITS ITS TURN —');
+t = await body();
+ok('the client is told why', /طلب واحد في كل مرة/.test(t), t.slice(0, 120));
+ok('naming the one in the way', t.includes(ref));
+const refused = await p.evaluate(() => {
+  const before = Store.requests().length;
+  // What the order button does, without the page in the way.
+  const blocked = !!Models.blockingRequest('u-fahad');
+  return { before, blocked };
+});
+ok('and the rule agrees', refused.blocked === true);
+await p.evaluate(() => {
+  const id = localStorage.getItem('rid');
+  Store.setRequest(id, { status: 'completed', rated: false });
+});
+await p.goto(U + 'requests.html'); await p.waitForTimeout(500);
+ok('finishing it is not enough on its own',
+   /قيّم المحامي لإغلاق الطلب/.test(await body()), (await body()).slice(0, 120));
+await p.evaluate(() => {
+  const id = localStorage.getItem('rid');
+  Store.setRequest(id, { rated: true });
+});
+await p.goto(U + 'requests.html'); await p.waitForTimeout(500);
+ok('rating it lets the next one through', !/طلب واحد في كل مرة/.test(await body()));
 
 console.log('\nerrors: ' + (errs.length ? errs.join(' | ') : 'none'));
 console.log(`${pass} passed, ${fail} failed`);
