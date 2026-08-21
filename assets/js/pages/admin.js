@@ -27,6 +27,7 @@ Pages.define("admin", function (global) {
     { id: "requests", key: "adm.tabRequests", icon: "inbox" },
     { id: "money",    key: "adm.tabMoney",    icon: "wallet" },
     { id: "ads",      key: "adm.tabAds",      icon: "bell" },
+    { id: "promos",   key: "adm.tabPromos",   icon: "tag" },
     { id: "catalogue",key: "admin.tabCat",    icon: "tag" },
     { id: "settings", key: "adm.tabSettings", icon: "settings" }
   ];
@@ -949,7 +950,9 @@ Pages.define("admin", function (global) {
               resolve: "admin.actResolve", settings: "admin.actSettings",
               feature: "adm.feature", ai: "adm.aiOff", ad: "adm.ads",
               cost: "adm.costs", partner: "adm.partners", band: "adm.bands",
-              catalogue: "admin.catTitle" };
+              catalogue: "admin.catTitle",
+              promo: "adm.promoAdd", promo_off: "adm.promoStop",
+              promo_on: "adm.promoStart" };
 
   function record() {
     var log = Store.audit().slice(0, 40);
@@ -968,9 +971,104 @@ Pages.define("admin", function (global) {
     "</section>";
   }
 
+  /* ============================================================== promos
+     Every code the platform has issued, what it has actually cost, and the
+     switch that stops one. The cost is the point: a discount is money the
+     platform gave away, and a page that lists codes without saying how much
+     they came to is a page nobody can use to decide anything. */
+  function promoRow(p) {
+    var used = p.usedCount || 0;
+    var given = 0;
+    ((Store.redemptions && Store.redemptions()) || []).forEach(function (x) {
+      if (x.promoId === p.id) given += x.amount || 0;
+    });
+    var who = p.clientId ? M.user(p.clientId) : null;
+    var dead = p.active === false ||
+      (p.expiresAt && new Date(p.expiresAt).getTime() <= Date.now()) ||
+      (p.usageLimit != null && used >= p.usageLimit);
+
+    return '<div class="card card--pad admin-card">' +
+      '<div class="row between wrap gap-3">' +
+        '<strong class="num" dir="ltr">' + esc(p.code) + "</strong>" +
+        '<span class="row gap-2">' +
+          '<span class="tag">' + I18N.num(p.discountPct) + "%</span>" +
+          '<span class="status status--' + (dead ? "muted" : "ok") + '">' +
+            esc(I18N.t(dead ? "adm.promoOff" : "adm.promoLive")) + "</span>" +
+        "</span>" +
+      "</div>" +
+      (p.label ? '<p class="small muted" style="margin-top:var(--s-2)">' +
+        esc(p.label) + "</p>" : "") +
+      (who ? '<p class="tiny faint" style="margin-top:var(--s-2)">' +
+        esc(I18N.t("adm.promoPersonal", { name: tx(who.name) })) + "</p>" : "") +
+      '<div class="meta-row" style="margin-top:var(--s-3)">' +
+        '<span class="tiny muted">' + esc(I18N.t("adm.promoUsed", { n: I18N.num(used) })) +
+          (p.usageLimit != null
+            ? " " + esc(I18N.t("adm.promoOf", { n: I18N.num(p.usageLimit) }))
+            : " · " + esc(I18N.t("adm.promoUnlimited"))) + "</span>" +
+        '<span class="dot"></span>' +
+        '<span class="tiny muted">' + esc(I18N.t("adm.promoGiven")) + ": " +
+          sar(given) + "</span>" +
+        (p.maxDiscount != null
+          ? '<span class="dot"></span><span class="tiny muted">' +
+            esc(I18N.t("adm.promoMax")) + ": " + sar(p.maxDiscount) + "</span>"
+          : "") +
+        (p.expiresAt
+          ? '<span class="dot"></span><span class="tiny muted">' +
+            esc(I18N.t("adm.promoExpiry")) + " " + esc(I18N.date(p.expiresAt)) + "</span>"
+          : "") +
+      "</div>" +
+      '<div class="row gap-2 wrap" style="margin-top:var(--s-3)">' +
+        '<button class="btn btn--ghost btn--sm" type="button" data-promo-toggle="' +
+          esc(p.id) + '">' +
+          esc(I18N.t(p.active === false ? "adm.promoStart" : "adm.promoStop")) + "</button>" +
+      "</div></div>";
+  }
+
+  function promos() {
+    var list = ((Store.promos && Store.promos()) || []).slice().reverse();
+    return head("adm.promos", "adm.promosLead") +
+      '<p class="tiny muted" style="margin:calc(-1 * var(--s-4)) 0 var(--s-5)" ' +
+        'data-i18n="adm.promoNote"></p>' +
+
+      '<section class="card card--pad">' +
+        '<div class="grid grid-2" style="gap:var(--s-3)">' +
+          '<label class="field"><span class="label" data-i18n="adm.promoCode"></span>' +
+            '<input class="input num" dir="ltr" data-promo-new-code ' +
+              'autocomplete="off" spellcheck="false"></label>' +
+          '<label class="field"><span class="label" data-i18n="adm.promoPct"></span>' +
+            '<input class="input" type="number" min="1" max="100" value="10" ' +
+              'data-promo-new-pct></label>' +
+        "</div>" +
+        '<label class="field" style="margin-top:var(--s-3)">' +
+          '<span class="label" data-i18n="adm.promoLabel"></span>' +
+          '<input class="input" data-promo-new-label></label>' +
+        '<div class="grid grid-2" style="gap:var(--s-3);margin-top:var(--s-3)">' +
+          '<label class="field"><span class="label" data-i18n="adm.promoMax"></span>' +
+            '<input class="input" type="number" min="0" data-promo-new-max></label>' +
+          '<label class="field"><span class="label" data-i18n="adm.promoLimit"></span>' +
+            '<input class="input" type="number" min="1" data-promo-new-limit></label>' +
+        "</div>" +
+        '<label class="field" style="margin-top:var(--s-3)">' +
+          '<span class="label" data-i18n="adm.promoExpiry"></span>' +
+          '<input class="input" type="date" dir="ltr" data-promo-new-expiry></label>' +
+        '<p class="tiny" style="margin-top:var(--s-3);color:var(--danger)" ' +
+          'data-promo-error hidden></p>' +
+        '<button class="btn btn--primary btn--sm" style="margin-top:var(--s-4)" ' +
+          'type="button" data-promo-add>' + Icons.svg("send", "icon-sm") +
+          esc(I18N.t("adm.promoAdd")) + "</button>" +
+      "</section>" +
+
+      '<div style="margin-top:var(--s-6)">' +
+        (list.length
+          ? list.map(promoRow).join("")
+          : '<p class="small muted" data-i18n="adm.promoNone"></p>') +
+      "</div>";
+  }
+
   /* =============================================================== render */
   var VIEWS = { overview: overview, people: people, requests: requests,
-                money: money, ads: ads, catalogue: catalogue, settings: settings };
+                money: money, ads: ads, promos: promos,
+                catalogue: catalogue, settings: settings };
 
   C.wireTimeline(host);
 
@@ -1054,6 +1152,50 @@ Pages.define("admin", function (global) {
 
     var f = hit("data-filter");
     if (f) { filter = f; App.rerender(); return; }
+
+    /* --- discount codes --- */
+    if (t.closest("[data-promo-add]")) {
+      var code = val("[data-promo-new-code]").toUpperCase();
+      var pctv = +val("[data-promo-new-pct]");
+      var err = $("[data-promo-error]", host);
+      var bad = function (key) {
+        if (err) { err.textContent = I18N.t(key); err.hidden = false; }
+      };
+      if (!code || !(pctv >= 1 && pctv <= 100)) { bad("adm.promoBad"); return; }
+      if (Store.promoByCode && Store.promoByCode(code)) { bad("adm.promoExists"); return; }
+
+      var max = val("[data-promo-new-max]");
+      var limit = val("[data-promo-new-limit]");
+      var ends = val("[data-promo-new-expiry]");
+      Store.addPromo({
+        code: code, discountPct: pctv,
+        label: val("[data-promo-new-label]") || null,
+        // The ceiling is typed in riyals and kept in halalas, like every
+        // other amount that means money here.
+        maxDiscount: max ? Math.round(+max * 100) : null,
+        usageLimit: limit ? +limit : null,
+        expiresAt: ends ? new Date(ends).getTime() : null,
+        createdBy: me.id
+      });
+      Store.log({ action: "promo", byId: me.id, subject: code });
+      App.toast(I18N.t("adm.promoDone"), "check");
+      App.rerender();
+      return;
+    }
+
+    var pt = hit("data-promo-toggle");
+    if (pt) {
+      var was = null;
+      ((Store.promos && Store.promos()) || []).forEach(function (x) {
+        if (x.id === pt) was = x;
+      });
+      if (!was) return;
+      Store.setPromo(pt, { active: was.active === false });
+      Store.log({ action: was.active === false ? "promo_on" : "promo_off",
+                  byId: me.id, subject: was.code });
+      App.rerender();
+      return;
+    }
 
     /* --- people --- */
     var ap = hit("data-approve");

@@ -127,6 +127,70 @@ const n = await tab.evaluate(() => window.Store.audit().length);
 // an action, so it leaves no entry.
 ok(`${n} entries, append only`, n === 4);
 
+console.log('— ISSUING A DISCOUNT, AND SEEING WHAT IT COST —');
+await open('admin.html?tab=promos', 'u-staff');
+ok('the desk has a place to issue codes', await tab.$('[data-promo-add]') !== null);
+ok('and says out loud whose money it is',
+   /الخصم يُخصم من عمولة المنصة وحدها/.test(await body()));
+
+await tab.click('[data-promo-add]'); await tab.waitForTimeout(300);
+ok('a code with no code is refused',
+   await tab.$eval('[data-promo-error]', e => !e.hidden));
+
+await tab.fill('[data-promo-new-code]', 'ramadan10');
+await tab.fill('[data-promo-new-pct]', '10');
+await tab.fill('[data-promo-new-label]', 'حملة رمضان');
+await tab.fill('[data-promo-new-max]', '50');
+await tab.fill('[data-promo-new-limit]', '100');
+await tab.click('[data-promo-add]'); await tab.waitForTimeout(400);
+const issued = await tab.evaluate(() => window.Store.promoByCode('RAMADAN10'));
+ok('a typed code is stored upper case', issued && issued.code === 'RAMADAN10', issued);
+ok('with its ceiling kept in halalas', issued.maxDiscount === 5000, issued.maxDiscount);
+ok('and it appears on the page', /RAMADAN10/.test(await body()));
+ok('marked live', /فعّال/.test(await body()));
+ok('the same code twice is refused', await (async () => {
+  await tab.fill('[data-promo-new-code]', 'RAMADAN10');
+  await tab.fill('[data-promo-new-pct]', '20');
+  await tab.click('[data-promo-add]'); await tab.waitForTimeout(300);
+  return !(await tab.$eval('[data-promo-error]', e => e.hidden));
+})());
+
+// Somebody spends it, and the desk has to be able to see what that cost.
+await tab.evaluate(() => {
+  const r = Store.addRequest({ clientId:'u-fahad', lawyerId:'u-ahmed', typeId:'consult',
+    title:{ar:'ع',en:'c'}, brief:{ar:'ب',en:'b'}, price:300, status:'new', hours:4 });
+  Store.signIn('u-fahad');
+  Store.redeemPromo(r.id, 'RAMADAN10');
+  Store.signIn('u-staff');
+});
+await open('admin.html?tab=promos', 'u-staff');
+const spent = await body();
+ok('the counter is on the page', /استُعمل/.test(spent));
+// Not a hard-coded 30: an earlier section on this page moves the commission,
+// and the whole point of the cap is that the discount follows it.
+const gave = await tab.evaluate(() => {
+  const p = Store.promoByCode('RAMADAN10');
+  return Store.redemptions().filter(r => r.promoId === p.id)
+    .reduce((t, r) => t + r.amount, 0);
+});
+ok('and so is what it actually gave away',
+   /خُصم فعلياً/.test(spent) && spent.indexOf(String(Math.round(gave / 100))) !== -1,
+   (spent.match(/خُصم فعلياً[^·]*/) || [])[0] + ' vs ' + gave);
+ok('which never exceeds the commission it comes out of',
+   await tab.evaluate(g => {
+     const c = Models.platformSettings().commissionPct;
+     return g <= Math.round(30000 * c / 100);
+   }, gave), gave);
+
+await tab.click('[data-promo-toggle]'); await tab.waitForTimeout(400);
+ok('withdrawing one takes it out of use',
+   await tab.evaluate(() => window.Store.promoByCode('RAMADAN10').active === false));
+ok('and the client is told so rather than shown a dead button',
+   await tab.evaluate(() =>
+     window.Models.promoValue('RAMADAN10', 30000, null, 'u-munira').reason) === 'withdrawn');
+ok('the desk keeps a record of who withdrew it',
+   await tab.evaluate(() => window.Store.audit().some(e => e.subject === 'RAMADAN10')));
+
 console.log('— IN ENGLISH, IN THE DARK —');
 await tab.evaluate(() => { window.I18N.set('en'); document.documentElement.setAttribute('data-theme','dark'); });
 await tab.waitForTimeout(350);
