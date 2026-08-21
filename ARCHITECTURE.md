@@ -244,7 +244,56 @@ end
 
 **`applications`** — تقدّم متدرب لمهمة فتحها محامٍ لكل المتدربين.
 
-### 3.9 البقية
+### 3.9 الصياغة والورش والإشراف (هجرة 019)
+
+**`draft_jobs`** — طابور المسوّدات: `request_id` (فريد)، `lawyer_id`، `status`
+(`queued`/`running`/`ready`/`failed`/`used`)، `body`، `model`، `context_ref`، `attempts`.
+يُملأ بـtrigger حين يصل عمل لمحامٍ **مشترك** في أداة الصياغة، بالطريقين: أن يكون على الطلب
+من البداية أو أن يستلمه من المزاد. لا يقرأه العميل، ولا يحذفه المحامي.
+سؤال الاشتراك يُسأل مرة واحدة: **`has_ai(lawyer)`**.
+
+**`webinars`** + **`webinar_seats`** — ورشة يستضيفها محامٍ موثَّق: `ref` (`WRK-26-00001`)،
+`seats`، `price`، `starts_at`، `minutes`، `status`. المقعد يُحجز مرة لكل شخص،
+والسقف محروس بقفل صف (`guard_seats`)، والسعر **مثبَّت على المقعد** لحظة الحجز.
+الإعلان عام؛ **قائمة الحاضرين ليست عامة** — صاحب المقعد والمضيف والإدارة فقط.
+
+**`mentorships`** — الإشراف المدفوع: `mentor_id`، `intern_id`، `opened_by`
+(`intern` تقدّم / `mentor` دعا)، `status`، `fee`، `paid_until`.
+**الطرف الذي طلب لا يَقبل** — `guard_mentorship()` يرفض ذلك.
+**`mentorship_messages`** — غرفة الإشراف (الاثنان والإدارة).
+**`mentorship_sessions`** — التقويم؛ الجلسة الحاضرة تُحتسب ساعاتها عبر `mentored_hours()`.
+
+### 3.10 الفرز المجاني والخصومات (هجرة 020)
+
+**`free_screening`** — تصنيف في `service_types` بنطاق سعري `0..0`.
+`guard_screening()` يرفض أي سعر عليه، ويشترط أن يكون المتدرب الذي يستلمه تحت إشراف
+**فعّال**، ثم **يضع مشرفه محامياً على الطلب** — لأن من يجيب هو من يتحمّل الإجابة.
+قاعدة «طلب واحد» صارت تقارن المِثل بالمِثل: جلسة فرز لا تحجب عملاً مدفوعاً ولا العكس،
+لكن جلستَي فرز مفتوحتين مرفوضتان.
+
+**كفالة الإشراف** — `platform_settings.sponsorship_pct` (≤ ٢٠٪) و`sponsorship_min/max`
+(٥٠–١٠٠ ر.س)، و`guard_mentorship_fee()` يفرض النطاق.
+`payments.request_id` صار قابلاً لأن يكون فارغاً مع `mentorship_id`، وقيد يقول
+**واحد منهما لا كلاهما ولا لا شيء**. الشحن عبر
+**`charge_sponsorship(mentorship, gateway, ref, months)`** — دالة `definer` تكتب
+`payments` + سطرَي `payouts` (حصة المنصة، وصافي المحامي)، لأن الجدولين **لا يقبلان كتابة من
+المتصفح** (قرار هجرة 003 وبقي كما هو).
+
+**`promo_codes`** — `code`, `discount_pct`, `max_discount` (هللات), `usage_limit`,
+`used_count`, `client_id` (كود شخصي), `type_id`, `expires_at`, `active`.
+**`promo_redemptions`** — من صرف ماذا؛ مفتاح فريد `(promo_id, client_id)` هو ما يمنع
+الصرف مرتين، ولا سياسة إدراج عليه إطلاقاً.
+`validate_promo_code(code, gross, type)` تُعيد `(ok, reason, discount, pct)`،
+و`redeem_promo_code(code, request)` تصرفه تحت قفل.
+
+> **الخصم يخرج من عمولة المنصة، لا من نصيب المحامي ولا المتدرب** — ولذلك هو **مسقوف
+> بالعمولة نفسها**. كود يعطي أكثر مما تكسبه المنصة على الطلب يُعطي العمولة كاملة ويقول
+> `capped at our commission` بدل أن يَعِد برقم لا يستطيع الدفتر الوفاء به.
+
+وحين تكتمل جلسة فرز، `offer_conversion()` يُصدر للعميل **كوداً حقيقياً باسمه**
+(١٠٪، صلاحية ٣٠ يوماً، استعمال واحد) بدل لافتة.
+
+### 3.11 البقية
 
 **`agreements`** — اتفاق دائم بين محامٍ ومتدرب: `kind` (`cases`/`monthly`/`yearly`) و`amount`.
 عمل تحت اتفاق **لا يأخذ شيئاً من الطلب** — يُحسب بين الطرفين خارجه.
@@ -292,6 +341,13 @@ is_lawyer()              -- 'lawyer' في roles
 | `contact_book()`, `contact_of()` | بيانات التواصل بين الأطراف — لا تُقرأ من الجدول مباشرة |
 | `raise_notice()` | رفع إشعار لشخص آخر (لا يستطيع الكاتب قراءته) |
 | `refund_under_guarantee(p_request)` | استرداد تحت الضمان؛ يُعيد كلمة: `refunded` / `not yours` / `window closed` / `not delivered` / `not offered` / `already disputed` |
+| `has_ai(lawyer)` | هل اشتراك أداة الصياغة فعّال |
+| `mentored_by(mentor, intern)` / `in_mentorship(id)` | هل بينهما إشراف فعّال / هل أنا طرف فيه |
+| `mentored_hours(intern)` | ساعات الجلسات التي حضرها |
+| `sponsorship_current(id)` | هل كفالة هذا الشهر مدفوعة |
+| `charge_sponsorship(...)` | يكتب الدفعة والتوزيع؛ يُعيد `paid` / `not yours` / `not active` / `already paid` |
+| `validate_promo_code(code, gross, type)` | قيمة الكود وسببه |
+| `redeem_promo_code(code, request)` | صرفه؛ يُعيد `applied` / `already used` / `too late` / … |
 
 ---
 
@@ -521,8 +577,8 @@ lawyer    = kept − commission − commissionVat − intern
 |---|---|---|
 | منطق بلا متصفح | ٧ حزم | `node tools/model-test.mjs` … |
 | متصفح (Playwright) | ٢٩ حزمة، ~٦٠٠ تحقّق | `sh tools/run-all.sh` |
-| صلاحيات قاعدة البيانات | ١٤ ملف، ١٩٤ تحقّق | `psql -f supabase/rls-test*.sql` |
-| الهجرات على بيانات حقيقية | ١٧/١٧ | `sh tools/migrate-test.sh` |
+| صلاحيات قاعدة البيانات | ١٦ ملف، ٢٧١ تحقّق | `psql -f supabase/rls-test*.sql` |
+| الهجرات على بيانات حقيقية | ١٩/١٩ | `sh tools/migrate-test.sh` |
 
 حزم يُنظر إليها أولاً عند التعديل: `thread-e2e` (المحادثات)، `call-e2e` (المكالمات
 والتسجيل)، `desk-e2e` (لوحة الإدارة والمقاعد)، `record-e2e` (السجل والرقم المرجعي)،
@@ -532,7 +588,8 @@ lawyer    = kept − commission − commissionVat − intern
 
 ## 18. ما ليس موجوداً بعد (لا تفترض وجوده)
 
-* **بوابة دفع حقيقية** — الجدولان جاهزان، لا اتصال.
+* **بوابة دفع حقيقية** — الجدولان جاهزان ولهما الآن كاتب واحد حقيقي
+  (`charge_sponsorship`)، لكن لا اتصال ببوّابة فعلية بعد: الشحن يقيّد الدفعة ولا يحصّلها.
 * **ذكاء اصطناعي حقيقي في `assistant.html`** — محاكاة بتأخير ونص قالب.
 * **خادم TURN مشغَّل** — المكان محجوز في `config.js`.
 * **بريد أو رسائل نصية** — الإشعارات داخل الموقع فقط.

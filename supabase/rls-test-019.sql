@@ -182,7 +182,7 @@ select case when count(*) = 1 then 'PASS' else 'FAIL' end
 \echo '── supervision is asked for by one side and agreed by the other ──'
 reset role;
 set request.jwt.claim.sub = '';
-update public.profiles set is_mentor = true, mentorship_fee = 300
+update public.profiles set is_mentor = true, mentorship_fee = 80
   where id = '22222222-0000-0000-0000-000000000002';
 
 set role authenticated;
@@ -193,7 +193,7 @@ insert into public.mentorships (id, mentor_id, intern_id, opened_by)
 reset role;
 select case when count(*) = 1 then 'PASS' else 'FAIL' end
   || '  a trainee applies to a lawyer taking trainees' from public.mentorships;
-select case when fee = 300 then 'PASS' else 'FAIL' end
+select case when fee = 80 then 'PASS' else 'FAIL' end
   || '  at the fee the lawyer published, pinned on the row'
   from public.mentorships where id = '19c1aaaa-0000-0000-0000-0000000019c1';
 
@@ -214,7 +214,7 @@ reset role;
 select case when status = 'active' and started_at is not null then 'PASS' else 'FAIL' end
   || '  the lawyer accepts, and the moment is stamped'
   from public.mentorships where id = '19c1aaaa-0000-0000-0000-0000000019c1';
-select case when fee = 300 then 'PASS' else 'FAIL' end
+select case when fee = 80 then 'PASS' else 'FAIL' end
   || '  and the fee is not rewritten on the way through'
   from public.mentorships where id = '19c1aaaa-0000-0000-0000-0000000019c1';
 
