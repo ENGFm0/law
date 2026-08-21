@@ -23,9 +23,24 @@ union all select '006 console',         (to_regclass('public.announcements')  is
 union all select '007 work + channels', (select count(*) > 0 from information_schema.columns
                                           where table_name = 'services' and column_name = 'channels')
 union all select '008 auction + catalogue', (to_regclass('public.quotes') is not null)
-union all select '008 is_staff is definer', (select p.prosecdef from pg_proc p
+union all select '009 anon writes nothing',   (not has_table_privilege('anon', 'public.requests', 'insert'))
+union all select '010 indexes',               (select count(*) > 0 from pg_indexes
+                                                where schemaname = 'public' and indexname = 'requests_client')
+union all select '011 columns + privacy',     (select count(*) > 0 from information_schema.columns
+                                                where table_name = 'profiles' and column_name = 'email')
+union all select '012 conversations',         (to_regclass('public.messages') is not null)
+union all select '013 raise_notice',          (to_regprocedure('public.raise_notice(uuid,text,text)') is not null)
+union all select '014 the guarantee',         (select count(*) > 0 from information_schema.columns
+                                                where table_name = 'platform_settings' and column_name = 'guarantee_hours')
+union all select '015 reference + record',    (to_regclass('public.request_events') is not null)
+union all select '003 is_staff is definer', (select p.prosecdef from pg_proc p
                                               join pg_namespace n on n.oid = p.pronamespace
                                               where n.nspname = 'public' and p.proname = 'is_staff');
+
+-- If a row above says false, that migration has not been run here. And if one
+-- says true while the browser still reports PGRST205, the table is there and
+-- PostgREST has not noticed yet — this tells it to look again:
+notify pgrst, 'reload schema';
 
 -- ---------------------------------------------------------------- 2 of 3
 -- A policy that reads the table it is written on is how a plain read turns

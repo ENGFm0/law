@@ -335,8 +335,20 @@
 
   /** A write that fails leaves the cache ahead of the database, so say so
       rather than letting the screen quietly disagree with the server. */
+  var toldAboutSchema = false;
   function report(res) {
     if (res && res.error) {
+      // The same distinction the reads make: a migration that has not been
+      // run is a state, not a fault. Said once per visit, to whoever is
+      // looking at the console, rather than as a toast on every attempt.
+      if (SB.notYet && SB.notYet(res.error)) {
+        if (!toldAboutSchema) {
+          toldAboutSchema = true;
+          console.warn("this database is missing something the site expects —",
+                       res.error.message);
+        }
+        return res;
+      }
       console.error(res.error);
       // 42501 on a write, from a page that believes somebody is signed in,
       // has one meaning worth showing: the request carried no session. The

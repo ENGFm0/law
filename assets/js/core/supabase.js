@@ -49,6 +49,22 @@
     return !!err && (err.code === "42703" || /does not exist|schema cache/i.test(err.message || ""));
   }
 
+  /** Something this database has not been given yet: a table from a migration
+      that has not been run, or a function that came with it. PostgREST says
+      PGRST205 for the first and PGRST202 for the second; Postgres itself says
+      42P01 and 42883 when the request gets that far.
+
+      Worth separating from a real failure. "The desk cannot read the ledger"
+      needs saying out loud; "this project is one migration behind" needs
+      saying to whoever runs migrations, and to nobody else. */
+  function notYet(err) {
+    if (!err) return false;
+    var code = err.code || "";
+    if (["PGRST205", "PGRST202", "42P01", "42883", "404"].indexOf(code) !== -1) return true;
+    return /could not find the (table|function)|schema cache|relation .* does not exist/i
+      .test(err.message || "");
+  }
+
   function people(sb) {
     return sb.from("profiles").select(PUBLIC_PROFILE).then(function (res) {
       if (!unknownColumn(res.error)) return res;
@@ -224,6 +240,8 @@
 
   var SB = {
     authError: authError,
+    // Exported so the write path can tell the same two things apart.
+    notYet: notYet,
     lib: lib,
     cleanUrl: cleanUrl,
     configured: configured,
@@ -468,6 +486,18 @@
             want.forEach(function (name, i) {
               var res = results[i];
               if (res && res.error) {
+                // A table or function this database has not been given yet is
+                // not a failure — it is a migration that has not been run. The
+                // site is deployed in one push and the SQL is run by hand
+                // afterwards, so this state is normal for a few minutes and
+                // permanent for anyone running an older schema on purpose.
+                // Treated as empty and said to the console, not to the person
+                // reading the page.
+                if (notYet(res.error)) {
+                  console.warn("not in this database yet:", name, "—", res.error.message);
+                  rows[name] = [];
+                  return;
+                }
                 errors.push({ table: name, code: res.error.code || "",
                               message: res.error.message || String(res.error) });
                 rows[name] = null;        // not [] — "we do not know" is not "none"

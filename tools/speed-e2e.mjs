@@ -122,6 +122,41 @@ console.log('— A DATABASE THAT HAS NOT HAD THE MIGRATION RUN YET —');
   await fresh.close();
 }
 
+console.log('— A DATABASE ONE MIGRATION BEHIND —');
+{
+  // The site ships in one push; the SQL is run by hand afterwards. In between,
+  // a table simply is not there — and PostgREST says so per request. That is a
+  // state, not a fault, and it must not paint a failure bar over a working
+  // site.
+  await ctx.unroute('**/rest/v1/**');
+  let missing = 0;
+  await ctx.route('**/rest/v1/**', async (r) => {
+    const name = new URL(r.request().url()).pathname.split('/').pop();
+    // Two the site reads on the way to drawing a directory, so the case is
+              // exercised by a visitor who is not signed in.
+              if (name === 'announcements' || name === 'reviews') {
+      missing++;
+      return r.fulfill({ status: 404, contentType: 'application/json',
+        body: JSON.stringify({ code: 'PGRST205',
+          message: `Could not find the table 'public.${name}' in the schema cache` }) });
+    }
+    const body = Object.prototype.hasOwnProperty.call(TABLES, name) ? TABLES[name] : [];
+    r.fulfill({ contentType: 'application/json', body: JSON.stringify(body) });
+  });
+  const behind = await ctx.newPage();
+  await behind.goto(U + 'lawyers.html');
+  await behind.waitForTimeout(900);
+  await behind.evaluate(() => localStorage.removeItem('sanad.warm.v1'));
+  await behind.reload();
+  await behind.waitForTimeout(900);
+  const t = await behind.$eval('#main', (e) => e.innerText);
+  ok('the missing tables were asked for', missing > 0, missing);
+  ok('the site loads anyway', /سلمى/.test(t), t.slice(0, 80));
+  ok('with no failure bar over it', await behind.$('[data-datafail]') === null);
+  ok('and nothing pretending to be offline', await behind.$('[data-offline]') === null);
+  await behind.close();
+}
+
 console.log('— NOTHING PRIVATE IS KEPT ON DISK —');
 const kept = await p.evaluate(() => JSON.parse(localStorage.getItem('sanad.warm.v1') || '{}'));
 ok('the warm copy holds the public lists', Array.isArray(kept.profiles));
