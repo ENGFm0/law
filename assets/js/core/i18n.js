@@ -1406,6 +1406,18 @@
       "req.rateToClose": "قيّم المحامي لإغلاق الطلب",
       "req.yourShare": "لك بعد الخصم",
       "req.clientPays": "يدفع العميل",
+      "call.taping": "تُسجَّل هذه المكالمة — الطرفان يريان هذا التنبيه.",
+      "call.keepTitle": "نحتفظ بالتسجيل في الطلب؟",
+      "call.keepBody": "مدة التسجيل {n} ثانية. لو احتفظتم به ظهر لك وللطرف الآخر مع مرفقات الطلب.",
+      "call.keepPlatform": "تحتفظ المنصة بنسخة على كل حال، ولا يراها إلا الإدارة وعند نزاع.",
+      "call.keepYes": "احتفظ به في الطلب",
+      "call.keepNo": "لا داعي",
+      "call.kept": "حُفظ التسجيل مع مرفقات الطلب.",
+      "call.dropped": "لم يُحفظ للطرفين — نسخة المنصة محفوظة.",
+      "call.recAudioName": "مكالمة صوتية {n} ثانية",
+      "call.recVideoName": "مكالمة فيديو {n} ثانية",
+      "call.recNote": "هذا تسجيل المكالمة.",
+      "call.noTape": "تعذّر تسجيل هذه المكالمة — لا نسخة منها، لا لكم ولا للمنصة.",
     },
 
     en: {
@@ -2774,6 +2786,18 @@
       "req.rateToClose": "Rate the lawyer to close it",
       "req.yourShare": "Yours after deductions",
       "req.clientPays": "The client pays",
+      "call.taping": "This call is being recorded — both sides see this notice.",
+      "call.keepTitle": "Keep the recording on the request?",
+      "call.keepBody": "{n} seconds. Kept, it appears for you and the other side with the request's files.",
+      "call.keepPlatform": "The platform keeps its own copy either way. Only the desk can open it, and only when something is disputed.",
+      "call.keepYes": "Keep it on the request",
+      "call.keepNo": "No need",
+      "call.kept": "Saved with the request's files.",
+      "call.dropped": "Not kept for the parties. The platform's copy is.",
+      "call.recAudioName": "Voice call {n}s",
+      "call.recVideoName": "Video call {n}s",
+      "call.recNote": "The recording of this call.",
+      "call.noTape": "This call could not be recorded — there is no copy of it, for you or for the platform.",
     }
   };
 

@@ -372,7 +372,17 @@
   function fileChip(a) {
     var image = /^image\//.test(a.mime || "");
     var sound = /^audio\//.test(a.mime || "");
+    var movie = /^video\//.test(a.mime || "");
     var pending = String(a.id || "").slice(0, 7) === "pending";
+    // A recorded call is watched here too. Sending someone away to download a
+    // video and find something to open it with is how a recording stops being
+    // looked at, which defeats the point of keeping one.
+    if (movie && !pending) {
+      return '<span class="file-chip file-chip--movie" data-file="' + App.esc(a.id) + '">' +
+        '<video controls preload="metadata" data-file-video="' + App.esc(a.id) + '"></video>' +
+        '<span class="tiny faint">' + App.esc(a.name) + "</span>" +
+        "</span>";
+    }
     // A voice note is played where it was sent, not downloaded and opened
     // somewhere else — which is the whole difference between a recording and
     // an attachment that happens to be audio.
@@ -464,7 +474,8 @@
         if (!url) return;
         var img = node.querySelector("[data-file-img]");
         if (img) { img.src = url; img.hidden = false; }
-        var sound = node.querySelector("[data-file-audio]");
+        var sound = node.querySelector("[data-file-audio]") ||
+                    node.querySelector("[data-file-video]");
         if (sound) { sound.src = url; return; }   // played here, not opened away
         node.setAttribute("data-href", url);
         node.setAttribute("tabindex", "0");

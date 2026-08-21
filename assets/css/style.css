@@ -547,6 +547,14 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 }
 .case__end { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s-2); flex: none; }
 .case__price { white-space: nowrap; }
+/* Said for the whole call, not once at the start: the disclosure is what
+   makes the recording worth anything. */
+.call-taping {
+  display: flex; gap: var(--s-2); align-items: center; justify-content: center;
+  margin-top: var(--s-4); padding: var(--s-2) var(--s-4); border-radius: 999px;
+  background: var(--danger-soft); color: var(--danger); font-size: .8125rem;
+}
+
 .case__flag {
   display: flex; gap: var(--s-3); align-items: baseline; flex-wrap: wrap;
   margin: 0 var(--s-5) var(--s-3); padding: var(--s-3) var(--s-4);
@@ -642,6 +650,12 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 
 .file-chip--sound { padding: var(--s-2); }
 .file-chip--sound audio { height: 34px; max-width: 260px; }
+.file-chip--movie {
+  flex-direction: column; align-items: stretch; gap: var(--s-2); padding: var(--s-2);
+}
+.file-chip--movie video {
+  width: 100%; max-width: 320px; border-radius: var(--r-sm); background: #000;
+}
 [data-thread-record].is-recording {
   background: var(--danger); color: #fff; border-color: var(--danger);
   animation: pulse 1.2s ease-in-out infinite;

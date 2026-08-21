@@ -28,6 +28,9 @@
 
   var accounts = read(localStorage, ACCOUNTS_KEY, []);
   var work = read(sessionStorage, WORK_KEY, {});
+  // Attachment bytes, by attachment id. Nothing here is written to storage:
+  // it is the one part of the demo that lives and dies with the tab.
+  var blobs = {};
   [
     "requests", "requestStates", "services", "removedServices", "reviews",
     "articles", "articleStates", "comments", "endorsements", "applications",
@@ -609,12 +612,17 @@
       if (done) done(m);
       return m;
     },
-    /** In the demo the file never leaves the browser: it is kept as a data
-        URL beside the message, so the thread works with no network at all. */
+    /** In the demo the file never leaves the browser. The record of it goes
+        into the work like everything else; the bytes are held here, beside it,
+        because a Blob does not survive being written to sessionStorage — it
+        comes back as {}, and asking the browser to make a link out of that
+        used to throw rather than say "gone". Reloading the tab loses the
+        bytes and keeps the record, which is exactly what demo mode is. */
     attachFile: function (a) {
       a.id = a.id || uid("att");
       a.at = Date.now();
       a.audience = a.audience || "parties";
+      if (a.file) blobs[a.id] = a.file;
       work.attachments.push(a);
       notify();
       return a;
@@ -624,8 +632,10 @@
     fileUrl: function (att) {
       if (!att) return Promise.resolve(null);
       if (att.url) return Promise.resolve(att.url);
-      if (att.file && global.URL && global.URL.createObjectURL) {
-        att.url = global.URL.createObjectURL(att.file);
+      var file = blobs[att.id] || att.file;
+      var real = file && typeof global.Blob === "function" && file instanceof global.Blob;
+      if (real && global.URL && global.URL.createObjectURL) {
+        att.url = global.URL.createObjectURL(file);
         return Promise.resolve(att.url);
       }
       return Promise.resolve(null);

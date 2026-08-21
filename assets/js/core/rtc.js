@@ -162,6 +162,11 @@
       return;
     }
 
+    // A word from the far end that is not negotiation — the tape starting,
+    // for one. Whoever is not holding it has to be told, or the recording is
+    // a trick played on them.
+    if (msg.note) { self.emit("note", msg.note); return; }
+
     if (msg.bye) self.emit("ended", "peer");
   };
 
@@ -209,8 +214,127 @@
     this.emit("ended", "self");
   };
 
+  /* ---------- recording a call ----------
+     One mixed stream out of two: both voices through an audio graph, and the
+     far end's picture if there is one. Recorded by exactly one side — the two
+     peers compare ids and the lower one takes it, the same trick that decides
+     which of them is polite — so a call leaves one copy rather than two of
+     the same conversation from opposite ends.
+
+     Nothing starts without both people being told, on screen, for the length
+     of the call. That is not a nicety: a recording nobody was told about is
+     not evidence, it is a problem. */
+  function Recorder(local, remote, wantsVideo) {
+    this.chunks = [];
+    this.started = 0;
+    this.mr = null;
+    this.ctx = null;
+    this.local = local;
+    this.remote = remote;
+    this.video = !!wantsVideo;
+  }
+
+  Recorder.supported = function () {
+    return !!(global.MediaRecorder && global.AudioContext);
+  };
+
+  /** The first type this browser will actually write. Chromium says webm,
+      Safari says mp4, and asking for the wrong one fails silently.
+
+      Asked for the kind that is being recorded, not for whatever comes first:
+      a voice consultation written as video/webm is a file the site then shows
+      with a black rectangle where a player should be. */
+  Recorder.mime = function (video) {
+    var picture = ["video/webm;codecs=vp8,opus", "video/webm", "video/mp4"];
+    var sound = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+    var want = video ? picture.concat(sound) : sound.concat(picture);
+    for (var i = 0; i < want.length; i++) {
+      if (global.MediaRecorder.isTypeSupported(want[i])) return want[i];
+    }
+    return "";
+  };
+
+  Recorder.prototype.start = function () {
+    if (!Recorder.supported()) return false;
+    var tracks = [];
+    try {
+      this.ctx = new (global.AudioContext || global.webkitAudioContext)();
+      // A context built without a gesture starts suspended, and a suspended
+      // graph produces no samples at all — a recording of a call that nobody
+      // can hear, which is worse than no recording.
+      if (this.ctx.state === "suspended") { try { this.ctx.resume(); } catch (e) {} }
+      var mix = this.ctx.createMediaStreamDestination();
+      [this.local, this.remote].forEach(function (s) {
+        if (s && s.getAudioTracks && s.getAudioTracks().length) {
+          this.ctx.createMediaStreamSource(s).connect(mix);
+        }
+      }, this);
+      tracks = mix.stream.getAudioTracks();
+    } catch (e) {
+      // No audio graph: record what there is rather than nothing.
+      tracks = (this.local && this.local.getAudioTracks()) || [];
+    }
+    if (this.video) {
+      // The far end's picture is the one worth keeping — but if it never
+      // arrived, keeping this end's is still a record of the call, and a
+      // recorder with no video track at all writes a file with no frames.
+      var picture = ((this.remote && this.remote.getVideoTracks &&
+                      this.remote.getVideoTracks()) || [])
+        // A track that has not delivered a frame yet is `muted`, and an
+        // encoder handed one waits for a keyframe that never comes: it writes
+        // nothing at all, audio included. So it only goes in once it is live.
+        .filter(function (t) { return !t.muted; });
+      if (!picture.length) {
+        picture = (this.local && this.local.getVideoTracks &&
+                   this.local.getVideoTracks()) || [];
+      }
+      tracks = tracks.concat(picture);
+    }
+    if (!tracks.length) return false;
+
+    var mime = Recorder.mime(this.video);
+    try {
+      this.mr = new global.MediaRecorder(new global.MediaStream(tracks),
+                                         mime ? { mimeType: mime } : undefined);
+    } catch (e) { return false; }
+
+    var self = this;
+    this.mr.ondataavailable = function (e) {
+      if (e.data && e.data.size) self.chunks.push(e.data);
+    };
+    this.started = Date.now();
+    this.mr.start(1000);            // a chunk a second, so a crash loses one
+    return true;
+  };
+
+  /** The finished recording, or null if there was nothing to keep. */
+  Recorder.prototype.stop = function () {
+    var self = this;
+    function finished() {
+      try { if (self.ctx) self.ctx.close(); } catch (e) {}
+      if (!self.chunks.length) return null;
+      var type = (self.mr && self.mr.mimeType) || Recorder.mime(self.video) || "video/webm";
+      return {
+        blob: new global.Blob(self.chunks, { type: type }),
+        seconds: Math.max(1, Math.round((Date.now() - self.started) / 1000)),
+        type: type,
+      };
+    }
+    return new Promise(function (done) {
+      // Hanging up stops the tracks, and a recorder whose tracks have all
+      // ended stops itself. Reaching here with it already inactive is that
+      // race, not an empty tape — and throwing away a minute of chunks
+      // because the recorder beat us to the stop is how a recording quietly
+      // stops existing. Whatever was written by then is the recording.
+      if (!self.mr || self.mr.state === "inactive") return done(finished());
+      self.mr.onstop = function () { done(finished()); };
+      try { self.mr.stop(); } catch (e) { done(finished()); }
+    });
+  };
+
   global.RTC = {
     Call: Call,
+    Recorder: Recorder,
     supported: function () {
       return !!(global.RTCPeerConnection && global.navigator.mediaDevices &&
                 global.navigator.mediaDevices.getUserMedia);

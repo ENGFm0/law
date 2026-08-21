@@ -20,14 +20,19 @@ Pages.define("call", function (global) {
   var call = null;
   var muted = false, camOff = false;
   var timer = null, seconds = 0, endedBy = null;
+  var conn = "new";       // the connection state, kept so a redraw does not lose it
+  // The recording, and what to do with it once the call ends.
+  var recorder = null, claimed = false, taped = null, asking = false, peerTaping = false;
 
   function request() { return requestId ? M.request(requestId) : null; }
 
-  /** Voice or video, taken from the service the client actually bought. */
+  /** Voice or video, taken from the channel the client chose when they
+      ordered. It used to read the service type and compare it to "call" — a
+      category that stopped existing when the catalogue became legal work, so
+      every voice consultation was asking for a camera. */
   function wantsVideo() {
     var r = request();
-    var t = r && M.serviceType(r.typeId);
-    return !t || t.id !== "call";
+    return !!(r && r.channel === "video");
   }
 
   function other() {
@@ -85,7 +90,7 @@ Pages.define("call", function (global) {
 
   function liveScreen() {
     var them = other();
-    return '<div class="call-stage">' +
+    return '<div class="call-stage" data-conn="' + esc(conn) + '">' +
       '<div class="call-stage__remote">' +
         '<video data-remote autoplay playsinline></video>' +
         '<div class="call-stage__placeholder" data-placeholder>' +
@@ -100,6 +105,10 @@ Pages.define("call", function (global) {
           '<span class="tiny" data-i18n="call.you"></span>' +
         "</div>" +
       "</div>" +
+      (recorder || peerTaping
+        ? '<p class="call-taping">' + Icons.svg("bell", "icon-sm") +
+          "<span>" + esc(I18N.t("call.taping")) + "</span></p>"
+        : "") +
       '<div class="call-bar">' +
         '<button class="call-btn" type="button" data-mute ' +
           'data-i18n-attr="aria-label:call.mute">' + Icons.svg("mic") + "</button>" +
@@ -123,6 +132,20 @@ Pages.define("call", function (global) {
       (endedBy === "peer" ? '<p class="lead" data-i18n="call.endedByPeer"></p>' : "") +
       '<p class="small muted" style="margin-top:var(--s-4)">' + esc(I18N.t("call.duration")) +
         ': <strong class="num">' + esc(clock()) + "</strong></p>" +
+      (asking
+        ? '<div class="card card--pad" style="margin-top:var(--s-6);text-align:start">' +
+            '<strong>' + esc(I18N.t("call.keepTitle")) + "</strong>" +
+            '<p class="small muted" style="margin-top:var(--s-2)">' +
+              esc(I18N.t("call.keepBody", { n: I18N.num(taped ? taped.seconds : 0) })) + "</p>" +
+            '<p class="tiny faint" style="margin-top:var(--s-2)">' +
+              esc(I18N.t("call.keepPlatform")) + "</p>" +
+            '<div class="row gap-3 wrap" style="margin-top:var(--s-4)">' +
+              '<button class="btn btn--primary btn--sm" type="button" data-keep-call>' +
+                Icons.svg("check", "icon-sm") + esc(I18N.t("call.keepYes")) + "</button>" +
+              '<button class="btn btn--ghost btn--sm" type="button" data-drop-call>' +
+                esc(I18N.t("call.keepNo")) + "</button>" +
+            "</div></div>"
+        : "") +
       '<div class="row center gap-3 wrap" style="margin-top:var(--s-8)">' +
         (canDeliver
           ? '<button class="btn btn--accent" type="button" data-deliver data-i18n="call.markDone"></button>'
@@ -209,14 +232,28 @@ Pages.define("call", function (global) {
       polite: !!(them && Session.user().id < them.id),
       on: {
         local: function (s) { localStream = s; },
-        remote: function (s) { remoteStream = s; attachStreams(); status("call.connected"); },
+        remote: function (s) {
+          remoteStream = s; attachStreams(); status("call.connected");
+          // Both ends are now on the line, which is the first moment there is
+          // anything worth keeping. Exactly one of them records: the lower id
+          // takes it, so the call leaves one copy rather than two.
+          startTaping();
+        },
         connected: function () { startTimer(); },
         state: function (st) {
-          // Surfaced on the element so the state is inspectable, not only felt.
+          // Surfaced on the element so the state is inspectable, not only
+          // felt. Held in a variable as well as written to the node, because
+          // anything else on this page that redraws would otherwise wipe it.
+          conn = st;
           var stage = $(".call-stage", host);
           if (stage) stage.setAttribute("data-conn", st);
           if (st === "connecting") status("call.connecting");
           if (st === "disconnected") status("call.reconnecting");
+        },
+        note: function (n) {
+          // The other side started the tape. Say so here too, for as long as
+          // it runs — being recorded is not something you find out afterwards.
+          if (n === "taping") { peerTaping = true; App.rerender(); }
         },
         ended: function (who) { endedBy = who; finish(); }
       }
@@ -246,15 +283,127 @@ Pages.define("call", function (global) {
   function finish() {
     clearInterval(timer);
     timer = null;
-    localStream = null;
-    remoteStream = null;
     phase = "ended";
+    // Stop the tape before the streams go, and hold what it caught until the
+    // question below is answered.
+    stopTaping().then(function () {
+      localStream = null;
+      remoteStream = null;
+      App.rerender();
+    });
     App.rerender();
+  }
+
+  /* ---------- the tape ----------
+     One side records, chosen the same way politeness is: the lower id takes
+     it. Both sides are told, on screen, for the whole call — that disclosure
+     is what makes the recording worth anything, and it is not optional.
+
+     What happens to it afterwards is two decisions, not one. The parties
+     choose whether a copy is kept on their request. The platform keeps its
+     own copy either way, for the day one of them says the call went
+     differently — and that is said in the same breath as the first sentence,
+     not buried. */
+  function recorderIsMine() {
+    var them = other(), me = Session.user();
+    if (!them || !me) return true;
+    return me.id < them.id;
+  }
+
+  /** The far end's track exists from the moment the description is applied,
+      but carries no picture until frames actually arrive. Starting the tape
+      in that gap produces a file with nothing in it, so the tape waits — and
+      does not wait forever. */
+  function whenPictureArrives(then) {
+    var track = wantsVideo() && remoteStream && remoteStream.getVideoTracks
+      ? remoteStream.getVideoTracks()[0] : null;
+    if (!track || !track.muted) return then();
+    var done = false;
+    var go = function () {
+      if (done) return;
+      done = true;
+      track.removeEventListener("unmute", go);
+      then();
+    };
+    track.addEventListener("unmute", go);
+    setTimeout(go, 4000);      // no picture coming: record the call anyway
+  }
+
+  function startTaping() {
+    if (claimed || !recorderIsMine()) return;
+    if (!global.RTC.Recorder || !global.RTC.Recorder.supported()) return;
+    claimed = true;            // taken, so a second remote track does not race
+    whenPictureArrives(function () {
+      if (phase !== "live") return;
+      var mine = new global.RTC.Recorder(localStream, remoteStream, wantsVideo());
+      if (!mine.start()) return;
+      recorder = mine;
+      if (call) call.post({ note: "taping" });
+      App.rerender();
+    });
+  }
+
+  function stopTaping() {
+    if (!recorder) return Promise.resolve(null);
+    var mine = recorder;
+    recorder = null;
+    return mine.stop().then(function (out) {
+      // A tape that caught nothing is worth saying out loud: both people were
+      // told for the whole call that it was being recorded, and finding out
+      // afterwards that there is no recording is exactly the kind of thing
+      // they would otherwise learn on the day they needed it.
+      if (!out) { App.toast(I18N.t("call.noTape"), "alert"); return null; }
+      taped = out;
+      asking = true;
+      // The platform's copy goes at once and regardless. The parties' copy
+      // waits on their answer.
+      keep("staff");
+      App.rerender();
+      return out;
+    }).catch(function (e) { console.error(e); return null; });
+  }
+
+  /** Put the recording on the request, for the audience given. It goes in as
+      a message with the file on it rather than as a loose attachment: a
+      conversation shows what was said, and the call is part of what was
+      said. A file with no line to sit on would not appear there at all. */
+  function keep(audience) {
+    var r = request(), me = Session.user();
+    if (!taped || !r || !me) return;
+    var ext = /mp4/.test(taped.type) ? "mp4" : "webm";
+    var name = I18N.t(wantsVideo() ? "call.recVideoName" : "call.recAudioName",
+                      { n: I18N.num(taped.seconds) }) + "." + ext;
+    var file = new global.File([taped.blob], name, { type: taped.type });
+    var blob = taped;
+    Store.sendMessage({
+      requestId: r.id, audience: audience, authorId: me.id,
+      body: I18N.t("call.recNote"),
+    }, function (saved) {
+      Store.attachFile({
+        requestId: r.id, messageId: saved.id, audience: audience, authorId: me.id,
+        name: name, size: blob.blob.size, mime: blob.type,
+        kind: "call", seconds: blob.seconds, file: file,
+      });
+    });
   }
 
   /* ---------- events ---------- */
   host.addEventListener("click", function (ev) {
     if (ev.target.closest("[data-join]")) { join(); return; }
+
+    if (ev.target.closest("[data-keep-call]")) {
+      keep("parties");
+      asking = false; taped = null;
+      App.toast(I18N.t("call.kept"), "check");
+      App.rerender();
+      return;
+    }
+    if (ev.target.closest("[data-drop-call]")) {
+      asking = false; taped = null;
+      App.toast(I18N.t("call.dropped"), "close");
+      App.rerender();
+      return;
+    }
 
     if (ev.target.closest("[data-copy-link]")) {
       var url = global.location.href;

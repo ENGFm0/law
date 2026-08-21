@@ -200,6 +200,9 @@
              authorId: a.author_id, audience: a.audience || "parties",
              path: a.path, name: a.name, size: Number(a.size || 0),
              mime: a.mime || "application/octet-stream",
+             // A recording is an attachment that knows what it is and how
+             // long it ran, so a list of files can say "call, 4 minutes".
+             kind: a.kind || null, seconds: a.seconds || null,
              at: new Date(a.created_at).getTime() };
   }
 
@@ -925,6 +928,7 @@
         request_id: a.requestId, message_id: a.messageId || null,
         author_id: a.authorId, audience: a.audience,
         path: path, name: a.name, size: a.size, mime: a.mime,
+        kind: a.kind || null, seconds: a.seconds || null,
       }).then(function (res) {
         report(res);
         if (!res || !res.data) return;
