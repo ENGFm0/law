@@ -213,6 +213,7 @@
       r.createdAt = Date.now();
       work.requests.push(r);
       Store.logEvent({ requestId: r.id, kind: "placed", byId: r.clientId });
+      Store.oweDraft(r.id, r.lawyerId, r.status);
       if (r.lawyerId) {
         Store.logEvent({ requestId: r.id, kind: "lawyer_set", byId: r.clientId, detail: r.lawyerId });
       }
@@ -771,6 +772,46 @@
                      type: "mentorship", ref: m.id });
       notify();
       return m;
+    },
+
+    /* ---------------- the drafting queue ----------------
+       A row that says a draft is owed on this request. The row is the point:
+       whatever writes the draft — a function on the server, or the stand-in
+       below — has somewhere to be asked from and somewhere to put the answer,
+       and nobody has to remember that one was due. */
+    drafts: function () { return work.drafts; },
+    draftFor: function (requestId) {
+      var out = null;
+      work.drafts.forEach(function (d) { if (d.requestId === requestId) out = d; });
+      return out;
+    },
+    /** Owe a draft on this request, once, and only to a lawyer paying for the
+        tool. Mirrors owe_a_draft() in migration 019. */
+    oweDraft: function (requestId, lawyerId, status) {
+      if (!lawyerId) return null;
+      if (["delivered", "completed", "cancelled", "refunded"].indexOf(status) !== -1) return null;
+      // Whether the tool is paid for is a model question, and this file is
+      // loaded on its own by the contract test. No model layer, no drafting —
+      // which is the right answer rather than a crash.
+      if (!global.Models || !global.Models.canDraft(lawyerId)) return null;
+      if (Store.draftFor(requestId)) return null;
+      var job = { id: uid("job"), requestId: requestId, lawyerId: lawyerId,
+                  status: "queued", body: null, at: Date.now(), readyAt: null };
+      work.drafts.push(job);
+      notify();
+      return job;
+    },
+    setDraft: function (id, patch) {
+      var d = byId(work.drafts, id);
+      if (!d) return null;
+      Object.keys(patch).forEach(function (k) { d[k] = patch[k]; });
+      if (patch.status === "ready") {
+        d.readyAt = d.readyAt || Date.now();
+        // A draft nobody is told about is a draft sitting in a table.
+        Store.notify({ to: d.lawyerId, type: "draft_ready", ref: d.requestId });
+      }
+      notify();
+      return d;
     },
 
     /** A trainee claiming a screening. The mentor goes on the request with

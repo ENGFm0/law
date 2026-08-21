@@ -73,38 +73,64 @@ Pages.define("assistant", function (global) {
       "</section></aside>";
   }
 
-  /* ---------- the queue: this lawyer's own drafting work ---------- */
+  /* ---------- the queue: this lawyer's own drafting work ----------
+     Read from the drafting queue rather than worked out from the requests.
+     The difference matters: the queue records that a draft is OWED, what was
+     written, and when it was ready — so work that arrived overnight is
+     already drafted when the lawyer opens the page, instead of waiting behind
+     a button somebody has to remember to press. */
+  function draftState(job) {
+    if (!job) return { key: "ai.owed", tone: "muted", icon: "clock" };
+    if (job.status === "ready") return { key: "ai.stateDrafted", tone: "ok", icon: "sparkle" };
+    if (job.status === "used") return { key: "ai.used", tone: "muted", icon: "check" };
+    if (job.status === "failed") return { key: "ai.failed", tone: "warn", icon: "alert" };
+    if (job.status === "running") return { key: "ai.writing", tone: "muted", icon: "clock" };
+    return { key: "ai.stateQueued", tone: "muted", icon: "clock" };
+  }
+
   function queue() {
     var me = Session.user();
     var rows = M.requestsForLawyer(me.id).filter(function (r) {
-      var st = M.requestState(r).status;
-      var type = M.serviceType(r.typeId);
-      // Something to draft, which a call is not.
-      return !M.isLive(r) && st !== "delivered" && st !== "completed" &&
-             st !== "cancelled" && !M.requestState(r).assignedTo;
+      var st = M.requestState(r);
+      // Something to draft, which a call is not, and which somebody else's
+      // hands are not either.
+      return !M.isLive(r) && ["delivered", "completed", "cancelled", "refunded"]
+        .indexOf(st.status) === -1 && !st.assignedTo;
     });
 
     return '<section class="card card--pad">' +
       '<div class="row between gap-3">' +
         '<h2 class="subtitle" data-i18n="ai.queue"></h2>' +
         '<span class="tag num">' + I18N.num(rows.length) + "</span></div>" +
+      '<p class="tiny muted" style="margin-top:var(--s-2)" data-i18n="ai.queueLead"></p>' +
+      '<p class="tiny faint" style="margin-top:var(--s-1)" data-i18n="ai.autoNote"></p>' +
       (rows.length
         ? '<div style="margin-top:var(--s-4)">' + rows.map(function (r) {
-            var st = M.requestState(r).status;
-            var ready = st === "drafted";
+            var job = Store.draftFor ? Store.draftFor(r.id) : null;
+            var state = draftState(job);
+            var ready = job && job.status === "ready";
             var client = M.user(r.clientId);
-            return '<div class="list-row">' +
-              '<span class="list-row__icon">' + Icons.svg(ready ? "sparkle" : "clock", "icon-sm") + "</span>" +
+            return '<div class="list-row" data-job-row="' + esc(r.id) + '">' +
+              '<span class="list-row__icon">' + Icons.svg(state.icon, "icon-sm") + "</span>" +
               '<div class="grow" style="min-width:0"><strong class="small">' + esc(tx(r.title)) + "</strong>" +
                 '<p class="tiny muted">' + esc(client ? tx(client.name) : "") +
-                  ' <span class="dot"></span> ' + esc(tx(r.ago)) + "</p>" +
-                '<p class="tiny faint">' + esc(tx(r.brief)) + "</p></div>" +
+                  ' <span class="dot"></span> ' + esc(C.stamp(M.whenOf(r))) + "</p>" +
+                '<p class="tiny faint">' + esc(tx(r.brief)) + "</p>" +
+                // When it became ready, because "ready" with no time on it is
+                // the same sentence whether it landed a minute or a week ago.
+                (ready && job.readyAt
+                  ? '<p class="tiny faint">' +
+                    esc(I18N.t("ai.readyAt", { d: C.stamp(job.readyAt) })) + "</p>"
+                  : "") +
+              "</div>" +
               '<div class="stack gap-2" style="align-items:flex-end">' +
-                '<span class="status status--' + (ready ? "ok" : "muted") + '">' +
-                  esc(I18N.t(ready ? "ai.stateDrafted" : "ai.stateQueued")) + "</span>" +
+                '<span class="status status--' + state.tone + '">' +
+                  esc(I18N.t(state.key)) + "</span>" +
                 '<button class="btn btn--sm ' + (ready ? "btn--primary" : "btn--outline") +
                   '" type="button" data-req="' + esc(r.id) + '">' +
-                  esc(I18N.t(ready ? "ai.openDraft" : "ai.generate")) + "</button></div></div>";
+                  esc(I18N.t(ready ? "ai.openDraft"
+                             : job && job.status === "failed" ? "ai.retry" : "ai.generate")) +
+                "</button></div></div>";
           }).join("") + "</div>"
         : '<p class="muted center" style="padding:var(--s-6)" data-i18n="ai.queueEmpty"></p>') +
     "</section>";
@@ -116,7 +142,12 @@ Pages.define("assistant", function (global) {
     if (!r) return "";
     var client = M.user(r.clientId);
     var st = M.requestState(r);
-    var body = st.body || (r.doc && global.SEED.draftBodies[r.doc] ? tx(global.SEED.draftBodies[r.doc]) : "");
+    var job = Store.draftFor ? Store.draftFor(r.id) : null;
+    // What the lawyer edits is what was actually written for them, not a
+    // template picked again at draw time — otherwise their edits vanish the
+    // moment the page redraws.
+    var body = st.body || (job && job.body) ||
+      (r.doc && global.SEED.draftBodies[r.doc] ? tx(global.SEED.draftBodies[r.doc]) : "");
     var onRegs = global.SEED.regulations.filter(function (x) { return regs[x.id]; })
       .slice(0, 3).map(function (x) { return tx(x); }).join("، ");
 
@@ -200,19 +231,23 @@ Pages.define("assistant", function (global) {
     var req = ev.target.closest("[data-req]");
     if (req) {
       var rid = req.getAttribute("data-req");
-      if (M.requestState(M.request(rid)).status === "drafted") {
+      var job = Store.draftFor(rid);
+      if (job && job.status === "ready") { openDraft = rid; App.rerender(); return; }
+
+      // Drafting takes a beat, so the state change reads as work happening.
+      req.disabled = true;
+      req.textContent = I18N.t("ai.generating");
+      if (!job) job = Store.oweDraft(rid, Session.user().id, M.requestState(M.request(rid)).status);
+      if (job) Store.setDraft(job.id, { status: "running" });
+      setTimeout(function () {
+        var r = M.request(rid);
+        var written = r && r.doc && global.SEED.draftBodies[r.doc]
+          ? tx(global.SEED.draftBodies[r.doc]) : "";
+        if (job) Store.setDraft(job.id, { status: "ready", body: written });
         openDraft = rid;
-        App.rerender();
-      } else {
-        // Drafting takes a beat, so the state change reads as work happening.
-        req.disabled = true;
-        req.textContent = I18N.t("ai.generating");
-        setTimeout(function () {
-          openDraft = rid;
-          Store.setRequest(rid, { status: "drafted" });
-          App.toast(I18N.t("ai.generated"), "sparkle");
-        }, 700);
-      }
+        Store.setRequest(rid, { status: "drafted" });
+        App.toast(I18N.t("ai.generated"), "sparkle");
+      }, 700);
       return;
     }
 
@@ -221,8 +256,13 @@ Pages.define("assistant", function (global) {
     if (ev.target.closest("[data-draft-approve]")) {
       var box = $("[data-draft-body]", host);
       var id = openDraft;
+      var spent = Store.draftFor(id);
       openDraft = null;
       Store.setRequest(id, { status: "delivered", body: box ? box.value : null });
+      // The queue row stays, marked spent. It is the record of what the
+      // assistant wrote and what the lawyer sent instead, which is the only
+      // thing that can answer "who wrote this" later.
+      if (spent) Store.setDraft(spent.id, { status: "used" });
       App.toast(I18N.t("ai.approved"), "check");
     }
   });

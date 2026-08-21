@@ -300,6 +300,7 @@
     announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
     types: [], quotes: [], offers: [], messages: [], attachments: [], events: [],
     mentorships: [], sessions: [], rooms: [], promos: [], redemptions: [],
+    drafts: [],
   };
   var ready = false;
 
@@ -1061,6 +1062,40 @@
              requestId: r.request_id || null, amount: r.amount || 0,
              at: new Date(r.at).getTime() };
   }
+  function inDraft(d) {
+    return { id: d.id, requestId: d.request_id, lawyerId: d.lawyer_id,
+             status: d.status, body: d.body || null, model: d.model || null,
+             error: d.error || null, attempts: d.attempts || 0,
+             at: new Date(d.queued_at).getTime(),
+             readyAt: d.ready_at ? new Date(d.ready_at).getTime() : null };
+  }
+  Store.drafts = function () { return cache.drafts || []; };
+  Store.draftFor = function (requestId) {
+    var out = null;
+    (cache.drafts || []).forEach(function (d) {
+      if (d.requestId === requestId) out = d;
+    });
+    return out;
+  };
+  /* The queue is filled by a trigger on the way in — a browser cannot insert
+     into it, and should not: owing a draft is the platform's decision about a
+     subscription, not a claim anybody makes for themselves. */
+  Store.oweDraft = function () { return null; };
+  Store.setDraft = function (id, changes) {
+    var row = {};
+    if ("status" in changes) row.status = changes.status;
+    if ("body" in changes) row.body = changes.body;
+    var out = null;
+    (cache.drafts || []).forEach(function (d) {
+      if (d.id !== id) return;
+      Object.keys(changes).forEach(function (k) { d[k] = changes[k]; });
+      out = d;
+    });
+    Store.notifyAll();
+    patch("draft_jobs", id, row);
+    return out;
+  };
+
   Store.promos = function () { return cache.promos || []; };
   Store.promoByCode = function (code) {
     var want = String(code || "").trim().toUpperCase(), out = null;
@@ -1117,11 +1152,11 @@
     if (Store.mentorshipOf(internId)) return "already";
     return openMentorship(me, internId, "mentor");
   };
-  Store.setMentorship = function (id, patch) {
+  Store.setMentorship = function (id, changes) {
     var row = {};
-    if ("status" in patch) row.status = patch.status;
+    if ("status" in changes) row.status = changes.status;
     (cache.mentorships || []).forEach(function (m) {
-      if (m.id === id) Object.keys(patch).forEach(function (k) { m[k] = patch[k]; });
+      if (m.id === id) Object.keys(changes).forEach(function (k) { m[k] = changes[k]; });
     });
     Store.notifyAll();
     patch("mentorships", id, row);
@@ -1135,11 +1170,11 @@
     }).then(function (res) { report(res); if (res && res.data) Store.hydrate(); });
     return local(cache.sessions, x);
   };
-  Store.setSession = function (id, patch) {
+  Store.setSession = function (id, changes) {
     var row = {};
-    if ("attended" in patch) row.attended = !!patch.attended;
+    if ("attended" in changes) row.attended = !!changes.attended;
     (cache.sessions || []).forEach(function (x) {
-      if (x.id === id) Object.keys(patch).forEach(function (k) { x[k] = patch[k]; });
+      if (x.id === id) Object.keys(changes).forEach(function (k) { x[k] = changes[k]; });
     });
     Store.notifyAll();
     patch("mentorship_sessions", id, row);
@@ -1395,6 +1430,7 @@
     cache.rooms = take("mentorship_messages", inRoomSaid, cache.rooms);
     cache.promos = take("promo_codes", inPromo, cache.promos);
     cache.redemptions = take("promo_redemptions", inRedemption, cache.redemptions);
+    cache.drafts = take("draft_jobs", inDraft, cache.drafts);
 
     if (had("platform_settings")) cache.settings = inSettings(rows.platform_settings);
     if (had("price_bands") && rows.price_bands) {

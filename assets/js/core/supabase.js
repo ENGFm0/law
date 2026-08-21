@@ -442,7 +442,7 @@
            "operating_costs", "partners", "quotes", "offers", "contacts",
            "messages", "attachments", "request_events",
            "mentorships", "mentorship_sessions", "mentorship_messages",
-           "promo_codes", "promo_redemptions"],
+           "promo_codes", "promo_redemptions", "draft_jobs"],
 
     hydrate: function (names) {
       return load().then(function (sb) {
@@ -460,6 +460,7 @@
             return sb.from("mentorship_messages").select("*").order("created_at");
           },
           promo_codes:      function () { return sb.from("promo_codes").select("*"); },
+          draft_jobs:       function () { return sb.from("draft_jobs").select("*"); },
           promo_redemptions: function () { return sb.from("promo_redemptions").select("*"); },
           platform_settings:function () { return sb.from("platform_settings").select("*").eq("id", 1).maybeSingle(); },
           reviews:          function () { return sb.from("reviews").select("*").limit(500); },

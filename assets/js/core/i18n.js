@@ -1635,6 +1635,15 @@
       "scr.convert": "عندك قضية؟",
       "scr.convertBody": "خذها إلى خدمة كاملة مع {name} بخصم ١٠٪ — الكود {code}، صالح ٣٠ يوماً.",
       "scr.convertGo": "اطلب الخدمة الكاملة",
+      "ai.owed": "مسودة مستحقة",
+      "ai.writing": "تُكتب الآن…",
+      "ai.readyAt": "جاهزة {d}",
+      "ai.used": "سُلّمت",
+      "ai.failed": "تعذّرت الكتابة — اكتبها بنفسك.",
+      "ai.retry": "أعد المحاولة",
+      "ai.queueLead": "ما وصلك من عمل ومعه مسودة أولى. لا شيء يصل العميل قبل أن تعتمده أنت.",
+      "ai.autoNote": "تُكتب المسودة تلقائياً حين يصلك الطلب — لأنك مشترك في الأداة.",
+      "notice.draft_ready": "مسودة جاهزة لمراجعتك",
     },
 
     en: {
@@ -3232,6 +3241,15 @@
       "scr.convert": "So you have a case?",
       "scr.convertBody": "Take it to the full thing with {name} at 10% off — code {code}, good for 30 days.",
       "scr.convertGo": "Order the full service",
+      "ai.owed": "A draft is owed",
+      "ai.writing": "Being written…",
+      "ai.readyAt": "Ready {d}",
+      "ai.used": "Delivered",
+      "ai.failed": "It could not be written — write it yourself.",
+      "ai.retry": "Try again",
+      "ai.queueLead": "Work that has arrived, with a first draft on it. Nothing reaches the client before you approve it.",
+      "ai.autoNote": "A draft is written the moment work arrives, because you subscribe to the tool.",
+      "notice.draft_ready": "A draft is ready for you",
     }
   };
 
