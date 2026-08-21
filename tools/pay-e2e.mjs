@@ -136,6 +136,49 @@ const leaks = ['حصة المتدرب', 'حصتك', 'ضمن اتفاق', 'متد
   .filter(w => ct.includes(w));
 ok('no share, no agreement, no trainee reaches the client', leaks.length === 0, leaks.join(','));
 
+console.log('— AND EACH OF THEM HAS A DESK OF THEIR OWN —');
+// A lawyer and a trainee were each handed a list and nothing else. What is
+// checked here is the sentence above the list: their share, what is still
+// riding on open work, and where they stand.
+await open('requests.html', 'u-ahmed');
+let head = await tab.innerText('main');
+ok('the lawyer is told what is theirs', /مستحق لك/.test(head), head.slice(0, 140));
+ok('and that it is after the platform’s cut', /بعد خصم عمولة المنصة/.test(head));
+ok('with what is still riding on open work', /تحت التنفيذ/.test(head));
+ok('said plainly not to be the client’s price', /ليس ما يدفعه العميل/.test(head));
+ok('their caseload counted in the four piles',
+   (await tab.$$eval('.kpi__label', ns => ns.map(n => n.innerText)))
+     .filter(t => /جارية|محجوزة|منتهية|اعتراضات/.test(t)).length === 4);
+ok('and where they stand in the profession', /مرتبتك/.test(head));
+
+const lawyerShare = await tab.evaluate(() => {
+  const w = Models.walletOf('u-ahmed');
+  const first = Models.requestsForLawyer('u-ahmed')[0];
+  return { pending: w.pending, lawyerCut: Models.distribute(first).lawyer,
+           clientPays: Models.distribute(first).client };
+});
+ok('the figure is the lawyer’s cut, never the client’s price',
+   lawyerShare.lawyerCut < lawyerShare.clientPays, JSON.stringify(lawyerShare));
+
+await open('requests.html', 'u-jaid');
+head = await tab.innerText('main');
+ok('the trainee is told the same way', /مستحق لك/.test(head) && /تحت التنفيذ/.test(head));
+ok('with the hours that go on their certificate', /ساعات مسجلة/.test(head));
+ok('and how far along they are', /حتى الشهادة/.test(head), (head.match(/حتى الشهادة[^\n]*/) || [])[0]);
+const traineeShare = await tab.evaluate(() => {
+  // A task of its own, on a lawyer with no standing agreement with this
+  // trainee: work under an agreement is settled between the two of them and
+  // takes nothing out of the request, which is a different rule.
+  const r = Store.addRequest({ clientId:'u-fahad', lawyerId:'u-sara', typeId:'consult',
+    price:400, hours:4, status:'new', title:{ar:'ت',en:'t'}, brief:{ar:'ب',en:'b'} });
+  Store.setRequest(r.id, { status:'with_intern', assignedTo:'u-jaid', internShare:30 });
+  const row = Models.request(r.id);
+  return { share: Models.taskPay(row).amount * 100, whole: Models.distribute(row).client };
+});
+ok('and it is their share of the price, not the price',
+   traineeShare && traineeShare.share > 0 && traineeShare.share < traineeShare.whole,
+   JSON.stringify(traineeShare));
+
 console.log('\npass ' + pass + '  fail ' + fail);
 console.log('errors: ' + (errs.length ? '\n  ' + errs.join('\n  ') : 'none'));
 await b.close();

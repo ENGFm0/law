@@ -573,6 +573,40 @@
     return { kind: "share", pct: pct, amount: Math.round((r.price || 0) * pct / 100) };
   }
 
+  /** What one person's work on this platform has come to.
+
+      Two numbers, and the difference between them matters: `settled` is work
+      that was accepted, so the money is theirs; `pending` is work delivered or
+      still in hand, which is a promise rather than a balance. Both are their
+      share after the platform's cut — the number they are paid, never the
+      number the client paid, because showing somebody a figure they will not
+      receive is how a platform gets accused of taking more than it said.
+
+      Halalas, like every other number here that means money. Work paid under
+      a standing agreement between a lawyer and a trainee is counted apart: it
+      is settled between the two of them and not out of this request. */
+  function walletOf(id) {
+    var out = { settled: 0, pending: 0, cases: 0, byAgreement: 0 };
+    requests().forEach(function (r) {
+      var st = requestState(r);
+      var seat = r.lawyerId === id ? "lawyer" : (st.assignedTo === id ? "intern" : null);
+      if (!seat) return;
+
+      var pay = taskPay(r);
+      if (seat === "intern" && pay && pay.kind !== "share") { out.byAgreement += 1; return; }
+
+      var s = settlement(r);
+      var d = distribute(r);
+      var mine = seat === "lawyer" ? (s ? s.lawyer : d.lawyer) : (s ? s.intern : d.intern);
+      if (!mine) return;
+
+      out.cases += 1;
+      if (st.status === "completed" || st.status === "refunded") out.settled += mine;
+      else if (st.status === "delivered" || OPEN_STATES.indexOf(st.status) !== -1) out.pending += mine;
+    });
+    return out;
+  }
+
   /** Everything a trainee has actually earned from delivered work. */
   function earnedBy(internId) {
     return requestsForIntern(internId).reduce(function (total, r) {
@@ -1158,6 +1192,7 @@
     serviceType: serviceType, servicesOf: servicesOf, services: services,
     timeline: timeline, refOf: refOf, partyList: partyList,
     requestPiles: requestPiles, blockingRequest: blockingRequest,
+    walletOf: walletOf,
     quotes: quotes, quote: quote, offersOn: offersOn, quoteLive: quoteLive,
     myQuote: myQuote, openQuotesFor: openQuotesFor, quotePrice: quotePrice,
     quotesForClient: quotesForClient, quoteState: quoteState,

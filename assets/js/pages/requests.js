@@ -485,6 +485,59 @@ Pages.define("requests", function (global) {
         Icons.svg("graduation", "icon-sm") + esc(I18N.t("inbox.assign")) + "</button>";
   }
 
+  /* ---------- the strip at the top of a professional's page ----------
+     A lawyer and a trainee were each handed a list and nothing else: no idea
+     what the month had come to, what was riding on open work, or where they
+     stood. The list is still the page; this is the sentence above it. */
+  function kpi(labelKey, value, note, tone) {
+    return '<div class="kpi' + (tone ? " kpi--" + tone : "") + '">' +
+      '<span class="kpi__label">' + esc(I18N.t(labelKey)) + "</span>" +
+      '<strong class="kpi__value">' + value + "</strong>" +
+      (note ? '<span class="tiny faint">' + esc(note) + "</span>" : "") +
+    "</div>";
+  }
+
+  /** Money first, because it is the question, and said in the two halves that
+      are actually different: what is theirs, and what is still a promise. */
+  function walletCards(me) {
+    var w = M.walletOf(me.id);
+    return kpi("dash.settled", C.sar(w.settled), I18N.t("dash.afterCut"), "good") +
+           kpi("dash.pending", C.sar(w.pending), I18N.t("dash.notYours")) +
+           (w.byAgreement
+             ? kpi("pay.tab", C.num(w.byAgreement),
+                   I18N.t("dash.byAgreement", { n: I18N.num(w.byAgreement) }))
+             : "");
+  }
+
+  function pileCards(list) {
+    var piles = M.requestPiles(list);
+    return kpi("dash.running", C.num(piles.live.length)) +
+           kpi("dash.booked", C.num(piles.booked.length)) +
+           kpi("dash.done", C.num(piles.past.length)) +
+           kpi("dash.objections", C.num(piles.disputed.length),
+               null, piles.disputed.length ? "warn" : "");
+  }
+
+  function standingCards(me, role) {
+    var rank = M.rankOf(me.id, role);
+    var rating = M.ratingOf(me.id);
+    return (rating.count
+             ? kpi("dash.rating", C.num(rating.avg),
+                   I18N.t("dash.reviewsN", { n: I18N.num(rating.count) }))
+             : "") +
+           (rank.rank
+             ? kpi("dash.rank", C.num(rank.rank) + '<span class="tiny faint"> / ' +
+                                I18N.num(rank.of) + "</span>")
+             : "");
+  }
+
+  function dashHead(titleKey, leadKey, cards) {
+    return '<header style="margin-bottom:var(--s-6)">' +
+        '<h1 class="headline" data-i18n="' + titleKey + '"></h1>' +
+        '<p class="lead" data-i18n="' + leadKey + '"></p></header>' +
+      '<div class="kpi-grid" style="margin-bottom:var(--s-8)">' + cards + "</div>";
+  }
+
   function lawyerView() {
     var me = Session.user();
     var all = M.requestsForLawyer(me.id);
@@ -499,9 +552,8 @@ Pages.define("requests", function (global) {
     }).join("");
 
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
-      '<header style="margin-bottom:var(--s-6)">' +
-        '<h1 class="headline" data-i18n="inbox.title"></h1>' +
-        '<p class="lead" data-i18n="inbox.lead"></p></header>' +
+      dashHead("inbox.title", "inbox.lead",
+               walletCards(me) + pileCards(all) + standingCards(me, "lawyer")) +
       '<div class="row gap-2 wrap" style="margin-bottom:var(--s-5)">' + chips + "</div>" +
       '<p class="small muted" style="margin-bottom:var(--s-4)">' +
         esc(I18N.t("inbox.count", { n: I18N.num(rows.length) })) + "</p>" +
@@ -680,10 +732,13 @@ Pages.define("requests", function (global) {
     var mine = M.requestsForIntern(me.id);
     var pool = M.openInternTasks();
 
+    var prog = M.certProgress(me.id);
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
-      '<header style="margin-bottom:var(--s-8)">' +
-        '<h1 class="headline" data-i18n="task.heading"></h1>' +
-        '<p class="lead" data-i18n="task.lead"></p></header>' +
+      dashHead("task.heading", "task.lead",
+               walletCards(me) + pileCards(mine) +
+               kpi("dash.hours", C.num(prog.hours),
+                   I18N.t("dash.toCert") + " " + prog.pct + "%") +
+               standingCards(me, "intern")) +
       (mine.length
         ? mine.map(internRow).join("")
         : C.empty("inbox", "task.none")) +
