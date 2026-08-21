@@ -258,41 +258,117 @@
     return null;
   }
 
-  function progress(r, mine) {
-    var st = M.requestState(r);
-    var dis = M.disputeFor && M.disputeFor(r.id);
-    var open = dis && dis.status === "open";
-    var stage = STAGE_OF[st.status] || "placed";
-    if (open) stage = "disputed";
+  /** The stepper.
 
-    var at = TRACK.indexOf(stage);
-    var waiting = open ? "prog.staff" : waitingOn(stage, mine);
+      One component, four vocabularies. A client is waiting to find out
+      whether their problem has an answer; a lawyer is watching work move from
+      their inbox to their pay; a trainee is watching a draft go up for a
+      signature; the desk is looking for where it stuck. Relabelling one bar
+      would have made three of those four read like somebody else's screen —
+      but they are all drawn off the same record, so no two of them can
+      disagree about where the case actually is.
 
-    return '<div class="track' + (open ? " track--held" : "") + '">' +
+      Each stage carries the moment it happened, because "in progress since
+      when" is the question behind every progress bar ever drawn. */
+  var WAIT_KEY = { you: "step.waitYou", lawyer: "step.waitLawyer",
+                   client: "step.waitClient", intern: "step.waitIntern",
+                   staff: "step.waitStaff" };
+
+  function stepper(r, role) {
+    var v = M.stepsFor(r, role || "client");
+    var last = v.steps.length - 1;
+
+    return '<div class="track' + (v.held ? " track--held" : "") +
+        '" data-stepper="' + App.esc(r.id) + '" data-role="' + App.esc(v.role) + '">' +
       '<div class="row between wrap gap-3">' +
-        '<strong class="small" data-i18n="prog.title"></strong>' +
-        (waiting
-          ? '<span class="tiny muted">' +
-            esc(I18N.t("prog.waitingOn", { who: I18N.t(waiting) })) + "</span>"
+        '<strong class="small">' + App.esc(I18N.t("prog.title")) + "</strong>" +
+        (v.waiting
+          ? '<span class="tiny muted">' + App.esc(I18N.t(WAIT_KEY[v.waiting])) + "</span>"
           : "") +
       "</div>" +
       '<ol class="track__steps">' +
-        TRACK.map(function (key, i) {
-          var done = at > i, here = at === i;
-          return '<li class="track__step' + (done ? " is-done" : "") + (here ? " is-here" : "") + '">' +
+        v.steps.map(function (x, i) {
+          return '<li class="track__step' +
+              (x.done ? " is-done" : "") + (x.here ? " is-here" : "") +
+              (x.optional && !x.at ? " is-optional" : "") +
+              '" data-step="' + App.esc(x.key) + '">' +
             '<span class="track__dot">' +
-              (done ? Icons.svg("check", "icon-sm") : "") + "</span>" +
-            '<span class="track__label">' + esc(I18N.t("prog." + key)) + "</span></li>";
+              (x.done ? Icons.svg("check", "icon-sm") : "") + "</span>" +
+            '<span class="track__label">' +
+              App.esc(I18N.t("step." + v.role + "." + x.key)) + "</span>" +
+            // The date under the stage, not in a tooltip: a bar that knows
+            // when something happened and does not say so is withholding the
+            // only part of it anybody asks about.
+            (x.at
+              ? '<span class="track__at tiny faint">' + App.esc(stamp(x.at)) + "</span>"
+              : (x.optional && i < last
+                  ? '<span class="track__at tiny faint">' +
+                    App.esc(I18N.t("step.optional")) + "</span>"
+                  : "")) +
+          "</li>";
         }).join("") +
       "</ol>" +
-      (stage === "disputed"
+      (v.held
         ? '<p class="small" style="margin-top:var(--s-3)">' +
-          Icons.svg("clock", "icon-sm") + " " + esc(I18N.t("prog.disputed")) + "</p>"
+          Icons.svg("clock", "icon-sm") + " " + App.esc(I18N.t("step.held")) + "</p>"
         : "") +
-      (stage === "cancelled"
+      (v.status === "cancelled"
         ? '<p class="small muted" style="margin-top:var(--s-3)">' +
-          esc(I18N.t("prog.cancelled")) + "</p>"
+          App.esc(I18N.t("prog.cancelled")) + "</p>"
         : "") +
+    "</div>";
+  }
+
+  /** The old name, kept because two pages call it and because one bar with
+      four vocabularies is the whole point — a second component would be the
+      thing that drifts. */
+  function progress(r, mine) { return stepper(r, mine); }
+
+  /* ---------- a discount code ----------
+     Says what it is worth, or why it is worth nothing. A greyed-out button
+     with no sentence beside it is the worst version of this box: the person
+     typing knows only that something is wrong and not what. */
+  var PROMO_WHY = {
+    unknown: "promo.unknown", expired: "promo.expired", withdrawn: "promo.withdrawn",
+    "used up": "promo.usedUp", "already used": "promo.alreadyUsed",
+    "not yours": "promo.notYours", "wrong service": "promo.wrongService",
+    "nothing to discount": "promo.nothing"
+  };
+
+  function promoBox(r, tried) {
+    var applied = (r.promoDiscount || 0) > 0;
+    var d = M.distribute(r);
+
+    if (applied) {
+      return '<div class="promo is-on" data-promo="' + App.esc(r.id) + '">' +
+        Icons.svg("check", "icon-sm") +
+        '<span class="small">' + App.esc(I18N.t("promo.applied", {
+          n: I18N.num(Math.round(d.discount / 100)),
+          code: r.promoCode || ""
+        })) + "</span>" +
+        '<button class="btn btn--ghost btn--sm" type="button" data-promo-clear="' +
+          App.esc(r.id) + '">' + App.esc(I18N.t("promo.remove")) + "</button>" +
+      "</div>";
+    }
+
+    var why = "";
+    if (tried && tried.reason && tried.reason !== "ok") {
+      why = tried.ok
+        ? '<p class="tiny muted">' + App.esc(I18N.t("promo.capped")) + "</p>"
+        : '<p class="tiny" style="color:var(--danger)">' +
+          App.esc(I18N.t(PROMO_WHY[tried.reason] || "promo.unknown")) + "</p>";
+    }
+
+    return '<div class="promo" data-promo="' + App.esc(r.id) + '">' +
+      '<label class="tiny muted" for="promo-' + App.esc(r.id) + '">' +
+        App.esc(I18N.t("promo.have")) + "</label>" +
+      '<div class="row gap-2 wrap">' +
+        '<input class="input" id="promo-' + App.esc(r.id) + '" data-promo-code ' +
+          'autocomplete="off" spellcheck="false" placeholder="' +
+          App.esc(I18N.t("promo.placeholder")) + '">' +
+        '<button class="btn btn--outline btn--sm" type="button" data-promo-apply="' +
+          App.esc(r.id) + '">' + App.esc(I18N.t("promo.apply")) + "</button>" +
+      "</div>" + why +
     "</div>";
   }
 
@@ -973,7 +1049,8 @@
     ratingLine: ratingLine, verifiedMark: verifiedMark, progressBar: progressBar,
     starPicker: starPicker, ratingSummary: ratingSummary, reviewCard: reviewCard,
     lawyerCard: lawyerCard, internCard: internCard, articleCard: articleCard,
-    statusPill: statusPill, progress: progress,
+    statusPill: statusPill, progress: progress, stepper: stepper,
+    promoBox: promoBox,
     requestRow: requestRow, empty: empty, sectionHead: sectionHead,
     thread: thread, bubble: bubble, fileChip: fileChip, linkFiles: linkFiles,
     bytes: bytes, wireThread: wireThread, threadDraw: threadDraw,

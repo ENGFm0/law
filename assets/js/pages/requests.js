@@ -242,6 +242,12 @@ Pages.define("requests", function (global) {
     "</article>";
   }
 
+  /* The window a code can still be applied in — the same list the database
+     checks in redeem_promo_code(), because a button drawn where the server
+     will refuse is a button that lies. */
+  var EARLY = ["new", "quoting", "assigned", "scheduled"];
+  var promoTried = {};          // the last answer per request, so it can be said
+
   function clientDetail(r, st, lawyer) {
     return '<div class="case__panel">' +
       '<div class="row between wrap gap-3">' +
@@ -254,6 +260,12 @@ Pages.define("requests", function (global) {
       (st.body
         ? '<pre class="draft-text" style="min-height:auto" readonly>' + esc(st.body) + "</pre>"
         : '<p class="small muted" style="margin-top:var(--s-2)" data-i18n="req.noDeliverable"></p>') +
+      // A discount can only be taken before the work starts: after that the
+      // price is what the lawyer agreed to be paid against, and moving it is
+      // moving the terms of a job already under way.
+      (EARLY.indexOf(st.status) !== -1 && !M.isScreening(r)
+        ? C.promoBox(r, promoTried[r.id])
+        : "") +
       acceptPanel(r) +
       (rating[r.id] !== undefined ? rateForm(r) : "") +
       // Everything the two of them said and sent, on the case it belongs to.
@@ -901,6 +913,29 @@ Pages.define("requests", function (global) {
 
     var f = t.closest("[data-filter]");
     if (f) { filter = f.getAttribute("data-filter"); App.rerender(); return; }
+
+    /* --- a discount code --- */
+    var pa = hit("data-promo-apply");
+    if (pa) {
+      var box = $('[data-promo="' + pa + '"] [data-promo-code]', host);
+      var typed = box ? box.value.trim() : "";
+      if (!typed) return;
+      Store.redeemPromo(pa, typed, function (word, answer) {
+        // The answer is kept so the box can say what happened. A refusal with
+        // no sentence beside it tells somebody only that they are wrong.
+        promoTried[pa] = answer;
+        if (word === "applied") App.toast(I18N.t("promo.apply"), "check");
+        App.rerender();
+      });
+      return;
+    }
+    var pc = hit("data-promo-clear");
+    if (pc) {
+      Store.clearPromo(pc);
+      promoTried[pc] = null;
+      App.rerender();
+      return;
+    }
 
     /* --- client --- */
     var bc = hit("data-brief-cancel");

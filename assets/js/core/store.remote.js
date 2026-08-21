@@ -42,6 +42,11 @@
       acceptedAt: r.accepted_at ? new Date(r.accepted_at).getTime() : null,
       revisions: r.revisions || 0,
       revisionNote: r.revision_note || null,
+      // What a code took off, in halalas, and which code. Read back rather
+      // than recomputed: the database is what applied it, under a lock, and a
+      // second opinion here would only ever be a way to disagree with it.
+      promoCode: r.promo_code || null,
+      promoDiscount: r.promo_discount || 0,
       title: pair(r.title), brief: pair(r.brief), ago: pair(""),
     };
   }
@@ -413,7 +418,8 @@
         return { status: r.status, assignedTo: r.assignedTo, body: r.body,
                  rated: r.rated, internShare: r.internShare,
                  deliveredAt: r.deliveredAt, acceptedAt: r.acceptedAt,
-                 revisions: r.revisions, revisionNote: r.revisionNote };
+                 revisions: r.revisions, revisionNote: r.revisionNote,
+                 promoCode: r.promoCode, promoDiscount: r.promoDiscount };
       }
     }
     return {};
@@ -453,6 +459,8 @@
     if ("channel" in changes) row.channel = changes.channel;
     if ("revisions" in changes) row.revisions = changes.revisions;
     if ("revisionNote" in changes) row.revision_note = changes.revisionNote;
+    if ("promoCode" in changes) row.promo_code = changes.promoCode;
+    if ("promoDiscount" in changes) row.promo_discount = changes.promoDiscount || 0;
     // `delivered_at` and `accepted_at` are stamped by the database when the
     // status moves, because they decide when money moves and a browser's
     // clock is not something to settle that on.
@@ -1012,6 +1020,50 @@
       if (done) done(word);
       return word;
     });
+  };
+
+  /* ---------------- discount codes ----------------
+     Validating and spending are two calls because they are two questions: one
+     is "what is this worth" and is asked while somebody types, the other is
+     "take it" and moves a counter under a lock. Neither is arithmetic done
+     here — the database decides, and the browser only has to agree with it. */
+  Store.promoValue = function (code, gross, typeId, done) {
+    if (noSession()) return Promise.resolve({ ok: false, reason: "not signed in" });
+    return SB.load().then(function (sb) {
+      return sb.rpc("validate_promo_code",
+                    { p_code: code, p_gross: gross, p_type: typeId || null });
+    }).then(function (res) {
+      if (res && res.error) { report(res); return { ok: false, reason: "failed" }; }
+      var row = Array.isArray(res.data) ? res.data[0] : res.data;
+      var out = row
+        ? { ok: !!row.ok, reason: row.reason, discount: row.discount || 0, pct: row.pct || 0 }
+        : { ok: false, reason: "unknown" };
+      if (done) done(out);
+      return out;
+    });
+  };
+
+  Store.redeemPromo = function (requestId, code, done) {
+    if (noSession()) { if (done) done("not signed in"); return Promise.resolve("not signed in"); }
+    return SB.load().then(function (sb) {
+      return sb.rpc("redeem_promo_code", { p_code: code, p_request: requestId });
+    }).then(function (res) {
+      if (res && res.error) { report(res); if (done) done("failed"); return "failed"; }
+      var word = Array.isArray(res.data) ? res.data[0] : res.data;
+      if (word && typeof word === "object") word = word.redeem_promo_code;
+      // The row carries the discount now, so the price on screen has to come
+      // from the row rather than from what was typed.
+      if (word === "applied") Store.hydrate();
+      if (done) done(word, { ok: word === "applied", reason: word });
+      return word;
+    });
+  };
+
+  /* Taking a code off again is an update to the request like any other, and
+     the redemption row stays: it is the record that the code was spent, and
+     the unique key on it is what stops a second attempt. */
+  Store.clearPromo = function (requestId) {
+    return Store.setRequest(requestId, { promoCode: null, promoDiscount: 0 });
   };
 
   Store.bands = function () { return cache.bands; };

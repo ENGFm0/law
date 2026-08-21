@@ -36,7 +36,9 @@
     "articles", "articleStates", "comments", "endorsements", "applications",
     "agreements", "disputes", "audit", "profiles", "notices",
     "announcements", "subscriptions", "costs", "partners", "bands",
-    "types", "removedTypes", "quotes", "offers", "messages", "attachments", "events"
+    "types", "removedTypes", "quotes", "offers", "messages", "attachments", "events",
+    "mentorships", "sessions", "rooms", "webinars", "seats", "promos", "redemptions",
+    "drafts"
   ].forEach(function (k) {
     if (!work[k]) {
       work[k] = (k.indexOf("States") !== -1 || k === "applications" ||
@@ -62,6 +64,11 @@
 
   function uid(prefix) {
     return prefix + "-" + Math.random().toString(36).slice(2, 8);
+  }
+
+  function byId(list, id) {
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
   }
 
   var Store = {
@@ -704,13 +711,213 @@
                audit: [], profiles: {}, notices: [],
                announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
                types: [], removedTypes: [], quotes: [], offers: [],
-               messages: [], attachments: [], events: [] };
+               messages: [], attachments: [], events: [],
+               mentorships: [], sessions: [], rooms: [], webinars: [], seats: [],
+               promos: [], redemptions: [], drafts: [] };
       notify();
     },
     resetAll: function () {
       accounts = []; saveAccounts();
       Store.signOut();
       Store.resetWork();
+    },
+
+    /* ---------------- supervision, workshops and discounts ----------------
+       The same shape as everything above: a list, a lookup, and a writer that
+       ends in notify(). What the database enforces with a policy this
+       enforces with nothing at all — which is exactly why the rules live
+       there and not here, and why the remote store overrides every one of
+       these with a call rather than a copy of the logic. */
+    mentorships: function () { return work.mentorships; },
+    mentorship: function (id) { return byId(work.mentorships, id); },
+    mentorshipOf: function (internId) {
+      var out = null;
+      work.mentorships.forEach(function (m) {
+        if (m.internId === internId && m.status === "active") out = m;
+      });
+      return out;
+    },
+    openMentorship: function (m) {
+      m.id = m.id || uid("men");
+      m.status = m.status || "pending";
+      m.at = Date.now();
+      work.mentorships.push(m);
+      Store.notify({ to: m.openedBy === "intern" ? m.mentorId : m.internId,
+                     type: "mentorship", ref: m.id });
+      notify();
+      return m;
+    },
+    setMentorship: function (id, patch) {
+      var m = byId(work.mentorships, id);
+      if (!m) return null;
+      Object.keys(patch).forEach(function (k) { m[k] = patch[k]; });
+      if (patch.status === "active" && !m.startedAt) m.startedAt = Date.now();
+      if (patch.status === "ended" && !m.endedAt) m.endedAt = Date.now();
+      Store.notify({ to: m.openedBy === "intern" ? m.internId : m.mentorId,
+                     type: "mentorship", ref: m.id });
+      notify();
+      return m;
+    },
+
+    sessions: function () { return work.sessions; },
+    addSession: function (s) {
+      s.id = s.id || uid("ses");
+      s.at = Date.now();
+      work.sessions.push(s);
+      notify();
+      return s;
+    },
+    setSession: function (id, patch) {
+      var s = byId(work.sessions, id);
+      if (!s) return null;
+      Object.keys(patch).forEach(function (k) { s[k] = patch[k]; });
+      notify();
+      return s;
+    },
+
+    /** The supervision room. Its own list, for the same reason it is its own
+        table: the case thread is bolted to a request and this is not one. */
+    roomMessages: function (mentorshipId) {
+      return work.rooms.filter(function (m) { return m.mentorshipId === mentorshipId; });
+    },
+    sayInRoom: function (m) {
+      m.id = m.id || uid("rm");
+      m.at = Date.now();
+      work.rooms.push(m);
+      notify();
+      return m;
+    },
+
+    webinars: function () { return work.webinars; },
+    webinar: function (id) { return byId(work.webinars, id); },
+    addWebinar: function (w) {
+      w.id = w.id || uid("web");
+      w.ref = w.ref || ("WRK-" + new Date().getFullYear().toString().slice(2) + "-" +
+                        String(100000 + work.webinars.length + 1).slice(1));
+      w.status = w.status || "open";
+      w.at = Date.now();
+      work.webinars.push(w);
+      notify();
+      return w;
+    },
+    setWebinar: function (id, patch) {
+      var w = byId(work.webinars, id);
+      if (!w) return null;
+      Object.keys(patch).forEach(function (k) { w[k] = patch[k]; });
+      notify();
+      return w;
+    },
+    seats: function (webinarId) {
+      return work.seats.filter(function (s) { return s.webinarId === webinarId; });
+    },
+    seatOf: function (webinarId, holderId) {
+      var out = null;
+      work.seats.forEach(function (s) {
+        if (s.webinarId === webinarId && s.holderId === holderId) out = s;
+      });
+      return out;
+    },
+    /** Returns the seat, or a word saying why there is not one. */
+    takeSeat: function (webinarId, holderId) {
+      var w = byId(work.webinars, webinarId);
+      if (!w) return "no such workshop";
+      if (Store.seatOf(webinarId, holderId)) return "already booked";
+      if (Store.seats(webinarId).length >= (w.seats || 0)) return "full";
+      if (w.startsAt && new Date(w.startsAt).getTime() <= Date.now()) return "started";
+      var seat = { id: uid("seat"), webinarId: webinarId, holderId: holderId,
+                   price: w.price || 0, attended: false, at: Date.now() };
+      work.seats.push(seat);
+      if (Store.seats(webinarId).length >= (w.seats || 0)) w.status = "full";
+      notify();
+      return seat;
+    },
+    dropSeat: function (webinarId, holderId) {
+      work.seats = work.seats.filter(function (s) {
+        return !(s.webinarId === webinarId && s.holderId === holderId);
+      });
+      var w = byId(work.webinars, webinarId);
+      if (w && w.status === "full") w.status = "open";
+      notify();
+    },
+
+    promos: function () { return work.promos; },
+    promoByCode: function (code) {
+      var want = String(code || "").trim().toUpperCase(), out = null;
+      work.promos.forEach(function (p) { if (p.code === want) out = p; });
+      return out;
+    },
+    addPromo: function (p) {
+      p.id = p.id || uid("promo");
+      p.code = String(p.code || "").trim().toUpperCase();
+      p.usedCount = p.usedCount || 0;
+      p.active = p.active !== false;
+      p.at = Date.now();
+      work.promos.push(p);
+      notify();
+      return p;
+    },
+    setPromo: function (id, patch) {
+      var p = byId(work.promos, id);
+      if (!p) return null;
+      Object.keys(patch).forEach(function (k) { p[k] = patch[k]; });
+      notify();
+      return p;
+    },
+    redemptions: function () { return work.redemptions; },
+    redemptionOf: function (promoId, clientId) {
+      var out = null;
+      work.redemptions.forEach(function (r) {
+        if (r.promoId === promoId && r.clientId === clientId) out = r;
+      });
+      return out;
+    },
+    addRedemption: function (r) {
+      r.id = r.id || uid("red");
+      r.at = Date.now();
+      work.redemptions.push(r);
+      var p = byId(work.promos, r.promoId);
+      if (p) p.usedCount = (p.usedCount || 0) + 1;
+      notify();
+      return r;
+    },
+
+    /** Spend a code on a request. Answers with a word and with the reason
+        behind it, the same pair redeem_promo_code() returns on the real
+        backend — so the page reads one shape whichever it is talking to. */
+    redeemPromo: function (requestId, code, done) {
+      var say = function (word, answer) { if (done) done(word, answer); return word; };
+      var r = byId(work.requests, requestId);
+      if (!r) return say("no such request");
+      var st = work.requestStates[requestId] || {};
+      if (["new", "quoting", "assigned", "scheduled"].indexOf(st.status || r.status) === -1) {
+        return say("too late", { ok: false, reason: "too late" });
+      }
+      if ((r.promoDiscount || 0) > 0) {
+        return say("already discounted", { ok: false, reason: "already used" });
+      }
+      var answer = global.Models.promoValue(code, Math.round((r.price || 0) * 100),
+                                            r.typeId, r.clientId);
+      if (!answer.ok) return say(answer.reason, answer);
+
+      Store.addRedemption({ promoId: answer.promo.id, clientId: r.clientId,
+                            requestId: requestId, amount: answer.discount });
+      r.promoCode = answer.promo.code;
+      r.promoDiscount = answer.discount;
+      notify();
+      return say("applied", answer);
+    },
+    clearPromo: function (requestId) {
+      var r = byId(work.requests, requestId);
+      if (!r) return;
+      work.redemptions = work.redemptions.filter(function (x) {
+        if (x.requestId !== requestId) return true;
+        var p = byId(work.promos, x.promoId);
+        if (p) p.usedCount = Math.max(0, (p.usedCount || 0) - 1);
+        return false;
+      });
+      r.promoCode = null;
+      r.promoDiscount = 0;
+      notify();
     },
 
     onChange: function (fn) { listeners.push(fn); },

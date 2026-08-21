@@ -63,18 +63,23 @@ const req = await p.evaluate(()=>window.Store.requests().slice(-1)[0]);
 ok('the request carries the channel the client chose', req && req.channel === 'video');
 ok('and a video request counts as live', await p.evaluate(r=>window.Models.isLive(r), req) === true);
 
-console.log('— ONE PROGRESS TRACK, THE SAME FOR BOTH —');
+console.log('— ONE PROGRESS TRACK, READ BY EACH SIDE IN ITS OWN WORDS —');
 await open('requests.html', 'u-fahad');
 await p.click('[data-detail]'); await p.waitForTimeout(400);
 ok('the client sees it', await p.$('.track') !== null);
 const ct = await p.$eval('.track', e=>e.innerText);
-ok('with every stage named', /الطلب مُرسَل/.test(ct) && /سُلّم/.test(ct), ct.slice(0,60));
+ok('with every stage named', /أرسلتَ الطلب/.test(ct) && /وصلك التسليم/.test(ct), ct.slice(0,60));
 ok('and whose move it is', /ننتظر/.test(ct), ct.slice(0,80));
 
 await open('requests.html', 'u-ahmed');
 await p.click('[data-open]'); await p.waitForTimeout(450);
 ok('the lawyer sees the same track', await p.$('.track') !== null);
-ok('told it is waiting on them', /ننتظر منك/.test(await p.$eval('.track', e=>e.innerText)));
+const lt = await p.$eval('.track', e=>e.innerText);
+// The same record, the other side of it: a lawyer is not "waiting on the
+// lawyer", and the last thing on their bar is being paid rather than a
+// delivery arriving.
+ok('in their own words', /استلمته/.test(lt) && /قُبِل واستُحق/.test(lt), lt.slice(0,80));
+ok('told it is waiting on them', /ننتظرك أنت/.test(lt), lt.slice(0,80));
 
 if (errs.length) { console.log('\nJS ERRORS:'); errs.forEach(e=>console.log('  '+e)); }
 console.log(`\n${pass} passed, ${fail} failed`+(errs.length?`, ${errs.length} js errors`:''));

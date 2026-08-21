@@ -817,10 +817,33 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .track__label { font-size: .6875rem; color: var(--text-faint); line-height: 1.3; }
 .track__step.is-done .track__label,
 .track__step.is-here .track__label { color: var(--text); font-weight: 600; }
+/* When it happened, under the stage it happened at. */
+.track__at { display: block; margin-top: 2px; font-variant-numeric: tabular-nums; }
+/* A stage that may never happen — routing to a trainee — is drawn as a stage
+   that is not owed rather than as one that is late. */
+.track__step.is-optional .track__dot { border-style: dashed; }
+.track__step.is-optional .track__label { opacity: .7; }
 
 @media (max-width: 520px) {
   .track__label { font-size: .625rem; }
+  .track__at { display: none; }
 }
+
+/* ---------- a discount code ----------
+   Sits under a price, so it is quiet until it has something to say. */
+.promo {
+  display: flex; flex-direction: column; gap: var(--s-2);
+  margin-top: var(--s-4); padding: var(--s-4);
+  border: 1px dashed var(--border-strong); border-radius: var(--r-lg);
+  background: var(--surface-2);
+}
+.promo .input { flex: 1 1 160px; min-width: 0; }
+.promo.is-on {
+  flex-direction: row; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+  border-style: solid; border-color: var(--success);
+  background: var(--success-soft); color: var(--success);
+}
+.promo.is-on .btn { margin-inline-start: auto; }
 
 /* ---------- 11a0b. What the platform is saying ---------- */
 .announce {

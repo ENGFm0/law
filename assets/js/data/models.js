@@ -669,7 +669,13 @@
       guaranteeUnconditional: s.guaranteeUnconditional !== false,
       // The experience the directory says it lists. A standard, not a gate:
       // it is shown and it is filterable, and nobody is thrown out by it.
-      minYears: Math.max(0, n(s.minYears, 5))
+      minYears: Math.max(0, n(s.minYears, 5)),
+      // What the platform takes out of a monthly sponsorship, and the band a
+      // lawyer may ask inside. Capped at 20 for the same reason the
+      // commission is capped at 10: a number nobody can raise quietly.
+      sponsorshipPct: Math.max(0, Math.min(20, n(s.sponsorshipPct, 15))),
+      sponsorshipMin: Math.max(0, n(s.sponsorshipMin, 50)),
+      sponsorshipMax: Math.max(0, n(s.sponsorshipMax, 100))
     };
   }
 
@@ -760,11 +766,26 @@
     var internPct = pay && pay.kind === "share" ? pay.pct : null;
     var intern = internPct == null ? 0 : pct(gross, internPct);
 
+    // A promo code comes out of the platform's own cut and out of nothing
+    // else. The lawyer's and the trainee's shares are computed off the price
+    // above and are not touched here — a platform that runs a sale and bills
+    // it to the people doing the work is not running a sale.
+    //
+    // Which is why it cannot exceed the commission. The figure on the request
+    // was capped when it was applied; this caps it again rather than trusting
+    // a column, because a settings change afterwards can move the commission
+    // underneath a discount that was fine when it was granted.
+    var discount = Math.max(0, Math.min(r.promoDiscount || 0, commission));
+
     return {
       gross: gross,
       serviceVat: serviceVat,
-      client: gross + serviceVat,
-      commission: commission,
+      discount: discount,
+      promoCode: discount ? (r.promoCode || null) : null,
+      client: gross + serviceVat - discount,
+      // What the platform is left with after its own discount.
+      commission: commission - discount,
+      commissionGross: commission,
       commissionVat: commissionVat,
       commissionPct: cfg.commissionPct,
       intern: intern,
@@ -775,6 +796,141 @@
       vatEnabled: cfg.vatEnabled,
       vatPct: cfg.vatPct
     };
+  }
+
+  /* ---------- promo codes ----------
+     The same arithmetic as validate_promo_code() in migration 020, and it has
+     to stay the same: this is what the client is shown before they order, and
+     being shown one number and charged another is the single worst thing a
+     checkout can do. The database is the one that decides — this only has to
+     agree with it.
+
+     Returns a reason rather than a boolean, because "why not" is the whole
+     of what somebody wants when a code is refused. */
+  function promoValue(code, gross, typeId, clientId) {
+    var no = function (why) { return { ok: false, reason: why, discount: 0, pct: 0 }; };
+    var p = Store.promoByCode ? Store.promoByCode(code) : null;
+    if (!p) return no("unknown");
+    if (p.active === false) return no("withdrawn");
+    if (p.expiresAt && new Date(p.expiresAt).getTime() <= Date.now()) return no("expired");
+    if (p.usageLimit != null && (p.usedCount || 0) >= p.usageLimit) return no("used up");
+    if (p.clientId && clientId && p.clientId !== clientId) return no("not yours");
+    if (p.typeId && typeId && p.typeId !== typeId) return no("wrong service");
+    if (clientId && Store.redemptionOf && Store.redemptionOf(p.id, clientId)) {
+      return no("already used");
+    }
+    if (!gross || gross <= 0) return no("nothing to discount");
+
+    var raw = pct(gross, p.discountPct);
+    if (p.maxDiscount != null) raw = Math.min(raw, p.maxDiscount);
+
+    var commission = pct(gross, platformSettings().commissionPct);
+    if (raw > commission) {
+      return { ok: true, reason: "capped", discount: commission,
+               pct: p.discountPct, promo: p };
+    }
+    return { ok: true, reason: "ok", discount: raw, pct: p.discountPct, promo: p };
+  }
+
+  /* ---------- the sponsorship ----------
+     A trainee with no supervisor pays monthly for one. Same shape as every
+     other split here: what was paid, what the platform took, what is owed to
+     the person who did the work. Halalas throughout. */
+  function sponsorship(m) {
+    var cfg = platformSettings();
+    var gross = Math.round(((m && m.fee) || 0) * 100);
+    var cut = pct(gross, cfg.sponsorshipPct);
+    return {
+      gross: gross,
+      pct: cfg.sponsorshipPct,
+      platform: cut,
+      lawyer: gross - cut,
+      mentorId: m ? m.mentorId : null,
+      internId: m ? m.internId : null,
+      paidUntil: m ? m.paidUntil : null,
+      current: !!(m && m.status === "active" &&
+                  (!m.fee || (m.paidUntil && new Date(m.paidUntil).getTime() > Date.now())))
+    };
+  }
+
+  /** Every trainee this lawyer supervises, and what that comes to a month. */
+  function sponsorshipBook(mentorId) {
+    var out = { active: 0, pending: 0, gross: 0, platform: 0, lawyer: 0, rows: [] };
+    ((Store.mentorships && Store.mentorships()) || []).forEach(function (m) {
+      if (m.mentorId !== mentorId) return;
+      if (m.status === "pending") { out.pending += 1; return; }
+      if (m.status !== "active") return;
+      var s = sponsorship(m);
+      out.active += 1;
+      out.gross += s.gross;
+      out.platform += s.platform;
+      out.lawyer += s.lawyer;
+      out.rows.push({ mentorship: m, user: user(m.internId), split: s });
+    });
+    return out;
+  }
+
+  /* ---------- a workshop ----------
+     Seats, not hours. The host keeps what is left after the platform's cut,
+     and a seat that was booked at the old price stays booked at the old
+     price — which is why the seat carries its own. */
+  function ticketSplit(w, seats) {
+    var cfg = platformSettings();
+    var rows = seats || ((Store.seats && Store.seats(w.id)) || []);
+    var gross = 0;
+    rows.forEach(function (s) { gross += Math.round((s.price || 0) * 100); });
+    var cut = pct(gross, cfg.commissionPct);
+    return {
+      sold: rows.length,
+      seats: w.seats || 0,
+      left: Math.max(0, (w.seats || 0) - rows.length),
+      gross: gross,
+      pct: cfg.commissionPct,
+      platform: cut,
+      host: gross - cut
+    };
+  }
+
+  /** Workshops worth showing: the ones that have not happened yet, soonest
+      first, and only the ones this person is allowed to be in. */
+  function webinarsFor(u) {
+    var now = Date.now();
+    var role = u ? (u.roles.indexOf("intern") !== -1 ? "intern" : "client") : "client";
+    return ((Store.webinars && Store.webinars()) || []).filter(function (w) {
+      if (w.status === "cancelled") return false;
+      if (w.audience && w.audience !== "all" && w.audience !== role) return false;
+      return !w.startsAt || new Date(w.startsAt).getTime() > now;
+    }).sort(function (a, b) {
+      return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
+    });
+  }
+
+  /* ---------- the free screening ----------
+     Free, and only taken on by a trainee somebody is actually supervising.
+     The database refuses it either way; this is so the button is not drawn in
+     the first place. */
+  var SCREENING = "free_screening";
+
+  function isScreening(r) { return !!r && r.typeId === SCREENING; }
+
+  function mentorOf(internId) {
+    var m = Store.mentorshipOf ? Store.mentorshipOf(internId) : null;
+    return m ? user(m.mentorId) : null;
+  }
+
+  function canScreen(internId) { return !!mentorOf(internId); }
+
+  /** The offer a finished screening earns: a real code in this person's name,
+      not a banner. Mirrors offer_conversion() in migration 020. */
+  function conversionOffer(clientId) {
+    var best = null;
+    ((Store.promos && Store.promos()) || []).forEach(function (p) {
+      if (p.clientId !== clientId || p.active === false) return;
+      if (p.expiresAt && new Date(p.expiresAt).getTime() <= Date.now()) return;
+      if (p.usageLimit != null && (p.usedCount || 0) >= p.usageLimit) return;
+      best = p;
+    });
+    return best;
   }
 
   /* ---------- accepting a delivery, and refusing one ----------
@@ -1054,6 +1210,120 @@
     return buckets;
   }
 
+  /* ---------- the stepper ----------
+     Four people watch the same request and none of them is watching the same
+     thing. A client is waiting to find out whether their problem has an
+     answer; a lawyer is watching a piece of work move from their inbox to
+     their pay; a trainee is watching a draft go up for a signature; the desk
+     is watching all of it at once and looking for where it stuck.
+
+     So the stages are per role rather than one bar relabelled — but they are
+     read off the SAME record, so no two of them can disagree about where the
+     case actually is. Each step carries the moment it happened, because "in
+     progress since when" is the question behind every one of these bars. */
+  var STEPS = {
+    client: [
+      { key: "placed",    on: ["placed", "brief_posted"] },
+      { key: "taken",     on: ["taken", "offer_taken", "lawyer_set", "status:assigned",
+                               "status:scheduled"] },
+      { key: "working",   on: ["status:in_progress", "status:with_intern",
+                               "status:drafted", "status:open_to_interns"] },
+      { key: "delivered", on: ["status:delivered"] },
+      { key: "closed",    on: ["status:completed", "status:refunded"] }
+    ],
+    lawyer: [
+      { key: "arrived",   on: ["placed", "brief_posted", "offer_taken"] },
+      { key: "taken",     on: ["taken", "lawyer_set", "status:assigned"] },
+      { key: "routed",    on: ["assigned", "status:with_intern", "status:open_to_interns"],
+        optional: true },
+      { key: "drafted",   on: ["status:drafted"] },
+      { key: "delivered", on: ["status:delivered"] },
+      { key: "paid",      on: ["status:completed"] }
+    ],
+    intern: [
+      { key: "handed",    on: ["assigned", "status:with_intern"] },
+      { key: "talking",   on: ["internal_said"] },
+      { key: "submitted", on: ["status:drafted", "status:delivered"] },
+      { key: "signed",    on: ["status:delivered", "status:completed"] }
+    ],
+    staff: [
+      { key: "placed",    on: ["placed", "brief_posted"] },
+      { key: "taken",     on: ["taken", "offer_taken", "lawyer_set"] },
+      { key: "routed",    on: ["assigned"], optional: true },
+      { key: "working",   on: ["status:in_progress", "status:with_intern", "status:drafted"] },
+      { key: "delivered", on: ["status:delivered"] },
+      { key: "closed",    on: ["status:completed", "status:refunded", "status:cancelled"] }
+    ]
+  };
+
+  /** When each stage happened, from the record rather than from the status.
+      A status says where a case is; only the record says when it got there. */
+  function stampsOn(r) {
+    var out = {};
+    ((Store.events && Store.events(r.id)) || []).forEach(function (e) {
+      if (out[e.kind] == null) out[e.kind] = e.at;
+    });
+    // The trainee's stage "talking to the lawyer" is not an event, it is the
+    // first thing either of them said out of the client's earshot.
+    var said = (Store.messages && Store.messages(r.id, "internal")) || [];
+    if (said.length && out.internal_said == null) out.internal_said = said[0].at;
+    return out;
+  }
+
+  function stepsFor(r, role) {
+    var plan = STEPS[role] || STEPS.client;
+    var st = requestState(r);
+    var d = disputeFor(r.id);
+    var held = !!(d && d.status === "open");
+    var stamps = stampsOn(r);
+    var at = -1;
+
+    var steps = plan.map(function (step, i) {
+      var when = null;
+      step.on.forEach(function (kind) {
+        if (stamps[kind] != null && (when == null || stamps[kind] < when)) {
+          when = stamps[kind];
+        }
+      });
+      if (when != null) at = i;
+      return { key: step.key, at: when, optional: !!step.optional, done: false, here: false };
+    });
+
+    // A record that has nothing in it — a fixture, or a request placed before
+    // the log existed — still has a status, and a bar that says "nothing has
+    // happened" to somebody looking at delivered work is worse than one drawn
+    // from the status alone.
+    if (at === -1) {
+      var fallback = { "new": 0, quoting: 0, assigned: 1, scheduled: 1,
+                       drafted: 2, open_to_interns: 2, with_intern: 2, in_progress: 2,
+                       delivered: 3, completed: 4, refunded: 4, cancelled: 4 };
+      at = Math.min(steps.length - 1, fallback[st.status] == null ? 0 : fallback[st.status]);
+    }
+
+    steps.forEach(function (x, i) {
+      x.done = i < at;
+      x.here = i === at;
+    });
+
+    return {
+      role: role, steps: steps, at: at, held: held,
+      status: st.status,
+      // Whose move it is. The bar says how far along; this says who everyone
+      // is waiting for, which is what people actually came to find out.
+      waiting: held ? "staff" : waitingFor(st.status, role),
+      dispute: d || null
+    };
+  }
+
+  function waitingFor(status, role) {
+    if (status === "delivered") return role === "client" ? "you" : "client";
+    if (status === "completed" || status === "refunded" || status === "cancelled") return null;
+    if (status === "with_intern" || status === "open_to_interns") {
+      return role === "intern" ? "you" : "intern";
+    }
+    return role === "client" ? "lawyer" : "you";
+  }
+
   /** The whole picture, over a window of `months`. */
   function books(months) {
     var cfg = platformSettings();
@@ -1216,6 +1486,11 @@
     monthlyCost: monthlyCost, costsInWindow: costsInWindow,
     gatewayFee: gatewayFee, earnedRequests: earnedRequests, books: books,
     series: series, whenOf: whenOf, inWindow: inWindow,
+    promoValue: promoValue, sponsorship: sponsorship, sponsorshipBook: sponsorshipBook,
+    ticketSplit: ticketSplit, webinarsFor: webinarsFor,
+    isScreening: isScreening, mentorOf: mentorOf, canScreen: canScreen,
+    conversionOffer: conversionOffer, SCREENING: SCREENING,
+    stepsFor: stepsFor, stampsOn: stampsOn,
     ACCEPT_DAYS: ACCEPT_DAYS, MAX_REVISIONS: MAX_REVISIONS,
     addWorkingDays: addWorkingDays, acceptance: acceptance, settlement: settlement,
     disputeFor: disputeFor, openDisputes: openDisputes,
