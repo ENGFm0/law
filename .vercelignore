@@ -18,6 +18,13 @@ verify.html
 tools/
 supabase/
 
+# The single-file bundle. It is a real artifact — the whole site in one file,
+# for handing to somebody with no server — but nothing rebuilds it any more
+# now that the Pages workflow is gone, and a stale full copy of the site at a
+# public URL is worse than no copy. Build it with `npm run build` when you
+# want one; it is not a page on the website.
+dist/
+
 # Notes, stories and the test tooling's manifest. The manifest matters twice:
 # it carries a `build` script, and Vercel runs one when it finds one. There is
 # no build step in production, and the fastest way to keep it that way is to

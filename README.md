@@ -8,7 +8,7 @@
 > Arabic-first (RTL) with full English (LTR) support, light/dark theming, and
 > three signed-in roles that each get their own view of the same data.
 
-**الموقع منشور على:** <https://engfm0.github.io/law/>
+**الموقع منشور على:** <https://sanad-green-delta.vercel.app>
 
 ---
 
@@ -379,23 +379,43 @@ Pages.define("home", function (global) { … });
 
 ## النشر | Deploying
 
-النشر يتم من فرع `gh-pages`، ويحدّثه `.github/workflows/pages.yml` عند كل push
-على الفرع الافتراضي: يعيد بناء نسخة الملف الواحد من المصادر، يجمّع الصفحات
-والأصول، ثم يدفعها إلى `gh-pages`.
+**Vercel، وحده.** الموقع ثابت بالكامل: لا خطوة بناء، ولا اعتماديات، ولا متغيرات
+بيئة — Framework: Other، Root: `./`، وVercel يرفع الملفات كما هي.
 
-### لماذا النشر عبر فرع وليس عبر `actions/deploy-pages`؟
+بيئة إنتاج واحدة على قاعدة بيانات واحدة. بيئتان حيّتان تعنيان قائمتَي إعادة توجيه
+وجلستين، وارتباكاً في `Auth Callbacks` لا يستحقه أحد.
 
-النشر عبر Actions يشترط ضبط مصدر Pages على "GitHub Actions" في إعدادات
-المستودع، وهذا ما لا يستطيع توكن Actions فعله بنفسه:
+ملفان يحرسان ذلك، وكلاهما موجود لسبب:
 
-```
-Create Pages site failed. Error: Resource not accessible by integration
-```
+**`.vercelignore`** — Vercel يخدم المستودع كما هو، فكل ملف مرفوع هو رابط يفتحه
+أحد. القائمة تمنع رفع ما ليس موقعاً، وأولها `verify.html`: صفحة فحص **تُنشئ حسابات
+حقيقية وتكتب صفوفاً حقيقية** في المشروع الحيّ. ومعها `tools/` و`supabase/`
+و`dist/` و`docs/` و`package.json` — والأخير مقصود مرتين، لأنه يحمل `build` script
+و**Vercel يشغّل البناء إذا وجده**.
 
-إنشاء موقع Pages أو تغيير مصدره نداء إداري (`administration: write`) لا يُمنح
-لـ `GITHUB_TOKEN` مهما كتبت في كتلة `permissions`. أما دفع فرع فيكفيه
-`contents: write` وهو متاح — ولأن المستودع عام، فعّل GitHub خدمة Pages
-تلقائياً بمجرد ظهور فرع `gh-pages` أول مرة.
+**`vercel.json`** — روابط الأصول بلا رقم إصدار، فمتصفح يحمل JavaScript إصدارٍ سابق
+قد يشغّله مع HTML الإصدار الجديد؛ خليط يبدو كبيانات لا تصل ويختفي عند فتح أدوات
+المطوّر لأنها تعطّل الكاش. الجواب `must-revalidate`: تكلفته ٣٠٤ واحدة ولا يمكن أن
+يخطئ. ومعه `nosniff` و`X-Frame-Options` و`Referrer-Policy` و`Permissions-Policy`
+(الكاميرا والميكروفون لنفس الأصل — المكالمات تحتاجهما).
+
+### ما لا يُضبط في ملف
+
+إعادة التوجيه بعد تسجيل الدخول تُبنى من `location.origin` وقت الضغط لا من إعداد،
+فالموقع يعمل من أي نطاق بلا تعديل. ما يجب ضبطه في اللوحات:
+
+1. **Supabase → Authentication → URL Configuration** — `Site URL`، و`Redirect URLs`
+   تشمل كل أصل ستفتح منه (نطاق Vercel، و`http://localhost:8099/**`). أصل غير مدرَج
+   يعني `redirect_to not allowed`، ولا شيء في الشيفرة يصلحه.
+2. **Google Cloud → OAuth client** — الأصل نطاق موقعك، أما `Authorized redirect URI`
+   فهو **`https://<مشروعك>.supabase.co/auth/v1/callback`**: جوجل يعود إلى Supabase
+   ثم Supabase يعود إليك. هذا أكثر ما يُخطئ فيه الناس.
+
+### نسخة الملف الواحد
+
+`npm run build` يبني `dist/sanad.html` — الموقع كله في ملف واحد، لمن لا خادم لديه.
+كان سير عمل Pages يعيد بناءه عند كل دفعة؛ صار يدوياً، ولهذا **لا يُنشر**: نسخة
+قديمة كاملة من الموقع على رابط عام أسوأ من لا نسخة.
 
 ---
 

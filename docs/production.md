@@ -63,7 +63,9 @@ Supabase تعطيك نوعين، والفرق بينهما ليس شكلياً:
 والصق القيمتين ← Save
 
 **٣ — في Supabase:** Authentication ← **URL Configuration** ← أضف إلى
-**Redirect URLs**: `https://engfm0.github.io/law/index.html`
+**Redirect URLs**: `https://sanad-green-delta.vercel.app/**` — وكل أصل آخر ستفتح منه، بما فيه
+`http://localhost:8099/**` للتطوير. عنوان غير مدرَج هنا يعني `redirect_to not allowed`
+ولا شيء في الشيفرة يستطيع إصلاحه.
 
 > **٤ — وشغّل الترحيل أولاً:** `supabase/migrations/002-oauth-and-status.sql`
 > في SQL Editor. بدونه يدخل مستخدم Google **بلا ملف شخصي**، فلا يراه الموقع

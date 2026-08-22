@@ -19,7 +19,7 @@
 | **اللغات** | عربي (افتراضي، RTL) وإنجليزي (LTR)، قاموسان داخل `assets/js/core/i18n.js`. |
 | **الثيم** | فاتح/داكن عبر `data-theme` ومتغيرات CSS. |
 | **المكالمات** | WebRTC مباشر بين المتصفحين + إشارات عبر Supabase Realtime، مع تسجيل. |
-| **النشر** | GitHub Actions → فرع `gh-pages` → موقع ثابت. |
+| **النشر** | Vercel، موقع ثابت يُخدَم كما هو. |
 
 ---
 
@@ -89,7 +89,7 @@ supabase/rls-test*.sql    ١٤ ملف اختبار صلاحيات (١٩٤ تحق
 tools/*.mjs               ٣٠+ حزمة اختبار Playwright/Node
 tools/run-all.sh          تشغّلها كلها
 tools/migrate-test.sh     تطبّق كل هجرة على قاعدة فيها بيانات حقيقية
-.github/workflows/pages.yml  النشر
+vercel.json / .vercelignore  النشر: الهيدرات، وما لا يُرفع أصلاً
 ```
 
 ---
@@ -583,16 +583,16 @@ lawyer          = kept − grossCommission − commissionVat − intern
 
 ## 16. النشر
 
-`.github/workflows/pages.yml` عند كل دفعة إلى `claude/website-dark-light-languages-5exre8`:
-1. يبني الحزمة أحادية الملف (`tools/build-artifact.mjs` → `dist/sanad.html`).
-2. ينسخ الصفحات والأصول إلى `_site`، **ويحذف `verify.html`**.
-3. يبصم كل رابط أصل برقم الـcommit (`?v=abc1234`) حتى لا يعمل متصفح بـHTML جديد
-   وJavaScript قديم.
-4. يدفع `_site` إلى فرع `gh-pages`.
+**Vercel وحده.** بيئة إنتاج واحدة على قاعدة واحدة: بيئتان حيّتان تعنيان جلستين
+وقائمتَي إعادة توجيه، وارتباكاً في `Auth Callbacks` لا يستحقه أحد.
 
-الموقع: `https://engfm0.github.io/law/`
+> **ما كان قبله:** `.github/workflows/pages.yml` كان ينشر على فرع `gh-pages` عند كل
+> دفعة، ويفعل شيئين لم يكن أحد ينتبه لهما: **يحذف `verify.html`** من المُخرَج،
+> **ويبصم كل رابط أصل برقم الـcommit** حتى لا يعمل متصفح بـHTML جديد وJavaScript
+> قديم. حُذف السير، وانتقلت المهمتان إلى `.vercelignore` و`vercel.json` أدناه —
+> وهذا سبب وجودهما، لا زينة.
 
-**النشر على Vercel** (وهو المعتمد الآن): المشروع ثابت بالكامل — Framework: Other،
+المشروع ثابت بالكامل — Framework: Other،
 Root: `./`، بلا أمر بناء وبلا متغيرات بيئة (المفاتيح داخل `config.js` أصلاً).
 
 Vercel يخدم المستودع كما هو، فلا يوجد ما يصفّي المُخرَج — ولهذا في المستودع:
