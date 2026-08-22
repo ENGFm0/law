@@ -1,0 +1,29 @@
+# What does not belong on a public web server.
+#
+# Vercel serves this repository as it is — there is no build step and nothing
+# to filter the output — so anything committed here is a URL somebody can
+# open. The GitHub Pages workflow used to delete the first line of this list
+# on its way out; moving to Vercel took that safeguard away, so it is written
+# down here instead of living inside a job nobody runs any more.
+
+# A self-test that signs up REAL accounts and writes REAL rows in the live
+# project. Fine to run locally against your own database, not something to
+# leave reachable by anyone with the URL.
+verify.html
+
+# The test suites, and the database's schema, policies and operating scripts.
+# None of it is secret — what protects the data is row-level security, not
+# anybody's ignorance of the schema — but none of it is the website either,
+# and grant-staff.sql is not a page.
+tools/
+supabase/
+
+# Notes, stories and the test tooling's manifest. The manifest matters twice:
+# it carries a `build` script, and Vercel runs one when it finds one. There is
+# no build step in production, and the fastest way to keep it that way is to
+# not ship the file that suggests otherwise.
+docs/
+user-stories/
+package.json
+package-lock.json
+.github/

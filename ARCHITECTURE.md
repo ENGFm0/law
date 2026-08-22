@@ -592,8 +592,30 @@ lawyer          = kept − grossCommission − commissionVat − intern
 
 الموقع: `https://engfm0.github.io/law/`
 
-**للنشر على Vercel**: المشروع ثابت بالكامل — Framework: Other، Root: `./`، بلا أمر بناء
-وبلا متغيرات بيئة (المفاتيح داخل `config.js` أصلاً). التنبيه الوحيد هو `verify.html` أعلاه.
+**النشر على Vercel** (وهو المعتمد الآن): المشروع ثابت بالكامل — Framework: Other،
+Root: `./`، بلا أمر بناء وبلا متغيرات بيئة (المفاتيح داخل `config.js` أصلاً).
+
+Vercel يخدم المستودع كما هو، فلا يوجد ما يصفّي المُخرَج — ولهذا في المستودع:
+
+* **`.vercelignore`** — يمنع رفع ما ليس موقعاً: `verify.html` أولاً (يُنشئ حسابات
+  حقيقية ويكتب صفوفاً حقيقية)، ثم `tools/` و`supabase/` و`docs/` و`user-stories/`
+  و`package.json`. الأخير مقصود مرتين: يحمل `build` script، و**Vercel يشغّل البناء إذا
+  وجده** — ولا بناء في الإنتاج.
+* **`vercel.json`** — روابط الأصول بلا رقم إصدار، فمتصفح يحمل JavaScript إصدارٍ سابق
+  قد يشغّله مع HTML الإصدار الجديد. سير عمل GitHub Pages كان يبصم كل رابط بالـcommit؛
+  هنا الجواب `must-revalidate`: تكلفته ٣٠٤ واحدة ولا يمكن أن يخطئ. ومعه
+  `nosniff` و`X-Frame-Options` و`Referrer-Policy` و`Permissions-Policy`
+  (الكاميرا والميكروفون لنفس الأصل — المكالمات تحتاجهما).
+
+**وما لا يُضبط في ملف:** إعادة التوجيه بعد تسجيل الدخول تُبنى من
+`location.origin` وقت الضغط، لا من إعداد — فالموقع يعمل من أي نطاق بلا تعديل.
+ما يجب ضبطه في اللوحات:
+
+1. **Supabase → Authentication → URL Configuration**: `Site URL`، و`Redirect URLs`
+   تشمل **كل** أصل ستفتح منه (Vercel، وGitHub Pages إن بقي، و`localhost`).
+2. **Google Cloud → OAuth client**: الأصل هو نطاق موقعك، أما
+   `Authorized redirect URI` فهو **`https://<مشروعك>.supabase.co/auth/v1/callback`**
+   — جوجل يعود إلى Supabase ثم Supabase يعود إليك.
 
 ---
 
