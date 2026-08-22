@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-page="signup" data-title-key="signup.title">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f8fd">
+<title>حساب جديد | سند</title>
+<meta name="description" content="أنشئ حسابك في منصة سند كعميل أو محامٍ أو متدرب قانوني.">
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/style.css?v=fcbd1a0">
+<script src="assets/js/config.js?v=fcbd1a0"></script>
+<script src="assets/js/core/theme.js?v=fcbd1a0"></script>
+<script src="assets/js/core/i18n.js?v=fcbd1a0"></script>
+</head>
+<body class="page">
+<a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
+
+<div data-slot="header"></div>
+<script src="assets/js/core/store.js?v=fcbd1a0"></script>
+<script src="assets/js/data/seed.js?v=fcbd1a0"></script>
+<script src="assets/js/data/models.js?v=fcbd1a0"></script>
+<script src="assets/js/core/session.js?v=fcbd1a0"></script>
+<script src="assets/js/core/rest.js?v=fcbd1a0"></script>
+<script src="assets/js/core/supabase.js?v=fcbd1a0"></script>
+<script src="assets/js/core/store.remote.js?v=fcbd1a0"></script>
+<script src="assets/js/core/signal.js?v=fcbd1a0"></script>
+<script src="assets/js/core/rtc.js?v=fcbd1a0"></script>
+<script src="assets/js/ui/icons.js?v=fcbd1a0"></script>
+<script src="assets/js/core/app.js?v=fcbd1a0"></script>
+<script src="assets/js/ui/layout.js?v=fcbd1a0"></script>
+
+<main id="main">
+  <div data-signed-in-panel hidden></div>
+  <div class="container" style="max-width:820px;padding-bottom:var(--s-20)">
+    <p class="demo-banner" data-demo-banner hidden></p>
+
+    <header style="margin:var(--s-8) 0">
+      <h1 class="headline" data-i18n="signup.heading"></h1>
+      <p class="lead" data-i18n="signup.lead" data-signup-head></p>
+    </header>
+
+    <ol class="stepper" data-stepper></ol>
+
+    <form class="card card--pad" data-signup novalidate>
+      <!-- step 1: who are you -->
+      <section data-step="1">
+        <h2 class="title" data-i18n="signup.pickRole"></h2>
+        <p class="small muted" style="margin-top:var(--s-2)" data-i18n="signup.pickRoleHint"></p>
+        <div class="grid grid-3" style="margin-top:var(--s-5)" data-role-picker></div>
+      </section>
+
+      <!-- step 2: the basics everyone gives -->
+      <section data-step="2" hidden>
+        <div data-google-slot></div>
+        <h2 class="title" data-i18n="signup.basics"></h2>
+        <div class="grid grid-2" style="gap:var(--s-4);margin-top:var(--s-5)">
+          <label class="field"><span class="label" data-i18n="auth.fullName"></span>
+            <input class="input" name="name" autocomplete="name"></label>
+          <label class="field" data-signed-in-hide><span class="label" data-i18n="auth.email"></span>
+            <input class="input" name="email" type="email" autocomplete="email" dir="ltr"></label>
+          <label class="field"><span class="label" data-i18n="signup.phone"></span>
+            <input class="input num" name="phone" type="tel" inputmode="tel" dir="ltr" placeholder="05XXXXXXXX"></label>
+          <label class="field"><span class="label" data-i18n="home.city"></span>
+            <select class="select" name="city" data-city-options></select></label>
+          <label class="field" data-signed-in-hide><span class="label" data-i18n="auth.password"></span>
+            <input class="input" name="password" type="password" autocomplete="new-password"></label>
+          <label class="field"><span class="label" data-i18n="signup.avatar"></span>
+            <input class="input" name="avatar" type="file" accept="image/*"></label>
+        </div>
+        <p class="tiny faint" style="margin-top:var(--s-2)" data-i18n="signup.avatarHint"></p>
+      </section>
+
+      <!-- step 3: proof of standing — differs by role -->
+      <section data-step="3" hidden>
+        <h2 class="title" data-step3-title></h2>
+        <div style="margin-top:var(--s-5)" data-step3-fields></div>
+      </section>
+
+      <!-- step 4: review -->
+      <section data-step="4" hidden>
+        <h2 class="title" data-i18n="signup.review"></h2>
+        <div style="margin-top:var(--s-5)" data-review></div>
+        <label class="check" style="margin-top:var(--s-5)">
+          <input type="checkbox" name="terms"><span data-i18n="auth.terms"></span></label>
+      </section>
+
+      <p class="form-error" data-signup-error hidden></p>
+
+      <div class="row between gap-3" style="margin-top:var(--s-8)">
+        <button class="btn btn--outline" type="button" data-back hidden data-i18n="signup.back"></button>
+        <span class="grow"></span>
+        <button class="btn btn--primary btn--lg" type="button" data-next data-i18n="signup.next"></button>
+        <button class="btn btn--accent btn--lg" type="submit" data-finish hidden data-i18n="signup.finish"></button>
+      </div>
+    </form>
+
+    <p class="center small muted" style="margin-top:var(--s-6)" data-signed-in-hide>
+      <span data-i18n="signup.haveAccount"></span>
+      <a href="login.html" style="color:var(--accent);font-weight:700" data-i18n="auth.signIn"></a>
+    </p>
+  </div>
+</main>
+
+<div data-slot="footer"></div>
+
+<script src="assets/js/ui/components.js?v=fcbd1a0"></script>
+<script src="assets/js/pages/signup.js?v=fcbd1a0"></script>
+</body>
+</html>

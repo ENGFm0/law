@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-page="quotes" data-title-key="quotes.title">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f8fd">
+<title>اطلب عروض أسعار | سند</title>
+<meta name="description" content="انشر حالتك مرة واحدة، وقارن عروض محامين مرخصين خلال دقائق.">
+<link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/style.css?v=fcbd1a0">
+<script src="assets/js/config.js?v=fcbd1a0"></script>
+<script src="assets/js/core/theme.js?v=fcbd1a0"></script>
+<script src="assets/js/core/i18n.js?v=fcbd1a0"></script>
+</head>
+<body class="page">
+<a class="skip-link" href="#main" data-i18n="a11y.skip">تخطي إلى المحتوى</a>
+
+<div data-slot="header"></div>
+<script src="assets/js/core/store.js?v=fcbd1a0"></script>
+<script src="assets/js/data/seed.js?v=fcbd1a0"></script>
+<script src="assets/js/data/models.js?v=fcbd1a0"></script>
+<script src="assets/js/core/session.js?v=fcbd1a0"></script>
+<script src="assets/js/core/rest.js?v=fcbd1a0"></script>
+<script src="assets/js/core/supabase.js?v=fcbd1a0"></script>
+<script src="assets/js/core/store.remote.js?v=fcbd1a0"></script>
+<script src="assets/js/core/signal.js?v=fcbd1a0"></script>
+<script src="assets/js/core/rtc.js?v=fcbd1a0"></script>
+<script src="assets/js/ui/icons.js?v=fcbd1a0"></script>
+<script src="assets/js/core/app.js?v=fcbd1a0"></script>
+<script src="assets/js/ui/layout.js?v=fcbd1a0"></script>
+
+<main id="main">
+  <div class="container" style="max-width:960px;padding-block:var(--s-8) var(--s-20)">
+    <nav class="breadcrumb">
+      <a href="index.html" data-i18n="nav.home"></a>
+      <span aria-hidden="true">·</span>
+      <span data-i18n="nav.quotes"></span>
+    </nav>
+
+    <!-- ===== the client's side: compose, only while nothing is live ===== -->
+    <section data-quote-compose hidden>
+      <header style="margin-bottom:var(--s-8);max-width:660px">
+        <span class="eyebrow" data-i18n="nav.quotes"></span>
+        <h1 class="headline" style="margin-top:var(--s-3)" data-i18n="quotes.heading"></h1>
+        <p class="lead" data-i18n="quotes.lead"></p>
+      </header>
+
+      <div class="quote-layout">
+        <form class="card card--pad stack gap-6" data-quote-form>
+          <div class="field">
+            <label class="label" for="q-brief" data-i18n="quotes.brief"></label>
+            <!-- Validated in JS rather than with [required]: the native bubble
+                 speaks the browser's language, not the page's. -->
+            <textarea class="textarea" id="q-brief"
+                      data-i18n-attr="placeholder:quotes.briefPlaceholder"></textarea>
+            <p class="tiny faint" data-i18n="quotes.briefHint"></p>
+          </div>
+
+          <div class="grid grid-2" style="gap:var(--s-4)">
+            <div class="field">
+              <label class="label" for="q-city" data-i18n="quotes.where"></label>
+              <select class="select" id="q-city" data-quote-city></select>
+            </div>
+            <div class="field">
+              <label class="label" for="q-spec" data-i18n="quotes.specialty"></label>
+              <select class="select" id="q-spec" data-quote-spec></select>
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="label" data-i18n="quotes.what"></span>
+            <div class="row gap-2 wrap" data-quote-types></div>
+          </div>
+
+          <!-- The channel, narrowed to the ones the work above allows: a
+               statement of claim is written whether or not it is talked
+               through, and nothing here lets a client ask for a channel the
+               platform does not offer on that kind of work. -->
+          <div class="field">
+            <span class="label" data-i18n="quotes.how"></span>
+            <div class="row gap-2 wrap" data-quote-modes></div>
+          </div>
+
+          <div class="field">
+            <span class="label" data-i18n="quotes.window"></span>
+            <div class="row gap-2 wrap" data-quote-window></div>
+          </div>
+
+          <button class="btn btn--accent btn--lg btn--block" type="submit" data-i18n="quotes.publish"></button>
+        </form>
+
+        <aside class="card card--rule-navy card--pad" style="align-self:start">
+          <h2 class="subtitle" data-i18n="quotes.privacy"></h2>
+          <p class="small muted" style="margin-top:var(--s-3)" data-i18n="quotes.privacyBody"></p>
+          <hr class="divider">
+          <div data-quote-preview></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===== the live board the client watches ===== -->
+    <section data-quote-live hidden></section>
+
+    <!-- ===== the same auction seen from a lawyer's chair ===== -->
+    <section data-quote-bids hidden></section>
+  </div>
+</main>
+
+<div data-slot="footer"></div>
+
+<script src="assets/js/ui/components.js?v=fcbd1a0"></script>
+<script src="assets/js/pages/quotes.js?v=fcbd1a0"></script>
+</body>
+</html>
