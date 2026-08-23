@@ -54,6 +54,25 @@ Pages.define("intern", function (global) {
             (rank.rank ? '<span class="dot"></span><span class="muted">' + esc(I18N.t("profile.rank")) +
               ' <span class="num">' + I18N.num(rank.rank) + "/" + I18N.num(rank.of) + "</span></span>" : "") +
           "</div>" +
+          // Who signs for them, and where they practise. Both are facts a
+          // client and a supervising lawyer read before anything else — and
+          // both are shown only where the platform can stand behind them:
+          // the standing mentor, and a firm that is actually listed.
+          (function () {
+            var mentor = M.mentorOf(u.id);
+            var at = M.firmsOf(u.id).filter(function (x) { return M.firmListed(x.firm); });
+            if (!mentor && !at.length) return "";
+            return '<p class="small muted row gap-2 wrap" style="margin-top:var(--s-3)">' +
+              (mentor
+                ? "<span>" + Icons.svg("shield-check", "icon-sm") + " " +
+                  esc(I18N.t("cert.under", { name: tx(mentor.name) })) + "</span>"
+                : "") +
+              (mentor && at.length ? '<span class="dot"></span>' : "") +
+              at.map(function (x) {
+                return '<a href="firm.html?id=' + esc(x.firm.id) + '">' +
+                  esc(x.firm.name || "") + "</a>";
+              }).join('<span class="dot"></span>') + "</p>";
+          })() +
           '<div style="margin-top:var(--s-5);max-width:420px">' + C.progressBar(prog.pct) + "</div>" +
         "</div>" +
       "</div></header>";

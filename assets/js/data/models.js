@@ -1506,6 +1506,11 @@
     if (status === "delivered") return role === "client" ? "you" : "client";
     if (status === "completed" || status === "refunded" || status === "cancelled") return null;
     if (status === "with_intern" || status === "open_to_interns") {
+      // Never to the client. Who inside the office is holding the pen is the
+      // office's business — the client hired a lawyer, and the lawyer is who
+      // they are waiting for whoever is drafting. Saying "waiting on the
+      // trainee" here undid the one promise the whole routing rests on.
+      if (role === "client") return "lawyer";
       return role === "intern" ? "you" : "intern";
     }
     return role === "client" ? "lawyer" : "you";

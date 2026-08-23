@@ -21,7 +21,7 @@ console.log('— SECTIONS, NOT ONE LONG PAGE —');
 // Named rather than counted: a bare number breaks every time the desk grows
 // a section, and says nothing about which one is missing when it does.
 const SECTIONS = ['نظرة عامة','الأشخاص','الطلبات','المالية','الإعلانات',
-                  'أكواد الخصم','الخدمات','الإعدادات'];
+                  'أكواد الخصم','المكاتب','الخدمات','الإعدادات'];
 const tabs = await p.$$eval('.adm-tab', ns => ns.map(n => n.textContent.trim()));
 ok('every section is on the bar', SECTIONS.every(x => tabs.indexOf(x) !== -1),
    SECTIONS.filter(x => tabs.indexOf(x) === -1).join(','));

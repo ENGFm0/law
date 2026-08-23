@@ -72,6 +72,22 @@ ok('standing at the same place the client is',
    await p.$eval('[data-stepper="'+rid+'"] .track__step.is-here', e=>e.getAttribute('data-step')) === 'delivered');
 ok('and told it is not their move', /ننتظر العميل/.test(t));
 
+console.log('— AND THE CLIENT IS NEVER TOLD A TRAINEE IS HOLDING THE PEN —');
+const rid3 = await p.evaluate(() => {
+  Store.signIn('u-fahad');
+  const r = Store.addRequest({ clientId:'u-fahad', lawyerId:'u-ahmed', typeId:'consult',
+    title:{ar:'مراجعة عقد',en:'c'}, brief:{ar:'ب',en:'b'}, price:400, status:'new', hours:4 });
+  Store.setRequest(r.id, { status:'with_intern', assignedTo:'u-jaid' });
+  return r.id;
+});
+await open('requests.html', 'u-fahad');
+t = await body();
+ok('the client is told the lawyer has it', /ننتظر المحامي/.test(t), t.slice(0,200));
+ok('and the word trainee appears nowhere on their screen', !/متدرب/.test(t),
+   (t.match(/[^\n]*متدرب[^\n]*/) || [])[0]);
+await open('requests.html', 'u-ahmed');
+ok('while the lawyer is told exactly who has it', /ننتظر المتدرب/.test(await body()));
+
 console.log('— AN OBJECTION HOLDS IT, WHOEVER IS LOOKING —');
 await p.evaluate(() => Store.openDispute({ requestId: localStorage.getItem('rid'),
                                            byId: 'u-fahad', reason: 'ناقص' }));
