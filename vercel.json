@@ -2,21 +2,18 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "headers": [
     {
-      "//": "Asset URLs carry no version, so a browser holding a cached copy of one release's JavaScript can run it against the next release's HTML. That mix is worse than either version alone: it looks like data failing to arrive. GitHub Pages was handled by stamping every URL with the commit; here the answer is to revalidate, which costs one 304 and cannot go wrong.",
       "source": "/assets/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
     },
     {
-      "//": "The pages themselves, for the same reason and more so.",
       "source": "/(.*).html",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
     },
     {
-      "//": "The site is same-origin apart from Google Fonts and the Supabase project, and it is never framed. Said in headers because a browser will enforce these and a policy document will not.",
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },

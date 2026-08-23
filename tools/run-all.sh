@@ -14,7 +14,7 @@
 # is not in the loop below:  node tools/live-e2e.mjs
 set -e
 echo '— headless —'
-for t in model-test money-test books-test growth-test rest-test columns-test store-contract remote-store-test; do
+for t in deploy-test model-test money-test books-test growth-test rest-test columns-test store-contract remote-store-test; do
   printf '  %-26s ' "$t"; node "tools/$t.mjs" | tail -1
 done
 echo '— in a browser —'
