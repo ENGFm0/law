@@ -688,7 +688,11 @@
       // commission is capped at 10: a number nobody can raise quietly.
       sponsorshipPct: Math.max(0, Math.min(20, n(s.sponsorshipPct, 15))),
       sponsorshipMin: Math.max(0, n(s.sponsorshipMin, 50)),
-      sponsorshipMax: Math.max(0, n(s.sponsorshipMax, 100))
+      sponsorshipMax: Math.max(0, n(s.sponsorshipMax, 100)),
+      // Supervising one case, priced in its own band: a signature on a single
+      // screening is not a month of teaching and should not be priced as one.
+      supervisionMin: Math.max(0, n(s.supervisionMin, 50)),
+      supervisionMax: Math.max(0, n(s.supervisionMax, 100))
     };
   }
 
@@ -931,7 +935,130 @@
     return m ? user(m.mentorId) : null;
   }
 
-  function canScreen(internId) { return !!mentorOf(internId); }
+  /* ---------- supervision by the case ----------
+     Requiring a standing mentorship was the right rule and the wrong gate: a
+     trainee between mentors, or one whose mentor does not do employment law,
+     is competent to do the work and has nobody to sign it. So there are two
+     ways to have somebody answerable, and one question that asks about both.
+
+     Mirrors signer_for() in migration 021 — deliberately, because the guard
+     refuses what this predicts and a page that predicts differently is a page
+     that draws a button the database will reject. */
+  function openOrderOf(internId) {
+    var out = null;
+    ((Store.supervisionOrders && Store.supervisionOrders()) || []).forEach(function (o) {
+      if (o.internId !== internId || o.status !== "paid") return;
+      if (!out || o.paidAt < out.paidAt) out = o;
+    });
+    return out;
+  }
+
+  /** The lawyer who may sign for this trainee right now, or null. */
+  function signerFor(internId) {
+    var m = Store.mentorshipOf ? Store.mentorshipOf(internId) : null;
+    if (m) return user(m.mentorId);
+    var o = openOrderOf(internId);
+    return o ? user(o.mentorId) : null;
+  }
+
+  function canScreen(internId) { return !!signerFor(internId); }
+
+  /** What one case of supervision comes to, split the way the monthly
+      sponsorship is. Halalas, and the lawyer's figure is what reaches them. */
+  function supervisionSplit(mentor) {
+    var cfg = platformSettings();
+    var gross = Math.round(((mentor && mentor.supervisionFee) || 0) * 100);
+    var cut = pct(gross, cfg.sponsorshipPct);
+    return { gross: gross, pct: cfg.sponsorshipPct, platform: cut,
+             lawyer: gross - cut, mentorId: mentor ? mentor.id : null };
+  }
+
+  /** Lawyers a trainee can buy a single signature from: taking cases, priced,
+      verified — and not somebody already supervising them, who would be
+      selling them what they have. */
+  function caseSupervisors(internId) {
+    var have = internId ? (Store.mentorshipOf && Store.mentorshipOf(internId)) : null;
+    return listedLawyers().filter(function (u) {
+      if (!u.supervisesCases || !u.supervisionFee) return false;
+      return !(have && have.mentorId === u.id);
+    }).sort(function (a, b) { return (a.supervisionFee || 0) - (b.supervisionFee || 0); });
+  }
+
+  /** Mentors taking trainees at all, for the directory and the open call. */
+  function openMentors() {
+    return listedLawyers().filter(function (u) { return !!u.isMentor; });
+  }
+
+  /** An open call a mentor may answer: named to them, or named to nobody. */
+  function callsFor(mentorId) {
+    var now = Date.now();
+    var me = user(mentorId);
+    if (!me || !me.isMentor) return [];
+    return ((Store.invites && Store.invites()) || []).filter(function (i) {
+      if (i.status !== "open") return false;
+      if (i.expiresAt && new Date(i.expiresAt).getTime() <= now) return false;
+      return !i.mentorId || i.mentorId === mentorId;
+    });
+  }
+
+  function callOf(internId) {
+    var now = Date.now(), out = null;
+    ((Store.invites && Store.invites()) || []).forEach(function (i) {
+      if (i.internId !== internId || i.status !== "open") return;
+      if (i.expiresAt && new Date(i.expiresAt).getTime() <= now) return;
+      out = i;
+    });
+    return out;
+  }
+
+  /* ---------- law firms ----------
+     A directory of people cannot hold a partnership. A firm is listed only
+     while it is both verified and paying — the two are different questions
+     and either one alone is the wrong answer. */
+  function firms() { return (Store.firms && Store.firms()) || []; }
+  function firm(id) { return byId(firms(), id); }
+
+  function firmListed(f) {
+    if (!f) return false;
+    if (f.status !== "verified") return false;
+    var subs = (Store.subscriptions && Store.subscriptions()) || [];
+    var now = Date.now();
+    for (var i = 0; i < subs.length; i++) {
+      var s = subs[i];
+      if (s.plan !== "firm" || s.firmId !== f.id) continue;
+      return s.active !== false && (!s.endsAt || new Date(s.endsAt).getTime() > now);
+    }
+    return false;
+  }
+
+  function listedFirms() {
+    return firms().filter(firmListed).sort(function (a, b) {
+      return roster(b.id).length - roster(a.id).length;
+    });
+  }
+
+  /** Who is on a firm's page: the people who put themselves there. */
+  function roster(firmId) {
+    return ((Store.firmMembers && Store.firmMembers()) || [])
+      .filter(function (m) { return m.firmId === firmId && m.status === "active"; })
+      .map(function (m) { return { member: m, user: user(m.profileId) }; })
+      .filter(function (x) { return !!x.user; });
+  }
+
+  function firmsOf(profileId) {
+    var out = [];
+    ((Store.firmMembers && Store.firmMembers()) || []).forEach(function (m) {
+      if (m.profileId !== profileId || m.status !== "active") return;
+      var f = firm(m.firmId);
+      if (f) out.push({ firm: f, role: m.role, title: m.title });
+    });
+    firms().forEach(function (f) {
+      if (f.ownerId !== profileId) return;
+      var already = out.some(function (x) { return x.firm.id === f.id; });
+      if (!already) out.push({ firm: f, role: "owner", title: null });
+    });
+    return out;
+  }
 
   /** The offer a finished screening earns: a real code in this person's name,
       not a banner. Mirrors offer_conversion() in migration 020. */
@@ -1071,12 +1198,30 @@
 
   /** Lawyers the platform is putting in front of people, in the order it
       chose. A rank rather than a flag, because "first" is an ordering. */
+  /** Who stands at the top of the directory, and in what order.
+
+      Two ways up, kept apart and ranked in that order: the desk placing
+      somebody (`featuredRank`) comes first, then anybody paying for the
+      place. A platform whose own judgement can be outbid is a directory
+      nobody should trust, and the ordering is where that is decided rather
+      than in a sentence on a marketing page. */
   function featured() {
     var now = Date.now();
-    return listedLawyers().filter(function (u) {
+    var placed = listedLawyers().filter(function (u) {
       if (u.featuredRank == null) return false;
       return !u.featuredUntil || new Date(u.featuredUntil).getTime() > now;
     }).sort(function (a, b) { return a.featuredRank - b.featuredRank; });
+
+    var seen = {};
+    placed.forEach(function (u) { seen[u.id] = true; });
+
+    // Paid placements behind them, best-rated first so buying the place still
+    // does not buy the order within it.
+    var paid = listedLawyers().filter(function (u) {
+      return !seen[u.id] && paidFeatured(u.id);
+    }).sort(function (a, b) { return scoreOf(b).total - scoreOf(a).total; });
+
+    return placed.concat(paid);
   }
 
   /** The directory order: placed lawyers first, then everyone else as before. */
@@ -1092,17 +1237,26 @@
     });
   }
 
-  function subscriptionOf(lawyerId) {
+  /** A lawyer's subscription to one plan. Three exist now — the drafting
+      tool, a paid place in the directory, and a firm's listing — and asking
+      for one by name is the whole of the difference between them. */
+  function subscriptionOf(lawyerId, plan) {
     var all = (Store.subscriptions && Store.subscriptions()) || [];
+    var want = plan || "ai";
     var now = Date.now();
     for (var i = 0; i < all.length; i++) {
       var s = all[i];
-      if (s.lawyerId !== lawyerId || s.plan !== "ai") continue;
+      if (s.lawyerId !== lawyerId || s.plan !== want) continue;
       var live = s.active !== false && (!s.endsAt || new Date(s.endsAt).getTime() > now);
       return { sub: s, active: live };
     }
     return { sub: null, active: false };
   }
+
+  /** Is this lawyer's place at the top paid for right now? Mirrors
+      is_paid_featured() in migration 021, and is kept apart from the desk's
+      own `featuredRank` on purpose — see featured() below. */
+  function paidFeatured(userId) { return subscriptionOf(userId, "featured").active; }
 
   /** The drafting workspace is sold, not given. Staff never need it and are
       not sold it; a lawyer needs a live subscription. */
@@ -1526,6 +1680,11 @@
     promoValue: promoValue, sponsorship: sponsorship, sponsorshipBook: sponsorshipBook,
     ticketSplit: ticketSplit, webinarsFor: webinarsFor,
     isScreening: isScreening, mentorOf: mentorOf, canScreen: canScreen,
+    signerFor: signerFor, openOrderOf: openOrderOf,
+    supervisionSplit: supervisionSplit, caseSupervisors: caseSupervisors,
+    openMentors: openMentors, callsFor: callsFor, callOf: callOf,
+    firms: firms, firm: firm, firmListed: firmListed, listedFirms: listedFirms,
+    roster: roster, firmsOf: firmsOf, paidFeatured: paidFeatured,
     conversionOffer: conversionOffer, SCREENING: SCREENING,
     stepsFor: stepsFor, stampsOn: stampsOn,
     ACCEPT_DAYS: ACCEPT_DAYS, MAX_REVISIONS: MAX_REVISIONS,

@@ -38,7 +38,7 @@
     "announcements", "subscriptions", "costs", "partners", "bands",
     "types", "removedTypes", "quotes", "offers", "messages", "attachments", "events",
     "mentorships", "sessions", "rooms", "webinars", "seats", "promos", "redemptions",
-    "drafts"
+    "drafts", "orders", "invites", "firms", "firmMembers"
   ].forEach(function (k) {
     if (!work[k]) {
       work[k] = (k.indexOf("States") !== -1 || k === "applications" ||
@@ -728,7 +728,8 @@
                types: [], removedTypes: [], quotes: [], offers: [],
                messages: [], attachments: [], events: [],
                mentorships: [], sessions: [], rooms: [], webinars: [], seats: [],
-               promos: [], redemptions: [], drafts: [] };
+               promos: [], redemptions: [], drafts: [],
+               orders: [], invites: [], firms: [], firmMembers: [] };
       notify();
     },
     resetAll: function () {
@@ -814,19 +815,129 @@
       return d;
     },
 
+    /* ---------------- supervision by the case ----------------
+       The demo's stand-in for buy_supervision(): the same checks in the same
+       order, so what the page is told here is what the database would say. */
+    supervisionOrders: function () { return work.orders; },
+    buySupervision: function (mentorId, done) {
+      var say = function (word) { if (done) done(word); return word; };
+      var me = Store.currentId();
+      if (!me) return say("not signed in");
+      if (Store.mentorshipOf(me)) return say("already supervised");
+      var open = null;
+      work.orders.forEach(function (o) {
+        if (o.internId === me && o.status === "paid") open = o;
+      });
+      if (open) return say("already bought");
+
+      var m = global.Models && global.Models.user(mentorId);
+      if (!m || !m.supervisesCases || !m.supervisionFee || m.status !== "verified") {
+        return say("not offered");
+      }
+      work.orders.push({ id: uid("sup"), mentorId: mentorId, internId: me,
+                         requestId: null, fee: m.supervisionFee, status: "paid",
+                         paidAt: Date.now(), usedAt: null });
+      notify();
+      return say("bought");
+    },
+
+    /** An open call for a supervisor. `mentorId` null means every mentor. */
+    invites: function () { return work.invites; },
+    callForMentor: function (note, mentorId) {
+      var me = Store.currentId();
+      if (!me) return "not signed in";
+      if (Store.mentorshipOf(me)) return "already supervised";
+      var open = global.Models && global.Models.callOf(me);
+      if (open) return "already calling";
+      work.invites.push({ id: uid("inv"), internId: me, mentorId: mentorId || null,
+                          note: note || null, status: "open", takenBy: null,
+                          expiresAt: Date.now() + 14 * 86400000, at: Date.now() });
+      notify();
+      return "sent";
+    },
+    withdrawCall: function (id) {
+      var i = byId(work.invites, id);
+      if (!i) return;
+      i.status = "withdrawn";
+      notify();
+    },
+
+    firms: function () { return work.firms; },
+    firm: function (id) { return byId(work.firms, id); },
+    addFirm: function (f) {
+      f.id = f.id || uid("firm");
+      // Four digits, like stamp_firm_ref() pads to. A reference that reads
+      // differently depending on which backend produced it is a reference
+      // somebody will one day read out and be told does not exist.
+      f.ref = f.ref || ("FRM-" + new Date().getFullYear().toString().slice(2) + "-" +
+                        String(10000 + work.firms.length + 1).slice(1));
+      // Pending, always. A firm verifies itself nowhere.
+      f.status = "pending";
+      f.at = Date.now();
+      work.firms.push(f);
+      notify();
+      return f;
+    },
+    setFirm: function (id, patch) {
+      var f = byId(work.firms, id);
+      if (!f) return null;
+      Object.keys(patch).forEach(function (k) { f[k] = patch[k]; });
+      notify();
+      return f;
+    },
+    firmMembers: function () { return work.firmMembers; },
+    inviteToFirm: function (firmId, profileId, role) {
+      var f = byId(work.firms, firmId);
+      if (!f || f.ownerId !== Store.currentId()) return "not yours";
+      var had = null;
+      work.firmMembers.forEach(function (m) {
+        if (m.firmId === firmId && m.profileId === profileId) had = m;
+      });
+      if (had) return "already";
+      work.firmMembers.push({ id: uid("fm"), firmId: firmId, profileId: profileId,
+                              role: role || "associate", status: "invited",
+                              title: null, joinedAt: null, at: Date.now() });
+      Store.notify({ to: profileId, type: "firm", ref: firmId });
+      notify();
+      return "sent";
+    },
+    /** Only the person named may join. A firm accepting on somebody's behalf
+        is a firm writing a claim about them. */
+    answerFirm: function (firmId, yes) {
+      var me = Store.currentId(), row = null;
+      work.firmMembers.forEach(function (m) {
+        if (m.firmId === firmId && m.profileId === me) row = m;
+      });
+      if (!row) return "not invited";
+      row.status = yes ? "active" : "declined";
+      if (yes) row.joinedAt = Date.now();
+      notify();
+      return row.status;
+    },
+
     /** A trainee claiming a screening. The mentor goes on the request with
         them, because the person who answers is the person answerable for the
         answer — the same rule guard_screening() enforces on the real backend. */
     takeScreening: function (requestId) {
       var me = Store.currentId();
       if (!me) return "not signed in";
-      var m = Store.mentorshipOf(me);
-      if (!m) return "no mentor";
+      var signer = global.Models && global.Models.signerFor(me);
+      if (!signer) return "no mentor";
       var r = byId(work.requests, requestId);
       if (!r || r.typeId !== "free_screening") return "not a screening";
       var st = work.requestStates[requestId] || {};
       if (st.assignedTo) return "taken";
-      r.lawyerId = m.mentorId;
+      r.lawyerId = signer.id;
+
+      // A standing mentorship covers it; a bought signature is spent on it.
+      if (!Store.mentorshipOf(me)) {
+        var order = global.Models.openOrderOf(me);
+        if (order) {
+          order.status = "used";
+          order.usedAt = Date.now();
+          order.requestId = requestId;
+        }
+      }
       Store.setRequest(requestId, { assignedTo: me, status: "with_intern" });
       return "yours";
     },

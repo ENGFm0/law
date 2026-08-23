@@ -300,7 +300,7 @@
     announcements: [], subscriptions: [], costs: [], partners: [], bands: {},
     types: [], quotes: [], offers: [], messages: [], attachments: [], events: [],
     mentorships: [], sessions: [], rooms: [], promos: [], redemptions: [],
-    drafts: [],
+    drafts: [], orders: [], invites: [], firms: [], firmMembers: [],
   };
   var ready = false;
 
@@ -1111,6 +1111,123 @@
     return out;
   };
 
+  /* ---------------- supervision by the case, calls, and firms ----------------
+     Reads from the hydrated cache; writes go to the table or through the one
+     function that is allowed to move money. Nothing here re-checks what the
+     database checks. */
+  function inOrder(o) {
+    return { id: o.id, mentorId: o.mentor_id, internId: o.intern_id,
+             requestId: o.request_id || null, fee: Number(o.fee || 0),
+             status: o.status, paidAt: new Date(o.paid_at).getTime(),
+             usedAt: o.used_at ? new Date(o.used_at).getTime() : null };
+  }
+  function inInvite(i) {
+    return { id: i.id, internId: i.intern_id, mentorId: i.mentor_id || null,
+             note: i.note || null, status: i.status, takenBy: i.taken_by || null,
+             expiresAt: i.expires_at, at: new Date(i.created_at).getTime() };
+  }
+  function inFirm(f) {
+    return { id: f.id, ref: f.ref || null, ownerId: f.owner_id, name: f.name,
+             bio: f.bio || null, city: f.city || null, address: f.address || null,
+             website: f.website || null, logoUrl: f.logo_url || null,
+             licenceNo: f.licence_no || null, status: f.status,
+             rejectedReason: f.rejected_reason || null,
+             at: new Date(f.created_at).getTime() };
+  }
+  function inFirmMember(m) {
+    return { firmId: m.firm_id, profileId: m.profile_id, role: m.role,
+             status: m.status, title: m.title || null,
+             joinedAt: m.joined_at ? new Date(m.joined_at).getTime() : null };
+  }
+
+  Store.supervisionOrders = function () { return cache.orders || []; };
+  /* Neither supervision_orders nor payouts takes an insert from a browser, so
+     buying one is a single call with the checks inside it. */
+  Store.buySupervision = function (mentorId, done) {
+    if (noSession()) { if (done) done("not signed in"); return Promise.resolve("not signed in"); }
+    return SB.load().then(function (sb) {
+      return sb.rpc("buy_supervision", {
+        p_mentor: mentorId, p_gateway: "demo",
+        p_gateway_ref: mentorId + "-" + Date.now()
+      });
+    }).then(function (res) {
+      if (res && res.error) { report(res); if (done) done("failed"); return "failed"; }
+      var word = Array.isArray(res.data) ? res.data[0] : res.data;
+      if (word && typeof word === "object") word = word.buy_supervision;
+      if (word === "bought") Store.hydrate();
+      if (done) done(word);
+      return word;
+    });
+  };
+
+  Store.invites = function () { return cache.invites || []; };
+  Store.callForMentor = function (note, mentorId) {
+    if (noSession()) return "not signed in";
+    push("mentorship_invites", { intern_id: Store.currentId(),
+                                 mentor_id: mentorId || null, note: note || null })
+      .then(function (res) { report(res); if (res && res.data) Store.hydrate(); });
+    return "sent";
+  };
+  Store.withdrawCall = function (id) {
+    (cache.invites || []).forEach(function (i) {
+      if (i.id === id) i.status = "withdrawn";
+    });
+    Store.notifyAll();
+    patch("mentorship_invites", id, { status: "withdrawn" });
+  };
+
+  Store.firms = function () { return cache.firms || []; };
+  Store.firm = function (id) {
+    var out = null;
+    (cache.firms || []).forEach(function (f) { if (f.id === id) out = f; });
+    return out;
+  };
+  Store.addFirm = function (f) {
+    if (noSession()) return f;
+    push("firms", { owner_id: Store.currentId(), name: f.name, bio: f.bio || null,
+                    city: f.city || null, address: f.address || null,
+                    website: f.website || null, licence_no: f.licenceNo || null })
+      .then(function (res) { report(res); if (res && res.data) Store.hydrate(); });
+    f.status = "pending";
+    return local(cache.firms, f);
+  };
+  Store.setFirm = function (id, changes) {
+    var row = {};
+    ["name", "bio", "city", "address", "website", "status"].forEach(function (k) {
+      if (k in changes) row[k === "name" ? "name" : k] = changes[k];
+    });
+    if ("logoUrl" in changes) row.logo_url = changes.logoUrl;
+    if ("rejectedReason" in changes) row.rejected_reason = changes.rejectedReason;
+    (cache.firms || []).forEach(function (f) {
+      if (f.id === id) Object.keys(changes).forEach(function (k) { f[k] = changes[k]; });
+    });
+    Store.notifyAll();
+    patch("firms", id, row);
+    return Store.firm(id);
+  };
+
+  Store.firmMembers = function () { return cache.firmMembers || []; };
+  Store.inviteToFirm = function (firmId, profileId, role) {
+    if (noSession()) return "not signed in";
+    push("firm_members", { firm_id: firmId, profile_id: profileId,
+                           role: role || "associate" })
+      .then(function (res) { report(res); if (res && res.data) Store.hydrate(); });
+    return "sent";
+  };
+  Store.answerFirm = function (firmId, yes) {
+    var me = Store.currentId();
+    var status = yes ? "active" : "declined";
+    (cache.firmMembers || []).forEach(function (m) {
+      if (m.firmId === firmId && m.profileId === me) m.status = status;
+    });
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("firm_members").update({ status: status })
+        .eq("firm_id", firmId).eq("profile_id", me);
+    }).then(function (res) { report(res); Store.hydrate(); });
+    return status;
+  };
+
   Store.mentorships = function () { return cache.mentorships || []; };
   Store.mentorship = function (id) {
     var out = null;
@@ -1431,6 +1548,10 @@
     cache.promos = take("promo_codes", inPromo, cache.promos);
     cache.redemptions = take("promo_redemptions", inRedemption, cache.redemptions);
     cache.drafts = take("draft_jobs", inDraft, cache.drafts);
+    cache.orders = take("supervision_orders", inOrder, cache.orders);
+    cache.invites = take("mentorship_invites", inInvite, cache.invites);
+    cache.firms = take("firms", inFirm, cache.firms);
+    cache.firmMembers = take("firm_members", inFirmMember, cache.firmMembers);
 
     if (had("platform_settings")) cache.settings = inSettings(rows.platform_settings);
     if (had("price_bands") && rows.price_bands) {

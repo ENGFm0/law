@@ -25,25 +25,35 @@
      everything — so the site has to name what it wants. Your own row comes
      back whole through my_profile(); one counterparty's details through
      contact_of(); the desk's book through contact_book(). */
-  var PUBLIC_PROFILE = [
-    "id", "full_name", "avatar_url", "roles", "active_role", "status", "bio",
-    "title", "licence_no", "licence_authority", "licence_expiry", "specialties",
-    "years", "university", "level", "skills", "city", "created_at", "onboarded",
-    "featured_rank", "featured_until", "auto_bid", "vat_registered",
-  ].join(",");
+  /* `select=*` is refused on this table — email and phone are not granted to
+     anybody — so the columns are asked for by name. Which means the list has
+     to keep up with the migrations, and a site deploys in one push while a
+     migration is run by hand afterwards: there is always a window where the
+     code asks for a column the database does not have yet, and PostgREST
+     refuses the WHOLE read for one unknown name.
 
-  /* The same list minus what migration 011 adds. A site deploys in one push
-     and a migration is run by hand afterwards, so there is a window where the
-     code asks for a column the database does not have yet — and PostgREST
-     refuses the whole read for one unknown name. Rather than leave the
-     directory empty until somebody opens the SQL editor, the read falls back
-     to what every version of this schema has. */
-  var OLDER_PROFILE = [
+     So the list is written as generations, newest first. An unknown column
+     drops back exactly one generation rather than all the way to the
+     beginning — a database that has had 011 but not 021 should lose the
+     mentor columns and nothing else. */
+  var PROFILE_BASE = [
     "id", "full_name", "avatar_url", "roles", "active_role", "status", "bio",
     "licence_no", "licence_authority", "licence_expiry", "specialties",
     "years", "university", "level", "skills", "city", "created_at", "onboarded",
     "featured_rank", "featured_until", "auto_bid",
-  ].join(",");
+  ];
+  var PROFILE_011 = PROFILE_BASE.concat(["title", "vat_registered"]);
+  var PROFILE_019 = PROFILE_011.concat(["is_mentor", "mentorship_fee"]);
+  var PROFILE_021 = PROFILE_019.concat(["supervises_cases", "supervision_fee",
+                                        "mentor_note"]);
+
+  var PROFILE_GENERATIONS = [PROFILE_021, PROFILE_019, PROFILE_011, PROFILE_BASE]
+    .map(function (cols) { return cols.join(","); });
+
+  // The newest list and the oldest, for the reads that ask for one row rather
+  // than the directory and can afford one retry instead of a walk.
+  var PUBLIC_PROFILE = PROFILE_GENERATIONS[0];
+  var OLDER_PROFILE = PROFILE_GENERATIONS[PROFILE_GENERATIONS.length - 1];
 
   function unknownColumn(err) {
     return !!err && (err.code === "42703" || /does not exist|schema cache/i.test(err.message || ""));
@@ -65,11 +75,14 @@
       .test(err.message || "");
   }
 
-  function people(sb) {
-    return sb.from("profiles").select(PUBLIC_PROFILE).then(function (res) {
+  function people(sb, generation) {
+    var at = generation || 0;
+    return sb.from("profiles").select(PROFILE_GENERATIONS[at]).then(function (res) {
       if (!unknownColumn(res.error)) return res;
-      console.warn("profiles: falling back to the pre-011 columns —", res.error.message);
-      return sb.from("profiles").select(OLDER_PROFILE);
+      if (at + 1 >= PROFILE_GENERATIONS.length) return res;
+      console.warn("profiles: a column is not there yet, dropping back one " +
+                   "generation —", res.error.message);
+      return people(sb, at + 1);
     });
   }
 
@@ -144,6 +157,15 @@
       status: row.status || "pending",
       // Where the platform is choosing to place them, if anywhere.
       featuredRank: row.featured_rank == null ? null : row.featured_rank,
+      featuredUntil: row.featured_until || null,
+      // Supervision, in its two shapes: a month of teaching, and a signature
+      // on one case. Two switches, because a lawyer with a full book may
+      // still sign one screening and a mentor may not want piecework.
+      isMentor: !!row.is_mentor,
+      mentorshipFee: row.mentorship_fee == null ? null : Number(row.mentorship_fee),
+      supervisesCases: !!row.supervises_cases,
+      supervisionFee: row.supervision_fee == null ? null : Number(row.supervision_fee),
+      mentorNote: row.mentor_note || null,
       // Whether they take matching work automatically when it is posted.
       autoBid: !!row.auto_bid,
       // Whether they have ever told us who they are. False for an account
@@ -442,7 +464,8 @@
            "operating_costs", "partners", "quotes", "offers", "contacts",
            "messages", "attachments", "request_events",
            "mentorships", "mentorship_sessions", "mentorship_messages",
-           "promo_codes", "promo_redemptions", "draft_jobs"],
+           "promo_codes", "promo_redemptions", "draft_jobs",
+           "supervision_orders", "mentorship_invites", "firms", "firm_members"],
 
     hydrate: function (names) {
       return load().then(function (sb) {
@@ -461,6 +484,12 @@
           },
           promo_codes:      function () { return sb.from("promo_codes").select("*"); },
           draft_jobs:       function () { return sb.from("draft_jobs").select("*"); },
+          supervision_orders: function () { return sb.from("supervision_orders").select("*"); },
+          mentorship_invites: function () {
+            return sb.from("mentorship_invites").select("*").order("created_at");
+          },
+          firms:            function () { return sb.from("firms").select("*"); },
+          firm_members:     function () { return sb.from("firm_members").select("*"); },
           promo_redemptions: function () { return sb.from("promo_redemptions").select("*"); },
           platform_settings:function () { return sb.from("platform_settings").select("*").eq("id", 1).maybeSingle(); },
           reviews:          function () { return sb.from("reviews").select("*").limit(500); },

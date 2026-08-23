@@ -252,5 +252,104 @@ ok('a fixture with no log falls back to its status',
    v.at === v.steps.length - 1 && v.steps[v.at].key === 'closed', v.at);
 ok('and says nothing happened at a time it did not', v.steps[0].at === null);
 
+console.log('— SUPERVISION BY THE CASE —');
+St.resetWork();
+St.updateAccount('u-ahmed', { supervisesCases: true, supervisionFee: 75 });
+St.updateAccount('u-sara', { isMentor: true, mentorshipFee: 80 });
+
+const sup = M.supervisionSplit(M.user('u-ahmed'));
+ok(`75 riyals is ${R(sup.gross)} in halalas`, sup.gross === 7500, sup.gross);
+ok(`the platform takes 15 per cent (${R(sup.platform)})`, sup.platform === 1125, sup.platform);
+ok(`and the lawyer who signs is owed ${R(sup.lawyer)}`, sup.lawyer === 6375, sup.lawyer);
+ok('which adds back up', sup.platform + sup.lawyer === sup.gross);
+
+ok('a trainee with nobody behind them cannot screen',
+   M.canScreen('u-jaid') === false);
+ok('and has no signer', M.signerFor('u-jaid') === null);
+
+St.signIn('u-jaid');
+ok('buying from somebody who does not sell it is refused',
+   St.buySupervision('u-sara') === 'not offered');
+ok('buying from somebody who does is not', St.buySupervision('u-ahmed') === 'bought');
+ok('a second while the first is unspent is refused',
+   St.buySupervision('u-ahmed') === 'already bought');
+ok('now they may screen', M.canScreen('u-jaid') === true);
+ok('and the signer is the lawyer they bought from',
+   M.signerFor('u-jaid').id === 'u-ahmed');
+
+// The rule the whole thing exists to keep: the client still pays nothing.
+const scr2 = St.addRequest({ clientId:'u-fahad', typeId: M.SCREENING, price:0,
+  hours:1, status:'new', title:{ar:'ف',en:'s'}, brief:{ar:'ب',en:'b'} });
+ok('taking it is allowed', St.takeScreening(scr2.id) === 'yours');
+ok('the lawyer who signs is on the request',
+   M.request(scr2.id).lawyerId === 'u-ahmed');
+ok('the order is spent, on that case', (() => {
+  const o = St.supervisionOrders()[0];
+  return o.status === 'used' && o.requestId === scr2.id;
+})(), St.supervisionOrders()[0]);
+ok('and the client still paid nothing',
+   M.distribute(M.request(scr2.id)).client === 0);
+ok('with another buyable once it is spent',
+   St.buySupervision('u-ahmed') === 'bought');
+
+console.log('— A STANDING MENTORSHIP OUTRANKS A BOUGHT SIGNATURE —');
+const men2 = St.openMentorship({ mentorId:'u-sara', internId:'u-jaid',
+                                 openedBy:'intern', fee:80 });
+St.setMentorship(men2.id, { status: 'active' });
+ok('the standing mentor signs while there is one',
+   M.signerFor('u-jaid').id === 'u-sara');
+ok('and the unspent order is left alone for afterwards',
+   St.supervisionOrders().filter(o => o.status === 'paid').length === 1);
+
+console.log('— AN OPEN CALL FOR A SUPERVISOR —');
+St.resetWork();
+St.updateAccount('u-sara', { isMentor: true, mentorshipFee: 80 });
+St.signIn('u-jaid');
+ok('a trainee with no mentor may call', St.callForMentor('أبحث عن مشرف') === 'sent');
+ok('once', St.callForMentor('ومرة أخرى') === 'already calling');
+ok('and the call is theirs', M.callOf('u-jaid').note === 'أبحث عن مشرف');
+ok('a mentor sees it', M.callsFor('u-sara').length === 1);
+ok('somebody who takes no trainees does not', M.callsFor('u-mohammed').length === 0);
+St.withdrawCall(M.callOf('u-jaid').id);
+ok('withdrawing it takes it out of the calls', M.callsFor('u-sara').length === 0);
+
+console.log('— TWO WAYS TO THE TOP, AND ONE OF THEM IS NOT FOR SALE —');
+St.resetWork();
+St.updateAccount('u-ahmed', { featuredRank: 1 });
+St.setSubscription('u-sara', { plan: 'featured', price: 300, active: true });
+const top = M.featured();
+ok('the desk’s placement is first', top[0] && top[0].id === 'u-ahmed', top.map(u => u.id));
+ok('and a paid one is behind it, not in front',
+   top[1] && top[1].id === 'u-sara', top.map(u => u.id));
+ok('a paid place is recognised as paid', M.paidFeatured('u-sara') === true);
+ok('and nobody else is', M.paidFeatured('u-mohammed') === false);
+St.setSubscription('u-sara', { plan: 'featured', price: 300, active: false });
+ok('a subscription that stops takes the place with it',
+   M.featured().length === 1 && M.featured()[0].id === 'u-ahmed');
+
+console.log('— A FIRM IS LISTED WHEN IT IS BOTH VERIFIED AND PAYING —');
+St.resetWork();
+St.signIn('u-ahmed');
+const f = St.addFirm({ ownerId:'u-ahmed', name:'مكتب المحمدي', city:'الرياض' });
+ok('it opens pending, never verified', f.status === 'pending');
+ok('with a reference', /^FRM-\d\d-\d{4}$/.test(f.ref), f.ref);
+ok('and is not listed', M.firmListed(St.firm(f.id)) === false);
+St.setFirm(f.id, { status: 'verified' });
+ok('verified alone is not enough', M.firmListed(St.firm(f.id)) === false);
+St.setSubscription('u-ahmed', { plan: 'firm', price: 900, active: true, firmId: f.id });
+ok('verified and paying is', M.firmListed(St.firm(f.id)) === true);
+ok('and it is in the directory', M.listedFirms().length === 1);
+
+ok('a roster starts empty', M.roster(f.id).length === 0);
+ok('the firm invites', St.inviteToFirm(f.id, 'u-sara', 'partner') === 'sent');
+ok('and an invitation is not a roster', M.roster(f.id).length === 0);
+St.signIn('u-sara');
+ok('only the person named may join', St.answerFirm(f.id, true) === 'active');
+ok('and then they are on it', M.roster(f.id).length === 1);
+ok('with the firm on their own page too',
+   M.firmsOf('u-sara').length === 1 && M.firmsOf('u-sara')[0].role === 'partner');
+ok('and the owner counted as its owner',
+   M.firmsOf('u-ahmed').some(x => x.role === 'owner'));
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 process.exit(failed ? 1 : 0);
