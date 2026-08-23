@@ -312,6 +312,9 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   background: var(--surface-3); color: var(--text-muted);
   font-size: .75rem; font-weight: 600;
 }
+/* A place at the top, however it was earned. Gold rather than a colour that
+   means something else on this site: nothing here is a status or a warning. */
+.tag--gold { background: var(--accent-soft); color: var(--accent-soft-text); }
 .chip {
   display: inline-flex; align-items: center; gap: var(--s-2);
   padding: var(--s-2) var(--s-4); border-radius: var(--r-full);

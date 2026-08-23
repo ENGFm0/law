@@ -1110,6 +1110,133 @@
     "</section>";
   }
 
+  /* ---------- supervision for one case ----------
+     For a trainee with nobody standing behind them. The card is deliberately
+     honest about who is paid what: a trainee about to spend their own money
+     should see the lawyer's figure after the platform's cut, not a price with
+     an invisible margin inside it. */
+  function caseSupervisionCard(me) {
+    if (!me) return "";
+    var held = M.openOrderOf(me.id);
+    if (held) {
+      var from = M.user(held.mentorId);
+      return '<section class="card card--pad card--rule-gold" data-supervision>' +
+        '<h2 class="subtitle">' + App.esc(I18N.t("sup.title")) + "</h2>" +
+        '<p class="small" style="margin-top:var(--s-3)">' + Icons.svg("check", "icon-sm") +
+          " " + App.esc(I18N.t("sup.have", { name: from ? App.tx(from.name) : "" })) + "</p>" +
+        '<p class="tiny faint" style="margin-top:var(--s-2)">' +
+          App.esc(I18N.t("sup.spend")) + "</p></section>";
+    }
+
+    var offers = M.caseSupervisors(me.id);
+    return '<section class="card card--pad" data-supervision>' +
+      '<h2 class="subtitle">' + App.esc(I18N.t("sup.title")) + "</h2>" +
+      '<p class="small muted" style="margin-top:var(--s-2);max-width:60ch">' +
+        App.esc(I18N.t("sup.lead")) + "</p>" +
+      (offers.length
+        ? '<div class="stack gap-3" style="margin-top:var(--s-4)">' +
+          offers.slice(0, 6).map(function (u) {
+            var split = M.supervisionSplit(u);
+            return '<div class="row between wrap gap-3 admin-line">' +
+              '<span class="row gap-3">' + avatar(u, "sm") +
+                "<span>" + personLink(u) +
+                '<span class="tiny faint" style="display:block">' +
+                  App.esc(I18N.t("sup.after",
+                    { n: I18N.num(Math.round(split.lawyer / 100)) })) + "</span></span></span>" +
+              '<span class="row gap-3">' +
+                "<strong class=\"small\">" +
+                  App.esc(I18N.t("sup.fee", { n: I18N.num(u.supervisionFee) })) + "</strong>" +
+                '<button class="btn btn--primary btn--sm" type="button" data-buy-sup="' +
+                  App.esc(u.id) + '">' + App.esc(I18N.t("sup.buy")) + "</button></span>" +
+            "</div>";
+          }).join("") + "</div>"
+        : '<p class="small muted" style="margin-top:var(--s-4)">' +
+          App.esc(I18N.t("sup.none")) + "</p>") +
+    "</section>";
+  }
+
+  /* ---------- an open call for a supervisor ----------
+     One card, two sides again: a trainee makes the call, a mentor answers it.
+     What it must not do is show the call to a client — who is looking for a
+     supervisor is the profession's business, and the policy says so too. */
+  function callCard(me) {
+    if (!me) return "";
+    var mine = M.callOf(me.id);
+    if (mine) {
+      return '<section class="card card--pad" data-call>' +
+        '<div class="row between wrap gap-3">' +
+          '<h2 class="subtitle">' + App.esc(I18N.t("call.out")) + "</h2>" +
+          '<button class="btn btn--ghost btn--sm" type="button" data-call-drop="' +
+            App.esc(mine.id) + '">' + App.esc(I18N.t("call.withdraw")) + "</button>" +
+        "</div>" +
+        (mine.note ? '<p class="small muted" style="margin-top:var(--s-3)">' +
+          App.esc(mine.note) + "</p>" : "") + "</section>";
+    }
+    return '<section class="card card--pad" data-call>' +
+      '<h2 class="subtitle">' + App.esc(I18N.t("call.seek")) + "</h2>" +
+      '<p class="small muted" style="margin-top:var(--s-2);max-width:60ch">' +
+        App.esc(I18N.t("call.lead")) + "</p>" +
+      '<textarea class="input" rows="2" style="margin-top:var(--s-3)" data-call-note ' +
+        'placeholder="' + App.esc(I18N.t("call.what")) + '"></textarea>' +
+      '<p class="tiny" data-call-error hidden style="margin-top:var(--s-2);color:var(--danger)"></p>' +
+      '<button class="btn btn--primary btn--sm" style="margin-top:var(--s-3)" ' +
+        'type="button" data-call-send>' + Icons.svg("send", "icon-sm") +
+        App.esc(I18N.t("call.send")) + "</button></section>";
+  }
+
+  /** The mentor's side of it: who is asking, and one button to offer. */
+  function callInbox(me) {
+    if (!me) return "";
+    var calls = M.callsFor(me.id);
+    if (!calls.length) return "";
+    return '<section style="margin-top:var(--s-8)" data-call-inbox>' +
+      '<h2 class="subtitle">' + App.esc(I18N.t("call.inbox")) + "</h2>" +
+      '<div class="stack gap-3" style="margin-top:var(--s-4)">' +
+        calls.map(function (c) {
+          var who = M.user(c.internId);
+          return '<div class="row between wrap gap-3 admin-line">' +
+            '<span class="row gap-3">' + avatar(who, "sm") +
+              "<span>" + personLink(who) +
+              (c.note ? '<span class="tiny muted" style="display:block">' +
+                App.esc(c.note) + "</span>" : "") + "</span></span>" +
+            '<button class="btn btn--outline btn--sm" type="button" data-call-answer="' +
+              App.esc(c.id) + '" data-call-intern="' + App.esc(c.internId) + '">' +
+              App.esc(I18N.t("call.answer")) + "</button></div>";
+        }).join("") + "</div></section>";
+  }
+
+  /* ---------- firms ---------- */
+  function featuredMark(u) {
+    if (!u) return "";
+    var desk = u.featuredRank != null;
+    if (!desk && !M.paidFeatured(u.id)) return "";
+    return '<span class="tag tag--gold" title="' +
+      App.esc(I18N.t(desk ? "feat.byDesk" : "feat.badge")) + '">' +
+      Icons.svg("star", "icon-sm") + App.esc(I18N.t("feat.badge")) + "</span>";
+  }
+
+  function firmCard(f) {
+    var team = M.roster(f.id);
+    return '<article class="card card--pad card--hover" data-firm="' + App.esc(f.id) + '">' +
+      '<div class="row between wrap gap-3">' +
+        '<div><h3 class="subtitle"><a href="firm.html?id=' + App.esc(f.id) + '">' +
+          App.esc(f.name) + "</a></h3>" +
+          '<span class="tiny muted num" dir="ltr">' + App.esc(f.ref || "") + "</span></div>" +
+        '<span class="tag">' + App.esc(I18N.t("firm.badge")) + "</span>" +
+      "</div>" +
+      (f.city ? '<p class="tiny muted" style="margin-top:var(--s-2)">' +
+        Icons.svg("location", "icon-sm") + " " + App.esc(f.city) + "</p>" : "") +
+      (f.bio ? '<p class="small muted" style="margin-top:var(--s-2)">' +
+        App.esc(String(f.bio).slice(0, 140)) + "</p>" : "") +
+      '<div class="row gap-2 wrap" style="margin-top:var(--s-4)">' +
+        (team.length
+          ? team.slice(0, 5).map(function (x) { return avatar(x.user, "sm"); }).join("") +
+            '<span class="tiny muted" style="align-self:center">' +
+              App.esc(I18N.t("firm.team")) + " " + I18N.num(team.length) + "</span>"
+          : '<span class="tiny faint">' + App.esc(I18N.t("firm.noTeam")) + "</span>") +
+      "</div></article>";
+  }
+
   global.C = {
     sar: sar, num: num, avatar: avatar, personLink: personLink, stars: stars,
     ratingLine: ratingLine, verifiedMark: verifiedMark, progressBar: progressBar,
@@ -1117,6 +1244,8 @@
     lawyerCard: lawyerCard, internCard: internCard, articleCard: articleCard,
     statusPill: statusPill, progress: progress, stepper: stepper,
     promoBox: promoBox, mentorCard: mentorCard,
+    caseSupervisionCard: caseSupervisionCard, callCard: callCard,
+    callInbox: callInbox, featuredMark: featuredMark, firmCard: firmCard,
     requestRow: requestRow, empty: empty, sectionHead: sectionHead,
     thread: thread, bubble: bubble, fileChip: fileChip, linkFiles: linkFiles,
     bytes: bytes, wireThread: wireThread, threadDraw: threadDraw,

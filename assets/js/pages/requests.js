@@ -649,6 +649,8 @@ Pages.define("requests", function (global) {
           }).join("")
         : '<p class="muted center" style="padding:var(--s-8)">' + esc(I18N.t("inbox.empty")) + "</p>") +
       mentorshipPanel(me) +
+      // Trainees asking for a supervisor. Only a mentor sees this at all.
+      C.callInbox(me) +
     "</div>";
   }
 
@@ -967,6 +969,15 @@ Pages.define("requests", function (global) {
         ? mine.map(internRow).join("")
         : C.empty("inbox", "task.none")) +
 
+      // A trainee with no standing mentor gets the two ways to fix that,
+      // side by side, above the work they cannot take yet. Buying one
+      // signature does not close the section: it is spent on one screening
+      // and then gone, so the card stays and says what is in hand.
+      (M.mentorOf(me.id) ? "" :
+        '<section style="margin-top:var(--s-12)">' +
+          '<div class="grid grid-2" style="gap:var(--s-4)">' +
+            C.callCard(me) + C.caseSupervisionCard(me) + "</div></section>") +
+
       screeningPool(me) +
 
       '<section style="margin-top:var(--s-12)">' +
@@ -1209,6 +1220,46 @@ Pages.define("requests", function (global) {
 
     var f = t.closest("[data-filter]");
     if (f) { filter = f.getAttribute("data-filter"); App.rerender(); return; }
+
+    /* --- looking for a supervisor --- */
+    var bs = hit("data-buy-sup");
+    if (bs) {
+      Store.buySupervision(bs, function (word) {
+        var say = { bought: "sup.bought", "already supervised": "sup.alreadySupervised",
+                    "already bought": "sup.alreadyBought", "not offered": "sup.notOffered" };
+        App.toast(I18N.t(say[word] || "sup.notOffered"),
+                  word === "bought" ? "check" : "alert");
+        App.rerender();
+      });
+      return;
+    }
+    if (t.closest("[data-call-send]")) {
+      var box = $("[data-call-note]", host);
+      var note = box ? box.value.trim() : "";
+      var err = $("[data-call-error]", host);
+      if (note.length < 5) {
+        if (err) { err.textContent = I18N.t("call.need"); err.hidden = false; }
+        return;
+      }
+      Store.callForMentor(note, null);
+      App.toast(I18N.t("call.sent"), "check");
+      App.rerender();
+      return;
+    }
+    var cd = hit("data-call-drop");
+    if (cd) { Store.withdrawCall(cd); App.rerender(); return; }
+    var ca = hit("data-call-answer");
+    if (ca) {
+      // Answering a call is opening a mentorship out of it — the trainee
+      // still has to accept, because the side that asked does not also
+      // answer, and that rule is the same whichever end started it.
+      var forWhom = t.closest("[data-call-intern]").getAttribute("data-call-intern");
+      Store.openMentorship({ mentorId: me.id, internId: forWhom, openedBy: "mentor",
+                             fee: (me.mentorshipFee || 0), inviteId: ca });
+      App.toast(I18N.t("men.invited"), "check");
+      App.rerender();
+      return;
+    }
 
     /* --- a free screening --- */
     var st2 = hit("data-scr-take");
