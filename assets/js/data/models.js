@@ -1013,6 +1013,15 @@
     }).sort(function (a, b) { return (a.supervisionFee || 0) - (b.supervisionFee || 0); });
   }
 
+  /** How many trainees this lawyer is supervising right now. A directory that
+      shows only a price tells a trainee nothing about whether the person has
+      room for them. */
+  function superviseeCount(mentorId) {
+    return ((Store.mentorships && Store.mentorships()) || []).filter(function (m) {
+      return m.mentorId === mentorId && m.status === "active";
+    }).length;
+  }
+
   /** Mentors taking trainees at all, for the directory and the open call. */
   function openMentors() {
     return listedLawyers().filter(function (u) { return !!u.isMentor; });
@@ -1717,7 +1726,8 @@
     isScreening: isScreening, mentorOf: mentorOf, canScreen: canScreen,
     signerFor: signerFor, openOrderOf: openOrderOf,
     supervisionSplit: supervisionSplit, caseSupervisors: caseSupervisors,
-    openMentors: openMentors, callsFor: callsFor, callOf: callOf,
+    openMentors: openMentors, superviseeCount: superviseeCount,
+    callsFor: callsFor, callOf: callOf,
     firms: firms, firm: firm, firmListed: firmListed, listedFirms: listedFirms,
     roster: roster, firmsOf: firmsOf, paidFeatured: paidFeatured,
     conversionOffer: conversionOffer, SCREENING: SCREENING,

@@ -11,7 +11,8 @@ await ctx.route('**://fonts.*/**', r => r.abort());
 const p = await ctx.newPage();
 const U = 'http://localhost:8099/';
 for (const [page, who] of [['index','u-fahad'],['requests','u-fahad'],['requests','u-ahmed'],
-                            ['admin','u-staff'],['account','u-ahmed'],['blog',null]]) {
+                            ['admin','u-staff'],['account','u-ahmed'],['blog',null],
+                            ['intern','u-jaid'],['firm','u-ahmed']]) {
   await p.goto(U + 'index.html');
   await p.evaluate(u => { if (u) localStorage.setItem('sanad.session.user', u);
     else localStorage.removeItem('sanad.session.user'); localStorage.removeItem('sanad.activeRole'); }, who);

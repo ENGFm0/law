@@ -1877,3 +1877,38 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 
 
 
+
+/* ---------- a modal ----------
+   The site's habit is an inline panel — three names do not warrant a modal —
+   but asking a lawyer to supervise you is a decision with a price on it, and
+   those deserve their own surface rather than a form that scrolls away under
+   the list it came from.
+
+   Painted rather than transparent: this sits over a page that already has a
+   background, and a see-through panel over a card reads as a rendering fault. */
+.modal {
+  position: fixed; inset: 0; z-index: 90;
+  display: grid; place-items: center; padding: var(--s-4);
+  background: rgba(6, 12, 24, .55);
+  backdrop-filter: blur(4px);
+}
+@supports not (backdrop-filter: blur(1px)) { .modal { background: rgba(6, 12, 24, .72); } }
+
+.modal__panel {
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-2);
+  width: min(560px, 100%); max-height: min(86vh, 720px);
+  overflow-y: auto; padding: var(--s-6);
+}
+.modal__head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--s-4); margin-bottom: var(--s-4);
+}
+.modal__close {
+  flex: none; width: 34px; height: 34px; border-radius: var(--r-full);
+  display: grid; place-items: center; color: var(--muted);
+  background: var(--surface-2);
+}
+.modal__close:hover { background: var(--surface-3); color: var(--text); }
+.modal__foot { display: flex; gap: var(--s-3); flex-wrap: wrap; margin-top: var(--s-6); }

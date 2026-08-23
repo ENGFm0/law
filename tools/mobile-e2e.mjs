@@ -14,7 +14,8 @@ const SHOTS = '/tmp/claude-0/-home-user-law/5b8e9e87-d166-5de3-b308-1b164061aad2
 
 const pages = [['index','u-fahad'],['requests','u-fahad'],['lawyers',null],
                ['services','u-ahmed'],['requests','u-ahmed'],['admin','u-staff'],
-               ['blog',null],['account','u-ahmed']];
+               ['blog',null],['account','u-ahmed'],
+               ['intern','u-jaid'],['firm','u-ahmed']];
 const report = [];
 for (const [page, who] of pages) {
   await p.goto(U + 'index.html');
@@ -25,9 +26,21 @@ for (const [page, who] of pages) {
   const m = await p.evaluate(() => {
     const de = document.documentElement;
     const bar = document.querySelector('.tabbar');
+    // Content that sits outside its own scrolling container is a bug; content
+    // that scrolls inside one is the convention — a tab strip or a wide table
+    // is supposed to run past the edge and be swiped. Only the first kind
+    // makes the page itself scroll sideways, which is what actually hurts.
+    const scrolls = (e) => {
+      for (let n = e.parentElement; n && n !== document.body; n = n.parentElement) {
+        const ov = getComputedStyle(n).overflowX;
+        if ((ov === 'auto' || ov === 'scroll') && n.scrollWidth > n.clientWidth + 1) return true;
+      }
+      return false;
+    };
     const over = [...document.querySelectorAll('body *')].filter(e => {
       const r = e.getBoundingClientRect();
-      return r.width > 0 && (r.right > window.innerWidth + 1 || r.left < -1);
+      if (!(r.width > 0 && (r.right > window.innerWidth + 1 || r.left < -1))) return false;
+      return !scrolls(e);
     }).slice(0, 6).map(e => (e.tagName + '.' + (e.className||'').toString().split(' ')[0] +
         ' w=' + Math.round(e.getBoundingClientRect().width)));
     const small = [...document.querySelectorAll('a,button')].filter(e => {

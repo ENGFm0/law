@@ -120,12 +120,69 @@ Pages.define("account", function (global) {
       "</div>" +
       '<label class="field" style="margin-top:var(--s-5)">' +
         '<span class="field__label">' + esc(I18N.t("offer.note")) + "</span>" +
-        '<textarea class="input" rows="2" data-offer="mentorNote" placeholder="' +
+        '<textarea class="input" rows="4" data-offer="mentorNote" placeholder="' +
           esc(I18N.t("offer.notePlace")) + '">' + esc(tx(u.mentorNote || "")) +
-        "</textarea></label>" +
+        "</textarea>" +
+        '<span class="tiny faint">' + esc(I18N.t("offer.noteHint")) + "</span></label>" +
       '<p class="tiny" data-offer-error hidden style="margin-top:var(--s-2);color:var(--danger)"></p>' +
       '<button class="btn btn--primary btn--sm" type="button" style="margin-top:var(--s-4)" ' +
-        'data-offer-save>' + esc(I18N.t("account.save")) + "</button></section>";
+        'data-offer-save>' + esc(I18N.t("account.save")) + "</button></section>" +
+      inbox(u);
+  }
+
+  /* ---------- who has asked to be supervised ----------
+     A lawyer who publishes an offer is going to be answered, and the answer
+     arriving somewhere they do not look is the same as not arriving. Both
+     buttons write the same row the trainee's own desk reads, so neither side
+     has a version of this the other cannot see.
+
+     The applications only. An invitation this lawyer sent is not theirs to
+     accept — that is guard_mentorship()'s rule, and the page keeps it by
+     drawing no button rather than by drawing one that fails. */
+  function inbox(u) {
+    var waiting = ((Store.mentorships && Store.mentorships()) || []).filter(function (m) {
+      return m.mentorId === u.id && m.status === "pending" && m.openedBy === "intern";
+    });
+    var live = ((Store.mentorships && Store.mentorships()) || []).filter(function (m) {
+      return m.mentorId === u.id && m.status === "active";
+    });
+
+    var line = function (m, pending) {
+      var who = M.user(m.internId);
+      if (!who) return "";
+      return '<div class="row between wrap gap-3 admin-line">' +
+        '<span class="row gap-3">' + C.avatar(who, "sm") +
+          "<span>" + C.personLink(who) +
+          '<span class="tiny muted" style="display:block">' +
+            esc(I18N.t("offer.atFee", { n: I18N.num(m.fee || 0) })) + "</span></span></span>" +
+        (pending
+          ? '<span class="row gap-2">' +
+              '<button class="btn btn--primary btn--sm" type="button" data-men-yes="' +
+                esc(m.id) + '">' + esc(I18N.t("men.accept")) + "</button>" +
+              '<button class="btn btn--ghost btn--sm" type="button" data-men-no="' +
+                esc(m.id) + '">' + esc(I18N.t("men.decline")) + "</button></span>"
+          : '<span class="row gap-3">' +
+              '<span class="tiny muted">' +
+                esc(I18N.t("cert.hoursDone", { n: I18N.num(M.hoursOf(m.internId)) })) + "</span>" +
+              '<a class="btn btn--outline btn--sm" href="requests.html">' +
+                esc(I18N.t("men.open")) + "</a></span>") +
+      "</div>";
+    };
+
+    return '<section class="card card--pad" style="margin-top:var(--s-6)" data-men-inbox>' +
+      '<h2 class="subtitle">' + esc(I18N.t("offer.inbox")) + "</h2>" +
+      (waiting.length
+        ? '<div class="stack gap-3" style="margin-top:var(--s-4)">' +
+          waiting.map(function (m) { return line(m, true); }).join("") + "</div>"
+        : '<p class="small muted" style="margin-top:var(--s-3)">' +
+          esc(I18N.t("offer.noneWaiting")) + "</p>") +
+      (live.length
+        ? '<h3 class="subtitle" style="margin-top:var(--s-6)">' +
+            esc(I18N.t("offer.current")) + "</h3>" +
+          '<div class="stack gap-3" style="margin-top:var(--s-3)">' +
+            live.map(function (m) { return line(m, false); }).join("") + "</div>"
+        : "") +
+    "</section>";
   }
 
   /** Reads the form back. Answers with a patch, or a reason it refused. */
@@ -245,6 +302,17 @@ Pages.define("account", function (global) {
 
     if (ev.target.closest("[data-signout]")) {
       Session.signOut().then(function () { App.go("index.html"); });
+      return;
+    }
+
+    var yes = ev.target.closest("[data-men-yes]");
+    var no = ev.target.closest("[data-men-no]");
+    if (yes || no) {
+      var el = yes || no;
+      Store.setMentorship(el.getAttribute(yes ? "data-men-yes" : "data-men-no"),
+                          { status: yes ? "active" : "declined" });
+      App.toast(I18N.t(yes ? "men.accepted" : "men.declinedIt"), yes ? "check" : "alert");
+      App.rerender();
       return;
     }
 
