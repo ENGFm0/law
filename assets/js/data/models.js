@@ -196,6 +196,28 @@
     return allServiceTypes().filter(function (t) { return t.active !== false; });
   }
 
+  /** Is this category free by the platform's own rule — a band of nothing to
+      nothing? Asked rather than known, so a desk that opens a band later does
+      not leave a hard-coded list behind disagreeing with it. */
+  function isFreeType(typeId) {
+    var band = priceBand(typeId);
+    return band.max === 0;
+  }
+
+  /* The categories somebody chooses a lawyer for, and prices.
+
+     A free screening is not one of them. It has no price to compare, no
+     lawyer to choose — a trainee claims it from the pool and their supervisor
+     signs it — and it is asked for from its own card. Leaving it in the
+     pickers gave a client a second route that skipped the pool entirely, and
+     gave a lawyer a category whose band is nothing to nothing: type any
+     number and the form says it is above the maximum, leave it blank and the
+     form says it is empty. That is the error, and this is where it came
+     from. */
+  function priceableTypes() {
+    return serviceTypes().filter(function (t) { return !isFreeType(t.id); });
+  }
+
   /* ---------- how the work is delivered ----------
      The channel is not the work. A statement of claim is a statement of claim
      whether it is talked through or handed over as a file — so the category
@@ -268,12 +290,19 @@
     return t ? { min: t.minPrice, max: t.maxPrice } : { min: 0, max: 0 };
   }
 
-  /** Returns null when the price is fine, or the reason it is not. */
+  /** Returns null when the price is fine, or the reason it is not.
+
+      Zero is a blank field on every band the platform charges on, and a
+      perfectly good price on one it does not. Reading them as the same thing
+      made a free category impossible to save at all — so emptiness is tested
+      as emptiness, and the band decides the rest. */
   function checkPrice(typeId, price) {
     var band = priceBand(typeId);
-    if (!price || isNaN(price)) return "empty";
-    if (price < band.min) return "low";
-    if (price > band.max) return "high";
+    if (price === "" || price === null || price === undefined) return "empty";
+    var n = Number(price);
+    if (isNaN(n)) return "empty";
+    if (n < band.min) return "low";
+    if (n > band.max) return "high";
     return null;
   }
 
@@ -1674,6 +1703,7 @@
     agreementFor: agreementFor,
     agreementsOfIntern: agreementsOfIntern, taskPay: taskPay,
     COMMISSION_MAX_PCT: COMMISSION_MAX_PCT, DEFAULT_VAT_PCT: DEFAULT_VAT_PCT,
+    priceableTypes: priceableTypes, isFreeType: isFreeType,
     clampCommission: clampCommission, platformSettings: platformSettings,
     checkSplit: checkSplit, distribute: distribute,
     featured: featured, byPlacement: byPlacement,

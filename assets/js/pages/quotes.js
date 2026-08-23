@@ -50,7 +50,9 @@ Pages.define("quotes", function (global) {
     return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
   }
 
-  function types() { return M.serviceTypes(); }
+  // Nothing free goes to auction: there is no price to bid and no lawyer to
+  // choose. A screening is claimed from the pool, not competed for.
+  function types() { return M.priceableTypes(); }
   function firstType() { return (types()[0] || {}).id || ""; }
   function typeOf(id) { return M.serviceType(id) || { title: {}, meta: {} }; }
   function channelsOf(typeId) {

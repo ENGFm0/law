@@ -52,6 +52,16 @@
   }
 
   var SERVICE_TYPES = [
+    /* Free, and priced at nothing at both ends — the same row migration 020
+       writes into service_types and price_bands. It was missing here, so the
+       demo and the real database disagreed about what the platform offers:
+       everything below was testable and this one was not, which is why the
+       band of nothing to nothing was only ever hit in production. */
+    { id: "free_screening", icon: "search", minPrice: 0, maxPrice: 0, sort: 5,
+      channels: ["text", "voice"],
+      title: { ar: "جلسة فرز وتحليل قضية", en: "Case screening and analysis" },
+      meta:  { ar: "نظرة أولى مجانية: هل لديك قضية، وما الطريق أمامها.",
+               en: "A free first look: whether you have a case, and what the road looks like." } },
     { id: "consult", icon: "chat", minPrice: 80, maxPrice: 500,
       channels: ["voice", "video", "text"],
       title: { ar: "استشارة قانونية", en: "Legal consultation" },

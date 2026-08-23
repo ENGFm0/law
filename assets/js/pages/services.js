@@ -74,7 +74,7 @@ Pages.define("services", function (global) {
   /* --- step one: which service --- */
   function typePicker() {
     return '<h2 class="title" style="margin-bottom:var(--s-5)" data-i18n="svc.pickType"></h2>' +
-      '<div class="grid grid-3">' + M.serviceTypes().map(function (t) {
+      '<div class="grid grid-3">' + M.priceableTypes().map(function (t) {
         var from = cheapestFor(t.id);
         return '<button type="button" class="card card--pad card--hover feature" ' +
           'data-pick-type="' + esc(t.id) + '" style="text-align:start">' +
@@ -242,9 +242,15 @@ Pages.define("services", function (global) {
   function lawyerView() {
     var me = Session.user();
     var mine = M.servicesOf(me.id);
-    var types = M.serviceTypes();
+    // A lawyer prices what the platform charges for. The free screening is
+    // not priced, chosen or booked — it is claimed from the pool by a trainee
+    // and signed by whoever supervises them — so it is not in this list, and
+    // the note below says where it actually comes from.
+    var types = M.priceableTypes();
+    if (editing && M.isFreeType(editing.typeId)) types = M.serviceTypes();
     var cat = editing ? editing.typeId : (draft.typeId || types[0].id);
     var band = M.priceBand(cat);
+    var free = M.isFreeType(cat);
 
     return '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       '<header style="margin-bottom:var(--s-8)">' +
@@ -297,7 +303,10 @@ Pages.define("services", function (global) {
             '<label class="field"><span class="label" data-i18n="svc.priceLabel"></span>' +
               '<input class="input num" type="number" data-new-price dir="ltr" ' +
                 'min="' + band.min + '" max="' + band.max + '" ' +
-                'value="' + (draft.price != null ? draft.price : "") + '"></label>' +
+                (free ? 'value="0" disabled ' : 'value="' + (draft.price != null ? draft.price : "") + '" ') +
+                "></label>" +
+            (free ? '<p class="note-inline" data-free-note>' +
+              esc(I18N.t("svc.freeLocked")) + "</p>" : "") +
             channelPicker(cat) +
             '<p class="tiny muted" data-band></p>' +
             '<p class="form-error" data-svc-error hidden></p>' +
@@ -379,16 +388,21 @@ Pages.define("services", function (global) {
     var sel = $("[data-new-type]", host), out = $("[data-band]", host);
     if (!sel || !out) return;
     var band = M.priceBand(sel.value);
-    out.textContent = I18N.t("svc.band", { min: I18N.num(band.min), max: I18N.num(band.max) });
+    out.textContent = M.isFreeType(sel.value)
+      ? I18N.t("svc.bandFree")
+      : I18N.t("svc.band", { min: I18N.num(band.min), max: I18N.num(band.max) });
   }
 
   function readForm() {
     var g = function (sel) { var el = $(sel, host); return el ? el.value.trim() : ""; };
+    var typeId = g("[data-new-type]");
     return {
-      typeId: g("[data-new-type]"),
+      typeId: typeId,
       title: g("[data-new-title]"),
       meta: g("[data-new-meta]"),
-      price: +g("[data-new-price]")
+      // A free category is nothing, whatever the disabled field happens to
+      // hold — the price is the platform's answer here, not the lawyer's.
+      price: M.isFreeType(typeId) ? 0 : +g("[data-new-price]")
     };
   }
 
@@ -548,7 +562,7 @@ Pages.define("services", function (global) {
     var ch = t.closest("[data-channel]");
     if (ch) {
       var id = ch.getAttribute("data-channel");
-      var cat = editing ? editing.typeId : (draft.typeId || M.serviceTypes()[0].id);
+      var cat = editing ? editing.typeId : (draft.typeId || M.priceableTypes()[0].id);
       var list = draftChannels(cat);
       var at = list.indexOf(id);
       draft.channels = at === -1 ? list.concat([id])

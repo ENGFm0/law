@@ -30,6 +30,43 @@ const open = async (page, who) => {
 await p.goto(U+'index.html');
 await p.evaluate(() => Store.resetWork());
 
+console.log('— IT IS NOT A CATEGORY ANYBODY PRICES OR PICKS —');
+ok('the platform ships it as a kind of work',
+   await p.evaluate(() => !!Models.serviceType('free_screening')));
+ok('with a band of nothing to nothing',
+   await p.evaluate(() => { const b = Models.priceBand('free_screening');
+     return b.min === 0 && b.max === 0; }));
+ok('and the model calls that free',
+   await p.evaluate(() => Models.isFreeType('free_screening')) === true);
+ok('nothing else on the platform is',
+   await p.evaluate(() => Models.serviceTypes()
+     .filter(t => Models.isFreeType(t.id)).length) === 1);
+ok('zero is a price it accepts',
+   await p.evaluate(() => Models.checkPrice('free_screening', 0)) === null);
+ok('and anything above it is not',
+   await p.evaluate(() => Models.checkPrice('free_screening', 50)) === 'high');
+ok('while zero on paid work is still refused',
+   await p.evaluate(() => Models.checkPrice('consult', 0)) === 'low');
+ok('and a blank field is still blank',
+   await p.evaluate(() => Models.checkPrice('consult', '')) === 'empty');
+
+await open('services.html', 'u-ahmed');           // a lawyer's own list
+let types = await p.$$eval('[data-new-type] option', ns => ns.map(n => n.value));
+ok('a lawyer is not offered it as a category', types.indexOf('free_screening') === -1,
+   types.join(','));
+ok('but is offered the ones they do price', types.indexOf('consult') !== -1);
+
+await open('quotes.html', 'u-fahad');
+const qTypes = await p.$$eval('[data-q-type] option, [data-quote-type] option',
+                              ns => ns.map(n => n.value)).catch(() => []);
+ok('and it never goes to auction', qTypes.indexOf('free_screening') === -1, qTypes.join(','));
+
+await open('services.html', 'u-fahad');           // the client's picker
+const picks = await p.$$eval('[data-pick-type]',
+                             ns => ns.map(n => n.getAttribute('data-pick-type')));
+ok('a client is not sent shopping for a lawyer to do it',
+   picks.indexOf('free_screening') === -1, picks.join(','));
+
 console.log('— THE CLIENT ASKS, AND IT COSTS NOTHING —');
 await open('services.html', 'u-fahad');
 ok('the free look is offered above the price list',
