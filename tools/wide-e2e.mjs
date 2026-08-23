@@ -19,7 +19,17 @@ for (const [page, who] of [['index','u-fahad'],['requests','u-fahad'],['requests
   await p.goto(U + page + '.html'); await p.waitForTimeout(450);
   const m = await p.evaluate(() => {
     const W = 390;
-    const wide = [...document.querySelectorAll('body *')].map(e => {
+    // Same rule the mobile check uses: a tab strip or a wide table running
+    // past the edge inside its own scrolling box is the convention, not a
+    // fault. Only what escapes its container makes the page itself wide.
+    const scrolls = (e) => {
+      for (let n = e.parentElement; n && n !== document.body; n = n.parentElement) {
+        const ov = getComputedStyle(n).overflowX;
+        if ((ov === 'auto' || ov === 'scroll') && n.scrollWidth > n.clientWidth + 1) return true;
+      }
+      return false;
+    };
+    const wide = [...document.querySelectorAll('body *')].filter(e => !scrolls(e)).map(e => {
       const r = e.getBoundingClientRect();
       return { t: e.tagName + '.' + (e.className||'').toString().split(' ').slice(0,2).join('.'),
                w: Math.round(r.width), l: Math.round(r.left), r: Math.round(r.right) };
