@@ -209,6 +209,15 @@
     // only a staff policy lets it through on anybody else's.
     if (data.status !== undefined) row.status = data.status;
     if (data.featuredRank !== undefined) row.featured_rank = data.featuredRank;
+    // What a lawyer offers a trainee. Two separate offers, deliberately: a
+    // month of teaching and a signature on one screening are not the same
+    // thing and are not priced the same way. Unmapped, every one of them
+    // moved the screen and never reached a column.
+    if (data.isMentor !== undefined) row.is_mentor = !!data.isMentor;
+    if (data.mentorshipFee !== undefined) row.mentorship_fee = data.mentorshipFee;
+    if (data.supervisesCases !== undefined) row.supervises_cases = !!data.supervisesCases;
+    if (data.supervisionFee !== undefined) row.supervision_fee = data.supervisionFee;
+    if (data.mentorNote !== undefined) row.mentor_note = flat(data.mentorNote);
     if (data.autoBid !== undefined) row.auto_bid = !!data.autoBid;
     if (data.role === "lawyer" || (data.roles || []).indexOf("lawyer") !== -1) {
       row.licence_no = data.licenceNumber || null;

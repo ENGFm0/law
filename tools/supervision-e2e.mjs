@@ -30,10 +30,33 @@ const open = async (page, who) => {
 await p.goto(U+'index.html');
 await p.evaluate(() => Store.resetWork());
 
-/* One lawyer sells the signature, another only takes trainees by the month.
+console.log('— THE LAWYER PUBLISHES THE OFFER THEMSELVES —');
+await open('account.html', 'u-ahmed');
+ok('the offer editor is on a lawyer\u2019s account', (await p.$('[data-offer-card]')) !== null, await body());
+ok('with the price hidden until the offer is taken',
+   await p.$eval('[data-offer-when="supervisionFee"]', e => e.hidden) === true);
+await p.check('[data-offer="supervisesCases"]'); await p.waitForTimeout(200);
+ok('ticking it opens the price straight away',
+   await p.$eval('[data-offer-when="supervisionFee"]', e => e.hidden) === false);
+await p.fill('[data-offer="supervisionFee"]', '400');
+await p.click('[data-offer-save]'); await p.waitForTimeout(300);
+ok('a price outside the platform\u2019s band is refused', /خارج النطاق/.test(await body()));
+ok('and nothing was published',
+   await p.evaluate(() => !Models.user('u-ahmed').supervisesCases));
+await p.fill('[data-offer="supervisionFee"]', '100');
+await p.fill('[data-offer="mentorNote"]', 'أشرف على القضايا العمالية والتجارية');
+await p.click('[data-offer-save]'); await p.waitForTimeout(400);
+ok('a price inside it is published',
+   await p.evaluate(() => Models.user('u-ahmed').supervisionFee) === 100);
+ok('the offer is on', await p.evaluate(() => Models.user('u-ahmed').supervisesCases) === true);
+ok('the note with it', await p.evaluate(() => Models.user('u-ahmed').mentorNote) === 'أشرف على القضايا العمالية والتجارية');
+ok('and the monthly offer was not switched on behind their back',
+   await p.evaluate(() => !Models.user('u-ahmed').isMentor));
+ok('the page says what reaches them after the cut', /يصلك ٨٥|يصلك 85/.test(await body()));
+
+/* The other lawyer takes trainees by the month and does not sell the case.
    Keeping them apart is the point: the two offers are not the same offer. */
 await p.evaluate(() => {
-  Store.updateAccount('u-ahmed', { supervisesCases: true, supervisionFee: 100 });
   Store.updateAccount('u-sara',  { isMentor: true, mentorshipFee: 90 });
 });
 
