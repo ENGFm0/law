@@ -124,7 +124,11 @@
              at: new Date(a.created_at).getTime() };
   }
   function inSubscription(s) {
+    // firm_id or nothing: a firm's listing is a subscription that names the
+    // firm, and dropping the column made firm_is_listed()'s other half
+    // unanswerable here — every verified, paying firm read as unlisted.
     return { id: s.id, lawyerId: s.lawyer_id, plan: s.plan, price: Number(s.price),
+             firmId: s.firm_id || null,
              startedAt: s.started_at, endsAt: s.ends_at, active: !!s.active };
   }
   function inCost(c) {
@@ -1144,7 +1148,7 @@
              at: new Date(f.created_at).getTime() };
   }
   function inFirmMember(m) {
-    return { firmId: m.firm_id, profileId: m.profile_id, role: m.role,
+    return { id: m.id, firmId: m.firm_id, profileId: m.profile_id, role: m.role,
              status: m.status, title: m.title || null,
              joinedAt: m.joined_at ? new Date(m.joined_at).getTime() : null };
   }
@@ -1191,12 +1195,23 @@
     (cache.firms || []).forEach(function (f) { if (f.id === id) out = f; });
     return out;
   };
-  Store.addFirm = function (f) {
+  /* The id and the reference are the database's to hand back — stamp_firm_ref()
+     writes the reference — so the caller is told when they arrive rather than
+     being handed a row with neither and sent to firm.html?id=undefined. */
+  Store.addFirm = function (f, done) {
     if (noSession()) return f;
     push("firms", { owner_id: Store.currentId(), name: f.name, bio: f.bio || null,
                     city: f.city || null, address: f.address || null,
                     website: f.website || null, licence_no: f.licenceNo || null })
-      .then(function (res) { report(res); if (res && res.data) Store.hydrate(); });
+      .then(function (res) {
+        report(res);
+        if (res && res.data) {
+          f.id = res.data.id;
+          f.ref = res.data.ref;
+          Store.hydrate();
+          if (done) done(f);
+        }
+      });
     f.status = "pending";
     return local(cache.firms, f);
   };

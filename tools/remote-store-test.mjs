@@ -133,7 +133,7 @@ function boot(rows = {}) {
         requests: rows.requests || [], articles: rows.articles || [],
         comments: [], endorsements: [], agreements: rows.agreements || [],
         disputes: rows.disputes || [], notifications: rows.notices || [],
-        audit_log: rows.audit || [], subscriptions: [],
+        audit_log: rows.audit || [], subscriptions: rows.subscriptions || [],
         operating_costs: [], partners: [],
         quotes: rows.quotes || [], offers: rows.offers || [],
       };
@@ -198,6 +198,27 @@ section('HYDRATION MAPS COLUMNS TO THE SHAPES PAGES EXPECT');
   const g = S.agreements()[0];
   ok('an agreement maps both parties', g.lawyerId === 'l1' && g.internId === 'i1');
   ok('and its amount', g.amount === 800 && g.cases === 5);
+}
+
+section('A SUBSCRIPTION CARRIES WHICH FIRM IT IS FOR');
+{
+  // firm_is_listed() asks two questions and one of them is this row. Dropping
+  // the column here read as "no firm is paying" — every verified firm would
+  // have been missing from the directory with nothing on screen to explain it.
+  const { S } = boot({
+    subscriptions: [
+      { id: 'sub1', lawyer_id: 'l1', plan: 'ai', price: '300.00', active: true },
+      { id: 'sub2', lawyer_id: 'l1', plan: 'firm', price: '900.00', active: true,
+        firm_id: 'f1' },
+    ],
+  });
+  await S.hydrate();
+  const subs = S.subscriptions();
+  ok('both plans survive the read', subs.length === 2, subs.length);
+  ok('the drafting one names no firm', subs[0].firmId === null, subs[0].firmId);
+  ok('the firm one names its firm', subs[1].firmId === 'f1', subs[1].firmId);
+  ok('and the plans are kept apart',
+     subs[0].plan === 'ai' && subs[1].plan === 'firm');
 }
 
 section('A READ THAT FAILED IS NOT A READ THAT CAME BACK EMPTY');

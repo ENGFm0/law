@@ -871,7 +871,7 @@
 
     firms: function () { return work.firms; },
     firm: function (id) { return byId(work.firms, id); },
-    addFirm: function (f) {
+    addFirm: function (f, done) {
       f.id = f.id || uid("firm");
       // Four digits, like stamp_firm_ref() pads to. A reference that reads
       // differently depending on which backend produced it is a reference
@@ -883,6 +883,9 @@
       f.at = Date.now();
       work.firms.push(f);
       notify();
+      // Answered the same way the remote store answers it, which is after the
+      // row exists — so one caller serves both backends.
+      if (done) done(f);
       return f;
     },
     setFirm: function (id, patch) {

@@ -263,11 +263,12 @@ Pages.define("firm", function (global) {
         if (err) { err.textContent = I18N.t("firm.needName"); err.hidden = false; }
         return;
       }
-      var made = Store.addFirm({ ownerId: me().id, name: draft.name.trim(),
-                                 city: draft.city || null, bio: draft.bio.trim() || null });
+      Store.addFirm({ ownerId: me().id, name: draft.name.trim(),
+                      city: draft.city || null, bio: draft.bio.trim() || null },
+        function (made) { App.go("firm.html?id=" + made.id); });
       draft = { name: "", city: "", bio: "" };
       App.toast(I18N.t("firm.created"), "check");
-      App.go("firm.html?id=" + made.id);
+      App.rerender();
       return;
     }
 
