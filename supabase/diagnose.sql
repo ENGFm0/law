@@ -1,9 +1,15 @@
 -- ===========================================================================
 --  Why did that request fail?
 --
---  Paste the whole file into the Supabase SQL editor and run it. It changes
---  nothing: the one part that writes is wrapped in a transaction that rolls
---  itself back. Three answers come out of it, in three result sets:
+--  >> If you only want to know which migrations have been run, use check.sql
+--  >> instead. It answers in ONE table. This file does not: the Supabase SQL
+--  >> editor shows only the LAST result set a script produces, so pasting the
+--  >> whole of this gets you the final count and nothing else. Run it a
+--  >> section at a time — select the lines you want and press Run.
+--
+--  It changes nothing: the one part that writes is wrapped in a transaction
+--  that rolls itself back. Three answers come out of it, in three result
+--  sets:
 --
 --    1. which migrations this project has actually had run against it
 --    2. every policy on the tables the site reads on every page
