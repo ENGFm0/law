@@ -28,6 +28,7 @@ Pages.define("admin", function (global) {
     { id: "money",    key: "adm.tabMoney",    icon: "wallet" },
     { id: "ads",      key: "adm.tabAds",      icon: "bell" },
     { id: "promos",   key: "adm.tabPromos",   icon: "tag" },
+    { id: "firms",    key: "adm.tabFirms",    icon: "briefcase" },
     { id: "catalogue",key: "admin.tabCat",    icon: "tag" },
     { id: "settings", key: "adm.tabSettings", icon: "settings" }
   ];
@@ -1069,8 +1070,73 @@ Pages.define("admin", function (global) {
   }
 
   /* =============================================================== render */
+  /* ================================================================== firms
+     Two separate decisions on one card, deliberately kept apart: whether the
+     partnership is real, which is the desk's to verify, and whether it is
+     paying, which is a subscription. A firm is listed only when both say yes
+     — the same pair firm_is_listed() reads — so a desk that could only
+     answer one of them would be a desk that cannot explain why a verified
+     firm is not in the directory. */
+  function firmCard(f) {
+    var team = M.roster(f.id);
+    var owner = M.user(f.ownerId);
+    var sub = M.subscriptionOf(f.ownerId, "firm");
+    var paying = sub.active && sub.sub && sub.sub.firmId === f.id;
+
+    return '<div class="card card--pad admin-card">' +
+      '<div class="row between wrap gap-3">' +
+        "<div><strong>" + esc(f.name || "") + "</strong>" +
+          '<div class="tiny muted num" dir="ltr">' + esc(f.ref || "") + "</div></div>" +
+        '<div class="row gap-2 wrap">' +
+          (M.firmListed(f)
+            ? '<span class="status status--ok">' + esc(I18N.t("firm.badge")) + "</span>"
+            : '<span class="status">' +
+              esc(I18N.t(f.status === "verified" ? "firm.notListed" : "firm.pending")) +
+              "</span>") +
+          C.statusPill(f.status) +
+        "</div></div>" +
+
+      '<div class="row gap-6 wrap small" style="margin-top:var(--s-4)">' +
+        (owner ? "<span><span class=\"tiny muted\">" + esc(I18N.t("firm.owner")) + "</span> " +
+          '<button class="linklike" type="button" data-person="' + esc(owner.id) + '">' +
+          esc(tx(owner.name)) + "</button></span>" : "") +
+        "<span><span class=\"tiny muted\">" + esc(I18N.t("firm.team")) + "</span> " +
+          '<span class="num">' + I18N.num(team.length) + "</span></span>" +
+        (f.city ? "<span>" + esc(tx(M.city(f.city) || {})) + "</span>" : "") +
+      "</div>" +
+
+      '<div class="row gap-2 wrap" style="margin-top:var(--s-4)">' +
+        (f.status !== "verified"
+          ? '<button class="btn btn--primary btn--sm" type="button" data-firm-ok="' + esc(f.id) + '">' +
+            Icons.svg("check", "icon-sm") + esc(I18N.t("admin.approve")) + "</button>"
+          : "") +
+        (f.status !== "rejected"
+          ? '<button class="btn btn--ghost btn--sm" type="button" data-firm-no="' + esc(f.id) + '">' +
+            esc(I18N.t("admin.reject")) + "</button>"
+          : "") +
+        '<button class="btn btn--outline btn--sm" type="button" data-firm-sub="' + esc(f.id) + '">' +
+          Icons.svg("wallet", "icon-sm") +
+          esc(I18N.t(paying ? "adm.firmSubOn" : "adm.firmSubOff")) + "</button>" +
+        '<a class="btn btn--outline btn--sm" href="firm.html?id=' + esc(f.id) + '">' +
+          esc(I18N.t("firm.open")) + "</a>" +
+      "</div></div>";
+  }
+
+  function firms() {
+    var list = (M.firms() || []).slice().sort(function (a, b) {
+      // Whatever is waiting on a decision first — a queue sorted by date is a
+      // queue where the one person waiting is at the bottom of it.
+      var rank = function (f) { return f.status === "pending" ? 0 : 1; };
+      return rank(a) - rank(b) || (b.at || 0) - (a.at || 0);
+    });
+    return head("adm.firms", "adm.firmsLead") +
+      (list.length
+        ? '<div class="stack gap-4">' + list.map(firmCard).join("") + "</div>"
+        : C.empty("briefcase", "adm.noFirms"));
+  }
+
   var VIEWS = { overview: overview, people: people, requests: requests,
-                money: money, ads: ads, promos: promos,
+                money: money, ads: ads, promos: promos, firms: firms,
                 catalogue: catalogue, settings: settings };
 
   C.wireTimeline(host);
@@ -1238,6 +1304,29 @@ Pages.define("admin", function (global) {
       Store.updateAccount(fe, { featuredRank: next });
       Store.log({ action: "feature", byId: me.id, targetId: fe,
                   subject: tx((u || {}).name || {}) });
+      return;
+    }
+
+    /* --- firms --- */
+    var fok = hit("data-firm-ok"), fno = hit("data-firm-no");
+    if (fok || fno) {
+      Store.setFirm(fok || fno, { status: fok ? "verified" : "rejected" });
+      Store.log({ action: fok ? "firm_verified" : "firm_rejected", byId: me.id,
+                  subject: (M.firm(fok || fno) || {}).name || "" });
+      App.toast(I18N.t(fok ? "adm.firmVerified" : "adm.firmRejected"),
+                fok ? "check" : "alert");
+      return;
+    }
+    var fsub = hit("data-firm-sub");
+    if (fsub) {
+      var theFirm = M.firm(fsub);
+      var had = M.subscriptionOf(theFirm.ownerId, "firm");
+      var live = had.active && had.sub && had.sub.firmId === fsub;
+      Store.setSubscription(theFirm.ownerId,
+        { plan: "firm", firmId: fsub, active: !live });
+      Store.log({ action: "firm_subscription", byId: me.id,
+                  subject: theFirm.name || "" });
+      App.toast(I18N.t(live ? "adm.firmSubRevoked" : "adm.firmSubGranted"), "wallet");
       return;
     }
 

@@ -193,6 +193,19 @@ Pages.define("account", function (global) {
 
       offer(u) +
 
+      // A firm has its own page, its own licence and its own listing, so the
+      // account carries a way in rather than a copy of it.
+      (Session.is("lawyer") || Session.is("intern")
+        ? '<section class="card card--pad" style="margin-top:var(--s-6)">' +
+            '<div class="row between wrap gap-3">' +
+              "<div><h2 class=\"subtitle\">" + esc(I18N.t("firm.mineTitle")) + "</h2>" +
+                '<p class="small muted" style="margin-top:var(--s-2);max-width:60ch">' +
+                  esc(I18N.t("firm.mineLead")) + "</p></div>" +
+              '<a class="btn btn--outline btn--sm" href="firm.html">' +
+                Icons.svg("briefcase", "icon-sm") + esc(I18N.t("firm.manage")) + "</a>" +
+            "</div></section>"
+        : "") +
+
       // Wiping the visit is a thing you do to a demo. On a real database it
       // would be either meaningless or alarming, so it is not offered there.
       (demo()

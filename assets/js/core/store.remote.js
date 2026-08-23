@@ -661,25 +661,34 @@
 
   Store.subscriptions = function () { return cache.subscriptions; };
   Store.setSubscription = function (lawyerId, sub) {
+    var plan = (sub && sub.plan) || "ai";
     var found = null;
-    cache.subscriptions.forEach(function (s) { if (s.lawyerId === lawyerId) found = s; });
+    cache.subscriptions.forEach(function (s) {
+      if (s.lawyerId === lawyerId && (s.plan || "ai") === plan) found = s;
+    });
     if (!found) {
-      found = { lawyerId: lawyerId, plan: "ai", startedAt: new Date().toISOString() };
+      found = { lawyerId: lawyerId, plan: plan, startedAt: new Date().toISOString() };
       cache.subscriptions.push(found);
     }
     Object.keys(sub || {}).forEach(function (k) { found[k] = sub[k]; });
     Store.notifyAll();
-    // One per lawyer per plan, so this is an upsert on that pair rather than
-    // a new row each time somebody toggles it.
-    SB.load().then(function (sb) {
-      return sb.from("subscriptions").upsert({
-        lawyer_id: lawyerId, plan: "ai",
-        price: found.price || 0, active: found.active !== false,
-        ends_at: found.endsAt || null, created_by: Store.currentId()
-      }, { onConflict: "lawyer_id,plan" }).select().single();
-    }).then(report).then(function (res) {
-      if (res && res.data) { found.id = res.data.id; Store.notifyAll(); }
-    });
+    // Written as an update when the row is known and an insert when it is
+    // not, rather than an upsert: migration 021 replaced the (lawyer_id,
+    // plan) unique constraint with two partial indexes — one lawyer may own
+    // two firms — and a partial index is not a conflict target PostgREST can
+    // name. The uniqueness is still the database's to enforce; a collision
+    // comes back through report() like any other refusal.
+    var row = { lawyer_id: lawyerId, plan: plan, firm_id: found.firmId || null,
+                price: found.price || 0, active: found.active !== false,
+                ends_at: found.endsAt || null };
+    if (found.id) {
+      patch("subscriptions", found.id, row).then(report);
+    } else {
+      row.created_by = Store.currentId();
+      push("subscriptions", row).then(report).then(function (res) {
+        if (res && res.data) { found.id = res.data.id; Store.notifyAll(); }
+      });
+    }
     return found;
   };
 
@@ -1202,7 +1211,7 @@
       if (f.id === id) Object.keys(changes).forEach(function (k) { f[k] = changes[k]; });
     });
     Store.notifyAll();
-    patch("firms", id, row);
+    patch("firms", id, row).then(report);
     return Store.firm(id);
   };
 

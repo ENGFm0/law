@@ -48,6 +48,20 @@ Pages.define("lawyers", function (global) {
     return M.byPlacement(sorted);
   }
 
+  /* A directory of people cannot hold a partnership, so the firms are a third
+     list rather than rows mixed into the first two. Only listed firms: a firm
+     the desk has not verified, or whose subscription has lapsed, is not a
+     firm the directory says exists. */
+  function firmList() {
+    var text = state.q.trim().toLowerCase();
+    return M.listedFirms().filter(function (f) {
+      if (state.city && f.city !== state.city) return false;
+      if (!text) return true;
+      return (String(f.name || "") + " " + String(f.bio || "")).toLowerCase()
+        .indexOf(text) !== -1;
+    });
+  }
+
   function cheapest(u) {
     var s = M.servicesOf(u.id);
     return s.length ? Math.min.apply(null, s.map(function (x) { return x.price; })) : Infinity;
@@ -56,13 +70,17 @@ Pages.define("lawyers", function (global) {
   /* ---------- pieces ---------- */
   function tabs() {
     return '<div class="tabs" role="tablist">' +
-      [["lawyer", "dir.tabLawyers"], ["intern", "dir.tabInterns"]].map(function (t) {
+      [["lawyer", "dir.tabLawyers"], ["intern", "dir.tabInterns"],
+       ["firm", "dir.tabFirms"]].map(function (t) {
         return '<button class="tab' + (state.tab === t[0] ? " is-active" : "") + '" role="tab" ' +
           'type="button" data-tab="' + t[0] + '" data-i18n="' + t[1] + '"></button>';
       }).join("") + "</div>";
   }
 
-  function filters() {
+  /* A firm has no rating, no years and no price list, so it is not filtered
+     by any of them — a dropdown that cannot change the list is a dropdown
+     that makes the reader wonder what they got wrong. */
+  function filters(forFirms) {
     function sel(name, list, value, anyKey) {
       return '<select class="select" data-f="' + name + '">' +
         '<option value="">' + esc(I18N.t(anyKey)) + "</option>" +
@@ -76,17 +94,20 @@ Pages.define("lawyers", function (global) {
         '<label class="field"><span class="label" data-i18n="blog.search"></span>' +
           '<input class="input" data-f="q" value="' + esc(state.q) + '" ' +
             'data-i18n-attr="placeholder:home.searchPlaceholder"></label>' +
-        '<label class="field"><span class="label" data-i18n="dir.specialties"></span>' +
-          sel("specialty", global.SEED.specialties, state.specialty, "dir.anySpecialty") + "</label>" +
+        (forFirms ? "" :
+          '<label class="field"><span class="label" data-i18n="dir.specialties"></span>' +
+            sel("specialty", global.SEED.specialties, state.specialty, "dir.anySpecialty") +
+          "</label>") +
         '<label class="field"><span class="label" data-i18n="dir.cities"></span>' +
           sel("city", global.SEED.cities, state.city, "dir.anyCity") + "</label>" +
-        '<label class="field"><span class="label" data-i18n="dir.sortBy"></span>' +
-          '<select class="select" data-f="sort">' +
-            [["rating", "dir.sortRating"], ["experience", "dir.sortExperience"],
-             ["priceAsc", "dir.sortPriceAsc"], ["priceDesc", "dir.sortPriceDesc"]].map(function (o) {
-              return '<option value="' + o[0] + '"' + (state.sort === o[0] ? " selected" : "") + ">" +
-                esc(I18N.t(o[1])) + "</option>";
-            }).join("") + "</select></label>" +
+        (forFirms ? "" :
+          '<label class="field"><span class="label" data-i18n="dir.sortBy"></span>' +
+            '<select class="select" data-f="sort">' +
+              [["rating", "dir.sortRating"], ["experience", "dir.sortExperience"],
+               ["priceAsc", "dir.sortPriceAsc"], ["priceDesc", "dir.sortPriceDesc"]].map(function (o) {
+                return '<option value="' + o[0] + '"' + (state.sort === o[0] ? " selected" : "") + ">" +
+                  esc(I18N.t(o[1])) + "</option>";
+              }).join("") + "</select></label>") +
         '<button class="btn btn--ghost btn--sm" type="button" data-reset data-i18n="dir.reset"></button>' +
       "</div></div>";
   }
@@ -128,21 +149,28 @@ Pages.define("lawyers", function (global) {
   }
 
   /* ---------- draw ---------- */
+  var HEADS = { lawyer: ["dir.heading", "dir.lead", "dir.found"],
+                intern: ["dir.headingInterns", "dir.internsLead", "dir.foundInterns"],
+                firm:   ["dir.headingFirms", "dir.firmsLead", "dir.foundFirms"] };
+
   App.onRender(function () {
     var isLawyers = state.tab === "lawyer";
-    var list = isLawyers ? lawyerList() : M.interns();
+    var isFirms = state.tab === "firm";
+    var list = isFirms ? firmList() : (isLawyers ? lawyerList() : M.interns());
+    var head = HEADS[state.tab] || HEADS.lawyer;
+    var card = isFirms ? C.firmCard : (isLawyers ? C.lawyerCard : C.internCard);
 
     host.innerHTML = '<div class="container" style="padding-block:var(--s-10) var(--s-20)">' +
       '<header style="margin-bottom:var(--s-6)">' +
-        '<h1 class="headline" data-i18n="' + (isLawyers ? "dir.heading" : "dir.headingInterns") + '"></h1>' +
-        '<p class="lead" data-i18n="' + (isLawyers ? "dir.lead" : "dir.internsLead") + '"></p></header>' +
+        '<h1 class="headline" data-i18n="' + head[0] + '"></h1>' +
+        '<p class="lead" data-i18n="' + head[1] + '"></p></header>' +
       tabs() +
-      (isLawyers ? filters() : "") +
+      (isLawyers || isFirms ? filters(isFirms) : "") +
       '<p class="small muted" style="margin:var(--s-4) 0">' +
-        esc(I18N.t(isLawyers ? "dir.found" : "dir.foundInterns", { n: I18N.num(list.length) })) + "</p>" +
+        esc(I18N.t(head[2], { n: I18N.num(list.length) })) + "</p>" +
       (list.length
-        ? '<div class="grid grid-3">' + list.map(isLawyers ? C.lawyerCard : C.internCard).join("") + "</div>"
-        : C.empty("search", "dir.empty")) +
+        ? '<div class="grid grid-3">' + list.map(card).join("") + "</div>"
+        : C.empty("search", isFirms ? "dir.noFirms" : "dir.empty")) +
       (canSeeBoard(state.tab) ? board(state.tab) : "") +
     "</div>";
 

@@ -24,7 +24,8 @@ Pages.define("lawyer", function (global) {
       '<div class="row gap-6 wrap" style="align-items:flex-start">' +
         C.avatar(u, "lg") +
         '<div class="grow" style="min-width:0">' +
-          '<h1 class="headline row gap-3 wrap">' + esc(tx(u.name)) + C.verifiedMark(u) + "</h1>" +
+          '<h1 class="headline row gap-3 wrap">' + esc(tx(u.name)) + C.verifiedMark(u) +
+            C.featuredMark(u) + "</h1>" +
           '<p class="lead">' + esc(tx(u.title || {})) + "</p>" +
           '<div class="meta-row" style="margin-top:var(--s-4)">' +
             C.ratingLine(u.id) +
@@ -44,6 +45,18 @@ Pages.define("lawyer", function (global) {
               var s = M.specialty(sid);
               return s ? '<span class="tag">' + esc(tx(s)) + "</span>" : "";
             }).join("") + "</div>" +
+          // Only listed firms, and only firms — where a lawyer practises is a
+          // claim, and an unverified one is not the platform's to repeat.
+          (function () {
+            var at = M.firmsOf(u.id).filter(function (x) { return M.firmListed(x.firm); });
+            if (!at.length) return "";
+            return '<p class="small muted row gap-2 wrap" style="margin-top:var(--s-3)">' +
+              Icons.svg("briefcase", "icon-sm") +
+              at.map(function (x) {
+                return '<a href="firm.html?id=' + esc(x.firm.id) + '">' +
+                  esc(x.firm.name || "") + "</a>";
+              }).join("<span class=\"dot\"></span>") + "</p>";
+          })() +
         "</div>" +
       "</div></header>";
   }
@@ -136,8 +149,10 @@ Pages.define("lawyer", function (global) {
     // Supervision is not a service on the price list — it is a standing
     // relationship with a trainee — so it sits beside the booking card rather
     // than inside it, and only a trainee is shown it.
-    (Session.is("intern") ? C.mentorCard(u, Session.user(),
-       { side: "trainee", link: "requests.html" }) : "");
+    (Session.is("intern")
+      ? C.mentorCard(u, Session.user(), { side: "trainee", link: "requests.html" }) +
+        C.caseOffer(u, Session.user())
+      : "");
   }
 
   /* What the store answers with, said in words the person can act on. */
@@ -182,6 +197,18 @@ Pages.define("lawyer", function (global) {
       App.toast(I18N.t(MENTOR_SAID[word] || "men.sent"),
                 word === "sent" ? "check" : "alert");
       App.rerender();
+      return;
+    }
+
+    var bs = ev.target.closest("[data-buy-sup]");
+    if (bs) {
+      Store.buySupervision(bs.getAttribute("data-buy-sup"), function (word) {
+        var say = { bought: "sup.bought", "already supervised": "sup.alreadySupervised",
+                    "already bought": "sup.alreadyBought", "not offered": "sup.notOffered" };
+        App.toast(I18N.t(say[word] || "sup.notOffered"),
+                  word === "bought" ? "check" : "alert");
+        App.rerender();
+      });
       return;
     }
 

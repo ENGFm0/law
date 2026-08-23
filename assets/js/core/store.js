@@ -388,11 +388,18 @@
     },
 
     subscriptions: function () { return work.subscriptions; },
+    /* One row per lawyer per plan. Matching on the lawyer alone was right
+       while "ai" was the only plan there was; with a paid place in the
+       directory and a firm's listing beside it, selling one would have
+       overwritten the other. */
     setSubscription: function (lawyerId, sub) {
+      var plan = (sub && sub.plan) || "ai";
       var found = null;
-      work.subscriptions.forEach(function (s) { if (s.lawyerId === lawyerId) found = s; });
+      work.subscriptions.forEach(function (s) {
+        if (s.lawyerId === lawyerId && (s.plan || "ai") === plan) found = s;
+      });
       if (!found) {
-        found = { id: uid("sub"), lawyerId: lawyerId, plan: "ai", startedAt: Date.now() };
+        found = { id: uid("sub"), lawyerId: lawyerId, plan: plan, startedAt: Date.now() };
         work.subscriptions.push(found);
       }
       Object.keys(sub || {}).forEach(function (k) { found[k] = sub[k]; });

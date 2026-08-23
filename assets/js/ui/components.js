@@ -140,7 +140,8 @@
         '<div class="row gap-4" style="align-items:flex-start">' +
           avatar(u, "md") +
           '<div class="grow" style="min-width:0">' +
-            '<h3 class="subtitle row gap-2 wrap">' + esc(tx(u.name)) + verifiedMark(u) + "</h3>" +
+            '<h3 class="subtitle row gap-2 wrap">' + esc(tx(u.name)) + verifiedMark(u) +
+              featuredMark(u) + "</h3>" +
             '<p class="small muted">' + esc(tx(u.title || {})) + "</p>" +
             '<div class="meta-row" style="margin-top:var(--s-2)">' + ratingLine(u.id) +
               '<span class="dot"></span><span class="muted">' +
@@ -1106,8 +1107,48 @@
         ? '<p class="small" style="margin-top:var(--s-2)"><strong>' +
           App.esc(I18N.t("men.fee", { n: I18N.num(fee) })) + "</strong></p>"
         : "") +
+      (mentor.mentorNote
+        ? '<p class="small muted" style="margin-top:var(--s-2)">' +
+          App.esc(App.tx(mentor.mentorNote)) + "</p>"
+        : "") +
       '<div style="margin-top:var(--s-4)">' + state + "</div>" +
     "</section>";
+  }
+
+  /* ---------- the same lawyer's other offer ----------
+     A month of teaching and a signature on one screening are separate offers
+     and a lawyer may take either. So this is its own card: gating it behind
+     isMentor would have hidden it from every lawyer who sells only the case,
+     which is the whole point of selling it by the case. */
+  function caseOffer(mentor, viewer) {
+    if (!mentor || !mentor.supervisesCases || !mentor.supervisionFee) return "";
+    if (mentor.status !== "verified") return "";
+    if (viewer && viewer.id === mentor.id) return "";
+
+    var split = M.supervisionSplit(mentor);
+    var held = viewer ? M.openOrderOf(viewer.id) : null;
+    var standing = viewer ? M.mentorOf(viewer.id) : null;
+
+    var state;
+    if (standing && standing.id === mentor.id) {
+      state = '<p class="small muted">' + App.esc(I18N.t("sup.alreadySupervised")) + "</p>";
+    } else if (held) {
+      state = '<p class="small">' + Icons.svg("check", "icon-sm") + " " +
+        App.esc(I18N.t("sup.have", { name: App.tx((M.user(held.mentorId) || {}).name || "") })) +
+        '</p><p class="tiny faint" style="margin-top:var(--s-2)">' +
+        App.esc(I18N.t("sup.spend")) + "</p>";
+    } else {
+      state = '<button class="btn btn--primary btn--sm" type="button" data-buy-sup="' +
+        App.esc(mentor.id) + '">' + App.esc(I18N.t("sup.buy")) + "</button>";
+    }
+
+    return '<section class="card card--pad" style="margin-top:var(--s-5)" data-case-offer>' +
+      '<h2 class="subtitle">' + App.esc(I18N.t("sup.title")) + "</h2>" +
+      '<p class="small" style="margin-top:var(--s-2)"><strong>' +
+        App.esc(I18N.t("sup.fee", { n: I18N.num(mentor.supervisionFee) })) + "</strong></p>" +
+      '<p class="tiny faint" style="margin-top:var(--s-1)">' +
+        App.esc(I18N.t("sup.after", { n: I18N.num(Math.round(split.lawyer / 100)) })) + "</p>" +
+      '<div style="margin-top:var(--s-4)">' + state + "</div></section>";
   }
 
   /* ---------- supervision for one case ----------
@@ -1208,7 +1249,11 @@
   /* ---------- firms ---------- */
   function featuredMark(u) {
     if (!u) return "";
-    var desk = u.featuredRank != null;
+    // The same two tests featured() sorts by, expiry included — a placement
+    // that has run out is not a placement, and a badge that outlives it is a
+    // lawyer still being sold as featured for free.
+    var desk = u.featuredRank != null &&
+      (!u.featuredUntil || new Date(u.featuredUntil).getTime() > Date.now());
     if (!desk && !M.paidFeatured(u.id)) return "";
     return '<span class="tag tag--gold" title="' +
       App.esc(I18N.t(desk ? "feat.byDesk" : "feat.badge")) + '">' +
@@ -1243,7 +1288,7 @@
     starPicker: starPicker, ratingSummary: ratingSummary, reviewCard: reviewCard,
     lawyerCard: lawyerCard, internCard: internCard, articleCard: articleCard,
     statusPill: statusPill, progress: progress, stepper: stepper,
-    promoBox: promoBox, mentorCard: mentorCard,
+    promoBox: promoBox, mentorCard: mentorCard, caseOffer: caseOffer,
     caseSupervisionCard: caseSupervisionCard, callCard: callCard,
     callInbox: callInbox, featuredMark: featuredMark, firmCard: firmCard,
     requestRow: requestRow, empty: empty, sectionHead: sectionHead,
