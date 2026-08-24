@@ -18,6 +18,7 @@ const pages = [['index','u-fahad'],['requests','u-fahad'],['lawyers',null],
                ['intern','u-jaid'],['firm','u-ahmed'],
                             ['mentorship','u-jaid'],['mentorship','u-ahmed']];
 const report = [];
+let hiding = 0;
 for (const [page, who] of pages) {
   await p.goto(U + 'index.html');
   await p.evaluate(u => { if (u) localStorage.setItem('sanad.session.user', u);
@@ -44,6 +45,21 @@ for (const [page, who] of pages) {
       return !scrolls(e);
     }).slice(0, 6).map(e => (e.tagName + '.' + (e.className||'').toString().split(' ')[0] +
         ' w=' + Math.round(e.getBoundingClientRect().width)));
+    // A tab strip is navigation: every destination has to be reachable
+    // without knowing there is a scroll there. Sideways-scrolling content is
+    // fine for a wide table; it is not fine for the list of places you can
+    // go, because which tabs you happen to see depends on where the browser
+    // left the scroll — and that is not the same answer in every browser.
+    const stripsHiding = [...document.querySelectorAll('.tabs, .adm-tabs, .tabbar')]
+      .map((strip) => {
+        const box = strip.getBoundingClientRect();
+        const hidden = [...strip.children].filter((k) => {
+          const kb = k.getBoundingClientRect();
+          return kb.width > 0 && (kb.right > box.right + 1 || kb.left < box.left - 1);
+        }).map((k) => k.textContent.trim().slice(0, 14));
+        return hidden.length ? (strip.className.split(' ')[0] + ': ' + hidden.join('/')) : null;
+      }).filter(Boolean);
+
     const small = [...document.querySelectorAll('a,button')].filter(e => {
       const r = e.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && (r.height < 40 || r.width < 40);
@@ -54,7 +70,7 @@ for (const [page, who] of pages) {
       tabbar: bar ? getComputedStyle(bar).display : 'missing',
       tabs: bar ? bar.children.length : 0,
       bodyPadBottom: getComputedStyle(document.body).paddingBottom,
-      over, small
+      over, small, stripsHiding
     };
   });
   report.push([page, who, m]);
@@ -64,6 +80,13 @@ for (const [pg, who, m] of report) {
   console.log(`${pg.padEnd(10)} ${(who||'guest').padEnd(9)} tabbar=${m.tabbar} tabs=${m.tabs} ` +
     `hscroll=${m.hscroll ? 'YES ' + m.scrollW : 'no'} padB=${m.bodyPadBottom} small=${m.small}`);
   if (m.over.length) console.log('           overflowing: ' + m.over.join(' | '));
+  if (m.stripsHiding.length) {
+    console.log('           NAVIGATION OUT OF REACH: ' + m.stripsHiding.join(' | '));
+    hiding++;
+  }
 }
 if (errs.length) console.log('JS ERRORS: ' + errs.join(' ; '));
+console.log(hiding ? (hiding + ' page(s) hide part of their navigation')
+                   : 'every tab strip reachable without a scroll');
+if (hiding || errs.length) process.exitCode = 1;
 await b.close();

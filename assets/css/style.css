@@ -523,6 +523,21 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
   .adm-tab { padding: var(--s-3) var(--s-3); font-size: .875rem; }
 }
 
+/* ---------- tab strips on a phone ----------
+   A strip that scrolls sideways hides half of itself and gives no sign that
+   it does. On a wide screen that is a reasonable trade; at 390px, where a
+   nine-tab desk is three times the width of the display, it means the reader
+   sees four tabs and has no reason to believe in the other five — and which
+   four they get depends on where the browser decided to leave the scroll,
+   which is not the same answer in every browser.
+
+   So on a phone they wrap. Two short rows, nothing hidden, no scroll
+   position to be wrong about. */
+@media (max-width: 640px) {
+  .tabs, .adm-tabs { flex-wrap: wrap; overflow-x: visible; row-gap: 0; }
+  .tab, .adm-tab { white-space: normal; }
+}
+
 /* ---------- 11a07b. A case, as a card ----------
    Files, not table rows. Each one is a small document: its number, what it
    is, where it has got to, and the two doors anybody wants — the
@@ -1100,7 +1115,11 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 .booking { position: sticky; top: calc(var(--header-h) + var(--s-6)); }
 @media (max-width: 1024px) { .booking { position: static; } }
 
-.tabs { display: flex; gap: var(--s-1); border-bottom: 1px solid var(--border); overflow-x: auto; }
+.tabs {
+  display: flex; gap: var(--s-1); border-bottom: 1px solid var(--border);
+  overflow-x: auto; scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
 .tab {
   padding: var(--s-3) var(--s-4); font-weight: 700; font-size: .9375rem;
   color: var(--text-muted); border-bottom: 2px solid transparent; white-space: nowrap;
