@@ -56,20 +56,24 @@ ok('at the fee the lawyer published', applied.fee === 80, applied.fee);
 ok('and the page now says it is with them', /طلبك قيد النظر/.test(await body()));
 
 console.log('— AND CANNOT ACCEPT THEIR OWN APPLICATION —');
-await open('requests.html', 'u-jaid');
+await open('mentorship.html?tab=sent', 'u-jaid');
 t = await body();
-ok('the trainee sees it on their desk', /كفالة الإشراف/.test(t), t.slice(0,200));
+ok('the trainee sees it under what they have asked for',
+   /أحمد عبدالله/.test(t), t.slice(0,200));
 ok('with no accept button in their hands',
    (await p.$('[data-men-yes]')) === null);
 
 console.log('— THE LAWYER ANSWERS —');
-await open('requests.html', 'u-ahmed');
-ok('it is on the lawyer’s desk', /من تشرف عليهم/.test(await body()));
+await open('mentorship.html?tab=inbox', 'u-ahmed');
+ok('it is in the lawyer’s inbox', /أحمد الجعيد/.test(await body()));
 ok('with the answer in their hands', (await p.$('[data-men-yes]')) !== null);
 await p.click('[data-men-yes]'); await p.waitForTimeout(450);
 const live = await p.evaluate(() => Store.mentorships()[0]);
 ok('accepting starts it', live.status === 'active');
 ok('and stamps the moment', !!live.startedAt);
+// Answered applications leave the inbox for the list of people supervised —
+// which is where the money on the relationship is shown.
+await p.click('[data-tab="mentees"]'); await p.waitForTimeout(450);
 ok('the lawyer is shown their net after the platform’s cut',
    /يصلك بعد خصم المنصة/.test(await body()));
 ok('which is 68 of the 80', await p.evaluate(() =>
@@ -81,41 +85,41 @@ ok('with the mentor behind them',
    await p.evaluate(() => Models.mentorOf('u-jaid').id) === 'u-ahmed');
 
 console.log('— THE ROOM IS THE TWO OF THEM —');
-await open('requests.html', 'u-ahmed');
+await open('mentorship.html', 'u-ahmed');
 await p.fill('[data-room-body]', 'اقرأ نظام المرافعات قبل الجلسة');
 await p.press('[data-room-body]', 'Enter'); await p.waitForTimeout(450);
 ok('the mentor writes into it', /نظام المرافعات/.test(await body()));
-await open('requests.html', 'u-jaid');
+await open('mentorship.html', 'u-jaid');
 ok('and the trainee reads it', /نظام المرافعات/.test(await body()));
 await p.fill('[data-room-body]', 'تمام، قرأته');
 await p.press('[data-room-body]', 'Enter'); await p.waitForTimeout(450);
 ok('and answers', /قرأته/.test(await body()));
-await open('requests.html', 'u-layan');
+await open('mentorship.html', 'u-layan');
 ok('a trainee outside it sees none of it', !/نظام المرافعات/.test(await body()));
 
 console.log('— THE CALENDAR IS THE MENTOR’S, AND SO ARE THE HOURS —');
-await open('requests.html', 'u-jaid');
+await open('mentorship.html', 'u-jaid');
 ok('the trainee cannot add a session', (await p.$('[data-session-form]')) === null);
-await open('requests.html', 'u-ahmed');
+await open('mentorship.html', 'u-ahmed');
 ok('the mentor can', (await p.$('[data-session-form]')) !== null);
 await p.fill('[data-session-title]', 'مراجعة قضية عمالية');
 await p.fill('[data-session-when]', '2026-09-01T10:00');
 await p.fill('[data-session-hours]', '3');
 await p.click('[data-session-form] button[type=submit]'); await p.waitForTimeout(450);
 ok('a session is booked', /مراجعة قضية عمالية/.test(await body()));
-await open('requests.html', 'u-jaid');
+await open('mentorship.html', 'u-jaid');
 ok('and the trainee sees it on theirs', /مراجعة قضية عمالية/.test(await body()));
 ok('but cannot tick their own attendance',
    (await p.$('[data-men-attended]')) === null);
-await open('requests.html', 'u-ahmed');
+await open('mentorship.html', 'u-ahmed');
 await p.click('[data-men-attended]'); await p.waitForTimeout(450);
 ok('the mentor marks it attended',
    await p.evaluate(() => Store.sessions()[0].attended) === true);
 
 console.log('— THE SPONSORSHIP IS PAID BY THE TRAINEE —');
-await open('requests.html', 'u-ahmed');
+await open('mentorship.html', 'u-ahmed');
 ok('the mentor is not asked to pay', (await p.$('[data-men-pay]')) === null);
-await open('requests.html', 'u-jaid');
+await open('mentorship.html', 'u-jaid');
 ok('the trainee is told this month is not paid', /لم تُدفع كفالة هذا الشهر/.test(await body()));
 await p.click('[data-men-pay]'); await p.waitForTimeout(500);
 ok('paying moves the date forward',
@@ -130,10 +134,10 @@ await p.click('[data-mentor-invite="u-layan"]'); await p.waitForTimeout(450);
 const invited = await p.evaluate(() =>
   Store.mentorships().filter(m => m.internId === 'u-layan')[0]);
 ok('an invitation is opened', !!invited && invited.openedBy === 'mentor', invited);
-await open('requests.html', 'u-ahmed');
+await open('mentorship.html?tab=inbox', 'u-ahmed');
 ok('and this time the lawyer cannot answer their own',
    (await p.$$('[data-men-yes]')).length === 0);
-await open('requests.html', 'u-layan');
+await open('mentorship.html?tab=sent', 'u-layan');
 ok('the trainee can', (await p.$('[data-men-yes]')) !== null);
 
 console.log('\nerrors: ' + (errs.length ? errs.join(' | ') : 'none'));

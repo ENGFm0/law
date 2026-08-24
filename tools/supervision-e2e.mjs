@@ -61,27 +61,33 @@ await p.evaluate(() => {
 });
 
 console.log('— A TRAINEE WITH NOBODY BEHIND THEM IS OFFERED BOTH WAYS —');
-await open('requests.html', 'u-jaid');
+await open('mentorship.html?tab=find', 'u-jaid');
 let t = await body();
-ok('the case-by-case card is there', (await p.$('[data-supervision]')) !== null, t.slice(0,200));
-ok('and the open call beside it', (await p.$('[data-call]')) !== null);
+ok('the mentor list is there', (await p.$('[data-mentor-row]')) !== null, t.slice(0,200));
+ok('with the open call beside it', (await p.$('[data-ask="all"]')) !== null);
 ok('the seller is listed', /أحمد/.test(t), t.slice(0,300));
 ok('at the published price', /١٠٠|100/.test(t));
 ok('with what reaches the lawyer after the cut spelled out',
    /بعد خصم المنصة يصل المحامي/.test(t));
 ok('which is 85 of the 100', await p.evaluate(() =>
    Models.supervisionSplit(Models.user('u-ahmed')).lawyer) === 8500);
-ok('a lawyer who does not sell it is not on the list', !/سارة/.test(t));
+// The list is every route to a supervisor, so somebody who takes trainees
+// by the month belongs on it even though they do not sell the single case.
+ok('a lawyer who takes trainees by the month is on it too', /سارة/.test(t));
+ok('but the single-case button is only under the one who sells it',
+   (await p.$$('[data-buy-sup]')).length === 1,
+   (await p.$$eval('[data-buy-sup]', ns => ns.map(n => n.getAttribute('data-buy-sup')))).join(','));
+ok('and a lawyer who offers neither is not on the list at all', !/رانية/.test(t));
 ok('and the screening pool says they cannot take one yet',
    await p.evaluate(() => Models.canScreen('u-jaid')) === false);
 
 console.log('— A CLIENT SEES NONE OF IT —');
-await open('requests.html', 'u-fahad');
-ok('no supervision card', (await p.$('[data-supervision]')) === null);
-ok('no open call', (await p.$('[data-call]')) === null);
+await open('mentorship.html', 'u-fahad');
+ok('the page is not theirs at all', /للمحامين والمتدربين/.test(await body()));
+ok('and offers them nothing to press', (await p.$('[data-mentor-row]')) === null);
 
 console.log('— BUYING THE SIGNATURE —');
-await open('requests.html', 'u-jaid');
+await open('mentorship.html?tab=find', 'u-jaid');
 await p.click('[data-buy-sup="u-ahmed"]'); await p.waitForTimeout(500);
 const order = await p.evaluate(() => Store.supervisionOrders()[0]);
 ok('an order is written', !!order, order);
@@ -103,6 +109,8 @@ console.log('— SPENDING IT ON ONE SCREENING, AND ONLY ONE —');
 const scr = await p.evaluate(() => Store.addRequest({
   clientId:'u-fahad', typeId:'free_screening', title:{ar:'فرز',en:'s'},
   brief:{ar:'فُصلت من العمل بدون إشعار، هل لي حق؟',en:'b'}, price:0, status:'new', hours:0 }));
+// The screening pool is work, so it stays on the requests page. Spending
+// the signature happens there; what it did to the order is read back here.
 await open('requests.html', 'u-jaid');
 await p.click('[data-scr-take="' + scr.id + '"]'); await p.waitForTimeout(500);
 const spent = await p.evaluate(() => Store.supervisionOrders()[0]);
@@ -112,16 +120,18 @@ ok('and named to the case it was spent on', spent.requestId === scr.id, spent.re
 ok('the lawyer who signed is on the request',
    await p.evaluate(id => Models.request(id).lawyerId, scr.id) === 'u-ahmed');
 ok('and the trainee is unsigned again', await p.evaluate(() => Models.canScreen('u-jaid')) === false);
-ok('so the card offers to sell them another',
+await open('mentorship.html?tab=find', 'u-jaid');
+ok('so the list offers to sell them another',
    (await p.$('[data-buy-sup="u-ahmed"]')) !== null);
 
 console.log('— THE OPEN CALL: A TRAINEE ASKS EVERYBODY —');
-await open('requests.html', 'u-layan');
-await p.click('[data-call-send]'); await p.waitForTimeout(300);
+await open('mentorship.html?tab=find', 'u-layan');
+await p.click('[data-ask="all"]'); await p.waitForTimeout(400);
+await p.click('[data-ask-send]'); await p.waitForTimeout(300);
 ok('an empty call is refused', /اكتب سطراً/.test(await body()));
 ok('and nothing was written', await p.evaluate(() => Store.invites().length) === 0);
-await p.fill('[data-call-note]', 'أبحث عن مشرف في القضايا العمالية');
-await p.click('[data-call-send]'); await p.waitForTimeout(500);
+await p.fill('[data-ask-note]', 'أبحث عن مشرف في القضايا العمالية');
+await p.click('[data-ask-send]'); await p.waitForTimeout(500);
 const call = await p.evaluate(() => Store.invites()[0]);
 ok('the call is out', !!call, call);
 ok('named to nobody in particular', call.mentorId === null);
@@ -130,18 +140,19 @@ ok('and it expires rather than standing forever', call.expiresAt > Date.now());
 ok('the page says so', /نداؤك قائم/.test(await body()));
 
 console.log('— EVERY MENTOR SEES IT, AND NOBODY ELSE —');
-await open('requests.html', 'u-sara');
+await open('mentorship.html?tab=calls', 'u-sara');
 ok('it is in the mentor’s inbox', (await p.$('[data-call-inbox]')) !== null, await body());
 ok('with the trainee named', /ليان/.test(await body()));
 ok('and the line they wrote', /العمالية/.test(await body()));
-await open('requests.html', 'u-ahmed');
+await open('mentorship.html?tab=calls', 'u-ahmed');
 ok('a lawyer who is not taking trainees does not see it',
    (await p.$('[data-call-inbox]')) === null);
-await open('requests.html', 'u-fahad');
+await open('mentorship.html', 'u-fahad');
 ok('and a client never does', (await p.$('[data-call-inbox]')) === null);
+ok('because the page is not theirs', /للمحامين والمتدربين/.test(await body()));
 
 console.log('— ANSWERING IT OPENS A MENTORSHIP THE TRAINEE STILL MUST ACCEPT —');
-await open('requests.html', 'u-sara');
+await open('mentorship.html?tab=calls', 'u-sara');
 await p.click('[data-call-answer]'); await p.waitForTimeout(500);
 const offered = await p.evaluate(() =>
   Store.mentorships().filter(m => m.internId === 'u-layan')[0]);
@@ -151,26 +162,29 @@ ok('pending, not active', offered.status === 'pending');
 ok('at the mentor’s monthly fee', offered.fee === 90, offered.fee);
 ok('carrying the call it came out of', offered.inviteId === call.id, offered.inviteId);
 ok('the mentor cannot accept their own offer', (await p.$('[data-men-yes]')) === null);
-await open('requests.html', 'u-layan');
+await open('mentorship.html?tab=sent', 'u-layan');
 ok('the trainee can', (await p.$('[data-men-yes]')) !== null);
 await p.click('[data-men-yes]'); await p.waitForTimeout(500);
 ok('accepting starts it',
    await p.evaluate(() => Store.mentorships().filter(m => m.internId === 'u-layan')[0].status) === 'active');
 ok('and now they may screen', await p.evaluate(() => Models.canScreen('u-layan')) === true);
-ok('the call card is gone from their desk', (await p.$('[data-call]')) === null);
-ok('and so is the offer to sell them a signature', (await p.$('[data-supervision]')) === null);
+await open('mentorship.html?tab=find', 'u-layan');
+ok('the open call is gone from the search', (await p.$('[data-ask="all"]')) === null);
+ok('and so is every offer to sign them up again', (await p.$('[data-ask]')) === null);
+ok('including the one that sells a single signature', (await p.$('[data-buy-sup]')) === null);
 
 console.log('— A CALL CAN BE WITHDRAWN —');
-await open('requests.html', 'u-jaid');
-await p.fill('[data-call-note]', 'أبحث عن مشرف في قضايا الشركات');
-await p.click('[data-call-send]'); await p.waitForTimeout(500);
+await open('mentorship.html?tab=find', 'u-jaid');
+await p.click('[data-ask="all"]'); await p.waitForTimeout(400);
+await p.fill('[data-ask-note]', 'أبحث عن مشرف في قضايا الشركات');
+await p.click('[data-ask-send]'); await p.waitForTimeout(500);
 const mine = await p.evaluate(() => Models.callOf('u-jaid'));
 ok('it is out', !!mine, mine);
 await p.click('[data-call-drop="' + mine.id + '"]'); await p.waitForTimeout(500);
 ok('withdrawing closes it',
    await p.evaluate(id => Store.invites().filter(i => i.id === id)[0].status, mine.id) === 'withdrawn');
 ok('and it leaves the mentor’s inbox', await (async () => {
-  await open('requests.html', 'u-sara');
+  await open('mentorship.html?tab=calls', 'u-sara');
   return !/الشركات/.test(await body());
 })());
 

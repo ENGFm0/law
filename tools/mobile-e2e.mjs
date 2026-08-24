@@ -15,7 +15,8 @@ const SHOTS = '/tmp/claude-0/-home-user-law/5b8e9e87-d166-5de3-b308-1b164061aad2
 const pages = [['index','u-fahad'],['requests','u-fahad'],['lawyers',null],
                ['services','u-ahmed'],['requests','u-ahmed'],['admin','u-staff'],
                ['blog',null],['account','u-ahmed'],
-               ['intern','u-jaid'],['firm','u-ahmed']];
+               ['intern','u-jaid'],['firm','u-ahmed'],
+                            ['mentorship','u-jaid'],['mentorship','u-ahmed']];
 const report = [];
 for (const [page, who] of pages) {
   await p.goto(U + 'index.html');

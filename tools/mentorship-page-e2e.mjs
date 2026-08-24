@@ -51,33 +51,37 @@ ok('with the terms they wrote, still in the field',
    await p.$eval('[data-offer="mentorNote"]', e => e.value) === 'أشرف على القضايا العمالية. ست ساعات أسبوعياً.');
 await p.evaluate(() => Store.updateAccount('u-sara', { isMentor: true, mentorshipFee: 90 }));
 
-console.log('— A CLIENT HAS NO SUPERVISION WORKSPACE —');
-await open('intern.html', 'u-fahad');
-ok('no hub tab', (await p.$('[data-tab="hub"]')) === null);
-ok('no mentors tab', (await p.$('[data-tab="mentors"]')) === null);
+console.log('— A CLIENT HAS NO SUPERVISION SPACE AT ALL —');
+await open('mentorship.html', 'u-fahad');
+ok('the page turns them away', /للمحامين والمتدربين/.test(await body()));
+ok('with no tabs to press', (await p.$('[data-tab]')) === null);
 
-console.log('— THE TRAINEE’S OWN PAGE IS THEIR WORKSPACE —');
-await open('intern.html', 'u-jaid');
-ok('the hub is there', (await p.$('[data-tab="hub"]')) !== null, await body());
-ok('and the mentor list', (await p.$('[data-tab="mentors"]')) !== null);
-ok('the hub opens first, on the thing they came for',
-   await p.$eval('.tab.is-active', e => e.getAttribute('data-tab')) === 'hub');
+console.log('— THE TRAINEE OPENS THEIR OWN PLACE —');
+await open('mentorship.html', 'u-jaid');
+ok('the workspace tab is there', (await p.$('[data-tab="space"]')) !== null, await body());
+ok('and the mentor search', (await p.$('[data-tab="find"]')) !== null);
+ok('and what they have asked for', (await p.$('[data-tab="sent"]')) !== null);
+ok('the workspace opens first, on the thing they came for',
+   await p.$eval('.tab.is-active', e => e.getAttribute('data-tab')) === 'space');
 let t = await body();
 ok('with nobody signing for them yet', /لا أحد يوقّع عنك بعد/.test(t), t.slice(0,240));
-ok('and one button that goes where that is fixed', (await p.$('[data-go-mentors]')) !== null);
-await p.click('[data-go-mentors]'); await p.waitForTimeout(400);
-ok('which is the mentor list',
-   await p.$eval('.tab.is-active', e => e.getAttribute('data-tab')) === 'mentors');
+ok('and one button that goes where that is fixed', (await p.$('[data-go="find"]')) !== null);
+await p.click('[data-go="find"]'); await p.waitForTimeout(400);
+ok('which is the mentor search',
+   await p.$eval('.tab.is-active', e => e.getAttribute('data-tab')) === 'find');
 
-console.log('— AND ANOTHER TRAINEE’S PAGE IS NOT —');
+console.log('— AND A PUBLIC PROFILE IS STILL A PUBLIC PROFILE —');
 await open('intern.html?id=u-layan', 'u-jaid');
-ok('no hub on somebody else’s profile', (await p.$('[data-tab="hub"]')) === null);
-ok('nor their mentor list', (await p.$('[data-tab="mentors"]')) === null);
-ok('the public profile still works', /ليان/.test(await body()));
+ok('no workspace leaks onto it', (await p.$('[data-tab="space"]')) === null);
+ok('nor the mentor search', (await p.$('[data-tab="find"]')) === null);
+ok('it is still the profile it was', /ليان/.test(await body()));
+await open('intern.html', 'u-jaid');
+ok('and your own profile is a profile too, not the workspace',
+   (await p.$('[data-tab="space"]')) === null, await body());
 
 console.log('— WHAT IS ON OFFER, PRICED IN THE OPEN —');
-await open('intern.html', 'u-jaid');
-await tab('mentors');
+await open('mentorship.html', 'u-jaid');
+await tab('find');
 t = await body();
 ok('both lawyers are listed', /أحمد/.test(t) && /سارة/.test(t), t.slice(0,200));
 ok('the monthly fee is shown', /٨٠|80/.test(t));
@@ -90,7 +94,7 @@ ok('a mentor with room says nothing rather than "supervising 0"',
 await p.evaluate(() => { const m = Store.openMentorship({ mentorId:'u-ahmed',
   internId:'u-turki', openedBy:'intern', fee:80 });
   Store.setMentorship(m.id, { status:'active' }); });
-await open('intern.html', 'u-jaid'); await tab('mentors');
+await open('mentorship.html', 'u-jaid'); await tab('find');
 ok('and one who has trainees says how many', /يشرف على/.test(await body()));
 
 console.log('— ASKING ONE LAWYER —');
@@ -114,40 +118,45 @@ ok('at the fee the lawyer published', applied.fee === 80, applied.fee);
 ok('the modal closes behind it', (await p.$('[data-ask-modal]')) === null);
 ok('and the row now says it is with them', /قيد النظر|طلبك/.test(await body()));
 
-console.log('— THE LAWYER ANSWERS FROM THEIR ACCOUNT —');
-await open('account.html', 'u-ahmed');
+console.log('— THE LAWYER ANSWERS FROM THE SAME PAGE —');
+await open('mentorship.html', 'u-ahmed');
+await tab('inbox');
 t = await body();
 ok('the application is in their inbox', /أحمد الجعيد/.test(t), t.slice(0,300));
 ok('with both answers in their hands',
    (await p.$('[data-men-yes]')) !== null && (await p.$('[data-men-no]')) !== null);
-await open('account.html', 'u-jaid');
-ok('and the trainee has no inbox of their own to accept from',
+await open('mentorship.html', 'u-jaid');
+await tab('sent');
+ok('and the trainee cannot accept their own application',
    (await p.$('[data-men-yes]')) === null);
-await open('account.html', 'u-ahmed');
+await open('mentorship.html', 'u-ahmed');
+await tab('inbox');
 await p.click('[data-men-yes]'); await p.waitForTimeout(500);
 ok('accepting starts it', await p.evaluate(() =>
    Store.mentorships().filter(m => m.internId === 'u-jaid')[0].status) === 'active');
-ok('and it moves to the people they supervise', /من تشرف عليهم الآن/.test(await body()));
+await tab('mentees');
+ok('and it moves to the people they supervise', /أحمد الجعيد/.test(await body()));
 
 console.log('— AND THE WORKSPACE FILLS IN —');
-await open('intern.html', 'u-jaid');
+await open('mentorship.html', 'u-jaid');
 t = await body();
 ok('the supervisor is named', /مشرفك/.test(t) && /أحمد عبدالله/.test(t), t.slice(0,300));
 ok('there is a way into the room', (await p.$('a[href="requests.html"]')) !== null);
 ok('the hours are tracked against the certificate', /ساعات التدريب/.test(t));
 ok('against forty', /٤٠|40/.test(t));
 ok('their desk is listed', /ما على مكتبك/.test(t));
-ok('with work actually on it', /مذكرة بحث|صياغة/.test(t));
+ok('with a count of what is under way, and the way back to it',
+   /مهمة تحت التنفيذ/.test(t) && (await p.$('a[href="requests.html"]')) !== null, t.slice(0,300));
 ok('and the sessions', /الجلسات/.test(t));
 ok('now they may screen', await p.evaluate(() => Models.canScreen('u-jaid')) === true);
-await tab('mentors');
+await tab('find');
 ok('the list no longer offers to sign them up twice',
    (await p.$('[data-ask]')) === null, await body());
 ok('and says who has them', /تحت إشراف/.test(await body()));
 
 console.log('— THE OPEN CALL, FROM THE SAME SCREEN —');
-await open('intern.html', 'u-layan');
-await tab('mentors');
+await open('mentorship.html', 'u-layan');
+await tab('find');
 await p.click('[data-ask="all"]'); await p.waitForTimeout(400);
 ok('the broadcast modal opens', (await p.$('[data-ask-modal]')) !== null);
 ok('and says a client never sees it', /لا يراه العملاء/.test(await body()));
@@ -161,12 +170,13 @@ ok('the call goes out', !!call, call);
 ok('to nobody in particular', call.mentorId === null);
 ok('the modal closes', (await p.$('[data-ask-modal]')) === null);
 ok('and the page says it is out', /نداؤك قائم/.test(await body()));
-await open('requests.html', 'u-sara');
+await open('mentorship.html', 'u-sara');
+await tab('calls');
 ok('every mentor sees it', /ليان/.test(await body()));
 
 console.log('— BUYING ONE SIGNATURE INSTEAD —');
-await open('intern.html', 'u-layan');
-await tab('mentors');
+await open('mentorship.html', 'u-layan');
+await tab('find');
 await p.click('[data-buy-sup="u-ahmed"]'); await p.waitForTimeout(500);
 const order = await p.evaluate(() => Store.supervisionOrders()[0]);
 ok('the order is written', !!order && order.status === 'paid', order);
@@ -174,9 +184,9 @@ ok('at the published price', order.fee === 100, order.fee);
 t = await body();
 ok('the page says it is held and unspent', /توقيع غير مصروف/.test(t), t.slice(0,240));
 ok('and will not sell them a second', (await p.$('[data-buy-sup]')) === null);
-await tab('hub');
+await tab('space');
 t = await body();
-ok('the workspace names who signs for them', /من يوقّع عنك/.test(t), t.slice(0,240));
+ok('the workspace names who signs for them', /من يوقّع عنك/.test(t), t.slice(0,300));
 ok('and says it is for one case only', /توقيع لقضية واحدة/.test(t));
 ok('they may screen now', await p.evaluate(() => Models.canScreen('u-layan')) === true);
 

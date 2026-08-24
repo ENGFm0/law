@@ -46,13 +46,19 @@
     var webinars = { key: "nav.webinars", tab: "tab.webinars",
                      href: "webinars.html", id: "webinars", icon: "calendar" };
 
+    // Supervision is not a task, so it does not belong under the inbox. For a
+    // trainee it is the reason they are here; for a lawyer it is a standing
+    // relationship with a fee and a calendar. Either way it earns its own slot.
+    var mentorship = { key: "nav.mentorship", tab: "tab.mentorship",
+                       href: "mentorship.html", id: "mentorship", icon: "graduation" };
+
     if (role === "intern") {
       // A trainee sells no services; the slot carries their skills instead.
       services = { key: "nav.skills", tab: "tab.skills", href: "services.html", id: "services", icon: "graduation" };
       // Workshops are training, which is what a trainee is here for. They get
       // a slot; a lawyer reaches them from the footer, because hosting one is
       // an occasional act rather than a daily tool.
-      return [home, requests, webinars, services, blog, people];
+      return [home, requests, mentorship, webinars, services, blog, people];
     }
     if (role === "guest") {
       return [home, people, services, blog];
@@ -66,7 +72,7 @@
     // The drafting workspace is a lawyer's daily tool, so it earns a slot of
     // its own rather than hiding behind a link on the dashboard.
     if (role === "lawyer") {
-      return [home, requests, drafting, services, blog, people];
+      return [home, requests, drafting, mentorship, services, blog, people];
     }
     return [home, requests, services, blog, people];
   }

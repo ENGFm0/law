@@ -27,6 +27,7 @@ const ROUTES = [
   { name: 'lawyer',    script: 'lawyer',    page: 'lawyers' },
   { name: 'intern',    script: 'intern',    page: 'lawyers' },
   { name: 'firm',      script: 'firm',      page: 'lawyers' },
+  { name: 'mentorship',script: 'mentorship',page: 'mentorship' },
   { name: 'blog',      script: 'blog',      page: 'blog' },
   { name: 'article',   script: 'article',   page: 'blog' },
   { name: 'editor',    script: 'editor',    page: 'blog' },
