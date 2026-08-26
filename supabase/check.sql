@@ -101,7 +101,15 @@ checks (sort, item, ok, run_this_if_false) as (values
        '021-supervision-firms-and-featured.sql'),
   (31, 'migration 022 — how long a mentor commits, and when they are free',
        to_regclass('public.mentor_slots') is not null,
-       '022-when-a-mentor-is-free.sql')
+       '022-when-a-mentor-is-free.sql'),
+  (32, 'migration 023 — the screening pool is reachable at all',
+       to_regprocedure('public.in_the_profession()') is not null,
+       '023-a-screening-nobody-can-see.sql'),
+  (33, 'migration 024 — the training room carries files and voice',
+       exists (select 1 from information_schema.columns
+                where table_schema='public' and table_name='attachments'
+                  and column_name='mentorship_id'),
+       '024-the-training-room-carries-files.sql')
 )
 
 --------------------------------------------------------------------- output

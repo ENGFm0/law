@@ -258,6 +258,28 @@ Pages.define("requests", function (global) {
   }
   var promoTried = {};          // the last answer per request, so it can be said
 
+  function screeningHands(r, st) {
+    var who = M.user(st.assignedTo);
+    var signer = M.user(r.lawyerId);
+    if (!who) return "";
+    return '<section class="card card--pad" style="margin-top:var(--s-6)" data-scr-hands>' +
+      '<h3 class="subtitle">' + esc(I18N.t("scr.whoTitle")) + "</h3>" +
+      '<div class="row between wrap gap-3" style="margin-top:var(--s-4)">' +
+        '<span class="row gap-3">' + C.avatar(who, "sm") +
+          "<span>" + C.personLink(who) +
+            '<span class="tiny muted" style="display:block">' +
+              esc(I18N.t("scr.theTrainee")) + "</span></span></span>" +
+        (signer
+          ? '<span class="row gap-3">' + C.avatar(signer, "sm") +
+            "<span>" + C.personLink(signer) + C.verifiedMark(signer) +
+              '<span class="tiny muted" style="display:block">' +
+                esc(I18N.t("scr.theSigner")) + "</span></span></span>"
+          : "") +
+      "</div>" +
+      '<p class="tiny faint" style="margin-top:var(--s-4)">' +
+        esc(I18N.t("scr.whoNote")) + "</p></section>";
+  }
+
   function convertOffer(r) {
     var code = M.conversionOffer(r.clientId);
     if (!code) return "";
@@ -290,6 +312,11 @@ Pages.define("requests", function (global) {
       // The one moment somebody is ready to hear what the full thing costs.
       // A real code in their name, not a banner — so it can be checked, it
       // runs out, and it cannot be passed around.
+      // On a screening the client is told who is doing the work. Paid work
+      // hides the trainee — the client hired a lawyer and that is who answers
+      // for it — but a screening is advertised as a trainee's first look under
+      // supervision, so naming them is keeping the promise, not breaking one.
+      (M.isScreening(r) && st.assignedTo ? screeningHands(r, st) : "") +
       (M.isScreening(r) && st.status === "completed" ? convertOffer(r) : "") +
       // A discount can only be taken before the work starts: after that the
       // price is what the lawyer agreed to be paid against, and moving it is
@@ -1077,8 +1104,11 @@ Pages.define("requests", function (global) {
             "</div>" +
 
             // The supervising lawyer, and nobody else: the client is not in
-            // this one and cannot be.
-            C.thread(r, "internal", { closed: false }) + "</div>"
+            // this one and cannot be. And it opens on the same rule the
+            // client's does — a room with nobody in it is not a room.
+            (M.threadOpen(r)
+              ? C.thread(r, "internal", { closed: false })
+              : notYetTalking(r)) + "</div>"
         : "") +
     "</article>";
   }

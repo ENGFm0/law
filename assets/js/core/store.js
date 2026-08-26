@@ -981,6 +981,7 @@
       }
       Store.setRequest(requestId, { assignedTo: internId, status: "with_intern" });
       Store.notify({ to: internId, type: "screening", ref: requestId });
+      Store.notify({ to: r.clientId, type: "screening_taken", ref: requestId });
       return "routed";
     },
 
@@ -1008,6 +1009,10 @@
         }
       }
       Store.setRequest(requestId, { assignedTo: me, status: "with_intern" });
+      // The client is told. A free screening is advertised as work a trainee
+      // does under supervision, so who picked it up is not a secret here the
+      // way it is on paid work — it is the thing they were promised.
+      Store.notify({ to: r.clientId, type: "screening_taken", ref: requestId });
       return "yours";
     },
 
@@ -1075,11 +1080,14 @@
     roomMessages: function (mentorshipId) {
       return work.rooms.filter(function (m) { return m.mentorshipId === mentorshipId; });
     },
-    sayInRoom: function (m) {
+    sayInRoom: function (m, done) {
       m.id = m.id || uid("rm");
       m.at = Date.now();
       work.rooms.push(m);
       notify();
+      // Answered the same way the remote store answers it — after the row
+      // exists — so one caller can hang a file off it either way.
+      if (done) done(m);
       return m;
     },
 

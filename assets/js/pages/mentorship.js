@@ -65,7 +65,12 @@ Pages.define("mentorship", function (global) {
   function menRoom(m, me) {
     var log = Store.roomMessages(m.id);
     var mentor = me.id === m.mentorId;
-    return '<section class="thread" data-room="' + esc(m.id) + '">' +
+    var files = C.roomFiles(m.id);
+    // The room is a thread whose subject is the mentorship. Marked as one so
+    // the compose bar, the file queue and the voice recorder all work here
+    // exactly as they do on a case, rather than being written twice.
+    return '<section class="thread" data-thread="' + esc(m.id) + '" data-audience="room" ' +
+      'data-room="' + esc(m.id) + '">' +
       '<h3 class="subtitle">' + esc(I18N.t("men.roomTitle")) + "</h3>" +
       '<div class="thread__log">' +
         (log.length
@@ -76,19 +81,20 @@ Pages.define("mentorship", function (global) {
                 '<article class="bubble' + (x.authorId === me.id ? " bubble--mine" : "") + '">' +
                   (x.authorId === me.id ? ""
                     : '<strong class="bubble__who">' + esc(who ? tx(who.name) : "") + "</strong>") +
-                  '<p class="bubble__body">' + esc(x.body) + "</p>" +
+                  (x.body ? '<p class="bubble__body">' + esc(x.body) + "</p>" : "") +
+                  (function () {
+                    var mine = files.filter(function (f) { return f.messageId === x.id; });
+                    return mine.length
+                      ? '<div class="bubble__files">' + mine.map(C.fileChip).join("") + "</div>"
+                      : "";
+                  })() +
                   '<time class="bubble__at tiny">' + esc(C.stamp(x.at)) + "</time>" +
                 "</article></div>";
             }).join("")
           : '<p class="small muted center">' +
             esc(I18N.t(mentor ? "men.roomEmptyMentor" : "men.roomEmpty")) + "</p>") +
       "</div>" +
-      '<form class="thread__compose" data-room-form="' + esc(m.id) + '">' +
-        '<input class="input" data-room-body placeholder="' +
-          esc(I18N.t("men.say")) + '">' +
-        '<button class="btn btn--primary btn--sm" type="submit">' +
-          esc(I18N.t("thread.send")) + "</button>" +
-      "</form></section>";
+      C.composeBar() + "</section>";
   }
 
   function menSessions(m, me) {
@@ -762,14 +768,19 @@ Pages.define("mentorship", function (global) {
       askModal(me);
 
     I18N.apply(host);
-    C.wireFiles(host);
+    C.threadDraw(host);
     var note = $("[data-ask-note]", host);
     if (note) note.focus();
     var box = $("[data-men-search]", host);
     if (box && query) { box.focus(); box.setSelectionRange(query.length, query.length); }
   });
 
-  /* ====================================================== events ========= */
+  /* ====================================================== events =========
+     The room borrows the case thread's wiring whole: attaching, the queue of
+     chosen files, the size limit and the voice note are the same behaviour
+     and should not be two implementations of it. */
+  C.wireThread(host);
+
   document.addEventListener("keydown", function (ev) {
     if (ev.key !== "Escape" || !asking) return;
     asking = null; askNote = ""; App.rerender();
@@ -798,19 +809,6 @@ Pages.define("mentorship", function (global) {
   /* The room and the calendar, both forms, both scoped to the one they are
      inside — a mentor with two trainees has two of each on screen. */
   host.addEventListener("submit", function (ev) {
-    var room = ev.target.closest("[data-room-form]");
-    if (room) {
-      ev.preventDefault();
-      var box = $("[data-room-body]", room);
-      var said = box ? box.value.trim() : "";
-      if (!said) return;
-      Store.sayInRoom({ mentorshipId: room.getAttribute("data-room-form"),
-                        authorId: Session.user().id, body: said });
-      if (box) box.value = "";
-      App.rerender();
-      return;
-    }
-
     var cal = ev.target.closest("[data-session-form]");
     if (!cal) return;
     ev.preventDefault();

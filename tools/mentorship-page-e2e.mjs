@@ -241,6 +241,46 @@ ok('the workspace names who signs for them', /من يوقّع عنك/.test(t), t
 ok('and says it is for one case only', /توقيع لقضية واحدة/.test(t));
 ok('they may screen now', await p.evaluate(() => Models.canScreen('u-layan')) === true);
 
+console.log('— AND THE ROOM CARRIES WHAT TRAINING ACTUALLY NEEDS —');
+await open('mentorship.html?tab=mentees', 'u-ahmed');
+ok('there is a room', (await p.$('[data-room]')) !== null, await body());
+ok('with somewhere to attach a file', (await p.$('[data-thread-file]')) !== null);
+ok('and a voice note', (await p.$('[data-thread-record]')) !== null);
+await p.setInputFiles('[data-thread-file]',
+  { name: 'مذكرة للمراجعة.pdf', mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.4 a marked up draft') });
+await p.waitForTimeout(400);
+ok('the chosen file waits in the queue, visibly',
+   (await p.$('[data-drop-file]')) !== null, await body());
+await p.fill('[data-thread-body]', 'راجعها قبل جلسة الأحد');
+await p.click('[data-thread-form] button[type=submit]'); await p.waitForTimeout(600);
+// This lawyer supervises more than one trainee, so the page holds more than
+// one room; read back whichever one the message actually landed in.
+const handed = await p.evaluate(() => {
+  const said = Store.mentorships().filter(m => m.mentorId === 'u-ahmed')
+    .flatMap(m => Store.roomMessages(m.id).map(x => ({ room: m.id, who: m.internId, body: x.body })));
+  return { said: said.length, room: said[0] && said[0].room, to: said[0] && said[0].who,
+           files: Store.attachments().filter(a => a.mentorshipId)
+             .map(a => ({ name: a.name, room: a.mentorshipId, onMessage: !!a.messageId })) };
+});
+ok('the message lands in the room', handed.said === 1, handed);
+ok('with the file tied to it, in the same room',
+   handed.files.length === 1 && handed.files[0].onMessage &&
+   handed.files[0].room === handed.room, handed.files);
+ok('a file belongs to the room, not to a case',
+   await p.evaluate(() => Store.attachments()
+     .filter(a => a.mentorshipId).every(a => !a.requestId)) === true);
+t = await body();
+ok('and both are on screen', /راجعها قبل جلسة الأحد/.test(t) && /مذكرة للمراجعة/.test(t));
+ok('the queue is empty again', (await p.$('[data-drop-file]')) === null);
+
+await open('mentorship.html', handed.to);
+t = await body();
+ok('the trainee on the other side reads it', /راجعها قبل جلسة الأحد/.test(t), t.slice(0,300));
+ok('and gets the file', /مذكرة للمراجعة/.test(t));
+await open('mentorship.html', 'u-layan');
+ok('and a trainee outside the room gets neither', !/راجعها قبل جلسة الأحد/.test(await body()));
+
 console.log('\nerrors: ' + (errs.length ? errs.join(' | ') : 'none'));
 console.log(`${pass} passed, ${fail} failed`);
 await b.close();

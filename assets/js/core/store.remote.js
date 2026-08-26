@@ -205,7 +205,8 @@
              at: new Date(m.created_at).getTime() };
   }
   function inAttachment(a) {
-    return { id: a.id, requestId: a.request_id, messageId: a.message_id,
+    return { id: a.id, requestId: a.request_id || null,
+             mentorshipId: a.mentorship_id || null, messageId: a.message_id,
              authorId: a.author_id, audience: a.audience || "parties",
              path: a.path, name: a.name, size: Number(a.size || 0),
              mime: a.mime || "application/octet-stream",
@@ -937,7 +938,11 @@
     if (noSession()) return a;
     if (authId) a.authorId = authId;
     a.audience = a.audience || "parties";
-    var path = a.requestId + "/" + Math.random().toString(36).slice(2, 10) + "-" +
+    // A file belongs to a case or to a training room, never both — the same
+    // one-of-two the constraint in 024 states — and the bucket path says
+    // which, so a room's files sit under their own prefix.
+    var owner = a.mentorshipId ? ("room-" + a.mentorshipId) : a.requestId;
+    var path = owner + "/" + Math.random().toString(36).slice(2, 10) + "-" +
       String(a.name).replace(/[^\w.\-]/g, "_").slice(-60);
 
     global.REST.upload("case-files", path, a.file).then(function (up) {
@@ -948,7 +953,9 @@
         return;
       }
       return push("attachments", {
-        request_id: a.requestId, message_id: a.messageId || null,
+        request_id: a.requestId || null,
+        mentorship_id: a.mentorshipId || null,
+        message_id: a.messageId || null,
         author_id: a.authorId, audience: a.audience,
         path: path, name: a.name, size: a.size, mime: a.mime,
         kind: a.kind || null, seconds: a.seconds || null,
@@ -1369,11 +1376,14 @@
     Store.notifyAll();
     patch("mentorship_sessions", id, row).then(report);
   };
-  Store.sayInRoom = function (m) {
+  Store.sayInRoom = function (m, done) {
     if (noSession()) return m;
     push("mentorship_messages", { mentorship_id: m.mentorshipId,
                                   author_id: m.authorId, body: m.body })
-      .then(function (res) { report(res); if (res && res.data) Store.hydrate(); });
+      .then(function (res) {
+        report(res);
+        if (res && res.data) { m.id = res.data.id; if (done) done(m); Store.hydrate(); }
+      });
     m.at = Date.now();
     return local(cache.rooms, m);
   };

@@ -553,20 +553,33 @@
       (closed
         ? '<p class="tiny muted" style="margin-top:var(--s-3)">' +
           App.esc(I18N.t("thread.closed")) + "</p>"
-        : '<div class="thread__pending" data-thread-pending hidden></div>' +
-          '<form class="thread__compose" data-thread-form>' +
-            '<label class="icon-btn" title="' + App.esc(I18N.t("thread.attach")) + '">' +
-              Icons.svg("upload", "icon-sm") +
-              '<input type="file" multiple hidden data-thread-file></label>' +
-            '<button class="icon-btn" type="button" data-thread-record ' +
-              'title="' + App.esc(I18N.t("thread.record")) + '">' +
-              Icons.svg("mic", "icon-sm") + "</button>" +
-            '<input class="input" data-thread-body placeholder="' +
-              App.esc(I18N.t("thread.placeholder")) + '">' +
-            '<button class="btn btn--primary btn--sm" type="submit">' +
-              App.esc(I18N.t("thread.send")) + "</button>" +
-          "</form>") +
+        : composeBar()) +
     "</section>";
+  }
+
+  /** The files handed over in one training room, newest last. */
+  function roomFiles(mentorshipId) {
+    return ((Store.attachments && Store.attachments()) || []).filter(function (a) {
+      return a.mentorshipId === mentorshipId;
+    }).sort(function (a, b) { return (a.at || 0) - (b.at || 0); });
+  }
+
+  /** The compose bar, exactly as a case thread has it — the queue of chosen
+      files included, since a bar you can attach to and no place for the chips
+      to land is a bar that swallows the file silently. */
+  function composeBar() {
+    return '<div class="thread__pending" data-thread-pending hidden></div>' +
+      '<form class="thread__compose" data-thread-form>' +
+      '<label class="icon-btn" title="' + App.esc(I18N.t("thread.attach")) + '">' +
+        Icons.svg("upload", "icon-sm") +
+        '<input type="file" multiple hidden data-thread-file></label>' +
+      '<button class="icon-btn" type="button" data-thread-record ' +
+        'title="' + App.esc(I18N.t("thread.record")) + '">' +
+        Icons.svg("mic", "icon-sm") + "</button>" +
+      '<input class="input" data-thread-body placeholder="' +
+        App.esc(I18N.t("thread.placeholder")) + '">' +
+      '<button class="btn btn--primary btn--sm" type="submit">' +
+        App.esc(I18N.t("thread.send")) + "</button></form>";
   }
 
   /** Fill in the links for whatever the last draw put on screen. The bucket
@@ -861,6 +874,35 @@
       if (!body && !files.length) return;
 
       var me = global.Session.user();
+
+      /* A training room is a thread whose subject is a mentorship rather than
+         a case. It goes through the same compose bar on purpose — the files,
+         the queue, the size limit and the voice note are all the same
+         machinery, and giving the room its own copy would have meant two of
+         everything drifting apart. */
+      if (audience === "room") {
+        Store.sayInRoom({ mentorshipId: requestId, authorId: me.id, body: body },
+          function (saved) {
+            files.forEach(function (f) {
+              Store.attachFile({
+                mentorshipId: requestId, messageId: saved.id, audience: "internal",
+                authorId: me.id, name: f.name, size: f.size,
+                mime: f.type || "application/octet-stream", file: f,
+                kind: f.kind || null, seconds: f.seconds || null,
+              });
+            });
+          });
+        var pair = Store.mentorship && Store.mentorship(requestId);
+        if (pair) {
+          var other = me.id === pair.mentorId ? pair.internId : pair.mentorId;
+          if (other) Store.notify({ to: other, type: "room", ref: requestId });
+        }
+        pending[key] = [];
+        if (box) box.value = "";
+        App.rerender();
+        return;
+      }
+
       Store.sendMessage({
         requestId: requestId, audience: audience, authorId: me.id, body: body,
       }, function (saved) {
@@ -1294,7 +1336,7 @@
     requestRow: requestRow, empty: empty, sectionHead: sectionHead,
     thread: thread, bubble: bubble, fileChip: fileChip, linkFiles: linkFiles,
     bytes: bytes, wireThread: wireThread, threadDraw: threadDraw,
-    wireFiles: wireFiles,
+    wireFiles: wireFiles, roomFiles: roomFiles, composeBar: composeBar,
     timeline: timeline, parties: parties, stamp: stamp,
     wireTimeline: wireTimeline,
     chartBars: chartBars, chartDonut: chartDonut, chartKeys: chartKeys,
