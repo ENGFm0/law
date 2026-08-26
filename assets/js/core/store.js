@@ -736,7 +736,7 @@
                messages: [], attachments: [], events: [],
                mentorships: [], sessions: [], rooms: [], webinars: [], seats: [],
                promos: [], redemptions: [], drafts: [],
-               orders: [], invites: [], firms: [], firmMembers: [] };
+               orders: [], invites: [], firms: [], firmMembers: [], slots: [] };
       notify();
     },
     resetAll: function () {
@@ -895,6 +895,38 @@
       notify();
       return f;
     },
+    /* ---------------- when a mentor is free ----------------
+       Windows a mentor is willing to be booked in, not bookings. A session
+       is still written by the mentor into the calendar; this only says where
+       the calendar is open, so a trainee can see whether the two of them can
+       ever meet before they pay anything. */
+    mentorSlots: function () { return work.slots || (work.slots = []); },
+    addSlot: function (weekday, from, to) {
+      var me = Store.currentId();
+      if (!me) return "not signed in";
+      var u = global.Models && global.Models.user(me);
+      // Mirrors guard_mentor_slot(): a week is an offer to teach, so it
+      // belongs to somebody who is offering.
+      if (!u || !(u.isMentor || u.supervisesCases)) return "not offering";
+      if (!(to > from)) return "backwards";
+      var list = Store.mentorSlots(), clash = false;
+      list.forEach(function (x) {
+        if (x.mentorId === me && x.weekday === weekday && x.from === from) clash = true;
+      });
+      if (clash) return "already";
+      list.push({ id: uid("slot"), mentorId: me, weekday: weekday, from: from, to: to });
+      notify();
+      return "added";
+    },
+    removeSlot: function (id) {
+      var me = Store.currentId();
+      work.slots = Store.mentorSlots().filter(function (x) {
+        // Nobody erases anybody else's week — the same rule the policy holds.
+        return !(x.id === id && x.mentorId === me);
+      });
+      notify();
+    },
+
     firmMembers: function () { return work.firmMembers; },
     inviteToFirm: function (firmId, profileId, role) {
       var f = byId(work.firms, firmId);

@@ -98,7 +98,10 @@ checks (sort, item, ok, run_this_if_false) as (values
        '020-free-screening-and-promo-codes.sql'),
   (30, 'migration 021 — supervision by the case, firms, featured',
        to_regclass('public.firms') is not null,
-       '021-supervision-firms-and-featured.sql')
+       '021-supervision-firms-and-featured.sql'),
+  (31, 'migration 022 — how long a mentor commits, and when they are free',
+       to_regclass('public.mentor_slots') is not null,
+       '022-when-a-mentor-is-free.sql')
 )
 
 --------------------------------------------------------------------- output
@@ -122,7 +125,11 @@ from (values
   ('its price (profiles.supervision_fee)',
    'supervision_fee',  '021-supervision-firms-and-featured.sql'),
   ('the terms a mentor publishes (profiles.mentor_note)',
-   'mentor_note',      '021-supervision-firms-and-featured.sql')
+   'mentor_note',      '021-supervision-firms-and-featured.sql'),
+  ('hours a week (profiles.mentor_hours)',
+   'mentor_hours',     '022-when-a-mentor-is-free.sql'),
+  ('how many months (profiles.mentor_months)',
+   'mentor_months',    '022-when-a-mentor-is-free.sql')
 ) as c(label, name, from_file)
 
 union all select
@@ -139,7 +146,8 @@ from (values
   ('intern.html',    'supervision_orders',  '021-supervision-firms-and-featured.sql'),
   ('intern.html',    'mentorship_invites',  '021-supervision-firms-and-featured.sql'),
   ('firm.html',      'firms',               '021-supervision-firms-and-featured.sql'),
-  ('firm.html',      'firm_members',        '021-supervision-firms-and-featured.sql')
+  ('firm.html',      'firm_members',        '021-supervision-firms-and-featured.sql'),
+  ('mentorship.html','mentor_slots',        '022-when-a-mentor-is-free.sql')
 ) as t(screen, name, from_file)
 
 -- Two of these are rows, not tables. A row can be missing while every table

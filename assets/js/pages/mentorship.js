@@ -29,7 +29,7 @@ Pages.define("mentorship", function (global) {
   var query = "";          // the mentor search
   var asking = null;       // the mentor being asked, or "all" for the open call
   var askNote = "";
-  var draft = { hours: "2" };
+  var draft = { hours: "2", day: 0, from: "17:00", to: "19:00" };
 
   /* What the store answers with, said in words the person can act on. */
   var SAID = { sent: "men.sent", already: "men.haveOne",
@@ -353,6 +353,30 @@ Pages.define("mentorship", function (global) {
           return sp ? '<span class="tag">' + esc(tx(sp)) + "</span>" : "";
         }).join("") + "</div>" +
 
+      // The two questions a trainee has to answer before spending anything:
+      // how much of this person do I get, and can we ever actually meet.
+      (function () {
+        var bits = [];
+        if (m.mentorHours) bits.push(I18N.t("offer.hoursOn", { n: I18N.num(m.mentorHours) }));
+        if (m.mentorMonths) bits.push(I18N.t("offer.monthsOn", { n: I18N.num(m.mentorMonths) }));
+        var week = M.mentorWeek(m.id);
+        if (!bits.length && !week.length) return "";
+        return '<div style="margin-top:var(--s-4)">' +
+          (bits.length ? '<p class="small">' + Icons.svg("clock", "icon-sm") + " " +
+            esc(bits.join(" · ")) + "</p>" : "") +
+          (week.length
+            ? '<p class="tiny muted" style="margin-top:var(--s-2)">' +
+              esc(I18N.t("week.free")) + " " +
+              week.slice(0, 4).map(function (x) {
+                return esc(I18N.t(DAYS[x.weekday])) + ' <span class="num" dir="ltr">' +
+                  esc(x.from) + "–" + esc(x.to) + "</span>";
+              }).join(" · ") +
+              (week.length > 4 ? " …" : "") + "</p>"
+            : '<p class="tiny faint" style="margin-top:var(--s-2)">' +
+              esc(I18N.t("week.unstated")) + "</p>") +
+        "</div>";
+      })() +
+
       (m.mentorNote
         ? '<p class="small muted" style="margin-top:var(--s-4);white-space:pre-line">' +
           esc(tx(m.mentorNote)) + "</p>"
@@ -470,37 +494,184 @@ Pages.define("mentorship", function (global) {
   /** The offer itself is edited on the account page; this says what it is
       and where to change it, rather than keeping a second copy of the form
       that would drift out of step with the first. */
+  /* ---------- everything a lawyer publishes about training ----------
+     The prices, how much of them a trainee gets, the terms, and the week
+     they are free — on the page where they do the teaching, not buried in
+     account settings two clicks away from any of it.
+
+     The bands are the platform's, the same two numbers guard_supervision_fee()
+     reads, so a price this form accepts is a price the database accepts. */
+  function money(v) {
+    var n = parseFloat(String(v || "").replace(/[^\d.]/g, ""));
+    return isFinite(n) ? Math.round(n) : 0;
+  }
+
+  var DAYS = ["day.sun", "day.mon", "day.tue", "day.wed", "day.thu", "day.fri", "day.sat"];
+
   function offerPanel(me) {
     var cfg = M.platformSettings();
     var net = function (fee) { return Math.round(fee - (fee * cfg.sponsorshipPct) / 100); };
-    var line = function (on, labelKey, fee) {
-      return '<div class="row between wrap gap-3 admin-line">' +
-        "<span>" + esc(I18N.t(labelKey)) + "</span>" +
-        (on
-          ? '<span class="row gap-3"><strong class="small">' +
-            esc(I18N.t("sup.fee2", { n: I18N.num(fee) })) + "</strong>" +
-            '<span class="tiny faint">' +
-              esc(I18N.t("sup.after", { n: I18N.num(net(fee)) })) + "</span></span>"
-          : '<span class="tiny muted">' + esc(I18N.t("men.offerOff")) + "</span>") + "</div>";
+
+    var check = function (name, on, labelKey) {
+      return '<label class="row gap-3" style="align-items:flex-start">' +
+        '<input type="checkbox" data-offer="' + name + '"' + (on ? " checked" : "") + ">" +
+        '<span class="small">' + esc(I18N.t(labelKey)) + "</span></label>";
+    };
+    var fee = function (name, on, value, labelKey, lo, hi) {
+      return '<div data-offer-when="' + name + '"' + (on ? "" : " hidden") + ">" +
+        '<label class="field" style="margin-top:var(--s-3)">' +
+          '<span class="field__label">' + esc(I18N.t(labelKey)) + "</span>" +
+          '<input class="input num" dir="ltr" inputmode="numeric" data-offer="' + name +
+            '" value="' + esc(value || "") + '">' +
+          '<span class="tiny muted">' +
+            esc(I18N.t("offer.band", { lo: I18N.num(lo), hi: I18N.num(hi) })) + "</span></label>" +
+        (value ? '<span class="tiny faint">' +
+          esc(I18N.t("offer.net", { n: I18N.num(net(value)) })) + "</span>" : "") + "</div>";
+    };
+    var num = function (name, value, labelKey, hintKey) {
+      return '<label class="field">' +
+        '<span class="field__label">' + esc(I18N.t(labelKey)) + "</span>" +
+        '<input class="input num" dir="ltr" inputmode="numeric" data-offer="' + name +
+          '" value="' + esc(value == null ? "" : value) + '">' +
+        '<span class="tiny muted">' + esc(I18N.t(hintKey)) + "</span></label>";
     };
 
-    return '<section class="card card--pad">' +
-      '<div class="row between wrap gap-3">' +
-        '<h2 class="subtitle">' + esc(I18N.t("offer.title")) + "</h2>" +
-        '<a class="btn btn--outline btn--sm" href="account.html">' +
-          Icons.svg("edit", "icon-sm") + esc(I18N.t("account.save")) + "</a></div>" +
-      '<div class="stack gap-2" style="margin-top:var(--s-4)">' +
-        line(me.isMentor, "offer.monthly", me.mentorshipFee || 0) +
-        line(me.supervisesCases, "offer.byCase", me.supervisionFee || 0) +
-      "</div>" +
-      (me.mentorNote
-        ? '<p class="small muted" style="margin-top:var(--s-4);white-space:pre-line">' +
-          esc(tx(me.mentorNote)) + "</p>"
-        : '<p class="tiny faint" style="margin-top:var(--s-4)">' +
-          esc(I18N.t("offer.noteHint")) + "</p>") +
+    return '<section class="card card--pad" data-offer-card>' +
+      '<h2 class="subtitle">' + esc(I18N.t("offer.title")) + "</h2>" +
+      '<p class="small muted" style="margin:var(--s-2) 0 var(--s-5);max-width:65ch">' +
+        esc(I18N.t("offer.lead")) + "</p>" +
       (Session.isVerified() ? "" :
-        '<p class="note-inline" style="margin-top:var(--s-4)">' +
-          esc(I18N.t("offer.pending")) + "</p>") + "</section>";
+        '<p class="note-inline" style="margin-bottom:var(--s-4)">' +
+          esc(I18N.t("offer.pending")) + "</p>") +
+
+      '<div class="grid grid-2" style="gap:var(--s-6)">' +
+        "<div>" + check("isMentor", me.isMentor, "offer.monthly") +
+          fee("mentorshipFee", me.isMentor, me.mentorshipFee, "offer.monthlyFee",
+              cfg.sponsorshipMin, cfg.sponsorshipMax) + "</div>" +
+        "<div>" + check("supervisesCases", me.supervisesCases, "offer.byCase") +
+          fee("supervisionFee", me.supervisesCases, me.supervisionFee, "offer.caseFee",
+              cfg.supervisionMin, cfg.supervisionMax) + "</div>" +
+      "</div>" +
+
+      // What a trainee is actually buying. Two numbers rather than a
+      // sentence, because a sentence cannot be compared between mentors.
+      '<div class="grid grid-2" style="gap:var(--s-4);margin-top:var(--s-6)">' +
+        num("mentorHours", me.mentorHours, "offer.hours", "offer.hoursHint") +
+        num("mentorMonths", me.mentorMonths, "offer.months", "offer.monthsHint") +
+      "</div>" +
+
+      '<label class="field" style="margin-top:var(--s-5)">' +
+        '<span class="field__label">' + esc(I18N.t("offer.note")) + "</span>" +
+        '<textarea class="input" rows="4" data-offer="mentorNote" placeholder="' +
+          esc(I18N.t("offer.notePlace")) + '">' + esc(tx(me.mentorNote || "")) +
+        "</textarea>" +
+        '<span class="tiny faint">' + esc(I18N.t("offer.noteHint")) + "</span></label>" +
+
+      '<p class="tiny" data-offer-error hidden style="margin-top:var(--s-2);color:var(--danger)"></p>' +
+      '<button class="btn btn--primary btn--sm" type="button" style="margin-top:var(--s-4)" ' +
+        'data-offer-save>' + esc(I18N.t("account.save")) + "</button></section>" +
+
+      weekPanel(me);
+  }
+
+  /* ---------- the week ----------
+     Windows, not appointments. What this says is when the calendar is open,
+     so a trainee can tell whether the two of them can ever meet before they
+     pay anything — and so a mentor is not asked for a Sunday morning they
+     never offered. */
+  function weekPanel(me) {
+    var week = M.mentorWeek(me.id);
+    var open = M.openHours(me.id);
+    var offers = me.isMentor || me.supervisesCases;
+
+    return '<section class="card card--pad" style="margin-top:var(--s-6)" data-week>' +
+      '<div class="row between wrap gap-3">' +
+        '<h2 class="subtitle">' + esc(I18N.t("week.title")) + "</h2>" +
+        (open ? '<span class="tag">' +
+          esc(I18N.t("week.open", { n: I18N.num(open) })) + "</span>" : "") +
+      "</div>" +
+      '<p class="small muted" style="margin:var(--s-2) 0 var(--s-4);max-width:65ch">' +
+        esc(I18N.t("week.lead")) + "</p>" +
+
+      (!offers
+        ? '<p class="note-inline">' + esc(I18N.t("week.needOffer")) + "</p>"
+        : (week.length
+            ? '<div class="stack gap-2">' + week.map(function (x) {
+                return '<div class="row between wrap gap-3 admin-line">' +
+                  "<span><strong class=\"small\">" +
+                    esc(I18N.t(DAYS[x.weekday])) + "</strong>" +
+                    ' <span class="num" dir="ltr">' + esc(x.from) + " – " + esc(x.to) +
+                  "</span></span>" +
+                  '<button class="btn btn--ghost btn--sm" type="button" data-slot-drop="' +
+                    esc(x.id) + '">' + Icons.svg("trash", "icon-sm") +
+                    esc(I18N.t("week.remove")) + "</button></div>";
+              }).join("") + "</div>"
+            : '<p class="small muted">' + esc(I18N.t("week.none")) + "</p>") +
+
+          '<div class="row gap-2 wrap" style="margin-top:var(--s-5);align-items:flex-end">' +
+            '<label class="field" style="flex:1 1 130px">' +
+              '<span class="field__label">' + esc(I18N.t("week.day")) + "</span>" +
+              '<select class="select" data-slot-day>' + DAYS.map(function (k, i) {
+                return '<option value="' + i + '"' + (i === (draft.day || 0) ? " selected" : "") +
+                  ">" + esc(I18N.t(k)) + "</option>";
+              }).join("") + "</select></label>" +
+            '<label class="field" style="flex:1 1 110px">' +
+              '<span class="field__label">' + esc(I18N.t("week.from")) + "</span>" +
+              '<input class="input" type="time" dir="ltr" data-slot-from value="' +
+                esc(draft.from || "17:00") + '"></label>' +
+            '<label class="field" style="flex:1 1 110px">' +
+              '<span class="field__label">' + esc(I18N.t("week.to")) + "</span>" +
+              '<input class="input" type="time" dir="ltr" data-slot-to value="' +
+                esc(draft.to || "19:00") + '"></label>' +
+            '<button class="btn btn--outline btn--sm" type="button" data-slot-add>' +
+              Icons.svg("plus", "icon-sm") + esc(I18N.t("week.add")) + "</button>" +
+          "</div>" +
+          '<p class="tiny" data-slot-error hidden style="margin-top:var(--s-2);color:var(--danger)"></p>') +
+    "</section>";
+  }
+
+  /** Reads the offer form back. Answers with a patch, or a reason it refused. */
+  function readOffer() {
+    var cfg = M.platformSettings();
+    var on = function (name) {
+      var el = $('[data-offer="' + name + '"]', host);
+      return !!(el && el.checked);
+    };
+    var val = function (name) {
+      var el = $('[data-offer="' + name + '"]', host);
+      return el ? el.value : "";
+    };
+    var patch = { isMentor: on("isMentor"), supervisesCases: on("supervisesCases"),
+                  mentorNote: val("mentorNote").trim() || null };
+
+    if (patch.isMentor) {
+      patch.mentorshipFee = money(val("mentorshipFee"));
+      if (patch.mentorshipFee < cfg.sponsorshipMin || patch.mentorshipFee > cfg.sponsorshipMax) {
+        return { error: I18N.t("offer.outOfBand",
+          { lo: I18N.num(cfg.sponsorshipMin), hi: I18N.num(cfg.sponsorshipMax) }) };
+      }
+    }
+    if (patch.supervisesCases) {
+      patch.supervisionFee = money(val("supervisionFee"));
+      if (patch.supervisionFee < cfg.supervisionMin || patch.supervisionFee > cfg.supervisionMax) {
+        return { error: I18N.t("offer.outOfBand",
+          { lo: I18N.num(cfg.supervisionMin), hi: I18N.num(cfg.supervisionMax) }) };
+      }
+    }
+
+    // The same two bounds the columns carry, so the form refuses what the
+    // database would refuse rather than letting the write fail silently.
+    var hours = val("mentorHours").trim();
+    var months = val("mentorMonths").trim();
+    patch.mentorHours = hours === "" ? null : money(hours);
+    patch.mentorMonths = months === "" ? null : money(months);
+    if (patch.mentorHours !== null && (patch.mentorHours < 0 || patch.mentorHours > 40)) {
+      return { error: I18N.t("offer.hoursRange") };
+    }
+    if (patch.mentorMonths !== null && (patch.mentorMonths < 1 || patch.mentorMonths > 24)) {
+      return { error: I18N.t("offer.monthsRange") };
+    }
+    return { patch: patch };
   }
 
   /* ---------- asking, with the price in front of you ---------- */
@@ -602,6 +773,18 @@ Pages.define("mentorship", function (global) {
   document.addEventListener("keydown", function (ev) {
     if (ev.key !== "Escape" || !asking) return;
     asking = null; askNote = ""; App.rerender();
+  });
+
+  // Ticking an offer opens its price straight away. Not on the next save,
+  // which would mean ticking a box, saving nothing, and being told 0 is
+  // outside the band.
+  host.addEventListener("change", function (ev) {
+    var box = ev.target.closest('[data-offer="isMentor"], [data-offer="supervisesCases"]');
+    if (!box) return;
+    var slot = $('[data-offer-when="' +
+      (box.getAttribute("data-offer") === "isMentor" ? "mentorshipFee" : "supervisionFee") +
+      '"]', host);
+    if (slot) slot.hidden = !box.checked;
   });
 
   host.addEventListener("input", function (ev) {
@@ -725,6 +908,39 @@ Pages.define("mentorship", function (global) {
       App.rerender();
       return;
     }
+
+    /* --- publishing the offer --- */
+    if (t.closest("[data-offer-save]")) {
+      var read = readOffer();
+      var oerr = $("[data-offer-error]", host);
+      if (read.error) {
+        if (oerr) { oerr.textContent = read.error; oerr.hidden = false; }
+        return;
+      }
+      Store.updateAccount(me.id, read.patch);
+      App.toast(I18N.t("offer.saved"), "check");
+      App.rerender();
+      return;
+    }
+
+    /* --- the week --- */
+    if (t.closest("[data-slot-add]")) {
+      draft.day = +(($("[data-slot-day]", host) || {}).value || 0);
+      draft.from = ($("[data-slot-from]", host) || {}).value || "";
+      draft.to = ($("[data-slot-to]", host) || {}).value || "";
+      var serr = $("[data-slot-error]", host);
+      var fail = function (key) { if (serr) { serr.textContent = I18N.t(key); serr.hidden = false; } };
+      if (!draft.from || !draft.to) { fail("week.needBoth"); return; }
+      var word = Store.addSlot(draft.day, draft.from, draft.to);
+      var says = { backwards: "week.backwards", already: "week.already",
+                   "not offering": "week.needOffer" };
+      if (word !== "added") { fail(says[word] || "week.needBoth"); return; }
+      App.toast(I18N.t("week.added"), "check");
+      App.rerender();
+      return;
+    }
+    var sd = hit("data-slot-drop");
+    if (sd) { Store.removeSlot(sd); App.rerender(); return; }
 
     /* --- one signature, bought --- */
     var bs = hit("data-buy-sup");

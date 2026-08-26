@@ -467,6 +467,22 @@ body, .card, .panel, .btn, .input, .site-header, .chip, .tag, .stat, .field {
 [data-theme="dark"] .icon-moon,
 :root:not([data-theme="dark"]) .icon-sun { display: none; }
 
+/* Between the phone bar and a wide desk the header runs out of room. It used
+   to answer by scrolling, which hides destinations and gives no sign it has —
+   the same fault the tab strips had, and worse here, because this is the only
+   navigation on the page at these widths. So the links tighten instead: the
+   same seven fit, nothing is hidden, and the scroll stays as a last resort
+   that nothing should ever reach. */
+@media (max-width: 1500px) {
+  .nav { gap: 0; }
+  .nav__link { padding-inline: var(--s-3); font-size: .9rem; }
+  .nav__link.is-active::after { inset-inline: var(--s-3); }
+}
+@media (max-width: 1200px) {
+  .nav__link { padding-inline: var(--s-2); font-size: .875rem; }
+  .nav__link.is-active::after { inset-inline: var(--s-2); }
+}
+
 /* Phone: the top nav collapses into the bottom tab bar below. */
 @media (max-width: 1024px) {
   .nav { display: none; }

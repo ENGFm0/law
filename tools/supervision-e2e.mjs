@@ -31,8 +31,8 @@ await p.goto(U+'index.html');
 await p.evaluate(() => Store.resetWork());
 
 console.log('— THE LAWYER PUBLISHES THE OFFER THEMSELVES —');
-await open('account.html', 'u-ahmed');
-ok('the offer editor is on a lawyer\u2019s account', (await p.$('[data-offer-card]')) !== null, await body());
+await open('mentorship.html?tab=offer', 'u-ahmed');
+ok('the offer editor is on the supervision page', (await p.$('[data-offer-card]')) !== null, await body());
 ok('with the price hidden until the offer is taken',
    await p.$eval('[data-offer-when="supervisionFee"]', e => e.hidden) === true);
 await p.check('[data-offer="supervisesCases"]'); await p.waitForTimeout(200);

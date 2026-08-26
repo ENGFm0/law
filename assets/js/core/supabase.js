@@ -46,8 +46,12 @@
   var PROFILE_019 = PROFILE_011.concat(["is_mentor", "mentorship_fee"]);
   var PROFILE_021 = PROFILE_019.concat(["supervises_cases", "supervision_fee",
                                         "mentor_note"]);
+  // How much of a mentor a trainee actually gets. Numbers rather than a
+  // sentence inside mentor_note, because a sentence cannot be compared,
+  // filtered on, or held to.
+  var PROFILE_022 = PROFILE_021.concat(["mentor_hours", "mentor_months"]);
 
-  var PROFILE_GENERATIONS = [PROFILE_021, PROFILE_019, PROFILE_011, PROFILE_BASE]
+  var PROFILE_GENERATIONS = [PROFILE_022, PROFILE_021, PROFILE_019, PROFILE_011, PROFILE_BASE]
     .map(function (cols) { return cols.join(","); });
 
   // The newest list and the oldest, for the reads that ask for one row rather
@@ -166,6 +170,8 @@
       supervisesCases: !!row.supervises_cases,
       supervisionFee: row.supervision_fee == null ? null : Number(row.supervision_fee),
       mentorNote: row.mentor_note || null,
+      mentorHours: row.mentor_hours == null ? null : Number(row.mentor_hours),
+      mentorMonths: row.mentor_months == null ? null : Number(row.mentor_months),
       // Whether they take matching work automatically when it is posted.
       autoBid: !!row.auto_bid,
       // Whether they have ever told us who they are. False for an account
@@ -218,6 +224,8 @@
     if (data.supervisesCases !== undefined) row.supervises_cases = !!data.supervisesCases;
     if (data.supervisionFee !== undefined) row.supervision_fee = data.supervisionFee;
     if (data.mentorNote !== undefined) row.mentor_note = flat(data.mentorNote);
+    if (data.mentorHours !== undefined) row.mentor_hours = data.mentorHours;
+    if (data.mentorMonths !== undefined) row.mentor_months = data.mentorMonths;
     if (data.autoBid !== undefined) row.auto_bid = !!data.autoBid;
     if (data.role === "lawyer" || (data.roles || []).indexOf("lawyer") !== -1) {
       row.licence_no = data.licenceNumber || null;
@@ -474,7 +482,8 @@
            "messages", "attachments", "request_events",
            "mentorships", "mentorship_sessions", "mentorship_messages",
            "promo_codes", "promo_redemptions", "draft_jobs",
-           "supervision_orders", "mentorship_invites", "firms", "firm_members"],
+           "supervision_orders", "mentorship_invites", "firms", "firm_members",
+           "mentor_slots"],
 
     hydrate: function (names) {
       return load().then(function (sb) {
@@ -499,6 +508,9 @@
           },
           firms:            function () { return sb.from("firms").select("*"); },
           firm_members:     function () { return sb.from("firm_members").select("*"); },
+          mentor_slots:     function () {
+            return sb.from("mentor_slots").select("*").order("weekday").order("starts_at");
+          },
           promo_redemptions: function () { return sb.from("promo_redemptions").select("*"); },
           platform_settings:function () { return sb.from("platform_settings").select("*").eq("id", 1).maybeSingle(); },
           reviews:          function () { return sb.from("reviews").select("*").limit(500); },

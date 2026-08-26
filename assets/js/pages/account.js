@@ -63,157 +63,25 @@ Pages.define("account", function (global) {
   }
 
   /* ---------- what a lawyer offers a trainee ----------
-     Both offers existed in the database and in every card that reads them,
-     and there was nowhere on the site to switch either one on: is_mentor and
-     supervises_cases were set by nothing. This is that place.
-
-     The bands are the platform's, not the page's — the same two numbers
-     guard_supervision_fee() reads — so a price this form accepts is a price
-     the database accepts. */
-  function money(v) {
-    var n = parseFloat(String(v || "").replace(/[^\d.]/g, ""));
-    return isFinite(n) ? Math.round(n) : 0;
-  }
-
+     The form used to be here, which put the prices two clicks away from the
+     trainees, the applications and the calendar they govern. It lives on the
+     supervision page now, with the rest of it; this is the door, and it says
+     what is currently published so the door is worth opening. */
   function offer(u) {
     if (!Session.is("lawyer")) return "";
-    var cfg = M.platformSettings();
-    var net = function (fee, key) {
-      if (!fee) return "";
-      return '<span class="tiny faint" data-net="' + key + '">' +
-        esc(I18N.t("offer.net",
-          { n: I18N.num(Math.round(fee - (fee * cfg.sponsorshipPct) / 100)) })) + "</span>";
-    };
-    var check = function (name, on, labelKey) {
-      return '<label class="row gap-3" style="align-items:flex-start">' +
-        '<input type="checkbox" data-offer="' + name + '"' + (on ? " checked" : "") + ">" +
-        "<span class=\"small\">" + esc(I18N.t(labelKey)) + "</span></label>";
-    };
-    // The price sits inside the offer it belongs to and is shown the moment
-    // the box is ticked — not on the next save, which would mean ticking a
-    // box, saving nothing, and being told 0 is out of the band.
-    var fee = function (name, on, value, labelKey, lo, hi, netKey) {
-      return '<div data-offer-when="' + name + '"' + (on ? "" : " hidden") + ">" +
-        '<label class="field" style="margin-top:var(--s-3)">' +
-          '<span class="field__label">' + esc(I18N.t(labelKey)) + "</span>" +
-          '<input class="input num" dir="ltr" inputmode="numeric" data-offer="' + name + '" ' +
-            'value="' + esc(value || "") + '">' +
-          '<span class="tiny muted">' +
-            esc(I18N.t("offer.band", { lo: I18N.num(lo), hi: I18N.num(hi) })) + "</span></label>" +
-        net(value, netKey) + "</div>";
-    };
+    var on = u.isMentor || u.supervisesCases;
+    var bits = [];
+    if (u.isMentor) bits.push(I18N.t("men.fee", { n: I18N.num(u.mentorshipFee || 0) }));
+    if (u.supervisesCases) bits.push(I18N.t("sup.fee", { n: I18N.num(u.supervisionFee || 0) }));
 
-    return '<section class="card card--pad" style="margin-top:var(--s-6)" data-offer-card>' +
-      '<h2 class="subtitle">' + esc(I18N.t("offer.title")) + "</h2>" +
-      '<p class="small muted" style="margin:var(--s-2) 0 var(--s-5);max-width:65ch">' +
-        esc(I18N.t("offer.lead")) + "</p>" +
-      (Session.isVerified() ? "" :
-        '<p class="note-inline" style="margin-bottom:var(--s-4)">' +
-          esc(I18N.t("offer.pending")) + "</p>") +
-      '<div class="grid grid-2" style="gap:var(--s-6)">' +
-        "<div>" + check("isMentor", u.isMentor, "offer.monthly") +
-          fee("mentorshipFee", u.isMentor, u.mentorshipFee, "offer.monthlyFee",
-              cfg.sponsorshipMin, cfg.sponsorshipMax, "month") + "</div>" +
-        "<div>" + check("supervisesCases", u.supervisesCases, "offer.byCase") +
-          fee("supervisionFee", u.supervisesCases, u.supervisionFee, "offer.caseFee",
-              cfg.supervisionMin, cfg.supervisionMax, "case") + "</div>" +
-      "</div>" +
-      '<label class="field" style="margin-top:var(--s-5)">' +
-        '<span class="field__label">' + esc(I18N.t("offer.note")) + "</span>" +
-        '<textarea class="input" rows="4" data-offer="mentorNote" placeholder="' +
-          esc(I18N.t("offer.notePlace")) + '">' + esc(tx(u.mentorNote || "")) +
-        "</textarea>" +
-        '<span class="tiny faint">' + esc(I18N.t("offer.noteHint")) + "</span></label>" +
-      '<p class="tiny" data-offer-error hidden style="margin-top:var(--s-2);color:var(--danger)"></p>' +
-      '<button class="btn btn--primary btn--sm" type="button" style="margin-top:var(--s-4)" ' +
-        'data-offer-save>' + esc(I18N.t("account.save")) + "</button></section>" +
-      inbox(u);
-  }
-
-  /* ---------- who has asked to be supervised ----------
-     A lawyer who publishes an offer is going to be answered, and the answer
-     arriving somewhere they do not look is the same as not arriving. Both
-     buttons write the same row the trainee's own desk reads, so neither side
-     has a version of this the other cannot see.
-
-     The applications only. An invitation this lawyer sent is not theirs to
-     accept — that is guard_mentorship()'s rule, and the page keeps it by
-     drawing no button rather than by drawing one that fails. */
-  function inbox(u) {
-    var waiting = ((Store.mentorships && Store.mentorships()) || []).filter(function (m) {
-      return m.mentorId === u.id && m.status === "pending" && m.openedBy === "intern";
-    });
-    var live = ((Store.mentorships && Store.mentorships()) || []).filter(function (m) {
-      return m.mentorId === u.id && m.status === "active";
-    });
-
-    var line = function (m, pending) {
-      var who = M.user(m.internId);
-      if (!who) return "";
-      return '<div class="row between wrap gap-3 admin-line">' +
-        '<span class="row gap-3">' + C.avatar(who, "sm") +
-          "<span>" + C.personLink(who) +
-          '<span class="tiny muted" style="display:block">' +
-            esc(I18N.t("offer.atFee", { n: I18N.num(m.fee || 0) })) + "</span></span></span>" +
-        (pending
-          ? '<span class="row gap-2">' +
-              '<button class="btn btn--primary btn--sm" type="button" data-men-yes="' +
-                esc(m.id) + '">' + esc(I18N.t("men.accept")) + "</button>" +
-              '<button class="btn btn--ghost btn--sm" type="button" data-men-no="' +
-                esc(m.id) + '">' + esc(I18N.t("men.decline")) + "</button></span>"
-          : '<span class="row gap-3">' +
-              '<span class="tiny muted">' +
-                esc(I18N.t("cert.hoursDone", { n: I18N.num(M.hoursOf(m.internId)) })) + "</span>" +
-              '<a class="btn btn--outline btn--sm" href="requests.html">' +
-                esc(I18N.t("men.open")) + "</a></span>") +
-      "</div>";
-    };
-
-    return '<section class="card card--pad" style="margin-top:var(--s-6)" data-men-inbox>' +
-      '<h2 class="subtitle">' + esc(I18N.t("offer.inbox")) + "</h2>" +
-      (waiting.length
-        ? '<div class="stack gap-3" style="margin-top:var(--s-4)">' +
-          waiting.map(function (m) { return line(m, true); }).join("") + "</div>"
-        : '<p class="small muted" style="margin-top:var(--s-3)">' +
-          esc(I18N.t("offer.noneWaiting")) + "</p>") +
-      (live.length
-        ? '<h3 class="subtitle" style="margin-top:var(--s-6)">' +
-            esc(I18N.t("offer.current")) + "</h3>" +
-          '<div class="stack gap-3" style="margin-top:var(--s-3)">' +
-            live.map(function (m) { return line(m, false); }).join("") + "</div>"
-        : "") +
-    "</section>";
-  }
-
-  /** Reads the form back. Answers with a patch, or a reason it refused. */
-  function readOffer() {
-    var cfg = M.platformSettings();
-    var on = function (name) {
-      var el = $('[data-offer="' + name + '"]', host);
-      return !!(el && el.checked);
-    };
-    var val = function (name) {
-      var el = $('[data-offer="' + name + '"]', host);
-      return el ? el.value : "";
-    };
-    var patch = { isMentor: on("isMentor"), supervisesCases: on("supervisesCases"),
-                  mentorNote: val("mentorNote").trim() || null };
-
-    if (patch.isMentor) {
-      patch.mentorshipFee = money(val("mentorshipFee"));
-      if (patch.mentorshipFee < cfg.sponsorshipMin || patch.mentorshipFee > cfg.sponsorshipMax) {
-        return { error: I18N.t("offer.outOfBand",
-          { lo: I18N.num(cfg.sponsorshipMin), hi: I18N.num(cfg.sponsorshipMax) }) };
-      }
-    }
-    if (patch.supervisesCases) {
-      patch.supervisionFee = money(val("supervisionFee"));
-      if (patch.supervisionFee < cfg.supervisionMin || patch.supervisionFee > cfg.supervisionMax) {
-        return { error: I18N.t("offer.outOfBand",
-          { lo: I18N.num(cfg.supervisionMin), hi: I18N.num(cfg.supervisionMax) }) };
-      }
-    }
-    return { patch: patch };
+    return '<section class="card card--pad" style="margin-top:var(--s-6)" data-offer-door>' +
+      '<div class="row between wrap gap-3">' +
+        "<div><h2 class=\"subtitle\">" + esc(I18N.t("offer.title")) + "</h2>" +
+          '<p class="small muted" style="margin-top:var(--s-2);max-width:60ch">' +
+            esc(on ? bits.join(" · ") : I18N.t("offer.notPublished")) + "</p></div>" +
+        '<a class="btn btn--outline btn--sm" href="mentorship.html?tab=offer">' +
+          Icons.svg("graduation", "icon-sm") + esc(I18N.t("offer.manage")) + "</a>" +
+      "</div></section>";
   }
 
   App.onRender(function () {
@@ -277,17 +145,6 @@ Pages.define("account", function (global) {
     I18N.apply(host);
   });
 
-  // Ticking an offer opens its price without a re-render: the page reads the
-  // account, and re-rendering here would put the tick back where it was.
-  host.addEventListener("change", function (ev) {
-    var box = ev.target.closest('[data-offer="isMentor"], [data-offer="supervisesCases"]');
-    if (!box) return;
-    var slot = $('[data-offer-when="' +
-      (box.getAttribute("data-offer") === "isMentor" ? "mentorshipFee" : "supervisionFee") +
-      '"]', host);
-    if (slot) slot.hidden = !box.checked;
-  });
-
   host.addEventListener("click", function (ev) {
     var v = ev.target.closest("[data-view-as]");
     if (v) {
@@ -302,30 +159,6 @@ Pages.define("account", function (global) {
 
     if (ev.target.closest("[data-signout]")) {
       Session.signOut().then(function () { App.go("index.html"); });
-      return;
-    }
-
-    var yes = ev.target.closest("[data-men-yes]");
-    var no = ev.target.closest("[data-men-no]");
-    if (yes || no) {
-      var el = yes || no;
-      Store.setMentorship(el.getAttribute(yes ? "data-men-yes" : "data-men-no"),
-                          { status: yes ? "active" : "declined" });
-      App.toast(I18N.t(yes ? "men.accepted" : "men.declinedIt"), yes ? "check" : "alert");
-      App.rerender();
-      return;
-    }
-
-    if (ev.target.closest("[data-offer-save]")) {
-      var read = readOffer();
-      var err = $("[data-offer-error]", host);
-      if (read.error) {
-        if (err) { err.textContent = read.error; err.hidden = false; }
-        return;
-      }
-      Store.updateAccount(Session.user().id, read.patch);
-      App.toast(I18N.t("offer.saved"), "check");
-      App.rerender();
       return;
     }
 

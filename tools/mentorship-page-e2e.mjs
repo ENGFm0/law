@@ -33,22 +33,69 @@ const tab = async (name) => { await p.click('[data-tab="'+name+'"]'); await p.wa
 await p.goto(U+'index.html');
 await p.evaluate(() => Store.resetWork());
 
-console.log('— THE LAWYER PUBLISHES AND IS ANSWERED IN ONE PLACE —');
-await open('account.html', 'u-ahmed');
-ok('the offer panel is on their account', (await p.$('[data-offer-card]')) !== null);
-ok('and the inbox with it', (await p.$('[data-men-inbox]')) !== null, await body());
-ok('empty to begin with', /لا طلبات تنتظر ردّك/.test(await body()));
+console.log('— THE LAWYER PUBLISHES EVERYTHING FROM ONE TAB —');
+await open('mentorship.html?tab=offer', 'u-ahmed');
+ok('the offer editor is on the supervision page', (await p.$('[data-offer-card]')) !== null,
+   await body());
+ok('and the week beside it', (await p.$('[data-week]')) !== null);
+ok('which will not take hours before there is an offer to attach them to',
+   /فعّل أحد عرضَي الإشراف/.test(await body()));
+ok('so there is nothing to press yet', (await p.$('[data-slot-add]')) === null);
+ok('the price is hidden until the offer is taken',
+   await p.$eval('[data-offer-when="supervisionFee"]', e => e.hidden) === true);
 await p.check('[data-offer="isMentor"]'); await p.waitForTimeout(200);
-await p.fill('[data-offer="mentorshipFee"]', '80');
 await p.check('[data-offer="supervisesCases"]'); await p.waitForTimeout(200);
+ok('ticking one opens its price straight away',
+   await p.$eval('[data-offer-when="supervisionFee"]', e => e.hidden) === false);
+await p.fill('[data-offer="mentorshipFee"]', '80');
 await p.fill('[data-offer="supervisionFee"]', '100');
-await p.fill('[data-offer="mentorNote"]', 'أشرف على القضايا العمالية. ست ساعات أسبوعياً.');
+await p.fill('[data-offer="mentorHours"]', '90');
+await p.click('[data-offer-save]'); await p.waitForTimeout(400);
+ok('a week with more hours than a week has is refused', /بين ٠ و٤٠/.test(await body()));
+ok('and nothing was published', await p.evaluate(() => !Models.user('u-ahmed').isMentor));
+await p.fill('[data-offer="mentorHours"]', '6');
+await p.fill('[data-offer="mentorMonths"]', '6');
+await p.fill('[data-offer="mentorNote"]', 'أشرف على القضايا العمالية.');
 await p.click('[data-offer-save]'); await p.waitForTimeout(500);
 ok('both offers go out together',
    await p.evaluate(() => { const u = Models.user('u-ahmed');
      return u.isMentor && u.mentorshipFee === 80 && u.supervisesCases && u.supervisionFee === 100; }));
-ok('with the terms they wrote, still in the field',
-   await p.$eval('[data-offer="mentorNote"]', e => e.value) === 'أشرف على القضايا العمالية. ست ساعات أسبوعياً.');
+ok('with how much of them a trainee gets',
+   await p.evaluate(() => { const u = Models.user('u-ahmed');
+     return u.mentorHours === 6 && u.mentorMonths === 6; }));
+ok('and the terms, still in the field',
+   await p.$eval('[data-offer="mentorNote"]', e => e.value) === 'أشرف على القضايا العمالية.');
+
+console.log('— AND THE WEEK IS THEIRS TO PUBLISH —');
+ok('now that there is an offer, the hours can be added',
+   (await p.$('[data-slot-add]')) !== null, await body());
+await p.selectOption('[data-slot-day]', '1');
+await p.fill('[data-slot-from]', '19:00');
+await p.fill('[data-slot-to]', '17:00');
+await p.click('[data-slot-add]'); await p.waitForTimeout(400);
+ok('a window that ends before it starts is refused', /نهاية الوقت قبل بدايته/.test(await body()));
+ok('and nothing was written', await p.evaluate(() => Store.mentorSlots().length) === 0);
+await p.fill('[data-slot-from]', '17:00');
+await p.fill('[data-slot-to]', '19:00');
+await p.click('[data-slot-add]'); await p.waitForTimeout(500);
+ok('a real one is published', await p.evaluate(() => Store.mentorSlots().length) === 1);
+await p.click('[data-slot-add]'); await p.waitForTimeout(400);
+ok('the same window twice is one window', await p.evaluate(() => Store.mentorSlots().length) === 1);
+await p.selectOption('[data-slot-day]', '3');
+await p.fill('[data-slot-from]', '17:00');
+await p.fill('[data-slot-to]', '20:00');
+await p.click('[data-slot-add]'); await p.waitForTimeout(500);
+ok('a second day goes on', await p.evaluate(() => Store.mentorSlots().length) === 2);
+ok('and the open hours add up', await p.evaluate(() => Models.openHours('u-ahmed')) === 5);
+ok('the page says so', /ساعة أسبوعياً متاحة/.test(await body()));
+
+console.log('— THE ACCOUNT PAGE IS A DOOR, NOT A SECOND COPY —');
+await open('account.html', 'u-ahmed');
+ok('the account points at it', (await p.$('[data-offer-door]')) !== null, await body());
+ok('with no form of its own to drift out of step',
+   (await p.$('[data-offer-card]')) === null);
+ok('and says what is published', /٨٠|80/.test(await body()));
+
 await p.evaluate(() => Store.updateAccount('u-sara', { isMentor: true, mentorshipFee: 90 }));
 
 console.log('— A CLIENT HAS NO SUPERVISION SPACE AT ALL —');
@@ -88,7 +135,11 @@ ok('the monthly fee is shown', /٨٠|80/.test(t));
 ok('so is the single case', /١٠٠|100/.test(t));
 ok('and what reaches the lawyer after the cut', /بعد خصم المنصة يصل المحامي/.test(t));
 ok('a lawyer who sells neither is not on the list', !/رانية/.test(t));
-ok('the terms they published are readable', /ست ساعات أسبوعياً/.test(t));
+ok('the terms they published are readable', /القضايا العمالية/.test(t));
+ok('how much of them a trainee gets', /٦ ساعة أسبوعياً|6 ساعة أسبوعياً/.test(t), t.slice(0,400));
+ok('for how long', /لمدة ٦|لمدة 6/.test(t));
+ok('and when they are free, before a riyal is spent',
+   /متاح:/.test(t) && /الاثنين/.test(t), t.slice(0,400));
 ok('a mentor with room says nothing rather than "supervising 0"',
    !/يشرف على/.test(t));
 await p.evaluate(() => { const m = Store.openMentorship({ mentorId:'u-ahmed',

@@ -1013,6 +1013,32 @@
     }).sort(function (a, b) { return (a.supervisionFee || 0) - (b.supervisionFee || 0); });
   }
 
+  /* ---------- when a mentor is free ----------
+     Mirrors mentor_week() and mentor_open_hours(). What a mentor publishes
+     is windows they are willing to be booked in; a session is still written
+     by them into the calendar. Kept separate on purpose: an availability is
+     an offer, and a booking is an appointment, and reading one as the other
+     is how a calendar starts lying. */
+  function mentorWeek(mentorId) {
+    return ((Store.mentorSlots && Store.mentorSlots()) || [])
+      .filter(function (x) { return x.mentorId === mentorId; })
+      .sort(function (a, b) {
+        return (a.weekday - b.weekday) || (a.from < b.from ? -1 : 1);
+      });
+  }
+
+  /** What those windows come to in a week. The number a mentor typed is what
+      they promise; this is what they have actually left room for, and the two
+      disagreeing is worth showing rather than smoothing over. */
+  function openHours(mentorId) {
+    var mins = 0;
+    mentorWeek(mentorId).forEach(function (x) {
+      var a = String(x.from).split(":"), b = String(x.to).split(":");
+      mins += (Number(b[0]) * 60 + Number(b[1])) - (Number(a[0]) * 60 + Number(a[1]));
+    });
+    return Math.round((mins / 60) * 10) / 10;
+  }
+
   /** How many trainees this lawyer is supervising right now. A directory that
       shows only a price tells a trainee nothing about whether the person has
       room for them. */
@@ -1727,6 +1753,7 @@
     signerFor: signerFor, openOrderOf: openOrderOf,
     supervisionSplit: supervisionSplit, caseSupervisors: caseSupervisors,
     openMentors: openMentors, superviseeCount: superviseeCount,
+    mentorWeek: mentorWeek, openHours: openHours,
     callsFor: callsFor, callOf: callOf,
     firms: firms, firm: firm, firmListed: firmListed, listedFirms: listedFirms,
     roster: roster, firmsOf: firmsOf, paidFeatured: paidFeatured,

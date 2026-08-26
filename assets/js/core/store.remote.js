@@ -1230,6 +1230,38 @@
     return Store.firm(id);
   };
 
+  function inSlot(x) {
+    return { id: x.id, mentorId: x.mentor_id, weekday: Number(x.weekday),
+             from: String(x.starts_at).slice(0, 5), to: String(x.ends_at).slice(0, 5) };
+  }
+
+  Store.mentorSlots = function () { return cache.slots || []; };
+  Store.addSlot = function (weekday, from, to) {
+    if (noSession()) return "not signed in";
+    var me = Store.currentId();
+    if (!(to > from)) return "backwards";
+    var clash = false;
+    (cache.slots || []).forEach(function (x) {
+      if (x.mentorId === me && x.weekday === weekday && x.from === from) clash = true;
+    });
+    if (clash) return "already";
+    push("mentor_slots", { mentor_id: me, weekday: weekday,
+                           starts_at: from, ends_at: to })
+      .then(function (res) { report(res); if (res && res.data) Store.hydrate(); });
+    local(cache.slots, { mentorId: me, weekday: weekday, from: from, to: to });
+    return "added";
+  };
+  Store.removeSlot = function (id) {
+    var me = Store.currentId();
+    cache.slots = (cache.slots || []).filter(function (x) {
+      return !(x.id === id && x.mentorId === me);
+    });
+    Store.notifyAll();
+    SB.load().then(function (sb) {
+      return sb.from("mentor_slots").delete().eq("id", id).eq("mentor_id", me);
+    }).then(report);
+  };
+
   Store.firmMembers = function () { return cache.firmMembers || []; };
   Store.inviteToFirm = function (firmId, profileId, role) {
     if (noSession()) return "not signed in";
@@ -1576,6 +1608,7 @@
     cache.invites = take("mentorship_invites", inInvite, cache.invites);
     cache.firms = take("firms", inFirm, cache.firms);
     cache.firmMembers = take("firm_members", inFirmMember, cache.firmMembers);
+    cache.slots = take("mentor_slots", inSlot, cache.slots);
 
     if (had("platform_settings")) cache.settings = inSettings(rows.platform_settings);
     if (had("price_bands") && rows.price_bands) {

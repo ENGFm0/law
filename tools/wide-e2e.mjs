@@ -36,10 +36,18 @@ for (const [page, who] of [['index','u-fahad'],['requests','u-fahad'],['requests
                w: Math.round(r.width), l: Math.round(r.left), r: Math.round(r.right) };
     }).filter(x => x.w > W || x.r > W + 1 || x.l < -1)
       .sort((a,b) => b.w - a.w).slice(0, 5);
+    // The header nav is the only navigation between the phone bar and a wide
+    // desk. It may not hide a destination behind a scroll — that is the same
+    // fault the tab strips had, and it matters more here.
+    const nav = document.querySelector('.site-header .nav');
+    const navHides = nav && getComputedStyle(nav).display !== 'none'
+      ? Math.max(0, nav.scrollWidth - nav.clientWidth) : 0;
     return { innerW: window.innerWidth, docW: document.documentElement.scrollWidth,
-             visual: Math.round(window.visualViewport ? window.visualViewport.width : 0), wide };
+             visual: Math.round(window.visualViewport ? window.visualViewport.width : 0),
+             wide, navHides };
   });
   console.log(`${page.padEnd(9)} ${(who||'guest').padEnd(9)} innerW=${m.innerW} docW=${m.docW} visual=${m.visual}`);
+  if (m.navHides) console.log(`    HEADER NAV OUT OF REACH: overflows by ${m.navHides}px`);
   m.wide.forEach(x => console.log(`    ${x.t}  w=${x.w} left=${x.l} right=${x.r}`));
 }
 await b.close();
