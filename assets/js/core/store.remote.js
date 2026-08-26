@@ -1105,7 +1105,7 @@
       out = d;
     });
     Store.notifyAll();
-    patch("draft_jobs", id, row);
+    patch("draft_jobs", id, row).then(report);
     return out;
   };
 
@@ -1349,7 +1349,7 @@
       if (m.id === id) Object.keys(changes).forEach(function (k) { m[k] = changes[k]; });
     });
     Store.notifyAll();
-    patch("mentorships", id, row);
+    patch("mentorships", id, row).then(report);
     return Store.mentorship(id);
   };
   Store.addSession = function (x) {
@@ -1367,7 +1367,7 @@
       if (x.id === id) Object.keys(changes).forEach(function (k) { x[k] = changes[k]; });
     });
     Store.notifyAll();
-    patch("mentorship_sessions", id, row);
+    patch("mentorship_sessions", id, row).then(report);
   };
   Store.sayInRoom = function (m) {
     if (noSession()) return m;

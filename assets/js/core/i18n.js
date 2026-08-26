@@ -1276,6 +1276,8 @@
 
       /* --- the conversation on a case --- */
       "thread.title": "المحادثة والمرفقات",
+      "thread.shut": "تُفتح المحادثة حين يستلم المحامي طلبك. لا أحد على الطرف الآخر بعد.",
+      "thread.shutScreening": "تُفتح المحادثة حين يستلم متدرب الجلسة. لا أحد على الطرف الآخر بعد.",
       "thread.withClient": "مع العميل",
       "thread.withIntern": "مع المتدرب",
       "thread.withLawyer": "مع المحامي",
@@ -1621,6 +1623,12 @@
       "scr.sent": "أُرسل طلبك. سيصلك التحليل بعد اعتماد المحامي.",
       "scr.needBrief": "اكتب سطرين على الأقل عمّا حدث.",
       "scr.oneOpen": "لديك جلسة فرز مفتوحة بالفعل.",
+      "scr.waitingOn": "طلبك قيد النظر عند {name} — تستطيع استلام جلسة فرز فور قبوله.",
+      "scr.fixLead": "الفرز يحتاج محامياً يوقّع على الإجابة. اشترِ توقيعاً لجلسة واحدة، أو نادِ كل من يستقبل متدربين.",
+      "scr.callAll": "أرسل لكل المشرفين",
+      "scr.callNote": "أبحث عن مشرف لاستلام جلسات الفرز.",
+      "scr.moreWays": "كل طرق الإشراف",
+      "scr.noneToRoute": "لا تشرف على أحد بعد.",
       "scr.deskTitle": "جلسات فرز بانتظار متدرب",
       "scr.deskLead": "طلبات فرز مجانية لم يستلمها أحد. وجّه واحدة لمتدرب تشرف عليه، وتصير أنت المحامي المسؤول عن الإجابة.",
       "scr.needTrainee": "لا تشرف على أحد بعد، فلا أحد توجّه له.",
@@ -3092,6 +3100,8 @@
 
       /* --- the conversation on a case --- */
       "thread.title": "Conversation and files",
+      "thread.shut": "The conversation opens when a lawyer takes your request on. Nobody is on the other side of it yet.",
+      "thread.shutScreening": "The conversation opens when a trainee takes the screening on. Nobody is on the other side of it yet.",
       "thread.withClient": "With the client",
       "thread.withIntern": "With the trainee",
       "thread.withLawyer": "With the lawyer",
@@ -3437,6 +3447,12 @@
       "scr.sent": "Sent. The analysis reaches you once the lawyer approves it.",
       "scr.needBrief": "Write a line or two about what happened.",
       "scr.oneOpen": "You already have a screening open.",
+      "scr.waitingOn": "Your application is with {name} \u2014 you can take a screening the moment they accept.",
+      "scr.fixLead": "A screening needs a lawyer to sign the answer. Buy a signature for one case, or call everybody who takes trainees.",
+      "scr.callAll": "Send it to every supervisor",
+      "scr.callNote": "Looking for a supervisor so I can take screenings.",
+      "scr.moreWays": "Every route to a supervisor",
+      "scr.noneToRoute": "You supervise nobody yet.",
       "scr.deskTitle": "Screenings waiting for a trainee",
       "scr.deskLead": "Free screenings nobody has picked up. Hand one to a trainee you supervise, and you become the lawyer answerable for the answer.",
       "scr.needTrainee": "You supervise nobody yet, so there is nobody to hand it to.",

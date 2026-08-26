@@ -959,6 +959,23 @@
 
   function isScreening(r) { return !!r && r.typeId === SCREENING; }
 
+  /* ---------- when the conversation opens ----------
+     Not when the request is written — when somebody takes it on. A thread on
+     a case nobody has accepted is a person talking into a room with nobody
+     in it, and worse, it looks answered: a client who wrote there and heard
+     nothing has been told by the screen that somebody was listening.
+
+     A screening opens when a trainee claims it, which is the same moment
+     somebody becomes answerable for it. */
+  var UNTAKEN = ["new", "quoting"];
+
+  function threadOpen(r) {
+    if (!r) return false;
+    var st = requestState(r);
+    if (isScreening(r)) return !!st.assignedTo;
+    return UNTAKEN.indexOf(st.status) === -1;
+  }
+
   function mentorOf(internId) {
     var m = Store.mentorshipOf ? Store.mentorshipOf(internId) : null;
     return m ? user(m.mentorId) : null;
@@ -991,6 +1008,18 @@
   }
 
   function canScreen(internId) { return !!signerFor(internId); }
+
+  /** An application or an invitation nobody has answered yet. "You need a
+      supervisor" is the wrong thing to tell somebody who asked for one
+      yesterday and is waiting — it reads as though the asking did not
+      happen. */
+  function pendingMentorshipOf(internId) {
+    var out = null;
+    ((Store.mentorships && Store.mentorships()) || []).forEach(function (m) {
+      if (m.internId === internId && m.status === "pending") out = m;
+    });
+    return out;
+  }
 
   /** The trainees this lawyer may sign for right now — a standing mentorship,
       or a signature they sold that has not been spent. The exact set the
@@ -1760,8 +1789,9 @@
     series: series, whenOf: whenOf, inWindow: inWindow,
     promoValue: promoValue, sponsorship: sponsorship, sponsorshipBook: sponsorshipBook,
     ticketSplit: ticketSplit, webinarsFor: webinarsFor,
-    isScreening: isScreening, mentorOf: mentorOf, canScreen: canScreen,
+    isScreening: isScreening, threadOpen: threadOpen, mentorOf: mentorOf, canScreen: canScreen,
     signerFor: signerFor, signsFor: signsFor, openOrderOf: openOrderOf,
+    pendingMentorshipOf: pendingMentorshipOf,
     supervisionSplit: supervisionSplit, caseSupervisors: caseSupervisors,
     openMentors: openMentors, superviseeCount: superviseeCount,
     mentorWeek: mentorWeek, openHours: openHours,

@@ -100,12 +100,44 @@ ok('but an unsupervised trainee is told why they cannot take one',
    /تحتاج محامياً مشرفاً/.test(t));
 ok('and given no button to press', (await p.$('[data-scr-take]')) === null);
 
+console.log('— AND THE DEAD END IS NOT A DEAD END —');
+await p.evaluate(() => {
+  Store.updateAccount('u-ahmed', { supervisesCases: true, supervisionFee: 100 });
+  Store.updateAccount('u-sara',  { supervisesCases: true, supervisionFee: 80 });
+});
+await open('requests.html', 'u-layan');
+t = await body();
+ok('the price list is on the screening itself', (await p.$('[data-scr-fix]')) !== null, t.slice(0,300));
+ok('with the lawyers who sell it', /سارة/.test(t) && /أحمد/.test(t));
+ok('their prices', /٨٠|80/.test(t) && /١٠٠|100/.test(t));
+ok('and what reaches the lawyer of it', /بعد خصم المنصة يصل المحامي/.test(t));
+ok('a way to reach all of them at once', (await p.$('[data-scr-callall]')) !== null);
+await p.click('[data-scr-callall]'); await p.waitForTimeout(500);
+ok('which puts the call out', await p.evaluate(() => Store.invites().length) === 1);
+ok('and says so', /نداؤك قائم/.test(await body()));
+
+console.log('— SOMEBODY WHO ALREADY ASKED IS NOT TOLD TO ASK —');
+await p.evaluate(() => {
+  Store.updateAccount('u-ahmed', { isMentor: true, mentorshipFee: 80 });
+  Store.signIn('u-turki');
+  Store.applyForMentorship('u-ahmed');
+});
+await open('requests.html', 'u-turki');
+t = await body();
+ok('they are told who is holding their application', /طلبك قيد النظر عند/.test(t), t.slice(0,300));
+ok('and not told to go and find one', !/تحتاج محامياً مشرفاً/.test(t));
+ok('nor shown a price list they do not need', (await p.$('[data-scr-fix]')) === null);
+
 console.log('— AND THE SUPERVISOR SEES IT TOO, AND MAY HAND IT OVER —');
 await open('requests.html', 'u-ahmed');
 ok('a lawyer supervising nobody is shown the pool', (await p.$('[data-screening-desk]')) !== null,
    await body());
 ok('and told why they cannot route it', /لا تشرف على أحد بعد/.test(await body()));
-ok('with no button to press', (await p.$('[data-scr-route]')) === null);
+ok('but the button still explains itself rather than vanishing',
+   (await p.$('[data-scr-route]')) !== null);
+await p.click('[data-scr-route]'); await p.waitForTimeout(300);
+ok('and says the one thing that would fill it',
+   /لا تشرف على أحد بعد/.test(await p.$eval('.assign-pop', e => e.innerText)));
 
 console.log('— A SUPERVISED ONE CAN, AND BRINGS THEIR LAWYER WITH THEM —');
 await p.evaluate(() => {

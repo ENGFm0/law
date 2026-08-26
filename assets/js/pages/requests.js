@@ -246,6 +246,16 @@ Pages.define("requests", function (global) {
      checks in redeem_promo_code(), because a button drawn where the server
      will refuse is a button that lies. */
   var EARLY = ["new", "quoting", "assigned", "scheduled"];
+
+  /** Said in place of the thread, rather than leaving an input box that goes
+      nowhere. Which of the two reasons applies depends on the kind of work. */
+  function notYetTalking(r) {
+    return '<section class="card card--pad" style="margin-top:var(--s-6)" data-thread-shut>' +
+      '<h3 class="subtitle">' + esc(I18N.t("thread.title")) + "</h3>" +
+      '<p class="small muted" style="margin-top:var(--s-2);max-width:60ch">' +
+        Icons.svg("lock", "icon-sm") + " " +
+        esc(I18N.t(M.isScreening(r) ? "thread.shutScreening" : "thread.shut")) + "</p></section>";
+  }
   var promoTried = {};          // the last answer per request, so it can be said
 
   function convertOffer(r) {
@@ -289,8 +299,11 @@ Pages.define("requests", function (global) {
         : "") +
       acceptPanel(r) +
       (rating[r.id] !== undefined ? rateForm(r) : "") +
-      // Everything the two of them said and sent, on the case it belongs to.
-      C.thread(r, "parties", { closed: st.status === "completed" }) +
+      // Everything the two of them said and sent, on the case it belongs to —
+      // once there is somebody on the other side of it.
+      (M.threadOpen(r)
+        ? C.thread(r, "parties", { closed: st.status === "completed" })
+        : notYetTalking(r)) +
     "</div>";
   }
 
@@ -724,8 +737,10 @@ Pages.define("requests", function (global) {
                 '" data-thread-side="internal">' + esc(I18N.t("thread.withIntern")) + "</button>" +
             "</div>"
           : "") +
-        C.thread(r, M.requestState(r).assignedTo ? side : "parties",
-                 { closed: M.requestState(r).status === "completed" }) +
+        (M.threadOpen(r)
+          ? C.thread(r, M.requestState(r).assignedTo ? side : "parties",
+                     { closed: M.requestState(r).status === "completed" })
+          : notYetTalking(r)) +
         // The lawyer is on both threads, so their record shows both.
         C.timeline(r, { internal: true }) +
       "</div></section>";
@@ -837,12 +852,10 @@ Pages.define("requests", function (global) {
               '<p class="tiny faint" style="margin-top:var(--s-2)">' +
                 esc(C.stamp(M.whenOf(r))) + "</p>" +
             "</div>" +
-            (mine.length
-              ? '<div style="position:relative">' +
-                '<button class="btn btn--accent btn--sm" type="button" data-scr-route="' +
-                  esc(r.id) + '">' + Icons.svg("send", "icon-sm") +
-                  esc(I18N.t("scr.route")) + "</button></div>"
-              : "") +
+            '<div style="position:relative">' +
+              '<button class="btn' + (mine.length ? " btn--accent" : " btn--outline") +
+                ' btn--sm" type="button" data-scr-route="' + esc(r.id) + '">' +
+                Icons.svg("send", "icon-sm") + esc(I18N.t("scr.route")) + "</button></div>" +
           "</div></article>";
       }).join("") +
     "</section>";
@@ -856,8 +869,19 @@ Pages.define("requests", function (global) {
     var me = Session.user();
     var pop = document.createElement("div");
     pop.className = "assign-pop";
+    var mine = M.signsFor(me.id);
+    // An empty popover is the worst of both: it looks broken, and it says
+    // nothing about the one thing that would fill it.
+    if (!mine.length) {
+      pop.innerHTML = '<p class="tiny muted" style="padding:var(--s-2)">' +
+        esc(I18N.t("scr.noneToRoute")) + "</p>" +
+        '<a class="btn btn--outline btn--sm" style="margin:var(--s-2)" ' +
+          'href="mentorship.html?tab=inbox">' + esc(I18N.t("scr.takeTrainees")) + "</a>";
+      anchor.appendChild(pop);
+      return;
+    }
     pop.innerHTML = '<p class="tiny muted">' + esc(I18N.t("scr.pickTrainee")) + "</p>" +
-      M.signsFor(me.id).map(function (i) {
+      mine.map(function (i) {
         return '<button type="button" data-route-to="' + esc(i.id) + '" data-for="' + esc(id) + '">' +
           '<img class="avatar avatar--sm" alt="" width="28" height="28" src="' +
             App.avatarOf(i.name, i.id) + '">' +
@@ -865,6 +889,62 @@ Pages.define("requests", function (global) {
           '<span class="tiny muted num">' + I18N.num(M.hoursOf(i.id)) + "</span></button>";
       }).join("");
     anchor.appendChild(pop);
+  }
+
+  /* ---------- why a trainee cannot take one, and what to do about it ----
+     "You need a supervising lawyer" was told to everybody who could not take
+     a screening, including somebody who applied for one yesterday and is
+     waiting on an answer. To them it reads as though the asking never
+     happened. And to somebody who really has nobody, it is a dead end with a
+     link on it rather than the thing they need, which is a price list.
+
+     So: three states, and the third one carries the list. */
+  function whyNot(me) {
+    var waiting = M.pendingMentorshipOf(me.id);
+    if (waiting) {
+      var who = M.user(waiting.mentorId);
+      return '<p class="small" style="margin-bottom:var(--s-4);color:var(--warning)">' +
+        Icons.svg("clock", "icon-sm") + " " +
+        esc(I18N.t("scr.waitingOn", { name: who ? tx(who.name) : "" })) + "</p>";
+    }
+
+    var call = M.callOf(me.id);
+    var offers = M.caseSupervisors(me.id);
+    var cfg = M.platformSettings();
+
+    return '<section class="card card--pad" style="margin-bottom:var(--s-6)" data-scr-fix>' +
+      '<p class="small" style="color:var(--warning)">' +
+        Icons.svg("lock", "icon-sm") + " " + esc(I18N.t("scr.needMentor")) + "</p>" +
+      '<p class="small muted" style="margin-top:var(--s-2);max-width:62ch">' +
+        esc(I18N.t("scr.fixLead")) + "</p>" +
+
+      (offers.length
+        ? '<div class="stack gap-2" style="margin-top:var(--s-4)">' +
+          offers.slice(0, 5).map(function (u) {
+            var net = Math.round((u.supervisionFee || 0) -
+              ((u.supervisionFee || 0) * cfg.sponsorshipPct) / 100);
+            return '<div class="row between wrap gap-3 admin-line">' +
+              '<span class="row gap-3">' + C.avatar(u, "sm") +
+                "<span>" + C.personLink(u) +
+                '<span class="tiny faint" style="display:block">' +
+                  esc(I18N.t("sup.after", { n: I18N.num(net) })) + "</span></span></span>" +
+              '<span class="row gap-3">' +
+                "<strong class=\"small\">" +
+                  esc(I18N.t("sup.fee", { n: I18N.num(u.supervisionFee) })) + "</strong>" +
+                '<button class="btn btn--primary btn--sm" type="button" data-buy-sup="' +
+                  esc(u.id) + '">' + esc(I18N.t("sup.buy")) + "</button></span></div>";
+          }).join("") + "</div>"
+        : '<p class="small muted" style="margin-top:var(--s-4)">' +
+          esc(I18N.t("sup.none")) + "</p>") +
+
+      '<div class="row gap-2 wrap" style="margin-top:var(--s-5)">' +
+        (call
+          ? '<span class="tag">' + esc(I18N.t("call.out")) + "</span>"
+          : '<button class="btn btn--outline btn--sm" type="button" data-scr-callall>' +
+            Icons.svg("send", "icon-sm") + esc(I18N.t("scr.callAll")) + "</button>") +
+        '<a class="btn btn--ghost btn--sm" href="mentorship.html?tab=find">' +
+          esc(I18N.t("scr.moreWays")) + "</a>" +
+      "</div></section>";
   }
 
   function screeningPool(me) {
@@ -876,10 +956,7 @@ Pages.define("requests", function (global) {
       '<h2 class="headline">' + esc(I18N.t("scr.pool")) + "</h2>" +
       '<p class="lead" style="margin-bottom:var(--s-6)">' +
         esc(I18N.t("scr.poolLead")) + "</p>" +
-      (supervised ? "" :
-        '<p class="small" style="margin-bottom:var(--s-4);color:var(--warning)">' +
-        Icons.svg("lock", "icon-sm") + " " + esc(I18N.t("scr.needMentor")) +
-        ' <a href="mentorship.html">' + esc(I18N.t("men.findMentor")) + "</a></p>") +
+      (supervised ? "" : whyNot(me)) +
       list.map(function (r) {
         return '<article class="card card--pad card--rule-gold" style="margin-bottom:var(--s-4)">' +
           '<div class="row between wrap gap-4">' +
@@ -1268,6 +1345,24 @@ Pages.define("requests", function (global) {
       Store.setRequest(dl, { status: "delivered" });
       Store.notify({ to: M.request(dl).clientId, type: "delivered", ref: dl });
       App.toast(I18N.t("inbox.completed"), "check"); return;
+    }
+
+    var bs2 = t.closest("[data-buy-sup]");
+    if (bs2) {
+      Store.buySupervision(bs2.getAttribute("data-buy-sup"), function (word) {
+        var says = { bought: "sup.bought", "already supervised": "sup.alreadySupervised",
+                     "already bought": "sup.alreadyBought", "not offered": "sup.notOffered" };
+        App.toast(I18N.t(says[word] || "sup.notOffered"), word === "bought" ? "check" : "alert");
+        App.rerender();
+      });
+      return;
+    }
+    if (t.closest("[data-scr-callall]")) {
+      var out = Store.callForMentor(I18N.t("scr.callNote"), null);
+      App.toast(I18N.t(out === "sent" ? "call.sent" : "men.haveOne"),
+                out === "sent" ? "check" : "alert");
+      App.rerender();
+      return;
     }
 
     var sr = t.closest("[data-scr-route]");

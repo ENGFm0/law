@@ -39,6 +39,48 @@ await p.evaluate(() => {
   localStorage.setItem('rid', r.id);
 });
 
+console.log('— A CONVERSATION OPENS WHEN SOMEBODY IS ON THE OTHER SIDE OF IT —');
+// The rule itself, on every state a request passes through. Built in
+// memory: writing five requests to try five statuses would trip the
+// one-at-a-time rule and test that instead.
+const gate = await p.evaluate(() => {
+  const at = (status, over) => Models.threadOpen(Object.assign(
+    { id: 'probe-' + status, typeId: 'consult', clientId: 'u-munira',
+      lawyerId: 'u-mohammed', status: status }, over || {}));
+  return { neu: at('new'), quoting: at('quoting'), assigned: at('assigned'),
+           working: at('in_progress'), delivered: at('delivered'),
+           scrOpen: at('new', { typeId: 'free_screening' }),
+           scrTaken: at('with_intern', { typeId: 'free_screening',
+                                         assignedTo: 'u-jaid' }) };
+});
+ok('nothing to write into while it is only placed', gate.neu === false, gate);
+ok('nor while offers are still coming in', gate.quoting === false);
+ok('it opens the moment somebody takes it on', gate.assigned === true);
+ok('and stays open while the work runs', gate.working === true);
+ok('and after it is handed over', gate.delivered === true);
+// A screening opens on a different moment: when a trainee claims it, which
+// is when somebody becomes answerable for it.
+ok('a screening nobody claimed has no thread', gate.scrOpen === false);
+ok('and a trainee claiming it opens one', gate.scrTaken === true);
+
+// And on screen, so a typo in the notice cannot ship: put this suite's own
+// case back to untaken and look at it through the client's eyes.
+await p.evaluate(() => Store.setRequest(Store.requests()[0].id, { status: 'new' }));
+// A client's cases are collapsed until opened, so open one.
+let seen = false;
+for (const which of ['live', 'booked', 'past']) {
+  await open('requests.html?pile=' + which, 'u-fahad');
+  const opener = await p.$('[data-detail]');
+  if (!opener) continue;
+  await opener.click(); await p.waitForTimeout(400);
+  if (await p.$('[data-thread-shut]')) { seen = true; break; }
+}
+ok('the notice is drawn where the thread would have been', seen, await body());
+ok('and it says what is actually true', /تُفتح المحادثة حين يستلم المحامي/.test(await body()));
+ok('with no box to type into', (await p.$('[data-thread-body]')) === null);
+// and back, so the rest of the suite reads the case it was built around.
+await p.evaluate(() => Store.setRequest(Store.requests()[0].id, { status: 'in_progress' }));
+
 console.log('— THE CLIENT WRITES, AND ATTACHES —');
 await open('requests.html', 'u-fahad');
 const rid = await p.evaluate(() => localStorage.getItem('rid'));
