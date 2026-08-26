@@ -59,6 +59,19 @@ if (cfg) {
   ok('every route names a source', routes.every((r) => typeof r.source === 'string'));
   ok('and every header a key and a value',
      routes.every((r) => (r.headers || []).every((h) => h.key && h.value)));
+
+  // The bare root is the URL almost everybody types, and it ends in no
+  // extension: a rule written as /(.*).html does not match it. Asset URLs
+  // carry no version here, so a browser holding one release's JavaScript can
+  // run it against the next release's HTML — which looks like data failing to
+  // arrive rather than a stale page. Every path has to revalidate, the root
+  // most of all.
+  const revalidates = (path) => routes.some((r) =>
+    (r.headers || []).some((h) => h.key.toLowerCase() === 'cache-control' &&
+      /must-revalidate/.test(h.value)) && new RegExp('^' + r.source
+        .replace(/\(\.\*\)/g, '.*') + '$').test(path));
+  ['/', '/index.html', '/mentorship.html', '/assets/js/core/i18n.js']
+    .forEach((path) => ok('revalidates ' + path, revalidates(path), path));
 }
 
 console.log('— AND NOTHING INVITES A BUILD STEP —');
