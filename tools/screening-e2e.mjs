@@ -100,6 +100,13 @@ ok('but an unsupervised trainee is told why they cannot take one',
    /تحتاج محامياً مشرفاً/.test(t));
 ok('and given no button to press', (await p.$('[data-scr-take]')) === null);
 
+console.log('— AND THE SUPERVISOR SEES IT TOO, AND MAY HAND IT OVER —');
+await open('requests.html', 'u-ahmed');
+ok('a lawyer supervising nobody is shown the pool', (await p.$('[data-screening-desk]')) !== null,
+   await body());
+ok('and told why they cannot route it', /لا تشرف على أحد بعد/.test(await body()));
+ok('with no button to press', (await p.$('[data-scr-route]')) === null);
+
 console.log('— A SUPERVISED ONE CAN, AND BRINGS THEIR LAWYER WITH THEM —');
 await p.evaluate(() => {
   Store.updateAccount('u-ahmed', { isMentor: true, mentorshipFee: 80 });
@@ -107,6 +114,14 @@ await p.evaluate(() => {
                                    openedBy:'intern', fee:80 });
   Store.setMentorship(m.id, { status: 'active' });
 });
+await open('requests.html', 'u-ahmed');
+ok('now the supervisor can route it', (await p.$('[data-scr-route]')) !== null, await body());
+await p.click('[data-scr-route="' + scr.id + '"]'); await p.waitForTimeout(300);
+const choices = await p.$$eval('[data-route-to]', ns => ns.map(n => n.getAttribute('data-route-to')));
+ok('and is offered only the trainee they sign for',
+   choices.length === 1 && choices[0] === 'u-jaid', choices.join(','));
+await p.keyboard.press('Escape');
+
 await open('requests.html', 'u-jaid');
 ok('the supervised trainee is offered it', (await p.$('[data-scr-take]')) !== null);
 await p.click('[data-scr-take="' + scr.id + '"]'); await p.waitForTimeout(500);
@@ -173,6 +188,26 @@ t = await body();
 ok('the offer is on the finished screening', /عندك قضية؟/.test(t), t.slice(0,200));
 ok('naming the lawyer who did it', /أحمد/.test(t));
 ok('and carrying the code itself', t.indexOf(code.code) !== -1, code.code);
+
+console.log('— THE SUPERVISOR ROUTES ONE, END TO END —');
+const scr2 = await p.evaluate(() => Store.addRequest({
+  clientId:'u-sara', typeId:'free_screening', title:{ar:'فرز ثانٍ',en:'s2'},
+  brief:{ar:'نزاع إيجار',en:'b'}, price:0, status:'new', hours:0 }));
+await open('requests.html', 'u-ahmed');
+await p.click('[data-scr-route="' + scr2.id + '"]'); await p.waitForTimeout(300);
+await p.click('[data-route-to="u-jaid"]'); await p.waitForTimeout(500);
+const routed = await p.evaluate(id => { const r = Models.request(id);
+  return { lawyer: r.lawyerId, to: Models.requestState(r).assignedTo,
+           status: Models.requestState(r).status }; }, scr2.id);
+ok('it lands with the trainee', routed.to === 'u-jaid', routed);
+ok('with the supervisor answerable for it', routed.lawyer === 'u-ahmed');
+ok('and moved out of the pool', routed.status === 'with_intern');
+ok('the trainee sees it on their desk', await (async () => {
+  await open('requests.html', 'u-jaid');
+  return /نزاع إيجار/.test(await body());
+})());
+await open('requests.html', 'u-layan');
+ok('and a trainee it was not routed to does not', !/نزاع إيجار/.test(await body()));
 
 console.log('\nerrors: ' + (errs.length ? errs.join(' | ') : 'none'));
 console.log(`${pass} passed, ${fail} failed`);

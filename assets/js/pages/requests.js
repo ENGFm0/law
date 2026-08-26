@@ -648,7 +648,7 @@ Pages.define("requests", function (global) {
                 : "") + "</div>";
           }).join("")
         : '<p class="muted center" style="padding:var(--s-8)">' + esc(I18N.t("inbox.empty")) + "</p>") +
-    "</div>";
+    screeningDesk(me) + "</div>";
   }
 
   /** Who put their hand up for an opened task, and the button that ends it. */
@@ -809,6 +809,64 @@ Pages.define("requests", function (global) {
   /* Free screenings nobody has picked up. Shown to every trainee, claimable
      only by one with a supervisor — and the reason why is written on the card
      rather than left to a disabled button. */
+  /* ---------- the screening pool, for a lawyer ----------
+     A supervising lawyer could not see an incoming screening at all, let
+     alone hand one to their trainee — which is the ordinary shape of
+     everything else on this platform. Routing work to a trainee is what a
+     supervisor does; a screening was the one kind they could not. */
+  function screeningDesk(me) {
+    var list = M.openScreenings();
+    if (!list.length) return "";
+    var mine = M.signsFor(me.id);
+
+    return '<section style="margin-top:var(--s-12)" data-screening-desk>' +
+      '<h2 class="headline">' + esc(I18N.t("scr.deskTitle")) + "</h2>" +
+      '<p class="lead" style="margin-bottom:var(--s-6)">' +
+        esc(I18N.t("scr.deskLead")) + "</p>" +
+      (mine.length ? "" :
+        '<p class="small" style="margin-bottom:var(--s-4);color:var(--warning)">' +
+        Icons.svg("lock", "icon-sm") + " " + esc(I18N.t("scr.needTrainee")) +
+        ' <a href="mentorship.html">' + esc(I18N.t("scr.takeTrainees")) + "</a></p>") +
+      list.map(function (r) {
+        return '<article class="card card--pad card--rule-gold" style="margin-bottom:var(--s-4)">' +
+          '<div class="row between wrap gap-4">' +
+            '<div class="grow" style="min-width:0">' +
+              '<div class="row gap-2 wrap"><h3 class="subtitle">' + esc(tx(r.title)) + "</h3>" +
+                '<span class="tag">' + esc(I18N.t("scr.free")) + "</span></div>" +
+              '<p class="small muted" style="margin-top:var(--s-2)">' + esc(tx(r.brief)) + "</p>" +
+              '<p class="tiny faint" style="margin-top:var(--s-2)">' +
+                esc(C.stamp(M.whenOf(r))) + "</p>" +
+            "</div>" +
+            (mine.length
+              ? '<div style="position:relative">' +
+                '<button class="btn btn--accent btn--sm" type="button" data-scr-route="' +
+                  esc(r.id) + '">' + Icons.svg("send", "icon-sm") +
+                  esc(I18N.t("scr.route")) + "</button></div>"
+              : "") +
+          "</div></article>";
+      }).join("") +
+    "</section>";
+  }
+
+  /** Who this lawyer may hand a screening to. The same set the routing policy
+      accepts, so no name is offered that the database will refuse. */
+  function openRoute(id, anchor) {
+    var existing = $(".assign-pop");
+    if (existing) existing.remove();
+    var me = Session.user();
+    var pop = document.createElement("div");
+    pop.className = "assign-pop";
+    pop.innerHTML = '<p class="tiny muted">' + esc(I18N.t("scr.pickTrainee")) + "</p>" +
+      M.signsFor(me.id).map(function (i) {
+        return '<button type="button" data-route-to="' + esc(i.id) + '" data-for="' + esc(id) + '">' +
+          '<img class="avatar avatar--sm" alt="" width="28" height="28" src="' +
+            App.avatarOf(i.name, i.id) + '">' +
+          "<span>" + esc(tx(i.name)) + "</span>" +
+          '<span class="tiny muted num">' + I18N.num(M.hoursOf(i.id)) + "</span></button>";
+      }).join("");
+    anchor.appendChild(pop);
+  }
+
   function screeningPool(me) {
     var list = M.openScreenings();
     if (!list.length) return "";
@@ -1210,6 +1268,18 @@ Pages.define("requests", function (global) {
       Store.setRequest(dl, { status: "delivered" });
       Store.notify({ to: M.request(dl).clientId, type: "delivered", ref: dl });
       App.toast(I18N.t("inbox.completed"), "check"); return;
+    }
+
+    var sr = t.closest("[data-scr-route]");
+    if (sr) { openRoute(sr.getAttribute("data-scr-route"), sr.parentNode); return; }
+    var rt = t.closest("[data-route-to]");
+    if (rt) {
+      var word = Store.routeScreening(rt.getAttribute("data-for"),
+                                      rt.getAttribute("data-route-to"));
+      var says = { routed: "scr.routed", taken: "scr.gone", "not yours": "scr.notYours" };
+      App.toast(I18N.t(says[word] || "scr.notYours"), word === "routed" ? "check" : "alert");
+      App.rerender();
+      return;
     }
 
     var as = t.closest("[data-assign]");

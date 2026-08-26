@@ -957,6 +957,33 @@
       return row.status;
     },
 
+    /** The other way a screening gets picked up: the supervisor hands it to
+        their own trainee. Mirrors the routing policy in 023 — a lawyer may
+        only assign somebody they are the signer for, so this refuses exactly
+        what the database refuses rather than letting the write fail. */
+    routeScreening: function (requestId, internId) {
+      var me = Store.currentId();
+      if (!me) return "not signed in";
+      var r = byId(work.requests, requestId);
+      if (!r || r.typeId !== "free_screening") return "not a screening";
+      var st = work.requestStates[requestId] || {};
+      if (st.assignedTo) return "taken";
+      var signer = global.Models && global.Models.signerFor(internId);
+      if (!signer || signer.id !== me) return "not yours";
+      r.lawyerId = me;
+      if (!Store.mentorshipOf(internId)) {
+        var order = global.Models.openOrderOf(internId);
+        if (order) {
+          order.status = "used";
+          order.usedAt = Date.now();
+          order.requestId = requestId;
+        }
+      }
+      Store.setRequest(requestId, { assignedTo: internId, status: "with_intern" });
+      Store.notify({ to: internId, type: "screening", ref: requestId });
+      return "routed";
+    },
+
     /** A trainee claiming a screening. The mentor goes on the request with
         them, because the person who answers is the person answerable for the
         answer — the same rule guard_screening() enforces on the real backend. */

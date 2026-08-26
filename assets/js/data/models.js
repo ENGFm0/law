@@ -992,6 +992,17 @@
 
   function canScreen(internId) { return !!signerFor(internId); }
 
+  /** The trainees this lawyer may sign for right now — a standing mentorship,
+      or a signature they sold that has not been spent. The exact set the
+      routing policy in migration 023 will accept, so the page cannot offer a
+      name the database will refuse. */
+  function signsFor(lawyerId) {
+    return interns().filter(function (u) {
+      var signer = signerFor(u.id);
+      return !!signer && signer.id === lawyerId;
+    });
+  }
+
   /** What one case of supervision comes to, split the way the monthly
       sponsorship is. Halalas, and the lawyer's figure is what reaches them. */
   function supervisionSplit(mentor) {
@@ -1750,7 +1761,7 @@
     promoValue: promoValue, sponsorship: sponsorship, sponsorshipBook: sponsorshipBook,
     ticketSplit: ticketSplit, webinarsFor: webinarsFor,
     isScreening: isScreening, mentorOf: mentorOf, canScreen: canScreen,
-    signerFor: signerFor, openOrderOf: openOrderOf,
+    signerFor: signerFor, signsFor: signsFor, openOrderOf: openOrderOf,
     supervisionSplit: supervisionSplit, caseSupervisors: caseSupervisors,
     openMentors: openMentors, superviseeCount: superviseeCount,
     mentorWeek: mentorWeek, openHours: openHours,

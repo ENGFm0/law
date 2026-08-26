@@ -1284,6 +1284,23 @@
     return status;
   };
 
+  /* The row is reachable now — migration 023 opened exactly this update — so
+     this is a plain write, and the guard and the policy between them settle
+     whether it is allowed. */
+  Store.routeScreening = function (requestId, internId) {
+    if (noSession()) return "not signed in";
+    var me = Store.currentId();
+    var signer = global.Models && global.Models.signerFor(internId);
+    if (!signer || signer.id !== me) return "not yours";
+    (cache.requests || []).forEach(function (r) {
+      if (r.id === requestId) { r.assignedTo = internId; r.lawyerId = me; r.status = "with_intern"; }
+    });
+    Store.notifyAll();
+    patch("requests", requestId, { assigned_to: internId, status: "with_intern" })
+      .then(report).then(function () { Store.hydrate(); });
+    return "routed";
+  };
+
   Store.mentorships = function () { return cache.mentorships || []; };
   Store.mentorship = function (id) {
     var out = null;

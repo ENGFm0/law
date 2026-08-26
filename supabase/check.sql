@@ -152,6 +152,22 @@ from (values
 
 -- Two of these are rows, not tables. A row can be missing while every table
 -- around it is present, and then the category simply does not exist.
+-- Without these policies the pool is invisible: the site draws it, the guard
+-- is written and tested, and no trainee or lawyer can select the row at all.
+-- An empty list reads as "no work today", which is how it shipped broken.
+union all select 'a waiting screening can be seen by the profession',
+  exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'requests'
+           and policyname = 'an unclaimed screening is the profession''s to see'),
+  '023-a-screening-nobody-can-see.sql'
+union all select 'and claimed by a supervised trainee',
+  exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'requests'
+           and policyname = 'a supervised trainee claims a screening'),
+  '023-a-screening-nobody-can-see.sql'
+union all select 'or routed to one by their supervisor',
+  exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'requests'
+           and policyname = 'a supervisor routes a screening to their trainee'),
+  '023-a-screening-nobody-can-see.sql'
+
 union all select 'the free screening exists as a category', screening_type,
                  '020-free-screening-and-promo-codes.sql' from row_exists
 union all select 'and its price band is nothing to nothing', screening_band,
